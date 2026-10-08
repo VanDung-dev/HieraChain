@@ -1557,11 +1557,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,7 +4400,7 @@
 
 <h1 id="gui-su-kien">Gửi sự kiện</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Sự kiện vào HieraChain là thao tác nghiệp vụ. Sự kiện được xác thực, gom nhóm bởi <code>OrderingService</code> thành khối, hoàn thiện bằng cơ chế proof đã cấu hình (PoA, PoF hoặc BFT), rồi nối vào Sub-Chain. Đồng thuận MainChain có thể cắm qua <code>HRC_MAINCHAIN_CONSENSUS</code>, còn SubChain mặc định dùng PoA để xử lý nhanh trong tổ chức. Luồng là như nhau trong mọi trường hợp. Chỉ bước <code>finalize_block()</code> thay đổi.</p>
+<p>API Ledger kiểm tra schema của request rồi <code>SubChain.add_event()</code> chuyển event tới <code>OrderingService</code>. Ordering Service ghi event vào journal và hàng đợi trước khi trả <code>event_id</code>. ID này xác nhận event đã được tiếp nhận; block được commit sau đó. Processor nền chứng thực và gom batch, rồi tạo block và đưa vào commit queue. Consumer của SubChain finalize và lưu từng block. Mặc định, SubChain gom 50 event và chờ 1 giây trước khi tạo block. MainChain dùng PoA hoặc PoF; BFT là thành phần riêng, không được chọn trong luồng API này.</p>
 <p>Với sơ đồ PoA và PoF, xem <a href=".././consensus_mechanisms/">Cơ chế Đồng thuận</a>.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
@@ -4412,43 +4410,40 @@
     participant API as 🌐 FastAPI
     participant SC as 📦 SubChain
     participant OS as ⚙️ OrderingService
-    participant PRF as 🔐 Proof
     participant DB as 💾 Storage
 
     rect rgb(0, 0, 0, 0)
         Note over Client,API: Giai đoạn 1 — Gửi Sự kiện
-        Client-&gt;&gt;API: POST /ledger/chains/{name}/events
+        Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/events
         API-&gt;&gt;SC: add_event(event_dict)
-        SC-&gt;&gt;SC: Xác thực &amp; đóng dấu thời gian
-        SC-&gt;&gt;SC: validate_event_for_consensus()
-        SC-&gt;&gt;OS: receive_event(event_data, channel_id)
-        OS-&gt;&gt;OS: Đưa vào event_pool (hàng đợi)
+        SC-&gt;&gt;SC: Thêm timestamp/entity_id/event mặc định nếu thiếu
+        SC-&gt;&gt;OS: receive_event(event_data, channel_id, submitter_org)
+        OS-&gt;&gt;OS: Ghi Event Journal và đưa vào event_pool
+        OS--&gt;&gt;API: event_id
+        API--&gt;&gt;Client: 200 OK (đã tiếp nhận; chưa phải block finality)
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over OS: Giai đoạn 2 — Đóng gói &amp; Hoàn tất
-        Note over OS: Hết thời gian chờ đóng gói HOẶC đạt giới hạn block_size
+        Note over OS: Giai đoạn 2 — Gom batch và tạo block ở xử lý nền
+        Note over OS: Đạt block_size hoặc batch_timeout
 
-        OS-&gt;&gt;OS: force_block_creation()
-        OS-&gt;&gt;OS: BlockBuilder.build()
-        OS-&gt;&gt;PRF: finalize_block(block, chain_name)
-
-        Note over PRF: PoA hoặc PoF — xem consensus_mechanisms.md
-
-        PRF--&gt;&gt;OS: Khối đã hoàn tất ✅
-        OS-&gt;&gt;OS: Đưa vào commit_queue
+        OS-&gt;&gt;OS: BlockBuilder._finalize_batch() trả về danh sách event
+        OS-&gt;&gt;OS: OrderingBlockManager.create_block_async(events) tạo block
+        OS-&gt;&gt;DB: Lưu block do Ordering tạo
+        OS-&gt;&gt;OS: Đưa block vào commit_queue sau khi lưu thành công
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 3 — Lưu khối &amp; Ghi dữ liệu
-        Note over SC: Luồng background consumer_thread đang thăm dò
+        Note over SC: Giai đoạn 3 — Finalize và cập nhật SubChain
+        Note over SC: Consumer nền lấy block từ commit_queue
 
         SC-&gt;&gt;OS: get_next_block()
-        OS--&gt;&gt;SC: Khối dữ liệu
+        OS--&gt;&gt;SC: Block
         SC-&gt;&gt;SC: _process_and_finalize_single_block()
-        SC-&gt;&gt;SC: Tính lại index, previous_hash, hash
-        SC-&gt;&gt;SC: add_block(finalized_block)
-        SC-&gt;&gt;DB: Ghi khối vào storage
+        SC-&gt;&gt;SC: Tính index, previous_hash, hash
+        SC-&gt;&gt;SC: Finalize bằng consensus PoA hoặc PoF
+        SC-&gt;&gt;DB: Lưu block đã finalize
+        SC-&gt;&gt;SC: add_block() và cập nhật world state
         SC-&gt;&gt;SC: auto_submit_proof_if_needed()
 
         Note over SC: → Kích hoạt Neo giữ Bằng chứng
@@ -4465,39 +4460,35 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>1. Nhận qua API</strong></td>
-<td style="text-align: left;">FastAPI xác thực cấu trúc request, trích xuất <code>event_dict</code>.</td>
+<td style="text-align: left;">FastAPI kiểm tra schema <code>EventRequest</code>, gồm <code>entity_id</code> và <code>event_type</code>; endpoint trả <code>event_id</code> sau khi sự kiện được tiếp nhận, chưa xác nhận block finality.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Xác thực SC</strong></td>
-<td style="text-align: left;"><code>SubChain.add_event()</code> đóng dấu <code>timestamp</code>, gọi <code>validate_event_for_consensus()</code>: quét từ cấm liên quan tiền mã hóa.</td>
+<td style="text-align: left;"><strong>2. Thêm sự kiện vào SubChain</strong></td>
+<td style="text-align: left;"><code>SubChain.add_event()</code> bổ sung giá trị mặc định, kiểm tra cấu trúc event rồi mới gọi <code>OrderingService.receive_event()</code>; API vẫn bắt buộc <code>entity_id</code> và <code>event_type</code>. Hàm này không gọi <code>validate_event_for_consensus()</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Đưa vào hàng đợi OS</strong></td>
-<td style="text-align: left;">Sự kiện được đẩy vào <code>event_pool</code> (hàng đợi trong bộ nhớ). <code>OrderingService</code> gom nhóm theo timer hoặc ngưỡng <code>block_size</code>.</td>
+<td style="text-align: left;"><strong>3. Chứng thực nền</strong></td>
+<td style="text-align: left;">Ordering Service chuyển sự kiện qua certifier sau phản hồi API; sự kiện bị từ chối không được đưa vào block.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Dựng khối</strong></td>
-<td style="text-align: left;"><code>BlockBuilder.build()</code> tạo khối: index, previous_hash, Merkle root của sự kiện, metadata.</td>
+<td style="text-align: left;"><strong>4. Gom batch</strong></td>
+<td style="text-align: left;"><code>BlockBuilder.add_event()</code> thêm event đã chứng thực vào batch; khi đủ <code>block_size</code>, hết <code>batch_timeout</code> hoặc được flush, <code>_finalize_batch()</code> trả danh sách event và reset batch.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Hoàn tất</strong></td>
-<td style="text-align: left;"><code>Proof.finalize_block()</code>: PoA ký bằng Ed25519, PoF xác thực luân phiên leader và proof ZK, BFT chạy PBFT 3 pha.</td>
+<td style="text-align: left;"><strong>5. Tạo và commit block Ordering</strong></td>
+<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code> tạo block; <code>commit_block()</code> lưu block vào storage rồi mới đưa vào <code>commit_queue</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Commit</strong></td>
-<td style="text-align: left;">Khối được đẩy vào <code>commit_queue</code>, luồng nền <code>consumer_thread</code> nhận xử lý.</td>
+<td style="text-align: left;"><strong>6. Finalize ở SubChain</strong></td>
+<td style="text-align: left;">Consumer nền lấy block từ <code>commit_queue</code>; <code>_process_and_finalize_single_block()</code> đặt index và các hash liên kết, gọi consensus đã cấu hình của SubChain (PoA mặc định hoặc PoF), rồi lưu block đã finalize.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Chuỗi băm</strong></td>
-<td style="text-align: left;"><code>_process_and_finalize_single_block()</code> tính lại <code>previous_hash</code> và <code>hash</code> để giữ toàn vẹn chuỗi.</td>
+<td style="text-align: left;"><strong>7. Cập nhật chuỗi</strong></td>
+<td style="text-align: left;">Khi lưu thành công, SubChain thêm block vào chuỗi và cập nhật world state.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. Lưu trữ</strong></td>
-<td style="text-align: left;">Khối được ghi vào backend lưu trữ (<code>SQLiteAdapter</code>, <code>RedisStorageAdapter</code> hoặc <code>MemoryStorage</code>).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>9. Kích hoạt proof</strong></td>
-<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> kích hoạt Neo giữ Bằng chứng nếu đạt ngưỡng độ dài chuỗi.</td>
+<td style="text-align: left;"><strong>8. Kích hoạt proof</strong></td>
+<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> có thể gửi proof lên Main Chain khi đạt ngưỡng đã cấu hình.</td>
 </tr>
 </tbody>
 </table>
@@ -4505,7 +4496,7 @@
 <h2 id="cau-truc-su-kien">Cấu trúc sự kiện</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">event</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"product-SKU-001"</span><span class="p">,</span>    <span class="c1"># Định danh thực thể nghiệp vụ</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>           <span class="c1"># Loại sự kiện</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"event_type"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>      <span class="c1"># Loại sự kiện</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714000000.0</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span>                        <span class="c1"># Payload nghiệp vụ</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"check_type"</span><span class="p">:</span> <span class="s2">"visual"</span><span class="p">,</span>
@@ -4515,7 +4506,7 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
 </code></pre></div>
 <blockquote>
-<p><strong>Lưu ý</strong>: không dùng thuật ngữ tiền mã hóa (<code>transaction</code>, <code>sender</code>, <code>receiver</code>, <code>amount</code>, <code>wallet</code>, <code>fee</code>). Hàm <code>validate_event_for_consensus()</code> sẽ từ chối các từ này.</p>
+<p><strong>Lưu ý</strong>: API yêu cầu <code>entity_id</code> và <code>event_type</code>; khi chuyển sang event nội bộ, <code>event_type</code> được biểu diễn bằng khóa <code>event</code>. <code>SubChain.add_event()</code> từ chối event sai cấu trúc hoặc chứa thuật ngữ bị cấm trước khi xếp hàng. Không nên coi <code>event_id</code> API trả về là bằng chứng block đã được finalize.</p>
 </blockquote>
 <hr />
 <h2 id="xu-ly-loi">Xử lý lỗi</h2>
@@ -4528,24 +4519,28 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Phát hiện từ cấm liên quan tiền mã hóa</td>
-<td style="text-align: left;">Ném <code>ValueError</code>, từ chối sự kiện trước khi vào hàng đợi</td>
+<td style="text-align: left;">Thiếu trường bắt buộc hoặc chain không tồn tại</td>
+<td style="text-align: left;">API từ chối request; schema yêu cầu <code>entity_id</code> và <code>event_type</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Hoàn tất khối lỗi (PoA: authority không hợp lệ)</td>
-<td style="text-align: left;">Hủy khối, ghi log lỗi, đưa sự kiện lại vào hàng đợi</td>
+<td style="text-align: left;">Cấu trúc event không hợp lệ</td>
+<td style="text-align: left;"><code>SubChain.add_event()</code> ném <code>ValueError</code> trước khi ghi journal; API Ledger trả HTTP 422.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Hoàn tất khối lỗi (PoF: sai leader)</td>
-<td style="text-align: left;">Từ chối khối, <code>validate_block_proposer()</code> ném lỗi</td>
+<td style="text-align: left;">Ghi event journal thất bại</td>
+<td style="text-align: left;"><code>OrderingService.receive_event()</code> ném lỗi và không xếp sự kiện vào <code>event_pool</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Ghi storage lỗi</td>
-<td style="text-align: left;">Session <code>SQLAlchemy</code> rollback; khối ở lại <code>commit_queue</code> để thử lại</td>
+<td style="text-align: left;">Chứng thực event thất bại</td>
+<td style="text-align: left;">Processor đánh dấu event bị từ chối; event không được thêm vào block.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Lỗi luồng consumer</td>
-<td style="text-align: left;">Bắt exception ở cấp luồng, ghi log, luồng tự khởi động lại</td>
+<td style="text-align: left;">Lưu block Ordering thất bại</td>
+<td style="text-align: left;">Lỗi được ghi log và Ordering Service chuyển sang <code>MAINTENANCE</code>; block chưa được đưa vào <code>commit_queue</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Lưu block đã finalize thất bại</td>
+<td style="text-align: left;">Consumer đã lấy block khỏi <code>commit_queue</code>; <code>_process_and_finalize_single_block()</code> trả về lỗi và mã hiện tại không đưa block trở lại hàng đợi để thử lại.</td>
 </tr>
 </tbody>
 </table>
@@ -4561,44 +4556,34 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Nhận sự kiện</td>
-<td style="text-align: left;"><code>SubChain.add_event()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;">Kiểm tra và nhận request</td>
+<td style="text-align: left;"><code>EventRequest</code>; <code>SubChain.add_event()</code></td>
+<td style="text-align: left;"><code>hierachain/api/ledger/schemas.py</code>; <code>hierachain/api/ledger/events.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Quét từ cấm</td>
-<td style="text-align: left;"><code>BaseConsensus.validate_event_for_consensus()</code></td>
-<td style="text-align: left;"><code>consensus/base_consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Gom nhóm và sắp xếp</td>
+<td style="text-align: left;">Journal và xếp hàng</td>
 <td style="text-align: left;"><code>OrderingService.receive_event()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/service.py</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/service.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Dựng khối</td>
-<td style="text-align: left;"><code>BlockBuilder.build()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/block_builder.py</code></td>
+<td style="text-align: left;">Chứng thực và gom batch</td>
+<td style="text-align: left;"><code>OrderingProcessor</code>; <code>BlockBuilder.add_event()</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/processor.py</code>; <code>hierachain/consensus/ordering/block_builder.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Hoàn tất PoA</td>
-<td style="text-align: left;"><code>ProofOfAuthority.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
+<td style="text-align: left;">Tạo và commit block Ordering</td>
+<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code>; <code>commit_block()</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/block_manager.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Hoàn tất PoF</td>
-<td style="text-align: left;"><code>ProofOfFederation.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
+<td style="text-align: left;">Finalize và lưu block SubChain</td>
+<td style="text-align: left;"><code>_process_and_finalize_single_block()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/block.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Liên kết và thêm khối</td>
-<td style="text-align: left;"><code>SubChain._process_and_finalize_single_block()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Ghi dữ liệu</td>
-<td style="text-align: left;"><code>SQLiteAdapter</code> / <code>RedisStorageAdapter</code></td>
-<td style="text-align: left;"><code>adapters/database/</code></td>
+<td style="text-align: left;">Storage adapter</td>
+<td style="text-align: left;">Database adapters</td>
+<td style="text-align: left;"><code>hierachain/adapters/database/</code></td>
 </tr>
 </tbody>
 </table>

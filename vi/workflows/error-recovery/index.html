@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Luồng công việc tự động khôi phục và giảm thiểu tác động khi xảy ra lỗi mạng, hết hạn kết nối của leader hoặc bất thường về tính toàn vẹn dữ liệu.">
+        <meta name="description" content="Xác thực runtime, ghi nhật ký sự kiện bền vững và view change BFT.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.hierachain.org/vi/workflows/error-recovery/">
       
       
-        <link rel="prev" href="../cluster-lockdown/">
+        <link rel="prev" href="../cluster-lockdown.md">
       
       
         <link rel="next" href="../entity-tracing/">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Giảm thiểu Lỗi & Phục hồi - HieraChain Docs</title>
+        <title>Xử lý lỗi và phục hồi - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#giam-thieu-loi-va-phuc-hoi" class="md-skip">
+        <a href="#xu-ly-loi-va-phuc-hoi" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Giảm thiểu Lỗi & Phục hồi
+              Xử lý lỗi và phục hồi
             
           </span>
         </div>
@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1523,10 +1521,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#luong-runtime" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Luồng runtime
       </span>
     </span>
   </a>
@@ -1534,10 +1532,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6a-khoi-phuc-mang" class="md-nav__link">
+  <a href="#phuc-hoi-ong-thuan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A: Khôi phục mạng
+        Phục hồi đồng thuận
       </span>
     </span>
   </a>
@@ -1545,10 +1543,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6b-khoi-phuc-ong-thuan-loi-leader" class="md-nav__link">
+  <a href="#o-ben-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B: Khôi phục đồng thuận (lỗi leader)
+        Độ bền sự kiện
       </span>
     </span>
   </a>
@@ -1556,10 +1554,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6c-rollback-trang-thai" class="md-nav__link">
+  <a href="#phuc-hoi-van-hanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C: Rollback trạng thái
+        Phục hồi vận hành
       </span>
     </span>
   </a>
@@ -1567,43 +1565,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lop-va-phuong-thuc-chinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Lớp và phương thức chính
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Liên quan
+        Tài liệu liên quan
       </span>
     </span>
   </a>
@@ -4304,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#luong-runtime" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Luồng runtime
       </span>
     </span>
   </a>
@@ -4315,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6a-khoi-phuc-mang" class="md-nav__link">
+  <a href="#phuc-hoi-ong-thuan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A: Khôi phục mạng
+        Phục hồi đồng thuận
       </span>
     </span>
   </a>
@@ -4326,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6b-khoi-phuc-ong-thuan-loi-leader" class="md-nav__link">
+  <a href="#o-ben-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B: Khôi phục đồng thuận (lỗi leader)
+        Độ bền sự kiện
       </span>
     </span>
   </a>
@@ -4337,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6c-rollback-trang-thai" class="md-nav__link">
+  <a href="#phuc-hoi-van-hanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C: Rollback trạng thái
+        Phục hồi vận hành
       </span>
     </span>
   </a>
@@ -4348,43 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lop-va-phuong-thuc-chinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Lớp và phương thức chính
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Liên quan
+        Tài liệu liên quan
       </span>
     </span>
   </a>
@@ -4422,180 +4354,49 @@
   
 
 
-<h1 id="giam-thieu-loi-va-phuc-hoi">Giảm thiểu lỗi và phục hồi</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain có cơ chế khôi phục tự động theo ba lớp: khả năng phục hồi mạng, khôi phục leader đồng thuận và rollback trạng thái. Các cơ chế này hoạt động độc lập và có thể chạy song song.</p>
-<hr />
-<h2 id="6a-khoi-phuc-mang">6A: Khôi phục mạng</h2>
-<pre class="mermaid"><code>flowchart TB
-    NET["🌐 Phát hiện sự cố mạng"]
-    LAT["📊 Thu thập lịch sử độ trễ"]
-    ADJ["⏱️ adjust_timeout()\nTính toán lại dựa trên độ trễ trung bình + lớn nhất"]
-    RED["📡 send_with_redundancy()\nGửi đồng thời qua N đường truyền song song"]
-    FIRST["✅ Phản hồi thành công đầu tiên được chấp nhận"]
-    PART["⚠️ Phát hiện phân mảnh mạng?\navg_latency &gt; 5000ms"]
-    VC["🔄 _initiate_view_change()\nKích hoạt view change BFT"]
-
-    NET --&gt; LAT --&gt; ADJ --&gt; RED --&gt; FIRST
-    RED --&gt; PART
-    PART --&gt;|Có| VC
-    PART --&gt;|Không| FIRST</code></pre>
-<p>Chiến lược: <code>send_with_redundancy()</code> gửi cùng thông điệp qua N đường truyền song song. Phản hồi thành công đầu tiên được chấp nhận, các cuộc gọi còn lại bị hủy. Cách này xử lý lỗi đường truyền chập chờn mà không cần logic retry phức tạp.</p>
-<hr />
-<h2 id="6b-khoi-phuc-ong-thuan-loi-leader">6B: Khôi phục đồng thuận (lỗi leader)</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant CRE as 🔧 ConsensusRecoveryEngine
-    participant VM as 🔄 BFTViewChangeManager
-    participant NEW as 👑 Trưởng nhóm Mới (New Leader)
-
-    Note over CRE: Phát hiện hết hạn kết nối với Leader
-    CRE-&gt;&gt;CRE: handle_leader_failure(failed_leader_id, current_view)
-    CRE-&gt;&gt;CRE: Kiểm tra recovery_attempts &lt; max (mặc định 3)
-    CRE-&gt;&gt;VM: _initiate_view_change(failed_leader, new_view = view + 1)
-    VM-&gt;&gt;VM: Phát tin VIEW-CHANGE đến tất cả các trình xác thực
-    VM-&gt;&gt;NEW: Bầu trưởng nhóm mới: Validators[new_view % n]
-    NEW-&gt;&gt;NEW: Bắt đầu lại pha PRE-PREPARE
-    CRE-&gt;&gt;CRE: Xóa đếm số lần thử recovery_attempts khi thành công</code></pre>
-<hr />
-<h2 id="6c-rollback-trang-thai">6C: Rollback trạng thái</h2>
-<pre class="mermaid"><code>flowchart LR
-    ERR["❌ Lỗi Nghiêm trọng\nhoặc Thất bại Toàn vẹn"]
-    SNAP["📸 Nạp Ảnh chụp nhanh\n(RollbackManager)"]
-    JRNL["📓 Phát lại Nhật ký\n(EventJournal)"]
-    VER["🔍 Xác minh Trạng thái Khôi phục\n(DataValidator)"]
-    OK["✅ Trạng thái Đã Khôi phục"]
-    ALERT["🚨 Cảnh báo + Leo thang\n(AlertManager)"]
-
-    ERR --&gt; SNAP --&gt; JRNL --&gt; VER
-    VER --&gt;|Hợp lệ| OK
-    VER --&gt;|Không hợp lệ| ALERT</code></pre>
-<p>Các bước rollback:
-1. <code>RollbackManager.load_snapshot()</code>: nạp snapshot nhất quán gần nhất
-2. <code>EventJournal.replay()</code>: phát lại các mục nhật ký đã commit kể từ snapshot
-3. <code>DataValidator.validate()</code>: xác thực trạng thái khôi phục so với checksum mật mã
-4. Nếu xác thực lỗi: gửi cảnh báo leo thang qua Risk Alerts; cần can thiệp thủ công.</p>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Luồng phụ</th>
-<th style="text-align: left;">Kích hoạt</th>
-<th style="text-align: left;">Hành động</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>6A Mạng</strong></td>
-<td style="text-align: left;"><code>avg_latency &gt; ngưỡng</code></td>
-<td style="text-align: left;">Timeout thích ứng và gửi song song dự phòng</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6A Phân mảnh</strong></td>
-<td style="text-align: left;"><code>avg_latency &gt; 5000ms</code></td>
-<td style="text-align: left;">Kích hoạt View Change BFT</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6B Leader</strong></td>
-<td style="text-align: left;"><code>leader_timeout</code></td>
-<td style="text-align: left;">Gọi <code>ConsensusRecoveryEngine.handle_leader_failure()</code> và View Change</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6B Thử lại tối đa</strong></td>
-<td style="text-align: left;"><code>recovery_attempts &gt;= max</code></td>
-<td style="text-align: left;">Ghi lỗi nghiêm trọng, gửi cảnh báo rủi ro, tạm dừng đồng thuận</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6C Rollback</strong></td>
-<td style="text-align: left;">Lỗi toàn vẹn hoặc lỗi nghiêm trọng</td>
-<td style="text-align: left;">Nạp snapshot và phát lại nhật ký rồi xác thực</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tình huống</th>
-<th style="text-align: left;">Hành vi</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Hết lượt khôi phục (6B)</td>
-<td style="text-align: left;">Gửi cảnh báo mức cao nhất, node dừng tham gia đồng thuận</td>
-</tr>
-<tr>
-<td style="text-align: left;">Không tìm thấy snapshot (6C)</td>
-<td style="text-align: left;">Chuyển sang nạp lại toàn bộ chuỗi từ DB (Chain Rehydration)</td>
-</tr>
-<tr>
-<td style="text-align: left;">Phát lại nhật ký cho trạng thái không hợp lệ</td>
-<td style="text-align: left;">Cảnh báo leo thang qua Risk Alerts, đánh dấu cần can thiệp thủ công</td>
-</tr>
-<tr>
-<td style="text-align: left;">Phân mảnh mạng được khắc phục</td>
-<td style="text-align: left;">Timeout thích ứng tự giảm, hoạt động trở lại bình thường</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
-<th style="text-align: left;">Tệp</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Cấu hình timeout mạng</td>
-<td style="text-align: left;"><code>NetworkRecoveryManager.adjust_timeout()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Gửi dự phòng</td>
-<td style="text-align: left;"><code>send_with_redundancy()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Xử lý lỗi leader</td>
-<td style="text-align: left;"><code>ConsensusRecoveryEngine.handle_leader_failure()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Kích hoạt View Change</td>
-<td style="text-align: left;"><code>BFTViewChangeManager._initiate_view_change()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Nạp snapshot</td>
-<td style="text-align: left;"><code>RollbackManager.load_snapshot()</code></td>
-<td style="text-align: left;"><code>error_mitigation/rollback_manager.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Phát lại nhật ký</td>
-<td style="text-align: left;"><code>TransactionJournal.replay()</code></td>
-<td style="text-align: left;"><code>error_mitigation/journal.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Xác thực trạng thái</td>
-<td style="text-align: left;"><code>DataValidator.validate()</code></td>
-<td style="text-align: left;"><code>error_mitigation/validator.py</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="lien-quan">Liên quan</h2>
+<h1 id="xu-ly-loi-va-phuc-hoi">Xử lý lỗi và phục hồi</h1>
+<p>HieraChain giữ trách nhiệm phục hồi gần với component sở hữu trạng thái:
+<code>ErrorClassifier</code> ghi log và phân loại lỗi, <code>TransactionJournal</code> bảo vệ các sự
+kiện đang chờ, còn implementation BFT xử lý view change khi leader không khả
+dụng. Snapshot và phục hồi hạ tầng thuộc về deployment, không phải các service
+tự động trong package này.</p>
+<h2 id="luong-runtime">Luồng runtime</h2>
+<pre class="mermaid"><code>flowchart TD
+    ERR["Lỗi hoặc node hỏng"] --&gt; CLASS["ErrorClassifier\nphân loại và ghi log"]
+    CLASS --&gt;|Sự kiện đang chờ| JOURNAL["TransactionJournal\nphát lại sau restart"]
+    CLASS --&gt;|Lỗi đồng thuận| VIEW["BFTViewChangeManager\nbắt đầu view mới"]
+    CLASS --&gt;|Lỗi xác thực| REJECT["Từ chối và báo cáo"]
+    JOURNAL --&gt; VALIDATE["Xác thực trước ordering"]
+    VIEW --&gt; CONSENSUS["Tiếp tục các pha BFT"]</code></pre>
+<h2 id="phuc-hoi-ong-thuan">Phục hồi đồng thuận</h2>
+<p><code>BFTConsensus</code> sở hữu việc xử lý leader hỏng thông qua
+<code>BFTViewChangeManager</code>. Manager phát các message view-change, thu thập quorum
+và cài đặt view mới. Luồng này là một phần của consensus runtime và không phụ
+thuộc vào recovery engine riêng.</p>
+<h2 id="o-ben-su-kien">Độ bền sự kiện</h2>
+<p><code>TransactionJournal</code> ghi các sự kiện đang chờ trước khi ordering. Sau khi
+restart, ordering service có thể phát lại các entry trong journal và xác thực
+chúng trước khi đưa trở lại pipeline sự kiện.</p>
+<p>Nếu thao tác ghi lỗi sau khi đã ghi một phần frame, journal cắt file về offset
+ban đầu của frame và fsync phần sửa chữa trước khi chấp nhận lần ghi tiếp theo.
+Nếu không xác nhận được việc sửa chữa, journal từ chối các lần ghi sau cho đến
+khi được đóng và mở lại thành instance mới; bước khởi động sẽ sửa phần cuối
+chưa hoàn chỉnh của file đang hoạt động.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="phuc-hoi-van-hanh">Phục hồi vận hành</h2>
+<p>Backup database, snapshot filesystem, khôi phục khóa và mở rộng hạ tầng phải do
+môi trường deployment cung cấp. Repository không tuyên bố có rollback tự động,
+khôi phục backup, transport mạng dự phòng hoặc autoscaling node thông qua các
+class trong <code>error_mitigation</code>.</p>
+<h2 id="tai-lieu-lien-quan">Tài liệu liên quan</h2>
 <ul>
-<li><a href=".././bft-consensus/">Đồng thuận BFT</a>: chi tiết View Change</li>
-<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a>: khôi phục ở cấp cụm</li>
-<li><a href=".././chain-rehydration/">Nạp lại Trạng thái Chuỗi</a>: tải lại toàn bộ chuỗi từ DB</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: thông báo leo thang</li>
+<li><a href=".././bft-consensus/">Đồng thuận BFT</a>: Chi tiết View Change</li>
+<li><a href=".././chain-rehydration/">Nạp lại trạng thái chuỗi</a>: Tải lại toàn bộ chuỗi từ DB</li>
+<li><a href="../../modules/error-mitigation/">Module Error Mitigation</a>: Xác thực và journaling</li>
 </ul>
 
 
@@ -4637,7 +4438,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../cluster-lockdown/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Khóa băng Cụm">
+          <a href="../cluster-lockdown.md" class="md-footer__link md-footer__link--prev" aria-label="Trước: Khóa băng Cụm">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>

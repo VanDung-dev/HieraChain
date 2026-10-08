@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4237,11 +4235,11 @@
 </tr>
 <tr>
 <td>Rollback</td>
-<td>State restoration; <code>hierachain/error_mitigation/rollback_manager.py</code>.</td>
+<td>Transaction rollback owned by <code>hierachain/hierarchical/transaction_manager.py</code>; no global state rollback manager is provided.</td>
 </tr>
 <tr>
 <td>Recovery</td>
-<td>Error recovery via <code>hierachain/error_mitigation/rollback_manager.py</code>, <code>consensus_recovery.py</code>, <code>network_recovery.py</code> (no <code>recovery_engine.py</code>).</td>
+<td>Runtime recovery through journal replay, validation, BFT view change, and deployment procedures.</td>
 </tr>
 <tr>
 <td>Ordering</td>
@@ -4278,14 +4276,6 @@
 <tr>
 <td>Zero-Knowledge Proof</td>
 <td>ZK Proof; <code>hierachain/security/zk_prover.py</code>, <code>hierachain/security/verify/zk_verifier.py</code>.</td>
-</tr>
-<tr>
-<td>Proof Aggregation</td>
-<td>Multiple proof aggregation; <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code>.</td>
-</tr>
-<tr>
-<td>Rebalancer</td>
-<td>Automatic Sub-Chain splitting/balancing; <code>hierachain/hierarchical/rebalancer/rebalancer.py</code>.</td>
 </tr>
 <tr>
 <td>Channel</td>
@@ -4333,11 +4323,7 @@
 </tr>
 <tr>
 <td>Cross-level State Sync</td>
-<td>Cross-tier sync via <code>hierachain/cluster/state_sync_manager.py</code> + <code>hierachain/hierarchical/hierarchy_manager/</code> + <code>HRC_CROSS_LEVEL_*</code> settings.</td>
-</tr>
-<tr>
-<td>Kubernetes Namespace</td>
-<td>Sub-Chain namespace isolation; <code>hierachain/hierarchical/k8s_namespace_manager/operations.py</code>.</td>
+<td>Cross-tier sync via <code>hierachain/cluster/cross_level_sync.py</code> + <code>hierachain/hierarchical/hierarchy_manager/</code> + <code>HRC_CROSS_LEVEL_*</code> settings.</td>
 </tr>
 <tr>
 <td>Identity Manager</td>

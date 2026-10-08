@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Real-time risk analysis and input sanitization against injection attacks.">
+        <meta name="description" content="Input validation and sanitization against injection attacks.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Risk Analyzer - HieraChain Docs</title>
+        <title>Input Sanitization - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#risk-analyzer" class="md-skip">
+        <a href="#input-sanitization" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Risk Analyzer
+              Input Sanitization
             
           </span>
         </div>
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2613,32 +2611,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-risk-analyzer-behavioral-analysis" class="md-nav__link">
+  <a href="#input-sanitization-validation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Risk Analyzer (Behavioral Analysis)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-input-sanitization-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Input Sanitization &amp; Validation
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#risk-response-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Risk Response Matrix
+        Input Sanitization &amp; Validation
       </span>
     </span>
   </a>
@@ -4271,32 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-risk-analyzer-behavioral-analysis" class="md-nav__link">
+  <a href="#input-sanitization-validation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Risk Analyzer (Behavioral Analysis)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-input-sanitization-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Input Sanitization &amp; Validation
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#risk-response-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Risk Response Matrix
+        Input Sanitization &amp; Validation
       </span>
     </span>
   </a>
@@ -4356,17 +4310,9 @@
   
 
 
-<h1 id="risk-analyzer">Risk Analyzer</h1>
-<p>This security layer acts as the "brain" analyzing suspicious behavior and the "filter" preventing data-level attacks.</p>
-<h2 id="1-risk-analyzer-behavioral-analysis">1. Risk Analyzer (Behavioral Analysis)</h2>
-<p><strong>File</strong>: <code>hierachain/risk_management/risk_analyzer.py</code></p>
-<p>Risk analysis system based on operational data:</p>
-<ul>
-<li><strong>Anomaly Detection</strong>: Uses Z-score algorithm to detect sudden changes in request frequency or error rates.</li>
-<li><strong>Threat Intelligence</strong>: Identifies common attack patterns (such as Brute force API key, Replay attack).</li>
-<li><strong>Scoring System</strong>: Evaluates Risk Score for each Peer or API Key to apply corresponding countermeasures.</li>
-</ul>
-<h2 id="2-input-sanitization-validation">2. Input Sanitization &amp; Validation</h2>
+<h1 id="input-sanitization">Input Sanitization</h1>
+<p>This security layer validates and sanitizes untrusted input before business logic handles it.</p>
+<h2 id="input-sanitization-validation">Input Sanitization &amp; Validation</h2>
 <p><strong>File</strong>: <code>hierachain/security/sanitization.py</code></p>
 <p>Defense layer against data-level attacks:</p>
 <ul>
@@ -4374,36 +4320,6 @@
 <li><strong>Nested Bomb Protection</strong>: Limits JSON payload depth to prevent denial-of-service attacks through complex nested data structures.</li>
 <li><strong>Type Strictness</strong>: Ensures input data fully matches the defined schema, rejecting any redundant or malformed fields.</li>
 </ul>
-<hr />
-<h2 id="risk-response-matrix">Risk Response Matrix</h2>
-<p>The system automatically executes actions based on risk score:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Risk Score</th>
-<th style="text-align: left;">Level</th>
-<th style="text-align: left;">Automatic Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>0.0 - 0.3</strong></td>
-<td style="text-align: left;">Low</td>
-<td style="text-align: left;">Normal logging only.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>0.3 - 0.7</strong></td>
-<td style="text-align: left;">Medium</td>
-<td style="text-align: left;">Increase authentication (Challenge) or apply stricter Rate Limit.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>0.7 - 1.0</strong></td>
-<td style="text-align: left;">High</td>
-<td style="text-align: left;">Temporarily blacklist the risk entity and send urgent alerts.</td>
-</tr>
-</tbody>
-</table>
-<hr />
 <h2 id="sanitization-flow">Sanitization Flow</h2>
 <pre class="mermaid"><code>graph LR
     A[Raw Request Body] --&gt; B[Size Limit Check]
@@ -4414,7 +4330,7 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href="../../modules/risk-management/">Risk management</a></li>
+<li><a href="../../modules/risk-management/">Audit logging</a></li>
 <li><a href="../../modules/monitoring/">Alert system</a></li>
 </ul>
 

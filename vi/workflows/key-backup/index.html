@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4430,9 +4428,10 @@
 <h3 id="2-encrypted-vault-devtest">2. Encrypted Vault (dev/test)</h3>
 <p><strong>File</strong>: <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
 <ul>
-<li>Creates a <code>.vault</code> file encrypted with <code>PBKDF2HMAC(SHA256, 310k iter)</code> → <code>Fernet</code> (AES-128-CBC+HMAC, not AES-256-GCM). Password is <code>HRC_VAULT_*</code> / constructor arg.</li>
+<li>Tạo file <code>.vault</code> mã hóa bằng <code>PBKDF2HMAC(SHA256, 310k iter)</code> rồi dùng <code>Fernet</code> (AES-128-CBC với HMAC, không phải AES-256-GCM). Password được truyền vào constructor của <code>FileVaultProvider</code>.</li>
 <li>Explicitly documented as <em>dev/test only</em>, production should implement <code>KeyProvider</code> via HSM/KMS.</li>
 <li>No distribution to multiple vaults, no <code>metadata.json</code>, no <code>retention_period</code>, no <code>auto_restore_threshold</code>.</li>
+<li><code>HRC_VAULT_TOKEN</code> và <code>HRC_VAULT_PATH</code> cấu hình backend Vault riêng của <code>SecretManager</code>; chúng không cung cấp password cho <code>FileVaultProvider</code>.</li>
 </ul>
 <pre class="mermaid"><code>sequenceDiagram
     participant CLI as CLI generate
@@ -4463,7 +4462,7 @@
 </tr>
 <tr>
 <td><code>MasterKeyProvider.get_master_key()</code></td>
-<td>No such provider; master key is <code>HRC_MASTER_KEY_FILE</code>/<code>HRC_MASTER_KEY_SOURCE</code> + <code>HRC_VAULT_TOKEN</code>/<code>HRC_VAULT_PATH</code> envs</td>
+<td>Không có provider này; chỉ <code>HRC_MASTER_KEY_SOURCE=env</code> được chấp nhận làm alias tương thích, còn giá trị nguồn khác và <code>HRC_MASTER_KEY_FILE</code> không rỗng sẽ dừng nạp cấu hình</td>
 </tr>
 <tr>
 <td>Auto backup on MSP cert issue or consensus rotation</td>
@@ -4477,13 +4476,12 @@
 <li>Generate: <code>python -m hierachain key generate -o validator_key.json</code></li>
 <li>Backup: <code>cp validator_key.json /secure/backup/</code> (+ encrypt externally if needed)</li>
 <li>Restore: <code>cp /secure/backup/validator_key.json ./ &amp;&amp; python -m hierachain key verify</code></li>
-<li>For encrypted vault: <code>FileVaultProvider.create_vault(vault_path, password)</code> then store password in vault/KMS at <code>HRC_VAULT_TOKEN</code>.</li>
+<li>Với vault mã hóa: <code>FileVaultProvider.create_vault(vault_path, password)</code> và truyền password qua luồng quản lý secret của ứng dụng. <code>HRC_VAULT_TOKEN</code> là credential của dịch vụ Vault, không phải password của file vault.</li>
 </ol>
 <hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././msp-identity/">MSP Identity</a>: <code>security/msp.py</code> issues in-memory certs; no trigger to key backup</li>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown</a>: no automatic key rotation</li>
 <li><a href="../../security/encryption-keys/">Encryption &amp; Keys</a>: corrected description of <code>msp.py</code>/<code>key_provider.py</code></li>
 </ul>
 

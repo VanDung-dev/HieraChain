@@ -1557,11 +1557,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,7 +4400,7 @@
 
 <h1 id="event-submission">Event submission</h1>
 <h2 id="overview">Overview</h2>
-<p>Events enter HieraChain as business operations. They are validated, batched by <code>OrderingService</code> into blocks, finalized by the configured proof mechanism (PoA, PoF or BFT), and then appended to the Sub-Chain. The MainChain consensus is pluggable via <code>HRC_MAINCHAIN_CONSENSUS</code>, while SubChain uses PoA by default for fast intra-org processing. The flow is the same in all cases. Only the <code>finalize_block()</code> step changes.</p>
+<p>The Ledger API validates each event request. <code>SubChain.add_event()</code> then sends the event to <code>OrderingService</code>, which journals and queues it before returning <code>event_id</code>. The ID confirms acceptance for ordering; block commitment happens later. A background processor certifies and batches events, builds blocks, and puts them in the commit queue. The Sub-Chain consumer finalizes and persists each block. By default, Sub-Chain batches 50 events and waits 1.0 second before creating a block. Configure Main-Chain consensus separately with <code>HRC_MAINCHAIN_CONSENSUS</code>.</p>
 <p>For PoA and PoF diagrams, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <hr />
 <h2 id="flow-diagram">Flow diagram</h2>
@@ -4412,43 +4410,42 @@
     participant API as 🌐 FastAPI
     participant SC as 📦 SubChain
     participant OS as ⚙️ OrderingService
+    participant BM as 🧱 OrderingBlockManager
     participant PRF as 🔐 Proof
     participant DB as 💾 Storage
 
     rect rgb(0, 0, 0, 0)
-        Note over Client,API: Phase 1 — Event Submission
-        Client-&gt;&gt;API: POST /ledger/chains/{name}/events
+        Note over Client,API: Phase 1 — Request and asynchronous acknowledgement
+        Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/events
         API-&gt;&gt;SC: add_event(event_dict)
-        SC-&gt;&gt;SC: Validate &amp; stamp timestamp
-        SC-&gt;&gt;SC: validate_event_for_consensus()
-        SC-&gt;&gt;OS: receive_event(event_data, channel_id)
-        OS-&gt;&gt;OS: Push to event_pool (queue)
+        SC-&gt;&gt;OS: receive_event(event_data, channel_id, submitter_org)
+        OS-&gt;&gt;OS: Append to Event Journal
+        OS-&gt;&gt;OS: Enqueue in event_pool
+        API--&gt;&gt;Client: 200 OK (event_id accepted for ordering)
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over OS: Phase 2 — Batching &amp; Finalization
-        Note over OS: Batch timer OR block_size reached
-
-        OS-&gt;&gt;OS: force_block_creation()
-        OS-&gt;&gt;OS: BlockBuilder.build()
-        OS-&gt;&gt;PRF: finalize_block(block, chain_name)
-
-        Note over PRF: PoA or PoF — see consensus_mechanisms.md
-
-        PRF--&gt;&gt;OS: Finalized Block ✅
-        OS-&gt;&gt;OS: Push to commit_queue
+        Note over OS: Phase 2 — Background certification and batching
+        OS-&gt;&gt;OS: Certify event
+        OS-&gt;&gt;OS: BlockBuilder.add_event()
+        Note over OS: Batch size or timeout returns a batch of event data
+        OS-&gt;&gt;BM: create_block_async(raw_event_data)
+        BM-&gt;&gt;BM: Build Block
+        BM-&gt;&gt;BM: commit_block()
+        Note over BM: Persist ordered block and enqueue it in commit_queue
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 3 — Committing &amp; Persistence
-        Note over SC: Background consumer_thread polling
+        Note over SC: Phase 3 — Asynchronous finalization and persistence
+        Note over SC: Background consumer processes the commit_queue
 
         SC-&gt;&gt;OS: get_next_block()
         OS--&gt;&gt;SC: Block
-        SC-&gt;&gt;SC: _process_and_finalize_single_block()
-        SC-&gt;&gt;SC: Recalculate index, previous_hash, hash
-        SC-&gt;&gt;SC: add_block(finalized_block)
-        SC-&gt;&gt;DB: Persist block
+        SC-&gt;&gt;SC: Set block index and hash links
+        SC-&gt;&gt;PRF: finalize_block(block, chain_name)
+        PRF--&gt;&gt;SC: Finalized block
+        SC-&gt;&gt;DB: Persist finalized block
+        SC-&gt;&gt;SC: Add block to Sub-Chain
         SC-&gt;&gt;SC: auto_submit_proof_if_needed()
 
         Note over SC: → Triggers Proof Anchoring
@@ -4465,39 +4462,35 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>1. API receive</strong></td>
-<td style="text-align: left;">FastAPI validates request structure, extracts <code>event_dict</code></td>
+<td style="text-align: left;"><code>POST /api/ledger/chains/{chain_name}/events</code> validates the request schema and passes the event to the Sub-Chain</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. SC validate</strong></td>
-<td style="text-align: left;"><code>SubChain.add_event()</code> stamps <code>timestamp</code>, calls <code>validate_event_for_consensus()</code>: scans for forbidden crypto terms</td>
+<td style="text-align: left;"><strong>2. Enqueue</strong></td>
+<td style="text-align: left;"><code>SubChain.add_event()</code> supplies missing internal defaults and validates the event structure before calling <code>OrderingService.receive_event()</code>; the orderer journals the event before queueing it and returns an <code>event_id</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. OrderingService queue</strong></td>
-<td style="text-align: left;">Event pushed to <code>event_pool</code> (in-memory queue). The <code>OrderingService</code> batches events by timer or <code>block_size</code> threshold</td>
+<td style="text-align: left;"><strong>3. Background certification</strong></td>
+<td style="text-align: left;">The Ordering Service processes queued events through its certifier; this occurs after the API acknowledgement</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Block build</strong></td>
-<td style="text-align: left;"><code>BlockBuilder.build()</code> assembles the block: index, previous_hash, merkle root of events, metadata</td>
+<td style="text-align: left;"><strong>4. Batch</strong></td>
+<td style="text-align: left;"><code>BlockBuilder.add_event()</code> adds certified events to a batch; size, timeout, or an explicit flush returns the batch data</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Finalize</strong></td>
-<td style="text-align: left;"><code>Proof.finalize_block()</code>: PoA signs with Ed25519, PoF validates leader rotation + ZK proof, BFT runs 3-phase PBFT</td>
+<td style="text-align: left;"><strong>5. Build and order commit</strong></td>
+<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code> builds a <code>Block</code>; <code>commit_block()</code> persists the ordering block and puts it in <code>commit_queue</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Commit</strong></td>
-<td style="text-align: left;">Block pushed to <code>commit_queue</code>, background <code>consumer_thread</code> picks it up</td>
+<td style="text-align: left;"><strong>6. Sub-Chain finalization</strong></td>
+<td style="text-align: left;">The consumer dequeues the block, sets its index and hash links, then calls the configured <code>finalize_block()</code> implementation (PoA by default)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Hash chain</strong></td>
-<td style="text-align: left;"><code>_process_and_finalize_single_block()</code> recalculates <code>previous_hash</code> and <code>hash</code> to ensure chain integrity</td>
+<td style="text-align: left;"><strong>7. Chain persistence</strong></td>
+<td style="text-align: left;">The finalized block is saved through the configured storage handler and added to the Sub-Chain</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. Persist</strong></td>
-<td style="text-align: left;">Block written to storage backend (<code>SQLiteAdapter</code>, <code>RedisStorageAdapter</code>, or <code>MemoryStorage</code>)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>9. Proof trigger</strong></td>
-<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> triggers Proof Anchoring if chain length threshold met</td>
+<td style="text-align: left;"><strong>8. Proof trigger</strong></td>
+<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> may submit a proof to the Main Chain when its configured threshold is met</td>
 </tr>
 </tbody>
 </table>
@@ -4505,7 +4498,7 @@
 <h2 id="event-structure">Event structure</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">event</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"product-SKU-001"</span><span class="p">,</span>    <span class="c1"># Domain entity identifier</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>           <span class="c1"># Event type (domain-specific)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"event_type"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>      <span class="c1"># Event type (domain-specific)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714000000.0</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span>                        <span class="c1"># Domain-specific payload</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"check_type"</span><span class="p">:</span> <span class="s2">"visual"</span><span class="p">,</span>
@@ -4515,7 +4508,7 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
 </code></pre></div>
 <blockquote>
-<p><strong>Important</strong>: Never use cryptocurrency terms (<code>transaction</code>, <code>sender</code>, <code>receiver</code>, <code>amount</code>, <code>wallet</code>, <code>fee</code>). The <code>validate_event_for_consensus()</code> scan will reject these.</p>
+<p>The Ledger API requires <code>entity_id</code> and <code>event_type</code>, and maps <code>event_type</code> to the internal <code>event</code> field. Defaults in <code>SubChain.add_event()</code> apply to internal calls and do not make those API fields optional. <code>SubChain.add_event()</code> rejects malformed events and forbidden terminology before enqueueing. The returned <code>event_id</code> acknowledges acceptance for ordering, not block finalization.</p>
 </blockquote>
 <hr />
 <h2 id="error-handling">Error handling</h2>
@@ -4528,24 +4521,28 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Forbidden crypto term detected</td>
-<td style="text-align: left;"><code>ValueError</code> raised, event rejected before queue</td>
+<td style="text-align: left;">Request body is invalid</td>
+<td style="text-align: left;">FastAPI rejects it during request-model validation before calling <code>SubChain.add_event()</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Block finalization fails (PoA: invalid authority)</td>
-<td style="text-align: left;">Block discarded, error logged, event re-queued</td>
+<td style="text-align: left;">Event structure is invalid</td>
+<td style="text-align: left;"><code>SubChain.add_event()</code> raises <code>ValueError</code> before journaling; the Ledger API returns HTTP 422</td>
 </tr>
 <tr>
-<td style="text-align: left;">Block finalization fails (PoF: wrong leader)</td>
-<td style="text-align: left;">Block rejected, <code>validate_block_proposer()</code> raises</td>
+<td style="text-align: left;">Journal write fails</td>
+<td style="text-align: left;"><code>OrderingService.receive_event()</code> raises before adding the event to its in-memory queue</td>
 </tr>
 <tr>
-<td style="text-align: left;">Storage write fails</td>
-<td style="text-align: left;"><code>SQLAlchemy</code> session rolled back; block stays in commit_queue for retry</td>
+<td style="text-align: left;">Event fails background certification</td>
+<td style="text-align: left;">The processor marks the event rejected; it is not added to a block</td>
 </tr>
 <tr>
-<td style="text-align: left;">Consumer thread exception</td>
-<td style="text-align: left;">Thread-level exception caught, logged, thread respawns</td>
+<td style="text-align: left;">Ordering block persistence fails</td>
+<td style="text-align: left;">The error is logged and the Ordering Service enters <code>MAINTENANCE</code>; the block is not added to <code>commit_queue</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Block finalization or persistence fails</td>
+<td style="text-align: left;">The Sub-Chain consumer logs the error and continues its loop; the dequeued block is not explicitly requeued by that loop</td>
 </tr>
 </tbody>
 </table>
@@ -4563,42 +4560,32 @@
 <tr>
 <td style="text-align: left;">Receive event</td>
 <td style="text-align: left;"><code>SubChain.add_event()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Forbidden term scan</td>
-<td style="text-align: left;"><code>BaseConsensus.validate_event_for_consensus()</code></td>
-<td style="text-align: left;"><code>consensus/base_consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Batch &amp; order</td>
+<td style="text-align: left;">Journal, queue, and order</td>
 <td style="text-align: left;"><code>OrderingService.receive_event()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/service.py</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/service.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Build block</td>
-<td style="text-align: left;"><code>BlockBuilder.build()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/block_builder.py</code></td>
+<td style="text-align: left;">Certify and batch events</td>
+<td style="text-align: left;"><code>OrderingProcessor</code> and <code>BlockBuilder.add_event()</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/processor.py</code>, <code>hierachain/consensus/ordering/block_builder.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">PoA finalize</td>
-<td style="text-align: left;"><code>ProofOfAuthority.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
+<td style="text-align: left;">Build and commit ordering block</td>
+<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code> / <code>commit_block()</code></td>
+<td style="text-align: left;"><code>hierachain/consensus/ordering/block_manager.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">PoF finalize</td>
-<td style="text-align: left;"><code>ProofOfFederation.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
+<td style="text-align: left;">Finalize and persist Sub-Chain block</td>
+<td style="text-align: left;"><code>_process_and_finalize_single_block()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/block.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Commit &amp; add</td>
-<td style="text-align: left;"><code>SubChain._process_and_finalize_single_block()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Persist</td>
-<td style="text-align: left;"><code>SQLiteAdapter</code> / <code>RedisStorageAdapter</code></td>
-<td style="text-align: left;"><code>adapters/storage/</code></td>
+<td style="text-align: left;">Storage adapters</td>
+<td style="text-align: left;">Database adapters</td>
+<td style="text-align: left;"><code>hierachain/adapters/database/</code></td>
 </tr>
 </tbody>
 </table>

@@ -1569,11 +1569,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4460,7 +4458,7 @@
 <tr>
 <td style="text-align: left;"><strong>Loại chữ ký</strong></td>
 <td style="text-align: left;">Ed25519 (bất đối xứng)</td>
-<td style="text-align: left;">Chữ ký liên minh SHA-256</td>
+<td style="text-align: left;">Ed25519 trên hash khối trước khi hoàn thiện</td>
 <td style="text-align: left;">Phiếu bầu PBFT tổng hợp</td>
 </tr>
 <tr>
@@ -4570,8 +4568,8 @@ Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng c
     Note right of POF: Quét tất cả các sự kiện để tìm cụm từ bị cấm
     POF-&gt;&gt;POF: _verify_block_zk_proof(block, previous_block)
     Note right of POF: Bắt buộc — làm hỏng khối nếu ZK không hợp lệ
-    POF-&gt;&gt;POF: _create_federation_signature(block, leader_id)&lt;br/&gt;SHA-256(hash:leader_id:block.index:time)
-    POF-&gt;&gt;POF: Thêm sự kiện consensus_finalization&lt;br/&gt;{ leader_id, validators_count, round, signature }
+    POF-&gt;&gt;POF: _create_federation_signature(block, signing_key)&lt;br/&gt;Ed25519 sign(block.hash)
+    POF-&gt;&gt;POF: Thêm sự kiện consensus_finalization&lt;br/&gt;{ leader_id, block_hash, validators_count, round, signature }
     POF--&gt;&gt;OS: Khối đã Hoàn thiện ✅</code></pre>
 <h3 id="cac-lop-quan-trong-pof">Các Lớp Quan trọng: PoF</h3>
 <table>
@@ -4610,6 +4608,8 @@ Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng c
 </tr>
 </tbody>
 </table>
+<p><code>validate_block()</code> dựng lại khối trước sự kiện hoàn thiện và đối chiếu hash với <code>block_hash</code> đã ký. Hàm từ chối khi thiếu khóa tin cậy của validator, payload bị sửa hoặc sự kiện hoàn thiện không nằm cuối.</p>
+<p>Mọi block, kể cả genesis, phải có <code>signature</code> Ed25519 hợp lệ từ creator nằm trong danh sách khóa tin cậy. <code>HRC_VALIDATOR_IDENTITY</code> cung cấp khóa ký cố định; <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> cung cấp map <code>creator_id</code> tới public key được operator phê duyệt. <code>Blockchain.add_block(block, public_key=...)</code> chỉ chấp nhận PEM key tường minh khi khóa đó khớp map. <code>Blockchain.is_chain_valid()</code> và <code>Blockchain.from_dict()</code> xác minh toàn bộ chain; thiếu khóa, block không ký và chữ ký sai đều không hợp lệ. CLI dùng cùng file khóa tin cậy và kiểm tra từng chain có tên trong database SQLite.</p>
 <hr />
 <h2 id="chong-loi-byzantine-bft-pbft">Chống lỗi Byzantine (BFT / PBFT)</h2>
 <blockquote>

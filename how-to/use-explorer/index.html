@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3568,10 +3566,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-how-to-invoke-the-dashboard-via-api" class="md-nav__link">
+  <a href="#2-render-the-dashboard-via-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. How to Invoke the Dashboard via API
+        2. Render the Dashboard via API
       </span>
     </span>
   </a>
@@ -4300,10 +4298,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-how-to-invoke-the-dashboard-via-api" class="md-nav__link">
+  <a href="#2-render-the-dashboard-via-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. How to Invoke the Dashboard via API
+        2. Render the Dashboard via API
       </span>
     </span>
   </a>
@@ -4348,31 +4346,31 @@
 
 <h1 id="using-the-blockchain-explorer">Using the Blockchain Explorer</h1>
 <h2 id="chain-explorer">Chain Explorer</h2>
-<p>Unlike peripheral Web applications, HieraChain provides a core, in-depth visual API Dashboard directly within the core (<code>hierachain/api/blockchain_explorer.py</code>). Through the JSON structure returned by the <code>render</code> module, any web-view can realize it into a real-time audit Dashboard.</p>
+<p><code>BlockchainExplorer</code> in <code>hierachain/api/blockchain_explorer.py</code> returns dashboard data as JSON. A web view can use this data to display chain activity and verification results.</p>
 <h3 id="1-explorer-components">1. Explorer Components</h3>
-<p>The interface (or API Render format) includes 4 main components:</p>
+<p>The rendered data can include these four components:</p>
 <ul>
-<li><strong>Chain Overview Component (<code>chain_overview</code>)</strong>: Displays a summary table of the structure. Shows overall metrics such as Block height, Event count across the Main-chain and Sub-chains, as well as recent activity.</li>
-<li><strong>Entity Tracer Component (<code>entity_tracer</code>)</strong>: A tracing tool. Enter an Entity's ID or any specification to globally search which Blocks and Events are governing that entity, supporting tracing of every asset link.</li>
-<li><strong>Event Analytics Component (<code>event_analytics</code>)</strong>: Outputs a historical Timeline of event volume distributed across Blocks (e.g., bucketed by the last 24 hours) or draws event distribution charts. Serves as high-load activity monitoring.</li>
-<li><strong>Proof Visualizer Component (<code>proof_visualizer</code>)</strong>: A hierarchical diagram view. Shows the success rate of ZK Proofs, highlighting which chains are stuck in Mock mode versus Production verification mode.</li>
+<li><strong>Chain Overview Component (<code>chain_overview</code>)</strong>: Displays block height, event counts across Main-Chain and Sub-Chains, and recent activity.</li>
+<li><strong>Entity Tracer Component (<code>entity_tracer</code>)</strong>: Searches for an entity ID and shows related blocks and events.</li>
+<li><strong>Event Analytics Component (<code>event_analytics</code>)</strong>: Shows event counts by type, an hourly timeline for the last 24 hours based on Main-Chain blocks, and total event counts by chain.</li>
+<li><strong>Proof Visualizer Component (<code>proof_visualizer</code>)</strong>: Shows recent proof submissions, a validation summary, and the block hierarchy for Main-Chain and Sub-Chains.</li>
 </ul>
 <h3 id="ipfs-features-in-the-explorer">IPFS Features in the Explorer</h3>
 <p>The Explorer supports visualizing data stored off-chain:</p>
 <ul>
 <li>
-<p><strong>Data Detection</strong>: Automatically displays Badges for events stored on IPFS.</p>
+<p><strong>Data Detection</strong>: Displays badges for events stored on IPFS.</p>
 <ul>
 <li><strong>Yellow</strong>: Unresolved CID data.</li>
 <li><strong>Green</strong>: Data has been fetched and decrypted (Resolved).</li>
 </ul>
 </li>
 <li>
-<p><strong>Instant Data Loading</strong>: Provides a <strong>"Load Details"</strong> button to fetch data from IPFS via the API Server without reloading the page.</p>
+<p><strong>Data Loading</strong>: The <strong>"Load Details"</strong> button fetches data from IPFS through the API Server without reloading the page.</p>
 </li>
-<li><strong>Security</strong>: Data is securely decrypted on the Server before being displayed in the user interface.</li>
+<li><strong>Decryption</strong>: The Server decrypts data before displaying it in the user interface.</li>
 </ul>
-<h3 id="2-how-to-invoke-the-dashboard-via-api">2. How to Invoke the Dashboard via API</h3>
+<h3 id="2-render-the-dashboard-via-api">2. Render the Dashboard via API</h3>
 <p>Developers can integrate the Dashboard directly into their Server-side Rendering:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.api.blockchain_explorer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockchainExplorer</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
@@ -4385,7 +4383,7 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Or render just the "Entity Tracer" section</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">tracer_form_ui</span> <span class="o">=</span> <span class="n">explorer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">component_id</span><span class="o">=</span><span class="s2">"entity_tracer"</span><span class="p">)</span>
 </code></pre></div>
-<p>With a highly logical JSON structure, Front-end developers (React/Vue/HTML5) can easily render card displays showing metrics and corresponding blocks without having to manually construct queries.</p>
+<p>The returned JSON lets front-end developers (React/Vue/HTML5) render cards with metrics and related blocks.</p>
 
 
 

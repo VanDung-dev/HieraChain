@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4548,7 +4546,7 @@
 <h3 id="22-enterprise-events-eventsbase_eventpy-eventsevent_creatorspy">2.2 Enterprise events (<code>events/base_event.py</code>, <code>events/event_creators.py</code>)</h3>
 <ul>
 <li><code>BaseEvent</code>: Base class for structured business events with schema validation.</li>
-<li><code>event_creators.py</code>: Helper factories producing validated dictionaries for operations: <code>create_quality_check</code>, <code>create_approval</code>, <code>create_resource_allocation</code>, and <code>create_status_update</code>.</li>
+<li><code>event_creators.py</code>: Helper factories producing event objects for operations: <code>create_quality_check</code>, <code>create_approval</code>, <code>create_resource_allocation</code>, and <code>create_status_update</code>.</li>
 </ul>
 <h3 id="23-integrity-utilities-utilscross_chain_validatorpy-utilsentity_tracerpy">2.3 Integrity utilities (<code>utils/cross_chain_validator.py</code>, <code>utils/entity_tracer.py</code>)</h3>
 <ul>
@@ -4561,9 +4559,13 @@
 <ol>
 <li>Registration: Links a unique <code>entity_id</code> to an entity type and metadata attributes.</li>
 <li>Status updates: Tracks sequential states (<code>in_progress</code>, <code>quality_approved</code>, <code>completed</code>).</li>
-<li>Resource allocation: Records assigned equipment, personnel, or storage locations.</li>
+<li>Resource allocation: Tracks assigned and reserved resources. <code>assigned</code> adds a resource to <code>allocated_resources</code> (and removes its reservation); <code>reserved</code> adds it to <code>reserved_resources</code>; <code>released</code> removes it from either list; <code>transferred</code> moves an allocated resource to another registered entity named by <code>details.target_entity_id</code>. Invalid transitions are rejected before the event is submitted.</li>
 <li>Operation metrics: <code>OperationMetricsTracker</code> calculates execution metrics per operation type.</li>
 </ol>
+<p>Domain events require a registered entity. <code>register_entity</code> stores the supplied initial data in the Sub-Chain registration event so the registry can be reconstructed after restart; that data is ledger content and must not contain secrets. Older registration events without <code>initial_data</code> restore the supported registration metadata only.</p>
+<p>Initial entity data uses standard-library JSON with finite numbers. Python integer values, including values larger than 64 bits, are restored exactly within Python's configured integer conversion limit. Use strings for numeric identifiers that must also pass through clients with smaller integer ranges. Unsupported values make <code>register_entity</code> return <code>False</code> before appending the registration event.</p>
+<p>Operation starts and completions append their event and update the in-memory projection under the chain lock. An accepted start sets <code>current_operation</code>, so another start for the same entity is rejected until completion. A domain event returning <code>False</code> was rejected before append. A <code>True</code> return means the ordering service accepted the event; it does not mean a signed block has been finalized or durably committed. If the post-append handler fails, the event remains accepted, the failure is logged, and <code>domain_projection_healthy</code> becomes false. Domain writes then fail closed until <code>rebuild_domain_state()</code> succeeds. Rebuild replays deterministic built-in projections only; custom handlers that appear in stored history are reported as unrecoverable automatically, because replaying them could repeat external side effects.</p>
+<p>The completed-operation count is rebuilt from accepted operation events. Detailed <code>OperationMetricsTracker</code> counters remain process-local and restart at zero. Participant 2PC prepares keep a deep snapshot of the validated payload. <code>pending_transactions</code> returns a detached snapshot, and a repeated prepare succeeds only when both the payload and participant role match. Proof consistency checks report proof events missing <code>sub_chain_name</code>, <code>proof_hash</code>, or <code>timestamp</code> as inconsistent. Malformed event details are reported structurally and skipped by logical consistency analysis instead of raising.</p>
 <h2 id="4-two-phase-commit-2pc-coordination">4. Two-Phase Commit (2PC) coordination</h2>
 <p>Cross-chain operations coordinating multiple Sub-Chains execute through the Two-Phase Commit protocol:</p>
 <pre class="mermaid"><code>sequenceDiagram

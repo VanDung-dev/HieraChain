@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2202,10 +2200,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vi-du-query-lazy-loading-ipfs" class="md-nav__link">
+  <a href="#vi-du-query" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ví dụ query (lazy-loading IPFS)
+        Ví dụ query
       </span>
     </span>
   </a>
@@ -2314,6 +2312,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Liên quan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ma-hoa-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Mã hóa JSON
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4634,10 +4649,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vi-du-query-lazy-loading-ipfs" class="md-nav__link">
+  <a href="#vi-du-query" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ví dụ query (lazy-loading IPFS)
+        Ví dụ query
       </span>
     </span>
   </a>
@@ -4747,6 +4762,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Liên quan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ma-hoa-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Mã hóa JSON
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -4784,6 +4816,7 @@
 <h2 id="tong-quan">Tổng quan</h2>
 <p>Module API xử lý giao tiếp giữa client bên ngoài và lõi HieraChain. Nó chạy trên FastAPI và hỗ trợ REST, GraphQL và WebSocket. Mục tiêu chính là hiệu năng, nên cùng một service có thể phục vụ cả ba giao thức mà không cần triển khai riêng.</p>
 <h3 id="thanh-phan-cot-loi">Thành phần cốt lõi</h3>
+<p>Import helper của API client, như <code>hierachain.api.storage.ipfs_client</code>, không tạo ứng dụng server. Các export <code>app</code> và <code>create_app</code> nạp server khi được yêu cầu; yêu cầu xác thực production vẫn được kiểm tra. Khi lifespan API kết thúc, hierarchy manager được đóng và provider manager/tracer được reset, kể cả khi startup P2P thất bại.</p>
 <ul>
 <li>FastAPI server (<code>server.py</code>) là điểm khởi chạy. Nó thiết lập middleware, xác thực và router.</li>
 <li>REST API có ba nhóm (ledger, business, admin) cho thao tác lõi, tính năng nghiệp vụ và quản trị hệ thống.</li>
@@ -4808,7 +4841,7 @@
 </ul>
 <p>Mặc định là 100 request mỗi phút, được cấu hình qua <code>HRC_RATE_LIMIT_RPM</code>.</p>
 <h3 id="xac-thuc">Xác thực</h3>
-<p><code>APIKeyVerifier</code> kiểm tra header <code>X-API-Key</code>. Bật hoặc tắt qua <code>HRC_AUTH_ENABLED</code>.</p>
+<p><code>APIKeyVerifier</code> kiểm tra header <code>X-API-Key</code> cho HTTP và WebSocket. Production bắt buộc <code>HRC_AUTH_ENABLED=true</code> và file key <code>HRC_API_KEYS_FILE</code> đã được cấp; dev/test có thể tắt xác thực. Khi bật xác thực, GraphQL kiểm tra scope cho từng operation: query chain và block cần <code>chains</code>, query event và <code>addEvent</code> cần <code>events</code>, còn query block chọn event lồng bên trong cần cả hai scope. WebSocket truyền cả message block và event, nên kết nối và đăng ký cần <code>chains</code> và <code>events</code> (hoặc <code>all</code>). Trong production, GraphQL và WebSocket từ chối yêu cầu nếu app không có verifier đang bật hoặc verifier không trả auth context.</p>
 <hr />
 <h2 id="rest-api-reference">REST API reference</h2>
 <h3 id="ledger-core-ledger">ledger: core ledger</h3>
@@ -4829,8 +4862,8 @@
 <p>Các endpoint này hỗ trợ quy trình nghiệp vụ:</p>
 <ul>
 <li>Channel tạo kênh giao tiếp riêng giữa các tổ chức (<code>POST /api/business/channels</code>).</li>
-<li>Private data collection lưu dữ liệu không chia sẻ trên sổ cái chung.</li>
-<li>Domain contract triển khai và chạy hợp đồng thông minh theo nghiệp vụ riêng.</li>
+<li>Có thể quản lý metadata của private collection, nhưng <code>POST /api/business/private-data</code> hiện trả HTTP 501 vì API chưa có kho lưu private data. Endpoint này không nhận giá trị inline hoặc tham chiếu IPFS như dữ liệu đã lưu.</li>
+<li>Domain contract đăng ký metadata; <code>POST /api/business/contracts/execute</code> trả HTTP 501 vì engine thực thi chưa được triển khai.</li>
 <li>Organization đăng ký và quản lý danh tính qua MSP.</li>
 </ul>
 <h3 id="admin-system-va-admin">admin: system và admin</h3>
@@ -4850,21 +4883,20 @@
 <li>Complexity giới hạn ở 1000 điểm mỗi query, tính theo số field và phép toán.</li>
 <li>Introspection (<code>__schema</code>) bị tắt ở production.</li>
 </ul>
-<h3 id="vi-du-query-lazy-loading-ipfs">Ví dụ query (lazy-loading IPFS)</h3>
-<p>Bạn có thể chọn có fetch và giải mã dữ liệu IPFS hay không qua <code>resolveCid</code>.</p>
+<h3 id="vi-du-query">Ví dụ query</h3>
+<p>Query event cần quyền <code>events</code>. Query block và chain cần <code>chains</code>; chọn event lồng trong block cần cả hai quyền.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">query</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"PROD-001"</span><span class="p">,</span><span class="w"> </span><span class="n">resolveCid</span><span class="p">:</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"PROD-001"</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">eventType</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">details</span><span class="w">  </span><span class="c"># Sẽ được tự động fetch từ IPFS và giải mã nếu cần</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">details</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">timestamp</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">isOffchain</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
 </code></pre></div>
 <hr />
 <h2 id="websocket-real-time-streaming">WebSocket (real-time streaming)</h2>
-<p>Endpoint: <code>/ws</code></p>
-<p>Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.</p>
+<p>Kết nối tới <code>/ws</code>. Để chọn chuỗi ngay khi kết nối, truyền <code>chain_name</code>, ví dụ <code>/ws?chain_name=supply_chain</code>.</p>
+<p>Khi bật xác thực, hãy gửi header <code>X-API-Key</code> trong quá trình bắt tay WebSocket. Kết nối và mỗi lần đăng ký cần cả quyền <code>chains</code> và <code>events</code> vì luồng hiện tại gửi cả message block lẫn event tới subscriber của chuỗi. Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.</p>
 <h3 id="cac-loai-message-chinh">Các loại message chính</h3>
 <ul>
 <li>Client tới server<ul>
@@ -4920,6 +4952,9 @@
 <li><a href=".././storage/">Storage &amp; IPFS Integration</a></li>
 <li><a href="../../security/encryption-keys/">Security &amp; Identity</a></li>
 </ul>
+<p>GraphQL đọc sự kiện Arrow theo hàng và chờ resolver bất đồng bộ, gồm trường details. Đọc sự kiện bên trong block cần cả quyền <code>chains</code> và <code>events</code>. Tên chain không tồn tại trả kết quả truy vấn rỗng và từ chối mutation; không tự chuyển sang main chain.</p>
+<h3 id="ma-hoa-json">Mã hóa JSON</h3>
+<p>Response JSON được tạo trực tiếp và các handler lỗi HTTP dùng <code>JSONResponse</code> của FastAPI/Starlette. Response mặc định và response model tiếp tục dùng validation, serialization và schema OpenAPI của FastAPI/Pydantic. Lỗi validation request giữ status <code>422</code> và danh sách <code>detail</code>. Thông điệp WebSocket dùng JSON chuẩn, mã hóa thành text frame UTF-8.</p>
 
 
 

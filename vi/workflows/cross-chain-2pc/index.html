@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Phối hợp giao thức Cam kết Hai pha (2PC - Two-Phase Commit) cho các hoạt động sự kiện liên chuỗi có tính nguyên tử.">
+        <meta name="description" content="Điều phối Two-Phase Commit bền vững với cơ chế phục hồi theo hướng commit.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1447,10 +1447,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
+  <a href="#luong-thanh-cong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
+        Luồng thành công
       </span>
     </span>
   </a>
@@ -1458,10 +1458,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
+  <a href="#loi-va-phuc-hoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
+        Lỗi và phục hồi
       </span>
     </span>
   </a>
@@ -1469,10 +1469,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#may-trang-thai-giao-dich-transaction-state-machine" class="md-nav__link">
+  <a href="#cam-ket-va-gioi-han" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Máy trạng thái Giao dịch (Transaction State Machine)
+        Cam kết và giới hạn
       </span>
     </span>
   </a>
@@ -1480,32 +1480,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-thuc-hien-chi-tiet" class="md-nav__link">
+  <a href="#method-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước thực hiện chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-class-method-quan-trong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các Class &amp; Method quan trọng
+        Method chính
       </span>
     </span>
   </a>
@@ -1568,11 +1546,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4315,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
+  <a href="#luong-thanh-cong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
+        Luồng thành công
       </span>
     </span>
   </a>
@@ -4326,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
+  <a href="#loi-va-phuc-hoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
+        Lỗi và phục hồi
       </span>
     </span>
   </a>
@@ -4337,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#may-trang-thai-giao-dich-transaction-state-machine" class="md-nav__link">
+  <a href="#cam-ket-va-gioi-han" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Máy trạng thái Giao dịch (Transaction State Machine)
+        Cam kết và giới hạn
       </span>
     </span>
   </a>
@@ -4348,32 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-thuc-hien-chi-tiet" class="md-nav__link">
+  <a href="#method-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước thực hiện chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-class-method-quan-trong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các Class &amp; Method quan trọng
+        Method chính
       </span>
     </span>
   </a>
@@ -4424,160 +4378,96 @@
 
 <h1 id="thao-tac-lien-chuoi-2pc">Thao tác Liên chuỗi (2PC)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain <code>logistics</code> sang Sub-Chain <code>finance</code>), HieraChain sử dụng giao thức <strong>Cam kết Hai pha (Two-Phase Commit - 2PC)</strong> để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback). Không cho phép trạng thái dở dở dang dang.</p>
-<p><strong>Ví dụ thực tế</strong>: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện <code>deduct</code> (trừ hàng); chuỗi đích ghi nhận sự kiện <code>receive</code> (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.</p>
-<hr />
-<h2 id="bieu-o-luong-kich-ban-thanh-cong-happy-path">Biểu đồ Luồng: Kịch bản Thành công (Happy Path)</h2>
+<p>Coordinator chuẩn bị cả hai participant <code>DomainChain</code>, sau đó fsync và đọc lại quyết định COMMIT từ journal riêng trước khi yêu cầu bất kỳ participant nào commit. Participant chỉ xác nhận khi cả hai event thao tác có gắn mã giao dịch đọc lại được từ ordering journal của chain đó; việc hoàn thiện block vẫn chạy bất đồng bộ. Bản ghi <code>committed</code> cuối cùng cũng phải đọc lại được trước khi báo <code>COMMITTED</code>. Sau khi COMMIT đã bền vững, quá trình phục hồi luôn retry theo hướng commit và không rollback participant.</p>
+<p>Trước khi COMMIT bền vững, coordinator yêu cầu cả hai participant abort. Trạng thái chỉ là <code>ROLLED_BACK</code> khi cả hai xác nhận. Nếu không thể xác nhận một trong hai lệnh abort, giao dịch giữ trạng thái <code>IN_DOUBT</code>; coordinator retry abort khi cả hai participant khả dụng.</p>
+<p>Khi khởi động, các bản ghi coordinator chưa hoàn tất xác định những chain đã lưu cần participant <code>DomainChain</code>. Các chain đã lưu khác vẫn là <code>SubChain</code> chung. Có thể chủ động thay placeholder chung bằng cách gọi <code>create_sub_chain()</code> với cùng tên và domain type; chain cũ chỉ được dừng sau khi chain thay thế kết nối thành công.</p>
+<h2 id="luong-thanh-cong">Luồng thành công</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
+    participant Client
+    participant TM as CrossChainTransactionManager
+    participant SRC as Source DomainChain
+    participant DST as Destination DomainChain
+    participant CJ as Coordinator journal
 
-    HM-&gt;&gt;TM: initiate_cross_chain_operation(src, dst, payload)
-    TM-&gt;&gt;TM: Tạo CrossChainOperation (UUID, state=PENDING)
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHA 1 — CHUẨN BỊ (PREPARE)
-        TM-&gt;&gt;SRC: prepare_operation(op_id, payload, is_source=True)
-        SRC-&gt;&gt;SRC: Khóa tài nguyên, xác thực payload
-        SRC--&gt;&gt;TM: True ✅
-
-        TM-&gt;&gt;DST: prepare_operation(op_id, payload, is_source=False)
-        DST-&gt;&gt;DST: Kiểm tra khả năng tiếp nhận
-        DST--&gt;&gt;TM: True ✅
-
-        TM-&gt;&gt;TM: state = PREPARED
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHA 2 — CAM KẾT (COMMIT)
-        TM-&gt;&gt;SRC: commit_operation(op_id)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_operation(op_id)
-        DST--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;TM: state = COMMITTED
-    end
-
-    TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
-<hr />
-<h2 id="bieu-o-luong-kich-ban-that-bai-failure-paths">Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: KỊCH BẢN A — Pha 1 Chuẩn bị Thất bại
-        TM-&gt;&gt;SRC: prepare_operation(op_id, payload)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: prepare_operation(op_id, payload)
-        DST--&gt;&gt;TM: False ❌  (Lỗi dung lượng / xác thực)
-        TM-&gt;&gt;TM: state = PENDING → Kích hoạt hoàn tác
-        TM-&gt;&gt;SRC: rollback_operation(op_id)
-        TM-&gt;&gt;DST: rollback_operation(op_id)
-        TM-&gt;&gt;TM: state = ROLLED_BACK ⚠️
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: KỊCH BẢN B — Pha 2 Cam kết Một phần Thất bại
-        TM-&gt;&gt;SRC: commit_operation(op_id)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_operation(op_id)
-        DST--&gt;&gt;TM: Ngoại lệ (Exception) ❌
-        TM-&gt;&gt;TM: state = FAILED ❌
-        Note over TM: Yêu cầu xử lý thủ công&lt;br/&gt;Kiểm tra nhật ký để tìm trạng thái một phần
-    end</code></pre>
-<hr />
-<h2 id="may-trang-thai-giao-dich-transaction-state-machine">Máy trạng thái Giao dịch (Transaction State Machine)</h2>
-<pre class="mermaid"><code>flowchart LR
-    P["PENDING"] --&gt; PR["PREPARED"]
-    PR --&gt; C["COMMITTED ✅"]
-    PR --&gt; RB["ROLLED_BACK ⚠️"]
-    P --&gt; F["FAILED ❌"]
-    PR --&gt; F</code></pre>
-<hr />
-<h2 id="cac-buoc-thuc-hien-chi-tiet">Các bước thực hiện chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Khởi tạo</strong></td>
-<td style="text-align: left;"><code>HierarchyManager</code> tạo một thực thể <code>CrossChainTransaction</code> với UUID duy nhất và trạng thái <code>state=PENDING</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Pha 1: Chuẩn bị nguồn</strong></td>
-<td style="text-align: left;">Chuỗi nguồn khóa tài nguyên liên quan, xác thực lược đồ (schema) của payload.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Pha 1: Chuẩn bị đích</strong></td>
-<td style="text-align: left;">Chuỗi đích kiểm tra dung lượng lưu trữ khả dụng và các ràng buộc nghiệp vụ.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Kết quả Pha 1</strong></td>
-<td style="text-align: left;">Nếu cả hai trả về <code>True</code>: trạng thái → <code>PREPARED</code>. Nếu một bên thất bại: rollback ngay lập tức cả hai</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Pha 2: Cam kết nguồn</strong></td>
-<td style="text-align: left;">Chuỗi nguồn hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Pha 2: Cam kết đích</strong></td>
-<td style="text-align: left;">Chuỗi đích hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Kết quả</strong></td>
-<td style="text-align: left;">Trạng thái chuyển thành <code>COMMITTED</code>. Mã <code>tx_id</code> được trả về cho bên gọi.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
+    Client-&gt;&gt;TM: initiate_transaction(src, dst, payload)
+    TM-&gt;&gt;CJ: fsync và đọc lại begin
+    TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload, true)
+    SRC--&gt;&gt;TM: prepared
+    TM-&gt;&gt;DST: prepare_transaction(tx_id, payload, false)
+    DST--&gt;&gt;TM: prepared
+    TM-&gt;&gt;CJ: fsync và đọc lại prepared
+    TM-&gt;&gt;CJ: fsync và đọc lại COMMIT decision
+    TM-&gt;&gt;SRC: commit_transaction(tx_id)
+    SRC--&gt;&gt;TM: đọc lại ordering events
+    TM-&gt;&gt;DST: commit_transaction(tx_id)
+    DST--&gt;&gt;TM: đọc lại ordering events
+    TM-&gt;&gt;CJ: fsync và đọc lại committed
+    TM--&gt;&gt;Client: tx_id</code></pre>
+<h2 id="loi-va-phuc-hoi">Lỗi và phục hồi</h2>
+<pre class="mermaid"><code>flowchart TD
+    PENDING --&gt; PREPARED
+    PENDING --&gt; ABORTING
+    PREPARED --&gt; ABORTING
+    ABORTING --&gt;|both abort acks| ROLLED_BACK
+    ABORTING --&gt;|an abort is unconfirmed| IN_DOUBT
+    IN_DOUBT --&gt;|no durable COMMIT| ABORTING
+    PREPARED --&gt;|fsynced COMMIT decision| COMMITTING
+    COMMITTING --&gt;|both participant acks| COMMITTED
+    COMMITTING --&gt;|an ack is missing| IN_DOUBT
+    IN_DOUBT --&gt;|durable COMMIT| COMMITTING
+    PENDING --&gt; FAILED</code></pre>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Tình huống</th>
-<th style="text-align: left;">Trạng thái chuyển dịch</th>
-<th style="text-align: left;">Cách thức phục hồi</th>
+<th style="text-align: left;">Trạng thái</th>
+<th style="text-align: left;">Phục hồi</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Lỗi Pha 1 trên Chuỗi Nguồn</td>
-<td style="text-align: left;"><code>ROLLED_BACK</code></td>
-<td style="text-align: left;">Tự động hoàn trả trạng thái (rollback) trên Chuỗi Đích</td>
+<td style="text-align: left;">Participant không prepare được</td>
+<td style="text-align: left;">Chỉ <code>ROLLED_BACK</code> sau khi cả hai xác nhận abort; nếu không thì <code>IN_DOUBT</code></td>
+<td style="text-align: left;">Retry cả hai lệnh abort khi participant khả dụng.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Lỗi Pha 1 trên Chuỗi Đích</td>
-<td style="text-align: left;"><code>ROLLED_BACK</code></td>
-<td style="text-align: left;">Tự động hoàn trả trạng thái (rollback) trên Chuỗi Nguồn</td>
-</tr>
-<tr>
-<td style="text-align: left;">Lỗi Pha 2 khi cam kết trên một trong hai chuỗi</td>
+<td style="text-align: left;">Thiếu chain hoặc chain không hỗ trợ 2PC trước prepare</td>
 <td style="text-align: left;"><code>FAILED</code></td>
-<td style="text-align: left;">Phải đối soát thủ công thông qua nhật ký kiểm toán (audit log)</td>
+<td style="text-align: left;">Đăng ký các participant <code>DomainChain</code> cần thiết rồi bắt đầu giao dịch mới.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Hết hạn kết nối mạng (Timeout) trong Pha 2</td>
-<td style="text-align: left;"><code>FAILED</code></td>
-<td style="text-align: left;">Người vận hành hệ thống phải kiểm tra trạng thái cam kết cuối cùng</td>
+<td style="text-align: left;">Kết quả ghi quyết định COMMIT chưa xác định</td>
+<td style="text-align: left;"><code>IN_DOUBT</code></td>
+<td style="text-align: left;">Đọc coordinator journal trước khi hành động. COMMIT đã bền vững thì retry commit; nếu không có COMMIT thì retry abort.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Commit participant lỗi sau COMMIT bền vững</td>
+<td style="text-align: left;"><code>IN_DOUBT</code></td>
+<td style="text-align: left;">Không rollback. Bản ghi <code>prepared</code> bền vững xác nhận cả hai participant đã xác thực payload; khôi phục trạng thái còn thiếu từ payload và marker journal, rồi chỉ retry event còn thiếu.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Tiến trình khởi động lại khi còn bản ghi chưa hoàn tất</td>
+<td style="text-align: left;"><code>IN_DOUBT</code> cho tới khi participant khả dụng</td>
+<td style="text-align: left;">Khôi phục các participant đã ghi tên thành <code>DomainChain</code> rồi retry.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="cac-class-method-quan-trong">Các Class &amp; Method quan trọng</h2>
+<h2 id="cam-ket-va-gioi-han">Cam kết và giới hạn</h2>
+<ul>
+<li>Coordinator journal được lưu riêng với OrderingService event journal, vì vậy các bản ghi của nó không bị replay như ledger event.</li>
+<li>Giao dịch <code>COMMITTED</code> nghĩa là đã đọc lại được hai cặp event của participant và bản ghi cuối cùng của coordinator từ các journal bền vững. Điều đó không có nghĩa block đã được hoàn thiện.</li>
+<li>Marker event của participant chứa transaction ID và bước thao tác. Khi retry, participant bỏ qua start hoặc completion event đã được chấp nhận, kể cả sau khi khởi động lại.</li>
+<li>Sau COMMIT bền vững, phục hồi participant dùng payload đã được coordinator xác thực trước đó và marker event đã nhận; không chạy lại xác thực nghiệp vụ dựa trên entity registry chỉ tồn tại trong bộ nhớ.</li>
+<li><code>IN_DOUBT</code> là trạng thái có thể phục hồi, không phải thất bại cuối cùng. Gọi <code>transaction_manager.retry_pending()</code> để retry sau lỗi participant trong lúc chạy; khởi động lại và đăng ký participant cũng kích hoạt retry.</li>
+<li>Recovery chiếm quyền xử lý từng giao dịch trong khi luồng coordinator đang hoạt động. Lần gọi <code>retry_pending()</code> đồng thời sẽ bỏ qua giao dịch đó và có thể retry sau khi luồng đang chạy nhả quyền. Coordinator cũng từ chối abort sau quyết định COMMIT bền vững hoặc chưa xác định.</li>
+</ul>
+<h2 id="method-chinh">Method chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Hành động</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
@@ -4585,35 +4475,24 @@
 <tr>
 <td style="text-align: left;">Khởi tạo</td>
 <td style="text-align: left;"><code>HierarchyManager.initiate_cross_chain_transaction()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager.py</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Tạo giao dịch</td>
-<td style="text-align: left;"><code>CrossChainTransactionManager.__init__()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
+<td style="text-align: left;">Điều phối và phục hồi</td>
+<td style="text-align: left;"><code>CrossChainTransactionManager.initiate_transaction()</code> / <code>retry_pending()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/transaction_manager.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Chuẩn bị</td>
-<td style="text-align: left;"><code>DomainChain.prepare_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Cam kết</td>
-<td style="text-align: left;"><code>DomainChain.commit_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Khôi phục</td>
-<td style="text-align: left;"><code>DomainChain.rollback_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
+<td style="text-align: left;">Chuẩn bị, commit hoặc abort</td>
+<td style="text-align: left;"><code>DomainChain.prepare_transaction()</code> / <code>commit_transaction()</code> / <code>rollback_transaction()</code></td>
+<td style="text-align: left;"><code>hierachain/domains/chains/domain_chain.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a>: mỗi phương thức <code>commit_transaction()</code> bên trong sẽ gọi đến <code>add_event()</code></li>
-<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a>: quản lý khôi phục trạng thái ở cấp độ hệ thống</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: operation event được đưa vào ordering journal của từng chain trước khi block hoàn thiện bất đồng bộ.</li>
+<li><a href=".././error-recovery/">Giảm thiểu Lỗi</a>: xử lý lỗi cấp hệ thống và phục hồi journal.</li>
 </ul>
 
 

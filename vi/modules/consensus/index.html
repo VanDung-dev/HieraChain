@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4358,10 +4356,10 @@
 
 <h1 id="consensus-module-hierachainconsensus">Consensus Module (<code>hierachain/consensus/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Consensus</strong> chịu trách nhiệm đảm bảo tính nhất quán (Consistency) và thứ tự xác định (Deterministic Ordering) của dữ liệu trên toàn bộ mạng lưới HieraChain. Hệ thống cung cấp các cơ chế đồng thuận linh hoạt, cho phép doanh nghiệp lựa chọn giữa hiệu năng cực cao trong môi trường tin cậy hoặc bảo mật tuyệt đối trong môi trường có rủi ro tấn công.</p>
+<p>Module <strong>Consensus</strong> cung cấp các thành phần sắp xếp event và finalize block cho HieraChain.</p>
 <hr />
 <h2 id="cac-giao-thuc-ong-thuan-ho-tro">Các giao thức đồng thuận hỗ trợ</h2>
-<p>HieraChain tích hợp sẵn 3 loại giao thức chính, có thể cấu hình qua <code>HRC_CONSENSUS_TYPE</code>:</p>
+<p>Ordering Service gom event thành batch; PoA và PoF finalize block của Sub-Chain. Repository cũng có thành phần BFT riêng. <code>HRC_CONSENSUS_TYPE</code> chọn <code>proof_of_authority</code> hoặc <code>proof_of_federation</code>, không chọn BFT:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4398,21 +4396,18 @@
 <hr />
 <h2 id="kien-truc-tong-the">Kiến trúc Tổng thể</h2>
 <pre class="mermaid"><code>graph TD
-    A[Event Submission] --&gt; B{Consensus Engine}
-    B -- Config: ordering --&gt; C[Ordering Service]
-    B -- Config: bft --&gt; D[BFT Consensus]
-
-    C --&gt; E[Block Building]
-    D --&gt; E
-
-    E --&gt; F[Storage Commitment]
-    F --&gt; G[(Ledger Persistence)]</code></pre>
+    A[Event Submission] --&gt; B[Ordering Service]
+    B --&gt; C[Block Building]
+    C --&gt; D[Sub-Chain finalization: PoA or PoF]
+    D --&gt; E[Storage Commitment]
+    E --&gt; F[(Ledger Persistence)]
+    G[BFT Consensus component] -. separate component .-&gt; H[Consensus workflows]</code></pre>
 <hr />
 <h2 id="tich-hop-vao-hierarchy">Tích hợp vào Hierarchy</h2>
 <p>Trong mô hình phân cấp của HieraChain:</p>
 <ol>
-<li><strong>Main Chain</strong>: Thường sử dụng <strong>BFT Consensus</strong> để đảm bảo tính an toàn cao nhất cho toàn bộ hệ thống.</li>
-<li><strong>Sub-Chains</strong>: Có thể sử dụng <strong>Ordering Service</strong> hoặc <strong>PoA</strong> để đạt tốc độ xử lý giao dịch cao, sau đó định kỳ gửi bằng chứng (Proofs) lên Main Chain.</li>
+<li><strong>Main Chain</strong>: Mặc định dùng <strong>PoA</strong>, có thể cấu hình <strong>PoF</strong> qua <code>HRC_MAINCHAIN_CONSENSUS</code>. BFT là thành phần riêng; <code>MainChain</code> không chọn BFT làm mặc định.</li>
+<li><strong>Sub-Chains</strong>: Dùng <strong>Ordering Service</strong> để gom batch và có thể finalize block bằng consensus đã cấu hình (mặc định PoA). Sau đó có thể gửi proof lên Main Chain.</li>
 </ol>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>

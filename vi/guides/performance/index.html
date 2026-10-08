@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3795,10 +3793,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thiet-lap-lien-quan-trich-configsettingspy" class="md-nav__link">
+  <a href="#cau-hinh-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Thiết lập liên quan (trích <code>config/settings.py</code>)
+        Cấu hình liên quan
       </span>
     </span>
   </a>
@@ -4304,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thiet-lap-lien-quan-trich-configsettingspy" class="md-nav__link">
+  <a href="#cau-hinh-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Thiết lập liên quan (trích <code>config/settings.py</code>)
+        Cấu hình liên quan
       </span>
     </span>
   </a>
@@ -4387,25 +4385,27 @@
 <li>Giảm chi phí IO/serialize: nhóm sự kiện theo lô, tránh payload nhị phân lớn trong <code>data</code>.</li>
 <li>Dùng cache hợp lý: L1 trong bộ nhớ, L2 bền vững nếu cần.</li>
 </ul>
-<h2 id="thiet-lap-lien-quan-trich-configsettingspy">Thiết lập liên quan (trích <code>config/settings.py</code>)</h2>
+<h2 id="cau-hinh-lien-quan">Cấu hình liên quan</h2>
 <ul>
-<li><code>ADVANCED_CACHING_ENABLED</code>: bật cache nâng cao.</li>
-<li><code>BLOCK_CACHE_SIZE</code>, <code>EVENT_CACHE_SIZE</code>, <code>ENTITY_CACHE_SIZE</code>: kích thước cache.</li>
-<li>Chính sách: <code>BLOCK_CACHE_POLICY</code> (lru/lfu/fifo/ttl), <code>EVENT_CACHE_POLICY</code>, <code>ENTITY_CACHE_POLICY</code>.</li>
-<li>Xử lý song song: <code>PARALLEL_PROCESSING_ENABLED</code>, <code>MAX_WORKERS</code>, <code>PROCESSING_CHUNK_SIZE</code>.</li>
+<li><code>AdvancedCache(max_size=..., eviction_policy=...)</code>: dung lượng và chính sách LRU/LFU/FIFO/TTL theo instance; TTL entry được truyền vào <code>set()</code>. Không có công tắc cache toàn cục hoặc tầng cache block/event/entity tự nối vào runtime.</li>
+<li><code>block_cache_size</code> của Ordering điều khiển deque lịch sử block cục bộ (mặc định: <code>100</code>).</li>
+<li>Ordering batches: <code>OrderingService</code> khởi tạo trực tiếp mặc định 100 event và 2.0 giây; cấu hình SubChain mặc định dùng 50 event và 1.0 giây.</li>
 </ul>
 <h2 id="khuyen-nghi">Khuyến nghị</h2>
 <ul>
-<li>Điều chỉnh batch size theo tải thật (ví dụ 100-1000 sự kiện/batch).</li>
-<li>Bật <code>PARALLEL_PROCESSING_ENABLED</code> khi có nhiều CPU; để <code>MAX_WORKERS=None</code> để tự chọn theo 50% số lõi.</li>
+<li>Điều chỉnh <code>batch_size</code> hoặc <code>block_size</code> và <code>batch_timeout</code> theo tải đo được và cấu hình service đang dùng.</li>
 <li>Dùng Arrow để giảm overhead chuyển đổi; tránh chuyển đổi qua lại nhiều lần.</li>
 </ul>
 <h2 id="benchmark-toi-thieu">Benchmark tối thiểu</h2>
 <ol>
 <li><strong>Ghi 10k sự kiện và đo thời gian</strong>: Chạy thử nghiệm tải cơ bản.</li>
-<li><strong>Điều chỉnh cấu hình</strong>: Thử thay đổi các tham số <code>PROCESSING_CHUNK_SIZE</code>, <code>EVENT_CACHE_POLICY</code>.</li>
-<li><strong>So sánh kết quả</strong>: Đo lường throughput (events/sec) và độ trễ (latencies p50/p95).</li>
+<li><strong>Điều chỉnh cấu hình</strong>: Thử thay đổi các thiết lập batch của Ordering; chỉ điều chỉnh instance cache khi tải đo được thực sự sử dụng chúng.</li>
+<li><strong>So sánh kết quả</strong>: Đo throughput của event đã commit và độ trễ p95/p99, cùng số event bị từ chối/chưa hoàn tất, thời gian chờ batch, độ bền lưu trữ và chi phí I/O.</li>
 </ol>
+<p>Benchmark event có chữ ký dùng chung một triển khai khi chạy cục bộ và trong Docker:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.benchmark_throughput<span class="w"> </span>--events<span class="w"> </span><span class="m">10000</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
+</code></pre></div>
+<p>Cấu hình danh tính ký của node và khóa tin cậy, đồng thời dùng database và journal riêng qua <code>HRC_BENCHMARK_DB_URL</code> và <code>HRC_BENCHMARK_JOURNAL_DIR</code>. Wrapper Docker yêu cầu PostgreSQL. Kết quả báo số event đã commit mỗi giây, số event bị từ chối/chưa hoàn tất, p95/p99, timeout batch 0,5 giây và ranh giới độ bền journal/storage. Event bị từ chối hoặc xử lý quá 60 giây khiến lệnh thất bại. Độ trễ đo lúc client quan sát block đã commit, gồm thời gian gửi đồng bộ và lấy block; đây không phải timestamp commit nội bộ của database. Benchmark này chưa đo chi phí I/O hoặc xác lập SLA production.</p>
 <h2 id="quan-sat-he-thong">Quan sát hệ thống</h2>
 <ul>
 <li>Dùng <code>monitoring/performance_monitor.py</code> để lấy metrics CPU/RAM.</li>

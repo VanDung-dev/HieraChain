@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hệ thống giảm thiểu rủi ro và phục hồi sau sự cố: Validation, Journaling, Rollback và Automated Recovery.">
+        <meta name="description" content="Xác thực runtime, ghi nhật ký bền vững và phân loại lỗi.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2154,10 +2152,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-quan-ly-hoan-tac-rollback_managerpy" class="md-nav__link">
+  <a href="#23-ma-hoa-co-the-khoi-phuc-encryption_validatorpy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3 Quản lý hoàn tác (<code>rollback_manager.py</code>)
+        2.3 Mã hóa có thể khôi phục (<code>encryption_validator.py</code>)
       </span>
     </span>
   </a>
@@ -2165,10 +2163,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-cac-he-thong-con-phuc-hoi" class="md-nav__link">
+  <a href="#24-khuyen-nghi-ve-tai-nguyen-va-xoay-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Các hệ thống con phục hồi
+        2.4 Khuyến nghị về tài nguyên và xoay khóa
       </span>
     </span>
   </a>
@@ -2196,28 +2194,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. Nhật ký sự kiện
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-quy-trinh-phuc-hoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        5. Quy trình phục hồi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-cac-loai-snapshot" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Các loại snapshot
       </span>
     </span>
   </a>
@@ -4388,10 +4364,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-quan-ly-hoan-tac-rollback_managerpy" class="md-nav__link">
+  <a href="#23-ma-hoa-co-the-khoi-phuc-encryption_validatorpy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3 Quản lý hoàn tác (<code>rollback_manager.py</code>)
+        2.3 Mã hóa có thể khôi phục (<code>encryption_validator.py</code>)
       </span>
     </span>
   </a>
@@ -4399,10 +4375,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-cac-he-thong-con-phuc-hoi" class="md-nav__link">
+  <a href="#24-khuyen-nghi-ve-tai-nguyen-va-xoay-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Các hệ thống con phục hồi
+        2.4 Khuyến nghị về tài nguyên và xoay khóa
       </span>
     </span>
   </a>
@@ -4430,28 +4406,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. Nhật ký sự kiện
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-quy-trinh-phuc-hoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        5. Quy trình phục hồi
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-cac-loai-snapshot" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Các loại snapshot
       </span>
     </span>
   </a>
@@ -4502,33 +4456,45 @@
 
 <h1 id="error-mitigation-module-hierachainerror_mitigation">Error Mitigation Module (<code>hierachain/error_mitigation/*</code>)</h1>
 <h2 id="1-tong-quan">1. Tổng quan</h2>
-<p>Module <code>error_mitigation</code> xử lý khả năng chịu lỗi, xác thực trạng thái và phục hồi hệ thống. Module này cung cấp nhật ký sự kiện ghi tiếp (append-only), phân loại lỗi tự động, snapshot hoàn tác và các bộ máy phục hồi chuyên biệt cho các lỗi mạng, đồng thuận và trạng thái.</p>
+<p>Module <code>error_mitigation</code> cung cấp các primitive runtime để xác thực trạng thái, ghi nhật ký bền vững và phân loại lỗi. View change của đồng thuận và khôi phục vận hành thuộc về các tầng runtime hoặc deployment tương ứng.</p>
 <h2 id="2-cac-thanh-phan-loi">2. Các thành phần lõi</h2>
 <p>Các thành phần nằm trong thư mục <code>hierachain/error_mitigation/</code>.</p>
 <h3 id="21-lop-xac-thuc-validatorpy-data_validatorpy">2.1 Lớp xác thực (<code>validator.py</code>, <code>data_validator.py</code>)</h3>
 <ul>
-<li><code>Validator</code>: Xác thực cấu trúc block và sự kiện theo các quy tắc sổ cái.</li>
+<li><code>validate_certificate()</code>: Từ chối chứng chỉ đã hết hạn.</li>
 <li><code>DataValidator</code>: Kiểm tra tính nhất quán của payload sự kiện, sự tương thích với schema Arrow và các ràng buộc đầu vào.</li>
 </ul>
+<p>Custom field validator trả về <code>(is_valid, message)</code>. Nếu callback ném exception hoặc trả kết quả sai hợp đồng, <code>DataValidator</code> ghi lỗi và trả <code>ValidationResult.is_valid=False</code>, kể cả khi xác thực batch. Mức validation và tính năng tự sửa không ghi đè thất bại này.</p>
 <h3 id="22-nhat-ky-ben-vung-journalpy">2.2 Nhật ký bền vững (<code>journal.py</code>)</h3>
 <ul>
 <li>Triển khai <code>TransactionJournal</code> sử dụng Apache Parquet và Arrow để ghi nhật ký sự kiện lưu trữ trên đĩa.</li>
 <li>Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.</li>
 <li>Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.</li>
 </ul>
-<h3 id="23-quan-ly-hoan-tac-rollback_managerpy">2.3 Quản lý hoàn tác (<code>rollback_manager.py</code>)</h3>
-<ul>
-<li>Tạo và xác minh snapshot trạng thái theo thời điểm (<code>FULL_SYSTEM</code>, <code>CHAIN_STATE</code>, <code>CONSENSUS_STATE</code>, <code>CONFIGURATION</code>).</li>
-<li>Xác thực mã băm SHA-256 của snapshot trước khi áp dụng hoàn tác.</li>
-<li>Tích hợp cơ chế cách ly cho các block trạng thái bị hỏng.</li>
-</ul>
-<h3 id="24-cac-he-thong-con-phuc-hoi">2.4 Các hệ thống con phục hồi</h3>
-<ul>
-<li><code>backup_recovery.py</code>: Quản lý lưu trữ sao lưu, khôi phục snapshot và chính sách lưu giữ.</li>
-<li><code>consensus_recovery.py</code>: Xử lý đồng bộ hóa khi chuyển view, phục hồi khi leader gặp sự cố và khởi động lại vòng BFT.</li>
-<li><code>network_recovery.py</code>: Phát hiện sự kiện phân đoạn mạng, kích hoạt giãn cách thời gian kết nối lại và quản lý cảnh báo nút mạng.</li>
-<li><code>auto_scaler.py</code>: Theo dõi mức sử dụng bộ nhớ và CPU để điều chỉnh ngưỡng validator một cách linh hoạt.</li>
-</ul>
+<p><code>read_since(cursor=None)</code> flush và fsync writer đang hoạt động, đọc frame bền vững và trả <code>(records, (inode, byte_offset))</code>. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.</p>
+<p>Mỗi lần ghi lưu offset bắt đầu. Nếu ghi hoặc fsync frame thất bại, journal cắt file về offset đó và fsync phần cắt trước khi cho phép lần ghi tiếp theo. Nếu thao tác cắt hoặc fsync phần cắt thất bại, writer bị vô hiệu hóa và từ chối ghi cho đến khi được đóng rồi mở lại thành instance mới; khi khởi động, journal sửa phần cuối chưa hoàn chỉnh của file đang hoạt động.</p>
+<h3 id="23-ma-hoa-co-the-khoi-phuc-encryption_validatorpy">2.3 Mã hóa có thể khôi phục (<code>encryption_validator.py</code>)</h3>
+<p><code>EncryptionValidator(config, key_resolver)</code> dùng AES-256-GCM. Mã hóa yêu cầu <code>config["key_id"]</code> và <code>key_resolver(key_id)</code> do caller cung cấp, trả đúng 32 byte cho khóa đã được cho phép và giữ lại. ID thiếu, khóa không khả dụng hoặc dữ liệu khóa không hợp lệ gây <code>SecurityError</code>; validator không tạo khóa mã hóa dùng xong rồi bỏ.</p>
+<p><code>encrypt_data(text)</code> trả <code>ciphertext</code>, <code>tag</code> và <code>iv</code> dạng bytes, cùng <code>algorithm</code>, <code>key_id</code> và <code>timestamp</code>. GCM tag xác thực ciphertext, thuật toán, ID khóa và timestamp. <code>decrypt_data(envelope)</code> tìm khóa theo ID trong envelope, nên dữ liệu cũ vẫn đọc được sau khi đổi ID khóa đang dùng để mã hóa, miễn là khóa gốc được giữ lại. Envelope thiếu trường hoặc bị sửa gây <code>SecurityError</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers.aead</span><span class="w"> </span><span class="kn">import</span> <span class="n">AESGCM</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncryptionValidator</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"data-v1"</span><span class="p">:</span> <span class="n">AESGCM</span><span class="o">.</span><span class="n">generate_key</span><span class="p">(</span><span class="n">bit_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">validator</span> <span class="o">=</span> <span class="n">EncryptionValidator</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="p">{</span><span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"AES-256-GCM"</span><span class="p">,</span> <span class="s2">"key_id"</span><span class="p">:</span> <span class="s2">"data-v1"</span><span class="p">},</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">key_resolver</span><span class="o">=</span><span class="n">keys</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">envelope</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">encrypt_data</span><span class="p">(</span><span class="s2">"business event"</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">reader</span> <span class="o">=</span> <span class="n">EncryptionValidator</span><span class="p">({</span><span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"AES-256-GCM"</span><span class="p">},</span> <span class="n">key_resolver</span><span class="o">=</span><span class="n">keys</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">assert</span> <span class="n">reader</span><span class="o">.</span><span class="n">decrypt_data</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"business event"</span>
+</code></pre></div>
+<p>Ví dụ này giữ khóa trong bộ nhớ. Caller production phải giữ khóa trong kho khóa an toàn sẵn có và khôi phục resolver khi khởi động lại; khóa không được nhúng vào envelope. Khi lưu JSON, mã hóa các trường bytes thành Base64 và đổi lại thành bytes trước khi giải mã. Thông báo xoay khóa của module không tự cấp phát hoặc giữ lại khóa. Ciphertext cũ có khóa ngẫu nhiên đã bị triển khai trước bỏ đi không thể được khôi phục bằng thay đổi này.</p>
+<h3 id="24-khuyen-nghi-ve-tai-nguyen-va-xoay-khoa">2.4 Khuyến nghị về tài nguyên và xoay khóa</h3>
+<p><code>ConsensusValidator.validate_node_count()</code> vẫn từ chối số node dưới <code>3f+1</code>. Phương thức legacy <code>monitor_and_scale()</code> chỉ trả các node khỏe và ghi khuyến nghị bổ sung tài nguyên khi tỷ lệ này dưới <code>auto_scale_threshold</code>; nó không thay đổi thành viên hay khôi phục quorum. Runtime BFT gọi validator số node nhưng không tự gọi bộ kiểm tra sức khỏe này.</p>
+<p><code>ResourceValidator.validate_resources()</code> báo các vi phạm ngưỡng CPU, memory và disk. Cờ legacy <code>auto_scale=True</code> ghi thêm khuyến nghị tài nguyên CPU/memory; vi phạm disk chỉ tạo cảnh báo. Caller phải tự gọi các kiểm tra này và thực hiện cấp phát qua hạ tầng của host.</p>
+<p>Ngưỡng mặc định là CPU 70%, memory 80% và disk 85%, cấu hình qua <code>cpu_threshold</code>, <code>memory_threshold</code> và <code>disk_threshold</code>. Kiểm tra theo thứ tự CPU, memory, disk; chỉ mức sử dụng cao hơn ngưỡng mới là vi phạm, nên bằng ngưỡng vẫn được chấp nhận.</p>
+<p><code>EncryptionValidator.validate_config()</code> cảnh báo khi <code>key_rotation_interval</code> dưới <code>min_key_rotation_interval</code> hiện có (2.592.000 giây). Đây là so sánh cấu hình để tham khảo, không đánh giá tuổi khóa hay áp dụng chính sách hết hạn. Nó không tạo lịch, deadline hoặc khóa thay thế. Ứng dụng host quản lý việc xoay khóa và giữ khóa cũ.</p>
+<p>Bên đọc log cần cập nhật bộ lọc sự kiện: <code>auto_scaling_triggered</code> và wrapper <code>consensus_scaling</code> đổi thành <code>consensus_capacity_recommendation</code>; <code>resource_scaling_triggered</code> đổi thành <code>resource_capacity_recommendation</code>. Các đường dẫn Parquet legacy <code>log/error_mitigation/consensus_scaling.parquet</code> và <code>log/error_mitigation/resource_scaling.parquet</code>, field payload (gồm <code>auto_scale_enabled</code>) và record hiện có vẫn tương thích. Log gây hiểu nhầm <code>key_rotation_scheduled</code> và field <code>next_rotation</code> được bỏ; cảnh báo về interval vẫn còn.</p>
 <h2 id="3-chien-luoc-phan-loai-loi">3. Chiến lược phân loại lỗi</h2>
 <p><code>ErrorClassifier</code> trong <code>error_classifier.py</code> phân loại lỗi theo mức độ nghiêm trọng và đề xuất hành động xử lý:</p>
 <table>
@@ -4553,7 +4519,7 @@
 <tr>
 <td style="text-align: left;">CRITICAL</td>
 <td style="text-align: left;">Hỏng trạng thái hoặc không khớp Merkle root</td>
-<td style="text-align: left;">Hoàn tác và cách ly</td>
+<td style="text-align: left;">Từ chối, ghi log và yêu cầu khôi phục vận hành</td>
 </tr>
 <tr>
 <td style="text-align: left;">FATAL</td>
@@ -4565,42 +4531,23 @@
 <h2 id="4-nhat-ky-su-kien">4. Nhật ký sự kiện</h2>
 <p><code>TransactionJournal</code> cung cấp khả năng lưu trữ ghi trước:</p>
 <ol>
-<li>Ghi bền vững: Ghi các bản ghi vào tệp Parquet trên đĩa trước khi các block hoàn tất.</li>
+<li>Ghi bền vững: Ghi tiếp record Arrow có frame và fsync xuống đĩa trước khi block hoàn tất; Parquet cũ vẫn đọc được.</li>
 <li>Thực thi schema: Đảm bảo mọi bản ghi nhật ký khớp với schema sự kiện bắt buộc.</li>
 <li>Khả năng phát lại: Phát lại các sự kiện đã ghi từ đĩa vào hàng đợi sắp xếp khi nút khởi động lại.</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="5-quy-trinh-phuc-hoi">5. Quy trình phục hồi</h2>
-<pre class="mermaid"><code>graph TD
-    A[Phát hiện sự cố] --&gt; B{ErrorClassifier}
-    B --&gt;|Mức độ Thấp| C[Ghi log và tiếp tục]
-    B --&gt;|Mức độ Trung bình| D[Thử lại / Phục hồi tự động]
-    B --&gt;|Mức độ Cao| E[Hoàn tác về snapshot đã xác minh]
-
-    D --&gt; D1[Phục hồi mạng]
-    D --&gt; D2[Phục hồi đồng thuận]
-    D --&gt; D3[Tự động mở rộng]
-
-    E --&gt; F[Xác thực trạng thái sau hoàn tác]
-    F --&gt; G[Phát lại nhật ký để khôi phục dữ liệu hợp lệ]</code></pre>
-<h2 id="6-cac-loai-snapshot">6. Các loại snapshot</h2>
-<p><code>RollbackManager</code> quản lý 4 phạm vi snapshot:</p>
-<ul>
-<li><code>CONFIGURATION</code>: Cài đặt nút và các tham số môi trường.</li>
-<li><code>CHAIN_STATE</code>: Mã băm block và sổ cái trạng thái thế giới trên Main Chain cùng các Sub-Chain.</li>
-<li><code>CONSENSUS_STATE</code>: Số thứ tự view hiện tại, tập hợp validator và trạng thái leader.</li>
-<li><code>FULL_SYSTEM</code>: Bản lưu trữ toàn diện kết hợp cấu hình, block chuỗi và trạng thái đồng thuận.</li>
-</ul>
 <h2 id="tai-lieu-lien-quan">Tài liệu liên quan</h2>
 <ul>
 <li><a href=".././adapters/">Module Adapters</a></li>
 <li><a href=".././core/">Module Core</a></li>
 <li><a href=".././cluster/">Khóa cụm khẩn cấp</a></li>
 </ul>
+<p><code>ErrorClassifier</code> gọi callback lockdown được cung cấp cho lỗi security mức HIGH hoặc CRITICAL và lỗi performance mức CRITICAL. <code>DataValidator.validate_table()</code> kiểm tra kiểu Arrow bắt buộc ở mọi mức; strict kiểm tra thêm null. Kiểm tra consistency so sánh từng hàng theo thứ tự, gồm details JSON đã giải mã. Journal duyệt thư mục và mở tệp qua descriptor với cờ no-follow để từ chối symlink.</p>
+<p>Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của <code>details</code> và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem <a href="../../consensus/ordering/#quyền-sở-hữu-journal-cục-bộ">quyền sở hữu journal cục bộ</a>.</p>
 
 
 

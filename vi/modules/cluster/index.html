@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quản lý cụm node, cơ chế đồng bộ trạng thái phân tán và giao thức phong tỏa (lockdown) an toàn.">
+        <meta name="description" content="Đồng bộ liên tầng và các kiểu dữ liệu thông điệp của cluster.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2276,60 +2274,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#giao-thuc-phong-toa-khoi-phuc-lockdown-recovery" class="md-nav__link">
+  <a href="#su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-bo-phieu-quorum-quorum-voting" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. Bỏ phiếu Quorum (Quorum Voting)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-bao-cao-hoi-tho-cuoi-quarantine-report" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Báo cáo "Hơi thở cuối" (Quarantine Report)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-bao-mat-thong-iep" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. Bảo mật thông điệp
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-ong-bo-trang-thai-state-synchronization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Đồng bộ Trạng thái (State Synchronization)
+        Sử dụng
       </span>
     </span>
   </a>
@@ -2337,49 +2285,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-du-cau-hinh-su-dung" class="md-nav__link">
+  <a href="#chu-ky-bao-cao-quarantine" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ví dụ cấu hình &amp; Sử dụng
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Ví dụ cấu hình &amp; Sử dụng">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình biến môi trường
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#su-dung-clustermanager-trong-ma-nguon" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sử dụng ClusterManager trong mã nguồn
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quan-sat-suc-khoe-cum-health-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quan sát sức khỏe cụm (Health Metrics)
+        Chữ ký báo cáo Quarantine
       </span>
     </span>
   </a>
@@ -2391,6 +2300,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Liên quan
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-ong-bo-song-song-va-tiep-nhan-lockdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trạng thái đồng bộ song song và tiếp nhận lockdown
       </span>
     </span>
   </a>
@@ -4382,60 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#giao-thuc-phong-toa-khoi-phuc-lockdown-recovery" class="md-nav__link">
+  <a href="#su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-bo-phieu-quorum-quorum-voting" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. Bỏ phiếu Quorum (Quorum Voting)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-bao-cao-hoi-tho-cuoi-quarantine-report" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Báo cáo "Hơi thở cuối" (Quarantine Report)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-bao-mat-thong-iep" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. Bảo mật thông điệp
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-ong-bo-trang-thai-state-synchronization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Đồng bộ Trạng thái (State Synchronization)
+        Sử dụng
       </span>
     </span>
   </a>
@@ -4443,49 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-du-cau-hinh-su-dung" class="md-nav__link">
+  <a href="#chu-ky-bao-cao-quarantine" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ví dụ cấu hình &amp; Sử dụng
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Ví dụ cấu hình &amp; Sử dụng">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình biến môi trường
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#su-dung-clustermanager-trong-ma-nguon" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sử dụng ClusterManager trong mã nguồn
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quan-sat-suc-khoe-cum-health-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quan sát sức khỏe cụm (Health Metrics)
+        Chữ ký báo cáo Quarantine
       </span>
     </span>
   </a>
@@ -4497,6 +4328,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Liên quan
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-ong-bo-song-song-va-tiep-nhan-lockdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Trạng thái đồng bộ song song và tiếp nhận lockdown
       </span>
     </span>
   </a>
@@ -4536,42 +4378,12 @@
 
 <h1 id="cluster-module-hierachaincluster">Cluster Module (<code>hierachain/cluster/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Cluster</strong> là bộ não điều phối sự phối hợp giữa các node trong mạng lưới HieraChain. Nó đảm bảo hệ thống hoạt động như một thực thể thống nhất, duy trì tính nhất quán dữ liệu xuyên suốt các tầng phân cấp và cung cấp các cơ chế bảo vệ khẩn cấp khi phát hiện dấu hiệu bất thường.</p>
+<p>Module <strong>Cluster</strong> chứa runtime đồng bộ liên tầng và các kiểu dữ liệu dùng cho thông điệp cluster.</p>
 <hr />
 <h2 id="kien-truc-cac-thanh-phan-chinh">Kiến trúc &amp; Các thành phần chính</h2>
-<p>Hệ thống được thiết kế theo mô hình phi tập trung với các thành phần chuyên biệt:</p>
+<p>Package hiện cung cấp hai khối chức năng nhỏ:</p>
 <div class="grid cards">
 <ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7zM4 3h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m5 4h1V5H9zm0 8h1v-2H9zM5 5v2h2V5zm0 8v2h2v-2z"/></svg></span> <strong>Cluster Manager</strong></p>
-<hr />
-<p><strong>File</strong>: <code>cluster_manager.py</code></p>
-<ul>
-<li>Theo dõi sức khỏe (Health tracking) của toàn bộ node.</li>
-<li>Cơ chế Heartbeat để phát hiện node ngoại tuyến.</li>
-<li>Quản lý bỏ phiếu Quorum (2/3 majority).</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg></span> <strong>Lockdown Protocol</strong></p>
-<hr />
-<p><strong>File</strong>: <code>lockdown_protocol.py</code></p>
-<ul>
-<li>Giao thức truyền tin Gossip qua P2P (ZMQ).</li>
-<li>Bảo mật bằng chữ ký HMAC-SHA256 (<code>HRC_CLUSTER_SECRET</code>).</li>
-<li>Cơ chế "Quarantine Report" (Báo cáo cách ly).</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 12v1.5a4 4 0 0 1 4 4c0 .82-.25 1.58-.67 2.21l-1.09-1.09c.17-.34.26-.72.26-1.12A2.5 2.5 0 0 0 19 15v1.5l-2.25-2.25zm0 11v-1.5a4 4 0 0 1-4-4c0-.82.25-1.58.67-2.21l1.09 1.09c-.17.34-.26.72-.26 1.12A2.5 2.5 0 0 0 19 20v-1.5l2.25 2.25zM12 3c4.42 0 8 1.79 8 4s-3.58 4-8 4-8-1.79-8-4 3.58-4 8-4M4 9c0 2.21 3.58 4 8 4 1.11 0 2.17-.11 3.14-.32-.95.86-1.64 1.99-1.96 3.28L12 16c-4.42 0-8-1.79-8-4zm16 0v2h-.5l-.6.03c.7-.6 1.1-1.29 1.1-2.03M4 14c0 2.21 3.58 4 8 4l1-.03c.09 1.06.42 2.03.95 2.91L12 21c-4.42 0-8-1.79-8-4z"/></svg></span> <strong>State Sync (Resurrection)</strong></p>
-<hr />
-<p><strong>File</strong>: <code>state_sync_manager.py</code></p>
-<ul>
-<li>Khôi phục trạng thái sau sự cố hoặc phong tỏa.</li>
-<li>Cơ chế "Gap-fill" (Lấp đầy khoảng trống) block.</li>
-<li>Xác thực block nhận được từ đồng đẳng (peers).</li>
-</ul>
-</li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.4 7.5c.8.8.8 2.1 0 2.8l-2.8 2.8-7.8-7.8 2.8-2.8c.8-.8 2.1-.8 2.8 0l1.8 1.8 3-3 1.4 1.4-3 3zm-5.8 5.8-1.4-1.4-2.8 2.8-2.1-2.1 2.8-2.8-1.4-1.4-2.8 2.8-1.5-1.4-2.8 2.8c-.8.8-.8 2.1 0 2.8l1.8 1.8-4 4 1.4 1.4 4-4 1.8 1.8c.8.8 2.1.8 2.8 0l2.8-2.8-1.4-1.4z"/></svg></span> <strong>Cross-Level Sync</strong></p>
 <hr />
@@ -4581,55 +4393,34 @@
 <li>Đảm bảo tính toàn vẹn của cây phân cấp doanh nghiệp.</li>
 </ul>
 </li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg></span> <strong>Kiểu dữ liệu thông điệp Lockdown</strong></p>
+<hr />
+<p><strong>File</strong>: <code>lockdown_types.py</code></p>
+<ul>
+<li>Định nghĩa thông điệp lockdown và quarantine có thể serialize.</li>
+<li>Cung cấp helper ký và xác thực HMAC.</li>
+</ul>
+</li>
 </ul>
 </div>
 <hr />
-<h2 id="giao-thuc-phong-toa-khoi-phuc-lockdown-recovery">Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)</h2>
-<p>Đây là cơ chế an ninh tối thượng của HieraChain để bảo vệ sổ cái khi có tấn công hoặc lỗi hệ thống nghiêm trọng.</p>
-<h3 id="1-bo-phieu-quorum-quorum-voting">1. Bỏ phiếu Quorum (Quorum Voting)</h3>
-<p>Hệ thống yêu cầu đa số tuyệt đối (<strong>2/3 số node</strong>) đồng thuận để thay đổi trạng thái cụm:
-*   <strong>Lockdown</strong>: Tạm dừng mọi hoạt động ghi mới để bảo vệ dữ liệu hiện có.
-*   <strong>Recovery</strong>: Tái khởi động hệ thống sau khi đã xử lý xong sự cố.</p>
-<h3 id="2-bao-cao-hoi-tho-cuoi-quarantine-report">2. Báo cáo "Hơi thở cuối" (Quarantine Report)</h3>
-<p>Trước khi một node thực hiện phong tỏa và xóa bộ nhớ đệm (event pool), nó sẽ phát đi một <code>QuarantineReport</code> chứa dấu vân tay (fingerprints) của các sự kiện chưa được ghi. Điều này giúp các node khác đối chiếu và phát hiện lỗ hổng dữ liệu sau khi khôi phục.</p>
-<h3 id="3-bao-mat-thong-iep">3. Bảo mật thông điệp</h3>
-<p>Mọi thông điệp trong cụm (Lockdown, Vote, Sync) đều phải được ký bằng <strong>HMAC-SHA256</strong> sử dụng khóa bí mật dùng chung <code>HRC_CLUSTER_SECRET</code>. Các thông điệp không hợp lệ hoặc hết hạn (&gt;300s) sẽ bị loại bỏ ngay lập tức.</p>
+<h2 id="su-dung">Sử dụng</h2>
+<p><code>HierarchyManager</code> sở hữu instance <code>CrossLevelSyncManager</code> tùy chọn và dùng nó
+để đồng bộ metadata proof giữa main chain và sub-chain. Các kiểu dữ liệu trong
+<code>lockdown_types.py</code> chỉ là helper cho dữ liệu và chữ ký; chúng không triển khai
+bộ điều phối bỏ phiếu hoặc phong tỏa toàn cluster.</p>
+<p>Việc gửi proof của một Sub-Chain được tuần tự hóa trên chain đó trong lúc lấy
+tip hiện tại, kiểm tra anchor có sẵn, ghi event MainChain và xác minh đọc lại
+từ storage bền vững. Vì vậy các request đồng thời cho cùng tip sẽ dùng lại một
+proof anchor thay vì thêm bản trùng. Khóa này chỉ áp dụng trong một object
+Sub-Chain, không phải khóa phân tán giữa các tiến trình.</p>
 <hr />
-<h2 id="co-che-ong-bo-trang-thai-state-synchronization">Cơ chế Đồng bộ Trạng thái (State Synchronization)</h2>
-<p>Khi một node mới gia nhập hoặc một node vừa khôi phục từ trạng thái phong tỏa, nó sẽ thực hiện quy trình <strong>Resurrection</strong>:</p>
-<ol>
-<li><strong>Xác định khoảng trống (Gap Identification)</strong>: Đối chiếu chỉ số (index) block cuối cùng với các peers.</li>
-<li><strong>Yêu cầu dữ liệu (Sync Request)</strong>: Gửi yêu cầu lấp đầy khoảng trống cho các node lành mạnh.</li>
-<li><strong>Xác thực đa tầng (Verification)</strong>: Mỗi block nhận về đều được kiểm tra hash chaining và chữ ký bởi <code>BlockVerifier</code>.</li>
-<li><strong>Hợp nhất (Merging)</strong>: Chỉ các dữ liệu hợp lệ mới được ghi vào database địa phương.</li>
-</ol>
-<hr />
-<h2 id="vi-du-cau-hinh-su-dung">Ví dụ cấu hình &amp; Sử dụng</h2>
-<h3 id="cau-hinh-bien-moi-truong">Cấu hình biến môi trường</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">HRC_CLUSTER_SECRET</span><span class="o">=</span><span class="s2">"your-super-secret-hmac-key"</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">HRC_QUORUM_THRESHOLD</span><span class="o">=</span><span class="m">0</span>.66<span class="w">  </span><span class="c1"># Tương đương 2/3</span>
-</code></pre></div>
-<h3 id="su-dung-clustermanager-trong-ma-nguon">Sử dụng ClusterManager trong mã nguồn</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.cluster.cluster_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClusterManager</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">ClusterManager</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="s2">"node-01"</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Đăng ký node đồng đẳng</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">manager</span><span class="o">.</span><span class="n">register_node</span><span class="p">(</span><span class="s2">"node-02"</span><span class="p">,</span> <span class="s2">"192.168.1.10:5000"</span><span class="p">,</span> <span class="n">auth_token</span><span class="o">=</span><span class="s2">"..."</span><span class="p">)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Bỏ phiếu phong tỏa khi phát hiện rủi ro</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">vote_lockdown</span><span class="p">(</span><span class="s2">"node-01"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">"Phát hiện giả mạo hash"</span><span class="p">):</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Quorum reached - Hệ thống đang chuyển sang trạng thái LOCKDOWN"</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h2 id="quan-sat-suc-khoe-cum-health-metrics">Quan sát sức khỏe cụm (Health Metrics)</h2>
-<p><code>ClusterManager</code> cung cấp đối tượng <code>ClusterHealthMetrics</code> cho phép theo dõi:</p>
-<ul>
-<li><code>total_nodes</code>: Tổng số node trong cấu hình.</li>
-<li><code>healthy_nodes</code>: Số node đang hoạt động và gửi heartbeat đều đặn.</li>
-<li><code>is_in_lockdown</code>: Trạng thái phong tỏa hiện tại của toàn cụm.</li>
-<li><code>lockdown_votes</code>: Số phiếu bầu phong tỏa hiện tại.</li>
-</ul>
+<h2 id="chu-ky-bao-cao-quarantine">Chữ ký báo cáo Quarantine</h2>
+<p><code>QuarantineReport.compute_signature(secret_key)</code> tính HMAC-SHA256 trên mọi trường do <code>to_dict()</code> trả về, trừ <code>signature</code>: <code>msg_type</code>, <code>lockdown_type</code>, <code>node_id</code>, <code>timestamp</code>, <code>pending_event_ids</code>, <code>last_block_index</code>, <code>last_block_hash</code> và <code>total_pending</code>. Payload là JSON UTF-8 dạng gọn, sắp xếp khóa object, giữ nguyên Unicode và chỉ chấp nhận số hữu hạn. Thứ tự danh sách event được giữ nguyên và bảo vệ. Digest vẫn lấy 32 ký tự hex đầu tiên.</p>
+<p>Byte canonical dùng <code>hierachain.serialization.dumps_canonical_json(payload)</code>, tương đương <code>json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")</code> của thư viện chuẩn. Thành phần ký bên ngoài phải dùng cùng cách mã hóa. Chữ ký đã phát hành với cách biểu diễn float khác cần được ký lại từ dữ liệu tin cậy.</p>
+<p>Caller gán kết quả vào <code>report.signature</code>; <code>verify_signature(secret_key)</code> kiểm tra bằng phép so sánh thời gian hằng. Thay đổi bất kỳ trường báo cáo nào đều làm chữ ký sai. Round-trip JSON hoặc đổi thứ tự khóa object vẫn xác minh được. Chữ ký thiếu/sai định dạng và giá trị payload không được hỗ trợ trả <code>False</code>; ký timestamp không hữu hạn gây <code>ValueError</code>. <code>from_dict()</code> từ chối giá trị <code>msg_type</code> hoặc <code>lockdown_type</code> được cung cấp nhưng không mô tả báo cáo quarantine.</p>
+<p>Chữ ký tạo bằng payload cũ chỉ có ba trường bị từ chối. Cần tạo lại báo cáo từ dữ liệu tin cậy và ký payload đầy đủ; không fallback sang định dạng chữ ký cũ. Caller cung cấp và bảo vệ khóa bí mật dùng chung. Các helper không cấp khóa, kiểm tra độ mới của báo cáo hoặc tự xác thực báo cáo trong bộ điều phối runtime.</p>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
@@ -4637,6 +4428,10 @@
 <li><a href=".././security/">Security Identity</a></li>
 <li><a href="../../architecture/hierarchy/">Hierarchical Architecture</a></li>
 </ul>
+<h2 id="trang-thai-ong-bo-song-song-va-tiep-nhan-lockdown">Trạng thái đồng bộ song song và tiếp nhận lockdown</h2>
+<p><code>CrossLevelSyncManager.get_status()</code> giữ trạng thái đang chạy khi còn bất kỳ sync hoặc xử lý conflict nào trong nhóm tác vụ chồng lấn. Khi nhóm hoàn tất, trạng thái là <code>failed</code> nếu có tác vụ thất bại, ngược lại là <code>complete</code>. Tác vụ độc lập tiếp theo mở nhóm mới. <code>get_stats()</code> có <code>active_operations</code>; <code>reset()</code> gây <code>RuntimeError</code> khi còn công việc. Lỗi callback hoàn tất được ghi log và không đảo ngược proof đã commit.</p>
+<p><code>LockdownMessage.verify_signature()</code> chỉ xác thực chữ ký. Trước khi xử lý thông điệp, dispatcher của ứng dụng phải gọi <code>LockdownMessageGuard.accept(message, secret_key)</code> và chỉ xử lý khi nhận <code>True</code>. Giữ một guard xuyên suốt các request. Guard kiểm tra chữ ký và timestamp hữu hạn, mặc định cho phép thông điệp cũ tối đa 60 giây hoặc đi trước 5 giây, đồng thời từ chối nguyên tử payload đã tiếp nhận, kể cả khi đổi giữa chữ ký đầy đủ và rút gọn. Có thể cấu hình <code>max_age</code>, <code>future_skew</code>, <code>max_entries</code>. Khi kho replay đầy, guard từ chối thông điệp mới đến lúc entries hết hạn; không đẩy entries còn hiệu lực ra ngoài. Chữ ký sai không chiếm dung lượng.</p>
+<p>Repo chưa có dispatcher lockdown. Guard chỉ giữ trạng thái trong một process; không lưu qua restart hoặc chia sẻ giữa worker. Ứng dụng cần các bảo đảm này phải giữ trạng thái replay trong storage của dispatcher. Guard không kiểm tra tiếp nhận <code>QuarantineReport</code>.</p>
 
 
 

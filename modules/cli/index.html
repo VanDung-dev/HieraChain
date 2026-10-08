@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4614,7 +4612,7 @@
 
 <h1 id="cli-module-hierachaincli">CLI Module (<code>hierachain/cli/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The <strong>CLI</strong> module provides a powerful command-line tool named <code>hrc</code>, enabling operators and developers to interact quickly with the HieraChain system without using the web interface or making manual API calls.</p>
+<p>The <strong>CLI</strong> module provides the <code>hrc</code> command for managing HieraChain from a terminal.</p>
 <p>The tool is built on the <strong>Click</strong> library, supporting logical command grouping, tab-completion, and strict parameter handling.</p>
 <h3 id="installation-launch">Installation &amp; Launch</h3>
 <p>When HieraChain is installed in development mode (<code>pip install -e .</code>), the <code>hrc</code> command is registered in the system. You can verify by:</p>
@@ -4631,12 +4629,13 @@
 <ul>
 <li><em>Arguments</em>: <code>[supply_chain|healthcare|finance|manufacturing]</code></li>
 <li><em>Options</em>: <code>--name</code> (Required), <code>--parent</code> (Default: <code>main</code>).</li>
+<li>The current hierarchy manager attaches sub-chains to <code>main</code>; a named nested parent is rejected explicitly.</li>
 </ul>
 </li>
 <li>
 <p><strong><code>hrc chain list</code></strong>: List all existing chains and their block counts.</p>
 </li>
-<li><strong><code>hrc chain submit-proof</code></strong>: Submit cryptographic proof from Sub-Chain to Main Chain for cross-chain validation.</li>
+<li><strong><code>hrc chain submit-proof</code></strong>: Currently exits with a nonzero status. Use the authenticated REST proof endpoint backed by durable SQL storage.</li>
 </ul>
 <h3 id="event-commands-event-management"><code>event</code> Commands (Event Management)</h3>
 <p>Used to record and query business activities.</p>
@@ -4659,9 +4658,9 @@
 <p>Used to generate and verify Ed25519 key pairs for Validators.</p>
 <ul>
 <li>
-<p><strong><code>hrc key generate</code></strong>: Generate a new key pair.</p>
+<p><strong><code>hrc key generate</code></strong>: Generate a new key pair in a new file with mode <code>0600</code> on POSIX systems. An existing output file is never overwritten; the private key is not printed.</p>
 <ul>
-<li><em>Options</em>: <code>--output</code> (Default: <code>validator_key.json</code>), <code>--format</code> (json/hex).</li>
+<li><em>Options</em>: <code>--output</code> (Default: <code>validator_key.json</code>), <code>--format</code> (<code>json</code> or <code>hex</code>). The hex file contains the private key on the first line and the public key on the second line.</li>
 </ul>
 </li>
 <li>
@@ -4675,7 +4674,7 @@
 <li>
 <p><strong><code>hrc node start</code></strong>: Start the FastAPI server.</p>
 <ul>
-<li><em>Options</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (For development).</li>
+<li><em>Options</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (For development). The global <code>--config</code> option selects the node configuration loaded before startup.</li>
 </ul>
 </li>
 <li>
@@ -4685,14 +4684,11 @@
 <h3 id="verify-commands-verification"><code>verify</code> Commands (Verification)</h3>
 <p>Tools for auditors to check ledger integrity.</p>
 <ul>
-<li><strong><code>hrc verify chain</code></strong>: Verify the link structure between blocks (hash chaining).</li>
-<li>
-<p><strong><code>hrc verify signatures</code></strong>: Verify all digital signatures of blocks and events in the database.</p>
-<ul>
-<li><em>Options</em>: <code>--limit</code> (Check only the N most recent blocks), <code>--db</code> (Database path).</li>
+<li><strong><code>hrc verify chain</code></strong>: Verify block hashes, Merkle roots, chain links, and required block signatures against configured trusted keys. Missing blocks, an empty database, unavailable trusted keys, or invalid data return a nonzero exit status.</li>
+<li><strong><code>hrc verify signatures</code></strong>: Verify required block signatures and any signed events. Unsigned events are counted as unverified; an event with incomplete signing data or an invalid signature returns a nonzero exit status. An empty database also returns a nonzero exit status.</li>
 </ul>
-</li>
-</ul>
+<p>Both commands accept <code>--db</code> (SQLite path/URL or PostgreSQL URL; otherwise the configured database is used). <code>verify signatures</code> also accepts <code>--limit</code> to check only the N most recent blocks in each chain. Signed events need a public key in <code>details.public_key</code> or <code>details.sender_public_key</code> for verification.</p>
+<p>These commands inspect stored blocks. Chain creation and event commands use the durable <code>HierarchyManager</code> registry and restore registered sub-chains from the configured SQLite or PostgreSQL store on each invocation. Event ordering uses each sub-chain's durable ordering journal.</p>
 <hr />
 <h2 id="practical-usage-examples">Practical Usage Examples</h2>
 <h3 id="1-initialize-the-system-and-create-a-supply-chain">1. Initialize the System and Create a Supply Chain</h3>
@@ -4700,14 +4696,17 @@
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>hrc<span class="w"> </span>node<span class="w"> </span>init<span class="w"> </span>--data-dir<span class="w"> </span>./my_data
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Create a component supply chain</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
 </code></pre></div>
 <h3 id="2-record-a-production-process">2. Record a Production Process</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start production of entity ITEM-99</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">'{"line": "A1"}'</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">'{"line": "A1"}'</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Complete and submit proof to Main Chain</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>submit-proof<span class="w"> </span>logistics_01
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Start the API with the same node configuration</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>node<span class="w"> </span>start
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Submit proofs through the authenticated REST API backed by durable SQL storage</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-API-Key: </span><span class="nv">$HRC_API_KEY</span><span class="s2">"</span><span class="w"> </span>http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 </code></pre></div>
 <h3 id="3-verify-data-integrity">3. Verify Data Integrity</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Check the 100 most recent blocks for tampering</span>
@@ -4715,9 +4714,11 @@
 </code></pre></div>
 <hr />
 <h2 id="configuration-environment-variables">Configuration &amp; Environment Variables</h2>
-<p>CLI reads configuration from the <code>chains.json</code> file by default, or from a file specified via a global option:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--config<span class="w"> </span>custom_config.json<span class="w"> </span>chain<span class="w"> </span>list
+<p>CLI reads <code>data/config.yaml</code> by default, or from a file specified before the command with the global option:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>chain<span class="w"> </span>list
 </code></pre></div>
+<p><code>hrc node init</code> writes YAML containing <code>database_url</code> and <code>node_id</code>. The CLI also accepts a JSON object with those fields. It applies the values to chain commands and API startup. Explicit <code>DATABASE_URL</code>, <code>HRC_DATABASE_URL</code>, <code>HRC_NODE_ID</code>, or <code>NODE_ID</code> environment values take precedence. Configuration files may contain only <code>database_url</code> and <code>node_id</code>.</p>
+<p>Sub-chain ordering journals are stored under <code>data/&lt;chain-name&gt;</code> relative to the current working directory. Keep that directory persistent and run the CLI from a stable working directory; a custom <code>--data-dir</code> currently relocates the hierarchy database and configuration, not those journals.</p>
 <hr />
 <h2 id="design-principles-developer-notes">Design Principles (Developer Notes)</h2>
 <ol>

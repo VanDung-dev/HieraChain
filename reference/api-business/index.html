@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3156,6 +3154,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#provisioning-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provisioning and permissions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#curl-examples" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4293,6 +4302,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#provisioning-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Provisioning and permissions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#curl-examples" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4357,7 +4377,7 @@
 
 
 <h1 id="api-business">API Business</h1>
-<p>API Business extends capabilities for working with channels, private data, domain contracts, and organizations.</p>
+<p>API Business extends capabilities for working with channels, private data collections, domain contracts, and organizations. The private-data write route is currently unsupported because no private-data store is connected.</p>
 <h2 id="source-code-components">Source Code Components</h2>
 <ul>
 <li>Router/Endpoints: <code>hierachain/api/business/router.py</code></li>
@@ -4369,7 +4389,6 @@
     participant User
     participant API as API business
     participant Channel as Channel Manager
-    participant Store as Private Store
 
     User-&gt;&gt;API: POST /channels (Create)
     API-&gt;&gt;Channel: Initialize Channel
@@ -4380,23 +4399,18 @@
     API--&gt;&gt;User: OK
 
     User-&gt;&gt;API: POST /private-data (Write)
-    API-&gt;&gt;Store: Store Private Data (Encrypted)
-    API--&gt;&gt;User: OK
+    API--&gt;&gt;User: 501 Not Implemented
 
     User-&gt;&gt;API: POST /contracts/execute
     API-&gt;&gt;API: Execute Logic (Smart Contract)
     API--&gt;&gt;User: Result</code></pre>
 <ul>
 <li><code>GET  /api/business/health</code>: service health check.</li>
-<li><code>POST /api/business/channels</code>: create a channel.</li>
+<li><code>POST /api/business/channels</code>: create a channel. Requires <code>chains</code> and <code>channels:manage</code> API key permissions.</li>
 <li><code>GET  /api/business/channels/{channel_id}</code>: get channel info.</li>
 <li><code>POST /api/business/channels/{channel_id}/private-collections</code>: create a private data collection.</li>
 <li>
-<p><code>POST /api/business/private-data</code>: Write private data (Supports raw <code>value</code> or <code>value_cid</code> IPFS reference).</p>
-<ul>
-<li><code>value_nonce: str | None</code></li>
-<li><code>event_metadata: dict[str, Any]</code> (Entity ID, Event Type, Timestamp)</li>
-</ul>
+<p><code>POST /api/business/private-data</code>: currently returns HTTP 501 for an existing collection. It does not persist inline <code>value</code> or <code>value_cid</code> data.</p>
 </li>
 <li>
 <p><code>ContractCreateRequest</code></p>
@@ -4413,49 +4427,70 @@
 <p><code>POST /api/business/contracts</code>: Register a contract (Supports raw <code>implementation</code> or <code>implementation_cid</code> IPFS reference).</p>
 </li>
 <li><code>POST /api/business/contracts/execute</code>: execute a contract.</li>
-<li><code>POST /api/business/organizations</code>: register an organization.</li>
+<li><code>POST /api/business/organizations</code>: register an organization. Requires <code>chains</code> and <code>organizations:manage</code>; the verified API key user becomes its first administrator.</li>
+<li><code>POST /api/business/organizations/{org_id}/members</code>: an organization administrator registers a member with role <code>admin</code> or <code>member</code>. The member ID must match that member's API key user ID.</li>
 </ul>
 <p>Additional note: some test/instrumentation scenarios in <code>tests/integration/api_business/test_api_business.py</code> and <code>scripts/security/*</code> use the above endpoints for security testing and behavior verification.</p>
-<h2 id="curl-examples">Curl Examples</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Health</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Create channel</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name": "test_channel"}'</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Create private collection for channel</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>http://localhost:2661/api/business/channels/test_channel/private-collections<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"collection": "sensitive_docs"}'</span>
+<h2 id="provisioning-and-permissions">Provisioning and permissions</h2>
+<p>Provisioning requires API key authentication to be enabled. A trusted operator assigns <code>organizations:manage</code> and <code>channels:manage</code> scopes when provisioning API keys; these routes do not issue keys. Organization creation also requires <code>chains</code>, and the key's verified user ID becomes the first organization administrator. Member registration requires <code>chains</code> and an existing organization administrator. Channel creation requires <code>chains</code> and <code>channels:manage</code>. Event submission uses the authenticated API key user ID and channel role policy.</p>
+<p>The organization, member, and channel registry is saved and restored through configured SQLite or PostgreSQL storage. <code>HierarchyManager</code> rejects Redis ledger storage at startup because the Redis adapter lacks durable signed-block persistence. The in-memory backend is process-local. Private-data values are not stored: the write route returns HTTP 501 before processing an inline value or IPFS reference. <code>ca_config</code> is retained as API-process metadata and is not used to verify member certificates. Direct Python channel and private-collection methods accept organization IDs as endorsements and require a trusted caller; they do not verify endorsement signatures.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">ORG_PROVISIONER_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">ORG_ADMIN_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">CHANNEL_PROVISIONER_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$ORG_PROVISIONER_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "ca_config": {}}'</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations/orgA/members<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$ORG_ADMIN_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"member_id": "userB", "role": "member"}'</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Write private data</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/private-data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1"># Register &amp; execute domain contract</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="s1">        "contract_id": "quality_control", </span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="s1">        "version": "1.0.0",</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="s1">        "implementation": "def logic()...",</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="s1">        "metadata": {"domain": "mfg"}</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="s1">      }'</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts/execute<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="s1">        "contract_id": "quality_control", </span>
-<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="s1">        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="s1">        "context": {"chain": "sub_chain_1"}</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="s1">      }'</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="c1"># Organization</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "name": "Org A"}'</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$CHANNEL_PROVISIONER_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'</span>
+</code></pre></div>
+<p>Event submissions also require the <code>events</code> API key permission.</p>
+<h2 id="curl-examples">Curl Examples</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Health</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Create channel</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Create private collection for channel</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>http://localhost:2661/api/business/channels/test_channel/private-collections<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># Private-data writes currently return HTTP 501 Not Implemented.</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Register &amp; execute domain contract</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s1">        "contract_id": "quality_control", </span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="s1">        "version": "1.0.0",</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s1">        "implementation": "def logic()...",</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="s1">        "metadata": {"domain": "mfg"}</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s1">      }'</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts/execute<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="s1">        "contract_id": "quality_control", </span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="s1">        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="s1">        "context": {"chain": "sub_chain_1"}</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="s1">      }'</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1"># Organization</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "ca_config": {}}'</span>
 </code></pre></div>
 <p>If API key authentication is enabled (production), add the header per <code>settings.API_KEY_NAME</code> (default <code>X-API-Key</code>).</p>
 <h2 id="security-configuration">Security &amp; Configuration</h2>
@@ -4470,6 +4505,7 @@
 <li>Security Architecture: <a href="../../architecture/security/">Security (in-depth)</a></li>
 <li>Modules: <a href="../../modules/api/">API</a></li>
 </ul>
+<p>Registered contracts return HTTP 501 from <code>/api/business/contracts/execute</code> because an execution engine is not implemented; unknown contracts return HTTP 404. Registration stores implementation metadata and does not imply execution support.</p>
 
 
 

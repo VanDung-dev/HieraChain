@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3853,6 +3851,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#authentication-lockout-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authentication lockout storage
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#related-components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4293,6 +4302,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#authentication-lockout-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authentication lockout storage
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#related-components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4366,6 +4386,12 @@
 <li>Sanitize logs and payloads to avoid sensitive data leakage.</li>
 <li>Enable HSTS/CORS/Rate limit appropriate to environment and valid front-ends.</li>
 <li>Enable resource guard to shed load when the system is overloaded.</li>
+</ul>
+<h2 id="authentication-lockout-storage">Authentication lockout storage</h2>
+<ul>
+<li>Use the SQLite or Redis brute-force backend when API authentication runs in multiple worker processes. Both backends count failures atomically across workers.</li>
+<li>The memory and file backends keep attempt counts in one process; run one worker with either backend. Running file-backed instances reload lockouts so a lockout written by another instance in the same deployment becomes visible on the next check.</li>
+<li>Shared backend errors stop the authentication request. Restore the configured backend before serving authenticated requests again.</li>
 </ul>
 <h2 id="related-components">Related Components</h2>
 <ul>

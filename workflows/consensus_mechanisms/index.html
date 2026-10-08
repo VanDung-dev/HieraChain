@@ -1569,11 +1569,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4460,7 +4458,7 @@
 <tr>
 <td style="text-align: left;"><strong>Signature type</strong></td>
 <td style="text-align: left;">Ed25519 (asymmetric)</td>
-<td style="text-align: left;">SHA-256 federation signature</td>
+<td style="text-align: left;">Ed25519 over the unfinalized block hash</td>
 <td style="text-align: left;">Aggregated PBFT votes</td>
 </tr>
 <tr>
@@ -4570,8 +4568,8 @@ Leader is elected deterministically by block index. ZK proof is enforced.</p>
     Note right of POF: Scan all events for forbidden crypto terms
     POF-&gt;&gt;POF: _verify_block_zk_proof(block, previous_block)
     Note right of POF: Enforced — fails block if ZK invalid
-    POF-&gt;&gt;POF: _create_federation_signature(block, leader_id)&lt;br/&gt;SHA-256(hash:leader_id:block.index:time)
-    POF-&gt;&gt;POF: Append consensus_finalization event&lt;br/&gt;{ leader_id, validators_count, round, signature }
+    POF-&gt;&gt;POF: _create_federation_signature(block, signing_key)&lt;br/&gt;Ed25519 sign(block.hash)
+    POF-&gt;&gt;POF: Append consensus_finalization event&lt;br/&gt;{ leader_id, block_hash, validators_count, round, signature }
     POF--&gt;&gt;OS: Finalized Block ✅</code></pre>
 <h3 id="key-classes-pof">Key classes: PoF</h3>
 <table>
@@ -4610,6 +4608,8 @@ Leader is elected deterministically by block index. ZK proof is enforced.</p>
 </tr>
 </tbody>
 </table>
+<p><code>validate_block()</code> rebuilds the block before the finalization event and checks that its hash matches the signed <code>block_hash</code>. It rejects a missing trusted validator key, altered payload, or a finalization event outside the last position.</p>
+<p>Every block, including genesis, must carry a valid Ed25519 <code>signature</code> from a creator in the trusted key map. <code>HRC_VALIDATOR_IDENTITY</code> supplies the fixed signing key, while <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> supplies the operator-approved <code>creator_id</code> to public-key map. <code>Blockchain.add_block(block, public_key=...)</code> accepts an explicit PEM key only when it matches that map. <code>Blockchain.is_chain_valid()</code> and <code>Blockchain.from_dict()</code> verify the complete chain; missing keys, unsigned blocks, and invalid signatures fail validation. CLI verification uses the same trusted key file and checks each named chain in its SQLite database.</p>
 <hr />
 <h2 id="byzantine-fault-tolerance-bft-pbft">Byzantine fault tolerance (BFT / PBFT)</h2>
 <blockquote>

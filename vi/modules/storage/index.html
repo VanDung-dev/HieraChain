@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4471,6 +4469,7 @@
 <ul>
 <li>Lưu trạng thái hiện tại của entity suy ra từ block đã finalize.</li>
 <li>Cập nhật khi block được commit và có hỗ trợ cache. Codebase không định nghĩa sẵn các loại event <code>creation/update/status_change</code>.</li>
+<li><code>get_entity_state()</code> và <code>get_all_states()</code> trả snapshot sâu có thể sửa. Sửa dictionary trả về hoặc <code>last_details</code> lồng bên trong không cập nhật state nội bộ hay Merkle root; cần event đã finalize để đổi state.</li>
 </ul>
 </li>
 <li>
@@ -4479,8 +4478,8 @@
 <p><strong>File</strong>: <code>hierachain/adapters/database/sqlite_adapter.py</code>, <code>postgres_adapter.py</code>, <code>redis_adapter.py</code>, <code>sqlite_schema.py</code>/<code>postgres_schema.py</code></p>
 <ul>
 <li><strong>SQLite/Postgres</strong> qua <code>SQLBase</code> + <code>init_database_schema()</code> (các bảng <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>; index composite).</li>
-<li><strong>Redis Adapter</strong>: <code>hierachain/adapters/database/redis_adapter.py</code> cho index theo entity.</li>
-<li><strong>Memory</strong>: <code>HRC_STORAGE_BACKEND=memory</code> cho test. Không có File Adapter tích hợp sẵn. Parquet dùng cho log và journal (<code>core/parquet_log.py</code>, <code>error_mitigation/journal.py</code>), không dùng để lưu chain.</li>
+<li><strong>Redis Adapter</strong>: <code>hierachain/adapters/database/redis_adapter.py</code> cho index theo entity. <code>HierarchyManager</code> từ chối Redis ledger storage khi khởi động cho đến khi có lưu trữ bền vững block đã ký; các helper indexing và registry vẫn có thể được dùng trực tiếp.</li>
+<li><strong>Memory</strong>: <code>HRC_STORAGE_BACKEND=memory</code> cho test. Không có File Adapter tích hợp sẵn. Log Parquet công bố snapshot active bền dữ liệu tối đa 1.024 bản ghi; segment đã đóng giữ bất biến trong <code>&lt;path&gt;.segments</code> và đọc bằng <code>read_parquet_log()</code> (bao gồm log legacy chỉ có một tệp); transaction journal dùng Arrow IPC append-only (<code>error_mitigation/journal.py</code>), không dùng để lưu chain.</li>
 </ul>
 </li>
 <li>
@@ -4521,7 +4520,7 @@
 <tr>
 <td style="text-align: left;"><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code>+<code>HRC_DATABASE_URL</code></td>
 <td style="text-align: left;">Storage backend / DB URL</td>
-<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>redis</code>, <code>memory</code>, <code>parquet_only</code> (via <code>HRC_STORAGE_BACKEND</code>/<code>DATABASE_URL</code> handling in <code>config/settings.py:78</code>)</td>
+<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>memory</code>; settings nhận diện <code>redis</code>, nhưng <code>HierarchyManager</code> từ chối dùng cho ledger storage</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>HRC_LOG_SQL_DETAIL</code> / <code>HRC_LOG_FORMAT</code></td>
@@ -4543,6 +4542,8 @@
 <li><a href=".././integration/">ERP Integration</a></li>
 <li><a href=".././monitoring/">Performance Monitoring</a></li>
 </ul>
+<p>Log Parquet công bố snapshot hoàn chỉnh của segment active, fsync tệp và thư mục rồi mới trả về. Mỗi segment tối đa 1.024 bản ghi; snapshot active được thay thế nguyên tử, segment đã đóng giữ bất biến. Mỗi append ghi lại tối đa một segment, làm tăng chi phí ghi. Bên đọc dùng <code>read_parquet_log()</code> cho log hiện tại và legacy.</p>
+<p>Lịch sử proof Redis lưu mỗi lần gửi trong một phần tử JSON của list, nên hai lần gửi cùng chỉ số block vẫn giữ hash riêng. Lịch sử tham chiếu hash cũ vẫn đọc được, nhưng adapter phiên bản cũ không đọc được định dạng inline mới; cần nâng cấp bên đọc và ghi cùng lúc. Truy vấn sự kiện Redis ném <code>RedisStorageError</code> khi lệnh lỗi, bản ghi sai hoặc thiếu bản ghi đã lập chỉ mục, thay vì trả kết quả thiếu như thành công. Redis vẫn chưa được hỗ trợ để khởi động hierarchical ledger bền dữ liệu.</p>
 
 
 

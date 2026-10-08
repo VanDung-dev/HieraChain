@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Các cấu trúc nền tảng của sổ cái: Block, Blockchain, Merkle Tree và hệ thống Caching đa tầng.">
+        <meta name="description" content="Các cấu trúc nền tảng của sổ cái: Block, Blockchain, Merkle Tree và cache trong bộ nhớ.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1991,10 +1989,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-bo-nho-em-va-trinh-quan-ly-caching-cachepy-cache_managerpy" class="md-nav__link">
+  <a href="#24-bo-nho-em-cachepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Bộ nhớ đệm và Trình quản lý Caching (<code>cache.py</code>, <code>cache_manager.py</code>)
+        2.4 Bộ nhớ đệm (<code>cache.py</code>)
       </span>
     </span>
   </a>
@@ -2029,21 +2027,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-he-thong-caching-a-tang" class="md-nav__link">
+  <a href="#5-thuc-thi-ong-thoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. Hệ thống Caching đa tầng
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-thuc-thi-ong-thoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Thực thi đồng thời
+        5. Thực thi đồng thời
       </span>
     </span>
   </a>
@@ -2058,6 +2045,34 @@
       </span>
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-cua-cache-va-timestamp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Mapping của cache và timestamp
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mapping của cache và timestamp">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serialization-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Serialization JSON
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4399,10 +4414,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-bo-nho-em-va-trinh-quan-ly-caching-cachepy-cache_managerpy" class="md-nav__link">
+  <a href="#24-bo-nho-em-cachepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Bộ nhớ đệm và Trình quản lý Caching (<code>cache.py</code>, <code>cache_manager.py</code>)
+        2.4 Bộ nhớ đệm (<code>cache.py</code>)
       </span>
     </span>
   </a>
@@ -4437,21 +4452,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-he-thong-caching-a-tang" class="md-nav__link">
+  <a href="#5-thuc-thi-ong-thoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. Hệ thống Caching đa tầng
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-thuc-thi-ong-thoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Thực thi đồng thời
+        5. Thực thi đồng thời
       </span>
     </span>
   </a>
@@ -4466,6 +4470,34 @@
       </span>
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-cua-cache-va-timestamp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Mapping của cache và timestamp
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mapping của cache và timestamp">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serialization-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Serialization JSON
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4502,7 +4534,7 @@
 
 <h1 id="core-module-hierachaincore">Core Module (<code>hierachain/core/*</code>)</h1>
 <h2 id="1-tong-quan">1. Tổng quan</h2>
-<p>Module <code>core</code> chứa các cấu trúc dữ liệu nền tảng của sổ cái. Khối lưu trữ các sự kiện trong bảng Apache Arrow giúp lọc dữ liệu trong bộ nhớ với tốc độ cao và tính toán mã băm xác định. Cây Merkle mật mã cung cấp bằng chứng chứng minh sự kiện có mặt trong khối, kết hợp với bộ nhớ đệm đa tầng tăng tốc độ tra cứu khối, sự kiện và thực thể.</p>
+<p>Module <code>core</code> chứa các cấu trúc dữ liệu nền tảng của sổ cái. Khối lưu trữ các sự kiện trong bảng Apache Arrow giúp lọc dữ liệu trong bộ nhớ với tốc độ cao và tính toán mã băm xác định. Cây Merkle mật mã cung cấp bằng chứng chứng minh sự kiện có mặt trong khối. <code>AdvancedCache</code> cung cấp cache trong bộ nhớ theo instance, được <code>KeyManager</code> sử dụng để tra cứu khóa và quyền.</p>
 <h2 id="2-cac-thanh-phan-nen-tang">2. Các thành phần nền tảng</h2>
 <p>Toàn bộ thành phần cốt lõi nằm tại <code>hierachain/core/</code>.</p>
 <h3 id="21-khoi-blockpy">2.1 Khối (<code>block.py</code>)</h3>
@@ -4510,6 +4542,7 @@
 <li>Lưu trữ bản ghi sự kiện trong một <code>pyarrow.Table</code>.</li>
 <li>Truy vấn các trường sự kiện qua biểu thức tính toán của Arrow thay vì vòng lặp Python.</li>
 <li>Tính toán mã băm khối và Merkle root xác định.</li>
+<li>Dùng dữ liệu Arrow làm nguồn cho cả xác minh và lưu trữ. <code>to_event_list()</code> và <code>to_dict()</code> trả snapshot sự kiện độc lập; sửa list đầu vào hoặc snapshot xuất ra không làm thay đổi khối.</li>
 </ul>
 <h3 id="22-chuoi-khoi-blockchainpy">2.2 Chuỗi khối (<code>blockchain.py</code>)</h3>
 <ul>
@@ -4523,11 +4556,12 @@
 <li>Tạo bằng chứng bao hàm (inclusion proof) phục vụ kiểm toán.</li>
 <li>Xác thực Merkle root giữa các tầng chuỗi trong kiến trúc phân cấp.</li>
 </ul>
-<h3 id="24-bo-nho-em-va-trinh-quan-ly-caching-cachepy-cache_managerpy">2.4 Bộ nhớ đệm và Trình quản lý Caching (<code>cache.py</code>, <code>cache_manager.py</code>)</h3>
+<h3 id="24-bo-nho-em-cachepy">2.4 Bộ nhớ đệm (<code>cache.py</code>)</h3>
 <ul>
-<li>Triển khai các thuật toán dọn dẹp cache: LRU, LFU, FIFO và TTL.</li>
-<li><code>BlockchainCacheManager</code> điều phối lưu cache đồng bộ cho khối, sự kiện và trạng thái thực thể.</li>
+<li>Cung cấp bộ nhớ đệm trong RAM với các chính sách dọn dẹp LRU, LFU, FIFO và TTL.</li>
+<li><code>KeyManager</code> sử dụng bộ nhớ đệm này cho các tra cứu khóa và quyền.</li>
 </ul>
+<p>TTL được xử lý khi dùng cache: đọc từ chối entry hết hạn; ghi khi đầy, lấy thống kê, liệt kê key và <code>len(cache)</code> xóa chúng. <code>cleanup_ttl()</code> vẫn cho phép dọn chủ động. Cache không tạo thread dọn riêng, nên cache đã bỏ có thể được thu hồi. Entry hết hạn trong cache không hoạt động có thể còn chiếm bộ nhớ đến thao tác tiếp theo hoặc khi cache được thu hồi.</p>
 <h2 id="3-cau-truc-bo-nho-va-luu-tru-cua-block">3. Cấu trúc bộ nhớ và lưu trữ của Block</h2>
 <p>Mỗi đối tượng <code>Block</code> đóng gói một bảng Arrow cùng metadata có cấu trúc:</p>
 <ol>
@@ -4545,35 +4579,7 @@
 <li>Hàm <code>safe_lock(timeout)</code> ngăn chặn tình trạng treo luồng khi xảy ra tranh chấp ghi đồng thời.</li>
 <li>Cơ chế callback thông báo cảnh báo tắc nghẽn lên tầng giám sát hệ thống.</li>
 </ul>
-<h2 id="5-he-thong-caching-a-tang">5. Hệ thống Caching đa tầng</h2>
-<p><code>BlockchainCacheManager</code> quản lý ba tầng bộ nhớ đệm chuyên biệt:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tầng Cache</th>
-<th style="text-align: left;">Chính sách mặc định</th>
-<th style="text-align: left;">Thao tác đích</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Block Cache</td>
-<td style="text-align: left;">LRU (Least Recently Used)</td>
-<td style="text-align: left;">Truy xuất khối theo chỉ mục hoặc mã băm</td>
-</tr>
-<tr>
-<td style="text-align: left;">Event Cache</td>
-<td style="text-align: left;">TTL (Time To Live)</td>
-<td style="text-align: left;">Truy vấn luồng sự kiện gần đây</td>
-</tr>
-<tr>
-<td style="text-align: left;">Entity Cache</td>
-<td style="text-align: left;">LFU (Least Frequently Used)</td>
-<td style="text-align: left;">Truy vết lịch sử vòng đời thực thể</td>
-</tr>
-</tbody>
-</table>
-<h2 id="6-thuc-thi-ong-thoi">6. Thực thi đồng thời</h2>
+<h2 id="5-thuc-thi-ong-thoi">5. Thực thi đồng thời</h2>
 <p>Các tác vụ xác thực mật mã và đồng bộ liên chuỗi chạy đồng thời thông qua các worker <code>ThreadPoolExecutor</code> do môi trường thực thi quản lý. Quá trình băm và kiểm tra chữ ký được mở rộng trên nhiều lõi CPU trong khi vẫn bảo toàn thứ tự khối tuần tự.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
@@ -4581,6 +4587,12 @@
 <li><a href=".././storage/">Storage Module</a></li>
 <li><a href=".././security/">Tổng quan bảo mật</a></li>
 </ul>
+<h2 id="mapping-cua-cache-va-timestamp">Mapping của cache và timestamp</h2>
+<p><code>AdvancedCache</code> triển khai <code>MutableMapping</code> trên cùng kho dữ liệu dùng cho eviction. Duyệt cache, <code>items()</code>, <code>values()</code>, <code>update()</code>, <code>pop()</code>, <code>setdefault()</code> và <code>dict(cache)</code> dùng cùng entries với <code>get()</code> và <code>set()</code>. <code>None</code> là giá trị hợp lệ; index khóa thiếu hoặc đã hết hạn gây <code>KeyError</code>. <code>get_keys()</code> trả snapshot khóa còn hiệu lực. Cache không còn kế thừa <code>dict</code>; consumer nên kiểm tra <code>MutableMapping</code>. Các khóa được chuẩn hóa thành chuỗi.</p>
+<p>Timestamp block được truyền rõ là <code>0</code> được giữ nguyên khi serialize và kiểm tra hash. Chỉ <code>None</code> yêu cầu lấy thời gian hiện tại.</p>
+<h3 id="serialization-json">Serialization JSON</h3>
+<p><code>hierachain.serialization</code> dùng <code>json</code> chuẩn của Python. Hàm ghi từ chối số không hữu hạn thay vì chuyển thành <code>null</code>; hàm đọc từ chối <code>NaN</code>, <code>Infinity</code> và số vượt khoảng biểu diễn float. Số nguyên giữ độ chính xác của số nguyên Python trong giới hạn chuyển đổi đã cấu hình. Đầu ra UTF-8 dùng dạng gọn; payload digest và chữ ký sắp xếp khóa object. Object không được hỗ trợ yêu cầu serializer được cấu hình rõ ở những thành phần đã hỗ trợ cơ chế này.</p>
+<p>Digest request BFT giữ định dạng thư viện chuẩn hiện có. Các hash khác, event ID, Merkle root, payload chữ ký, AAD metadata mã hóa và nội dung IPFS tải lên mới có thể khác serializer trước khi cách biểu diễn số khác, dù giá trị sau giải mã bằng nhau. Nội dung JSON cũ vẫn đọc được, nhưng root và chữ ký lịch sử không tự được viết lại hay chấp nhận bằng encoder fallback. Cần nâng cấp các node đồng bộ và dùng ledger mới cho nhánh tái cấu trúc này, hoặc thực hiện migration và xác minh lịch sử cũ rõ ràng trước khi sử dụng. Giá trị thập phân cần tính toán chính xác và định danh lớn dùng chung với client có giới hạn độ chính xác cần schema chuỗi hoặc số nguyên rõ ràng.</p>
 
 
 

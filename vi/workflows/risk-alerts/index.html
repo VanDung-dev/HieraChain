@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4430,25 +4428,9 @@
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant PM as 📊 PerformanceMonitor
-    participant RA as 🔍 RiskAnalyzer
     participant AM as 🚨 AlertManager
     participant AD as 📈 AnomalyDetector
     participant NTF as 📧 Email / Webhook Notifier
-
-    PM-&gt;&gt;RA: perform_comprehensive_analysis(system_data)
-
-    par Rủi ro Đồng thuận (Consensus)
-        RA-&gt;&gt;RA: analyze_consensus_risks()&lt;br/&gt;Kiểm tra: node_count &gt;= 3f+1, leader_timeout, msg_verify_rate
-    and Rủi ro Bảo mật (Security)
-        RA-&gt;&gt;RA: analyze_security_risks()&lt;br/&gt;Kiểm tra: cert_expiry, failed_auth, encryption_strength
-    and Rủi ro Hiệu năng (Performance)
-        RA-&gt;&gt;RA: analyze_performance_risks()&lt;br/&gt;Kiểm tra: CPU%, memory%, event_pool_size
-    and Rủi ro Lưu trữ (Storage)
-        RA-&gt;&gt;RA: analyze_storage_risks()&lt;br/&gt;Kiểm tra: world_state_size, backup_age
-    end
-
-    RA-&gt;&gt;RA: Cập nhật active_risks + risk_history
-    RA--&gt;&gt;PM: all_risks { consensus, security, performance, storage }
 
     PM-&gt;&gt;AM: check_metric(metric_name, value, source)
     AM-&gt;&gt;AD: add_data_point(metric_name, value)
@@ -4546,35 +4528,31 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>1. Phân tích</strong></td>
-<td style="text-align: left;"><code>RiskAnalyzer.perform_comprehensive_analysis()</code> chạy song song 4 lĩnh vực.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Kiểm tra chỉ số</strong></td>
+<td style="text-align: left;"><strong>1. Kiểm tra chỉ số</strong></td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code> so sánh từng chỉ số với quy tắc.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Phát hiện bất thường</strong></td>
+<td style="text-align: left;"><strong>2. Phát hiện bất thường</strong></td>
 <td style="text-align: left;"><code>AnomalyDetector</code> dùng baseline thống kê để gắn cờ điểm bất thường.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Kiểm tra cooldown</strong></td>
+<td style="text-align: left;"><strong>3. Kiểm tra cooldown</strong></td>
 <td style="text-align: left;">Quy tắc có cooldown để tránh bão cảnh báo.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Kiểm tra trùng lặp</strong></td>
+<td style="text-align: left;"><strong>4. Kiểm tra trùng lặp</strong></td>
 <td style="text-align: left;"><code>_is_duplicate_alert()</code> loại bỏ nếu cùng quy tắc và cùng nguồn đã có cảnh báo đang hoạt động.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Gửi thông báo</strong></td>
+<td style="text-align: left;"><strong>5. Gửi thông báo</strong></td>
 <td style="text-align: left;">Gửi đồng thời tới Email và/hoặc Webhook đã cấu hình.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Leo thang</strong></td>
+<td style="text-align: left;"><strong>6. Leo thang</strong></td>
 <td style="text-align: left;">Cảnh báo không xác nhận sẽ tăng <code>escalation_level += 1</code> và gửi lại.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. Hoàn tất vòng đời</strong></td>
+<td style="text-align: left;"><strong>7. Hoàn tất vòng đời</strong></td>
 <td style="text-align: left;">Vận hành xác nhận thành <code>ACKNOWLEDGED</code>; chỉ số về mức an toàn thành <code>RESOLVED</code>.</td>
 </tr>
 </tbody>
@@ -4601,10 +4579,6 @@
 <td style="text-align: left;">Bão cảnh báo (quá nhiều trùng lặp)</td>
 <td style="text-align: left;">Cooldown tự loại bỏ cảnh báo trùng từ cùng quy tắc</td>
 </tr>
-<tr>
-<td style="text-align: left;">RiskAnalyzer ném exception</td>
-<td style="text-align: left;">Bắt exception, trả về dữ liệu rủi ro một phần, kích hoạt cảnh báo lỗi phân tích</td>
-</tr>
 </tbody>
 </table>
 <hr />
@@ -4618,11 +4592,6 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td style="text-align: left;">Phân tích rủi ro</td>
-<td style="text-align: left;"><code>RiskAnalyzer.perform_comprehensive_analysis()</code></td>
-<td style="text-align: left;"><code>risk_management/risk_analyzer.py</code></td>
-</tr>
 <tr>
 <td style="text-align: left;">Kiểm tra chỉ số</td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code></td>
@@ -4663,7 +4632,6 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a>: cảnh báo CRITICAL không xử lý có thể kích hoạt khóa băng</li>
 <li><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a>: trạng thái DEGRADED kích hoạt cảnh báo tại đây</li>
 </ul>
 

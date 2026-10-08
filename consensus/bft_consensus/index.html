@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Byzantine Fault Tolerant consensus (PBFT): Absolute security, anti-spoofing, and automatic View Change mechanism.">
+        <meta name="description" content="Byzantine fault-tolerant PBFT consensus with a View Change mechanism.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4458,58 +4456,74 @@
 
 <h1 id="bft-consensus-hierachainconsensusbft">BFT Consensus (<code>hierachain/consensus/bft/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>BFT Consensus</strong> is HieraChain's advanced Byzantine fault-tolerant consensus mechanism, allowing the system to maintain consistency even when some nodes (<code>f</code>) fail or exhibit malicious behavior (data corruption, denial of service). The system follows the formula <code>n &gt;= 3f + 1</code>, ensuring maximum security for Main Chains or enterprise consortiums.</p>
+<p><strong>BFT Consensus</strong> is HieraChain's Byzantine fault-tolerant consensus mechanism. The protocol uses <code>n &gt;= 3f + 1</code> to tolerate up to <code>f</code> faulty or malicious nodes, including nodes that corrupt data or deny service. This implementation is separate from the MainChain and SubChain runtime paths.</p>
 <hr />
 <h2 id="bft-module-architecture">BFT Module Architecture</h2>
-<p>The system is divided into specialized components to ensure modularity and maintainability:</p>
+<p>The module contains these components:</p>
 <div class="grid cards">
 <ul>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>BFT Engine</strong></p>
 <hr />
-<p><strong>File</strong>: <code>consensus.py</code></p>
-<p>Executes the core <strong>PBFT</strong> protocol with 3-phase commit: <strong>Pre-prepare</strong>, <strong>Prepare</strong>, and <strong>Commit</strong>.</p>
+<p><strong>Files</strong>: <code>consensus.py</code>, <code>engine.py</code></p>
+<p><code>BFTConsensus.request()</code> starts the <strong>PBFT</strong> phases. <code>BFTConsensusEngine</code> validates PRE-PREPARE messages, records phase votes, and applies a committed operation when its application write succeeds.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m6 9h-5l1.81-1.81A3.94 3.94 0 0 0 12 8a4 4 0 1 0 3.86 5h2.05A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L18 6Z"/></svg></span> <strong>View Manager</strong></p>
 <hr />
-<p><strong>File</strong>: <code>view_manager.py</code></p>
-<p>Automatically detects Primary node failure and triggers the <strong>View Change</strong> process to elect a new Leader, ensuring the system does not halt.</p>
+<p><strong>File</strong>: <code>view_change.py</code></p>
+<p>Detects when the Primary node is unresponsive and triggers <strong>View Change</strong> to elect a new Leader.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 10v3h6v5H8v3l-6-5.5zm14-1.5L16 3v3h-6v5h6v3z"/></svg></span> <strong>BFT Network</strong></p>
 <hr />
-<p><strong>File</strong>: <code>network.py</code></p>
-<p>Specialized communication layer using <strong>ZeroMQ</strong>, supporting broadcast and consensus message routing with ultra-low latency.</p>
+<p><strong>File</strong>: <code>dispatcher.py</code></p>
+<p>Uses <strong>ZeroMQ</strong> to broadcast and route consensus messages.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 18v4h-4v-3h-3v-3h-3l-2.26-2.26c-.55.17-1.13.26-1.74.26a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6c0 .61-.09 1.19-.26 1.74zM7 5a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2"/></svg></span> <strong>BFT Crypto</strong></p>
 <hr />
-<p><strong>File</strong>: <code>cryptographic.py</code></p>
+<p><strong>Files</strong>: <code>helpers.py</code>, <code>types.py</code></p>
 <p>Handles Ed25519 signing, hashing, and <strong>Zero-Knowledge (ZK)</strong> proof verification for each consensus message.</p>
 </li>
 </ul>
 </div>
 <hr />
 <h2 id="pbft-protocol-flow">PBFT Protocol Flow</h2>
-<p>The system requires consensus from at least <code>2f + 1</code> nodes before executing commands:</p>
+<p>The standalone BFT component is separate from the current MainChain and SubChain runtime paths. The demo and library API use <code>BFTConsensus</code> explicitly.</p>
+<p>The primary hashes the complete request as canonical JSON. Each replica recomputes that digest before it accepts PRE-PREPARE, so changing any request field while retaining the original digest and signature is rejected. The digest is included in the signed BFT message.</p>
+<p>Canonical request encoding uses Python standard-library <code>json</code> through <code>hierachain.serialization.dumps_canonical_json</code>. It preserves the established BFT request digest format: sorted fields, compact separators, unescaped UTF-8 text and Python finite-number formatting. Non-finite numbers, circular values and unsupported JSON types are rejected.</p>
+<p>Local phase votes are tracked per sequence. An admitted request's PREPARE quorum can produce its local COMMIT even while another sequence has changed the displayed consensus state.</p>
+<p>Each node records its own signed PREPARE and COMMIT vote once before broadcasting it. Quorums count unique senders, including the local vote: <code>2f</code> PREPARE votes and <code>2f + 1</code> COMMIT votes.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant C as Client
-    participant P as Primary (Leader)
-    participant R as Replicas (Nodes)
-
-    C-&gt;&gt;P: Request Operation
-    P-&gt;&gt;R: 1. PRE-PREPARE (Seq, View, Digest)
-    R-&gt;&gt;R: Validate &amp; Sign
-    R-&gt;&gt;P: 2. PREPARE (Quorum 2f)
-    R-&gt;&gt;R: 2. PREPARE (Broadcast)
-    P-&gt;&gt;R: 3. COMMIT (Quorum 2f+1)
-    R-&gt;&gt;R: Execute &amp; Commit to Ledger
-    R-&gt;&gt;C: Reply (Optional)</code></pre>
+    participant P as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+    participant R3 as Replica 3
+    C-&gt;&gt;P: request(operation)
+    P-&gt;&gt;P: Hash canonical request and record local PREPARE
+    P-&gt;&gt;R1: PRE-PREPARE(view, seq, digest, request)
+    P-&gt;&gt;R2: PRE-PREPARE(view, seq, digest, request)
+    P-&gt;&gt;R3: PRE-PREPARE(view, seq, digest, request)
+    R1-&gt;&gt;R1: Recompute digest, record local PREPARE
+    R2-&gt;&gt;R2: Recompute digest, record local PREPARE
+    R3-&gt;&gt;R3: Recompute digest, record local PREPARE
+    R1-&gt;&gt;P: PREPARE(view, seq, digest)
+    R2-&gt;&gt;P: PREPARE(view, seq, digest)
+    R3-&gt;&gt;P: PREPARE(view, seq, digest)
+    Note over P,R3: Each node records its local COMMIT after 2f PREPARE votes
+    P-&gt;&gt;R1: COMMIT(view, seq, digest)
+    R1-&gt;&gt;P: COMMIT(view, seq, digest)
+    R2-&gt;&gt;P: COMMIT(view, seq, digest)
+    Note over P,R3: Apply after 2f+1 unique COMMIT votes</code></pre>
+<p>For a node with an attached application chain, a failed <code>chain.add_event()</code> leaves the commit quorum and a stable in-memory event, with a deterministic event ID, available for retry. A repeated valid COMMIT can retry the same event; the node advances <code>committed_sequence</code> only after the write succeeds. The component does not persist this retry state across process restarts. Recent sequence messages are retained; cleanup removes messages only when their sequence is more than 100 behind the committed sequence.</p>
+<p>When no application chain is attached, BFT runs in protocol-only mode and records consensus status without writing an application event. The standalone demo uses this mode.</p>
+<p>A later request cannot advance the committed sequence past an earlier unapplied or missing request. Application proceeds contiguously from sequence 1. Quorums already received for later requests are retained and attempted in order after the earlier write succeeds. Retry state remains in memory. If a backend persists an event and then raises, retry can duplicate that event unless the backend deduplicates the stable <code>event_id</code>; the current <code>SubChain.add_event()</code> does not use this BFT ID for deduplication. This component therefore does not guarantee exactly-once application across ambiguous writes or restarts.</p>
 <hr />
 <h2 id="advanced-protection-mechanisms">Advanced Protection Mechanisms</h2>
 <h3 id="1-view-change-proof">1. View Change Proof</h3>
-<p>When a node detects the current Leader is unresponsive (Timeout), it requests a View change. This process requires <strong>Proof</strong> including at least <code>2f + 1</code> signatures from other nodes, preventing unauthorized takeovers.</p>
+<p>When a node detects the current Leader is unresponsive (Timeout), it requests a View change. The new view requires a proof with at least <code>2f + 1</code> valid signatures from unique nodes, including the local vote when present, preventing unauthorized takeovers.</p>
 <h3 id="2-sequence-number-nonce">2. Sequence Number &amp; Nonce</h3>
 <p>Every BFT message has an incrementing sequence number and a unique random value (Nonce) to defend against <strong>Replay Attacks</strong>.</p>
 <h3 id="3-zk-integration">3. ZK Integration</h3>

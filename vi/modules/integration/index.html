@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cầu nối tích hợp hệ thống ERP doanh nghiệp: Các bộ kết nối SAP, Oracle và Dynamics kèm công cụ ánh xạ trường và phát hiện thay đổi.">
+        <meta name="description" content="Công cụ ánh xạ và lập lịch ERP cùng các bộ dữ liệu mô phỏng được bật rõ ràng.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2259,10 +2257,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enterprise-adapters-enterprisepy" class="md-nav__link">
+  <a href="#22-bo-du-lieu-mo-phong-uoc-xuat-enterprisepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2 Enterprise Adapters (<code>enterprise.py</code>)
+        2.2 Bộ dữ liệu mô phỏng được xuất (<code>enterprise.py</code>)
       </span>
     </span>
   </a>
@@ -2286,10 +2284,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-cong-cu-anh-xa-du-lieu-mapping-engine" class="md-nav__link">
+  <a href="#3-cong-cu-anh-xa-du-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Công cụ ánh xạ dữ liệu (Mapping Engine)
+        3. Công cụ ánh xạ dữ liệu
       </span>
     </span>
   </a>
@@ -2297,10 +2295,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-luong-ong-bo-du-lieu" class="md-nav__link">
+  <a href="#4-ong-bo-va-thu-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Luồng đồng bộ dữ liệu
+        4. Đồng bộ và thử lại
       </span>
     </span>
   </a>
@@ -2316,30 +2314,13 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Ví dụ sử dụng">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-anh-xa-va-lap-lich-ong-bo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình ánh xạ và lập lịch đồng bộ
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-tinh-ben-vung-va-bao-mat" class="md-nav__link">
+  <a href="#6-pham-vi-luc-chay" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Tính bền vững và bảo mật
+        6. Phạm vi lúc chạy
       </span>
     </span>
   </a>
@@ -2351,6 +2332,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Liên quan
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inh-danh-trong-change-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Định danh trong change detection
       </span>
     </span>
   </a>
@@ -4383,10 +4375,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enterprise-adapters-enterprisepy" class="md-nav__link">
+  <a href="#22-bo-du-lieu-mo-phong-uoc-xuat-enterprisepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2 Enterprise Adapters (<code>enterprise.py</code>)
+        2.2 Bộ dữ liệu mô phỏng được xuất (<code>enterprise.py</code>)
       </span>
     </span>
   </a>
@@ -4410,10 +4402,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-cong-cu-anh-xa-du-lieu-mapping-engine" class="md-nav__link">
+  <a href="#3-cong-cu-anh-xa-du-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Công cụ ánh xạ dữ liệu (Mapping Engine)
+        3. Công cụ ánh xạ dữ liệu
       </span>
     </span>
   </a>
@@ -4421,10 +4413,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-luong-ong-bo-du-lieu" class="md-nav__link">
+  <a href="#4-ong-bo-va-thu-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Luồng đồng bộ dữ liệu
+        4. Đồng bộ và thử lại
       </span>
     </span>
   </a>
@@ -4440,30 +4432,13 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Ví dụ sử dụng">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-anh-xa-va-lap-lich-ong-bo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình ánh xạ và lập lịch đồng bộ
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-tinh-ben-vung-va-bao-mat" class="md-nav__link">
+  <a href="#6-pham-vi-luc-chay" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Tính bền vững và bảo mật
+        6. Phạm vi lúc chạy
       </span>
     </span>
   </a>
@@ -4475,6 +4450,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Liên quan
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inh-danh-trong-change-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Định danh trong change detection
       </span>
     </span>
   </a>
@@ -4514,28 +4500,25 @@
 
 <h1 id="integration-module-hierachainintegration">Integration Module (<code>hierachain/integration/*</code>)</h1>
 <h2 id="1-tong-quan">1. Tổng quan</h2>
-<p>Module <code>integration</code> kết nối HieraChain với các hệ thống phần mềm doanh nghiệp như SAP, Oracle và Microsoft Dynamics. Hệ thống trích xuất bản ghi từ ERP bên ngoài, chuẩn hóa dữ liệu thông qua công cụ ánh xạ và ghi nhận các sự kiện trạng thái có thể kiểm chứng lên các chuỗi con nghiệp vụ.</p>
+<p>Module <code>integration</code> cung cấp công cụ ánh xạ trường, phát hiện thay đổi và lập lịch cho ứng dụng tự kết nối adapter ERP với nơi nhận sự kiện HieraChain. Module không có bộ truyền tải SAP, Oracle hay Microsoft Dynamics thực tế, và máy chủ API không tự khởi chạy đồng bộ ERP. Ứng dụng gọi thư viện phải đăng ký adapter và nơi nhận chuỗi.</p>
 <h2 id="2-cac-thanh-phan-cot-loi">2. Các thành phần cốt lõi</h2>
-<p>Toàn bộ thành phần tích hợp nằm tại <code>hierachain/integration/</code>.</p>
 <h3 id="21-erp-integration-ledger-erp_ledgerpy-erpbasepy">2.1 ERP Integration Ledger (<code>erp_ledger.py</code>, <code>erp/base.py</code>)</h3>
 <ul>
-<li>Điều phối các đường ống đồng bộ dữ liệu.</li>
-<li>Tích hợp <code>MappingEngine</code> để chuyển đổi các trường dữ liệu.</li>
-<li>Quản lý <code>SyncScheduler</code> để định kỳ thăm dò API bên ngoài theo khoảng thời gian cấu hình.</li>
+<li>Điều phối adapter do ứng dụng cung cấp và chuyển đổi bản ghi theo hồ sơ ánh xạ.</li>
+<li>Truyền <code>config</code> của hồ sơ vào hàm khởi tạo adapter đã đăng ký.</li>
+<li>Yêu cầu có nơi nhận chuỗi khi lập lịch gửi dữ liệu; dùng <code>translate_erp_to_blockchain()</code> cho trường hợp chỉ cần chuyển đổi.</li>
+<li>Hỗ trợ metadata tùy chọn <code>detect_changes</code> và <code>key_fields</code>. Trường khóa chấp nhận đường dẫn có dấu chấm như <code>material.document_number</code>.</li>
 </ul>
-<h3 id="22-enterprise-adapters-enterprisepy">2.2 Enterprise Adapters (<code>enterprise.py</code>)</h3>
-<ul>
-<li>Các bộ kết nối cho SAP, Oracle và Microsoft Dynamics.</li>
-<li>Đọc URL và thông tin đăng nhập từ biến môi trường (<code>HRC_SAP_*</code>, <code>HRC_ORACLE_*</code>, <code>HRC_DYNAMICS_*</code>).</li>
-<li>Xử lý bắt tay xác thực và vòng đời phiên HTTP.</li>
-</ul>
+<p>Adapter đăng ký bằng <code>register_adapter()</code> phải có phương thức <code>get_changes_since_last_sync()</code>. Phương thức <code>add_event()</code> của nơi nhận phải trả về <code>True</code> hoặc mã sự kiện không rỗng thì sự kiện mới được tính là đã chấp nhận.</p>
+<h3 id="22-bo-du-lieu-mo-phong-uoc-xuat-enterprisepy">2.2 Bộ dữ liệu mô phỏng được xuất (<code>enterprise.py</code>)</h3>
+<p><code>SAPIntegration</code>, <code>OracleIntegration</code> và <code>DynamicsIntegration</code> trả về các bản ghi tổng hợp. Mặc định, <code>EnterpriseIntegration.connect_to_erp()</code> từ chối khởi tạo chúng. Truyền <code>{"simulation_mode": True}</code> để bật trong kiểm thử hoặc minh họa. Các lớp này không gửi yêu cầu mạng và không xác thực với hệ thống của nhà cung cấp.</p>
 <h3 id="23-bo-phat-hien-thay-oi-erpchange_detectorpy">2.3 Bộ phát hiện thay đổi (<code>erp/change_detector.py</code>)</h3>
 <ul>
-<li>So sánh dữ liệu ERP mới nhận với ảnh chụp trạng thái trước đó.</li>
-<li>Tách biệt các thay đổi (delta) nhằm tránh ghi nhận sự kiện dư thừa lên chuỗi.</li>
+<li>So sánh các trường nghiệp vụ với ảnh chụp trạng thái trong bộ nhớ, được phân vùng theo hồ sơ và khóa thực thể.</li>
+<li>Loại metadata <code>changes</code> và <code>change_detected</code> do chính nó tạo ra khỏi ảnh chụp kế tiếp, nhờ đó bản ghi không đổi vẫn được xem là không đổi.</li>
 </ul>
-<h2 id="3-cong-cu-anh-xa-du-lieu-mapping-engine">3. Công cụ ánh xạ dữ liệu (Mapping Engine)</h2>
-<p><code>MappingEngine</code> chuyển đổi các trường dữ liệu doanh nghiệp thành thuộc tính sự kiện chuẩn hóa:</p>
+<h2 id="3-cong-cu-anh-xa-du-lieu">3. Công cụ ánh xạ dữ liệu</h2>
+<p>Công cụ ánh xạ chuyển đổi trường nguồn thành trường sự kiện và tạo đối tượng lồng nhau từ đích có dấu chấm như <code>details.quantity</code>.</p>
 <table>
 <thead>
 <tr>
@@ -4552,8 +4535,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>amount</code></td>
-<td style="text-align: left;">Chuẩn hóa số và tiền tệ</td>
-<td style="text-align: left;"><code>5000</code> -&gt; <code>5000.0</code> (float)</td>
+<td style="text-align: left;">Chuẩn hóa giá trị số</td>
+<td style="text-align: left;"><code>5000</code> -&gt; <code>5000.0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>status</code></td>
@@ -4572,60 +4555,46 @@
 </tr>
 </tbody>
 </table>
-<h2 id="4-luong-ong-bo-du-lieu">4. Luồng đồng bộ dữ liệu</h2>
-<p><code>SyncScheduler</code> quản lý việc thăm dò và thử lại với các nguồn dữ liệu bên ngoài:</p>
-<pre class="mermaid"><code>sequenceDiagram
-    participant ERP as ERP System (SAP/Oracle)
-    participant Sync as SyncScheduler
-    participant Map as MappingEngine
-    participant HRC as HieraChain SubChain
-
-    Sync-&gt;&gt;ERP: Poll for changes (interval)
-    ERP--&gt;&gt;Sync: Return ERP records
-
-    loop Per Record
-        Sync-&gt;&gt;Map: Translate ERP -&gt; Blockchain event
-        Map-&gt;&gt;Map: Apply transformers (ID, date, status)
-        Map--&gt;&gt;Sync: Normalized event dict
-        Sync-&gt;&gt;HRC: Submit event to Sub-Chain
-    end</code></pre>
+<p>Quy tắc ánh xạ, cấu hình adapter và trường khóa được sao chép khi tạo và đọc hồ sơ. Việc thay đổi đối tượng đầu vào phía ứng dụng không làm thay đổi hồ sơ đã đăng ký.</p>
+<h2 id="4-ong-bo-va-thu-lai">4. Đồng bộ và thử lại</h2>
+<p><code>SyncScheduler</code> gọi adapter do ứng dụng cung cấp, chuyển đổi từng bản ghi trả về rồi gửi đến nơi nhận chuỗi. Bản ghi chỉ được tính là đã xử lý sau khi nơi nhận xác nhận. Nếu thiếu nơi nhận, thao tác thất bại trước khi truy vấn adapter. Lỗi chuyển đổi hoặc gửi của từng bản ghi khiến lượt chạy có trạng thái <code>failed</code>; <code>get_sync_status()</code> cung cấp số sự kiện được chấp nhận và danh sách lỗi.</p>
+<p>Lượt chạy thành công dùng khoảng thời gian đã cấu hình. Lượt chạy lỗi được thử lại sau 30, 60, rồi 120 giây theo mặc định; thời gian chờ tối đa là 300 giây. Sau ba lần thử lại ngoài lần chạy đầu, tác vụ báo <code>retry_exhausted</code> và ngừng lập lịch. Trạng thái scheduler chỉ ở trong bộ nhớ và mất khi tiến trình khởi động lại. Khi thử lại một lô, cơ chế gửi có thể chuyển phát ít nhất một lần: các bản ghi được chấp nhận ở lượt một phần trước đó có thể được gửi lại. Hãy dùng mã sự kiện ổn định, con trỏ chuyển phát của adapter, khử trùng lặp tại nơi nhận hoặc đối soát thủ công; module này không bảo đảm chuyển phát đúng một lần.</p>
+<p>Thay thế hoặc dừng hồ sơ sẽ hủy bộ hẹn giờ đang chờ và ngăn thế hệ cũ bắt đầu lượt mới. Thao tác này không thể hủy lời gọi adapter đang chạy; lời gọi đó vẫn có thể gửi bản ghi trước khi kết thúc, còn kết quả cũ sẽ bị scheduler bỏ qua.</p>
 <h2 id="5-vi-du-su-dung">5. Ví dụ sử dụng</h2>
-<h3 id="cau-hinh-anh-xa-va-lap-lich-ong-bo">Cấu hình ánh xạ và lập lịch đồng bộ</h3>
+<p>Đăng ký adapter do ứng dụng triển khai và cung cấp nơi nhận:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.integration.erp_ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERPIntegrationLedger</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sap_mapping</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"material.document_number"</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"source_path"</span><span class="p">:</span> <span class="s2">"material.event_type"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"transformer"</span><span class="p">:</span> <span class="s2">"status"</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">"params"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mapping"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"GR"</span><span class="p">:</span> <span class="s2">"GOODS_RECEIPT"</span><span class="p">}}</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">},</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="s2">"details.quantity"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"source_path"</span><span class="p">:</span> <span class="s2">"material.qty"</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="s2">"transformer"</span><span class="p">:</span> <span class="s2">"amount"</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">}</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">ledger</span> <span class="o">=</span> <span class="n">ERPIntegrationLedger</span><span class="p">()</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Start syncing with a domain sub-chain</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">ledger</span><span class="o">.</span><span class="n">start_scheduled_sync</span><span class="p">(</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">profile_name</span><span class="o">=</span><span class="s2">"SAP_Logistics"</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">interval_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain_instance</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">ledger</span> <span class="o">=</span> <span class="n">ERPIntegrationLedger</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">ledger</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="s2">"sap"</span><span class="p">,</span> <span class="n">MyConfiguredSapAdapter</span><span class="p">)</span>  <span class="c1"># do ứng dụng cung cấp</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">ledger</span><span class="o">.</span><span class="n">create_mapping_profile</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="s2">"SAP_Logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="s2">"sap"</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">{</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"material.document_number"</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"material.event_type"</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"details.quantity"</span><span class="p">:</span> <span class="s2">"material.qty"</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">},</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"tenant"</span><span class="p">:</span> <span class="s2">"example"</span><span class="p">},</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">detect_changes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">key_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"material.document_number"</span><span class="p">],</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">ledger</span><span class="o">.</span><span class="n">start_scheduled_sync</span><span class="p">(</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">profile_name</span><span class="o">=</span><span class="s2">"SAP_Logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">interval_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain_instance</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="p">)</span>
 </code></pre></div>
-<h2 id="6-tinh-ben-vung-va-bao-mat">6. Tính bền vững và bảo mật</h2>
-<ul>
-<li>Xử lý đa luồng: Sử dụng <code>ThreadPoolExecutor</code> để xử lý đồng thời nhiều hồ sơ đồng bộ mà không chặn xử lý sự kiện chính.</li>
-<li>Phân lập thông tin bí mật: Mật khẩu và thông tin xác thực sử dụng biến môi trường, không lưu trữ trong mã nguồn.</li>
-<li>Tự động thử lại: Các worker đồng bộ áp dụng cơ chế exponential backoff khi gặp sự cố mạng tạm thời.</li>
-</ul>
+<p><code>MyConfiguredSapAdapter</code> và <code>sub_chain_instance</code> do ứng dụng gọi thư viện cung cấp. Các lớp fixture của nhà cung cấp là ví dụ mô phỏng riêng.</p>
+<h2 id="6-pham-vi-luc-chay">6. Phạm vi lúc chạy</h2>
+<p>Integration Ledger là thành phần thư viện, chưa được nối vào vòng đời máy chủ REST. Ứng dụng phải đăng ký adapter, chọn nơi nhận chuỗi, quản lý thông tin xác thực trong adapter của mình và theo dõi trạng thái đồng bộ trả về.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href=".././hierarchical/">Hệ thống Phân cấp (Hierarchical)</a></li>
 <li><a href=".././core/">Cấu trúc Sổ cái Cốt lõi (Core)</a></li>
 <li><a href=".././error-mitigation/">Xử lý lỗi và Giảm thiểu rủi ro</a></li>
 </ul>
+<h2 id="inh-danh-trong-change-detection">Định danh trong change detection</h2>
+<p><code>key_fields</code> đã cấu hình phải là danh sách không rỗng gồm các đường dẫn field không rỗng. Giá trị định danh thiếu, null hoặc chuỗi rỗng gây <code>ValueError</code> trước khi detector thay snapshot hoặc record. Số <code>0</code> vẫn hợp lệ. Đường dẫn SAP lồng nhau như <code>material.document_number</code> phân biệt các record; định danh thiếu không được gộp vào khóa <code>unknown</code>. Đồng bộ theo lịch ghi nhận record này là lỗi dịch dữ liệu thay vì giao thành công.</p>
 
 
 

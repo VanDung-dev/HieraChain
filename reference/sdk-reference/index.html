@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3140,6 +3138,78 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#2-core-network-resilience-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Core Network Resilience Features
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Core Network Resilience Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-auto-retry-exponential-backoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        a. Auto-retry (Exponential Backoff)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-circuit-breaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        b. Circuit Breaker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-lockdown-503-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        c. Lockdown &amp; 503 Handling
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-data-interaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Data Interaction
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON transport
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4403,6 +4473,78 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#2-core-network-resilience-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Core Network Resilience Features
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Core Network Resilience Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-auto-retry-exponential-backoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        a. Auto-retry (Exponential Backoff)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-circuit-breaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        b. Circuit Breaker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-lockdown-503-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        c. Lockdown &amp; 503 Handling
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-data-interaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Data Interaction
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON transport
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4435,7 +4577,7 @@
 
 
 <h1 id="python-sdk-reference">Python SDK Reference</h1>
-<p>The HieraChain Python SDK library is designed as a powerful module to help Developers push transactions and read data quickly and efficiently in Python environments. Source code located at: <code>hierachain/sdk/client.py</code>.</p>
+<p>The HieraChain Python SDK provides synchronous and asynchronous clients for submitting events and reading data. Source: <code>hierachain/sdk/client.py</code>.</p>
 <h3 id="1-client-initialization">1. Client Initialization</h3>
 <p>The SDK provides 2 methods depending on needs: <strong>Sync</strong> and <strong>Async</strong>.
 Both accept the <code>HieraChainClientConfig</code> object as a profile.</p>
@@ -4463,6 +4605,7 @@ Both accept the <code>HieraChainClientConfig</code> object as a profile.</p>
 <p>Get system status from API Admin. Returns an object containing <code>version</code>, <code>uptime</code>, <code>chains_active</code>, etc.</p>
 <h4 id="trace_entityentity_id-str-chain_name-str-none-resolve_cid-bool-false-entitytrace"><code>trace_entity(entity_id: str, chain_name: str = None, resolve_cid: bool = False) -&gt; EntityTrace</code></h4>
 <p>Trace the history of an entity across chains.</p>
+<p>Entity IDs are percent-encoded as one URL path segment. <code>health_check()</code> uses the API route <code>/api/ledger/health</code>. If <code>api_key</code> is configured, the sync and async clients do not follow redirects for read requests; a 3xx response raises <code>HieraChainAPIError</code> and the <code>X-API-Key</code> is not sent to another origin.</p>
 <hr />
 <h3 id="example-off-chain-storage-ipfs">Example: Off-chain Storage (IPFS)</h3>
 <p>When submitting events with large or sensitive data, HieraChain recommends using IPFS. The SDK supports transparent querying:</p>
@@ -4482,50 +4625,53 @@ Both accept the <code>HieraChainClientConfig</code> object as a profile.</p>
 <p>The SDK defines specialized exceptions so applications can handle business logic:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.sdk.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">CircuitOpenError</span><span class="p">,</span>     <span class="c1"># When Circuit Breaker is activated</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">LockdownError</span><span class="p">,</span>        <span class="c1"># When system is in security lockdown mode</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">ServiceUnavailableError</span> <span class="c1"># When connection error or server overload</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_event</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="k">except</span> <span class="n">LockdownError</span><span class="p">:</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="c1"># Logic to handle when system is temporarily halted for maintenance/security</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="k">pass</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">HieraChainAPIError</span><span class="p">,</span>   <span class="c1"># HTTP errors, with status_code</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">LockdownError</span><span class="p">,</span>        <span class="c1"># When system is in security lockdown mode</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">ServiceUnavailableError</span> <span class="c1"># When the server returns HTTP 503</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_event</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="k">except</span> <span class="n">LockdownError</span><span class="p">:</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="c1"># Logic to handle when system is temporarily halted for maintenance/security</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="k">pass</span>
 </code></pre></div>
-<h1 id="run-as-context-manager">Run as context manager</h1>
-<p>with HieraChainClient(config) as client:
-    health = client.health_check()
-    print("Healthy:", health)
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>**Using Async (Suitable for Web Server/FastAPI):**
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>```python
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>from hierachain.sdk.client import HieraChainAsyncClient
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>async with HieraChainAsyncClient(config) as async_client:
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    status = await async_client.get_chain_status()
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    print("Network:", status.block_height)
+<p>For synchronous code, open the client with a context manager:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">with</span> <span class="n">HieraChainClient</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">health</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">health_check</span><span class="p">()</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Healthy:"</span><span class="p">,</span> <span class="n">health</span><span class="p">)</span>
+</code></pre></div>
+<p>For a web server or FastAPI application, use the async client:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.sdk.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">HieraChainAsyncClient</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">async</span> <span class="k">with</span> <span class="n">HieraChainAsyncClient</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">async_client</span><span class="p">:</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">status</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_client</span><span class="o">.</span><span class="n">get_chain_status</span><span class="p">()</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Network:"</span><span class="p">,</span> <span class="n">status</span><span class="o">.</span><span class="n">block_height</span><span class="p">)</span>
 </code></pre></div></p>
 <h3 id="2-core-network-resilience-features">2. Core Network Resilience Features</h3>
-<p>The SDK is equipped with recovery and throughput assurance mechanisms to prevent spam / Node server overload:</p>
+<p>The SDK retries network failures and uses a circuit breaker to limit requests when the API is unavailable:</p>
 <h4 id="a-auto-retry-exponential-backoff">a. Auto-retry (Exponential Backoff)</h4>
-<p>If a network drop occurs, the SDK automatically calculates a pause interval <code>initial_delay * (backoff_multiplier ^ attempt)</code>. Instead of crashing the whole system, queries are continuously retried (default <code>max_retries = 5</code>).</p>
+<p>Read requests (<code>GET</code>) retry transport failures and HTTP 5xx with <code>initial_delay * (backoff_multiplier ^ attempt)</code>, up to <code>max_retries = 5</code> times by default. HTTP 3xx/4xx raises <code>HieraChainAPIError</code> immediately; its <code>status_code</code> contains the response status. Submission requests (<code>POST</code>) are sent once, including after a timeout or 503, because the server has no idempotency contract. The SDK does not follow POST redirects.</p>
 <h4 id="b-circuit-breaker">b. Circuit Breaker</h4>
 <p>Fail-fast operation (prioritizes early error reporting):
 - <strong>CLOSED</strong>: Network state stable, all requests pass through to API.
-- <strong>OPEN</strong>: If 5 consecutive transport failures are detected (<code>circuit_failure_threshold</code>), the relay trips, immediately raising <code>CircuitOpenError</code> until the 30s timeout (<code>circuit_recovery_timeout</code>) elapses.
-- <strong>HALF_OPEN</strong>: After the cooldown period, it self-tests one packet. If it fails, it re-opens; if successful, it recovers to Closed.</p>
+- <strong>OPEN</strong>: If 5 consecutive transport or HTTP 5xx failures are detected (<code>circuit_failure_threshold</code>), the relay trips, immediately raising <code>CircuitOpenError</code> until the 30s timeout (<code>circuit_recovery_timeout</code>) elapses.
+- <strong>HALF_OPEN</strong>: After the cooldown period, only one request is admitted as a probe. It is not retried; failure re-opens the circuit, and success closes it.</p>
 <h4 id="c-lockdown-503-handling">c. Lockdown &amp; 503 Handling</h4>
-<p>If the Node server returns a <code>X-Lockdown-Mode: true</code> header (System under DDoS attack / manual maintenance) or an HTTP <code>503 Service Unavailable</code>, the SDK will not spam retries (causing overload). Errors are exposed via dedicated Exception classes <code>LockdownError</code> and <code>ServiceUnavailableError</code>. </p>
+<p>If the Node server returns the <code>X-Lockdown-Mode: true</code> header or HTTP <code>503 Service Unavailable</code>, the SDK raises <code>LockdownError</code> or <code>ServiceUnavailableError</code>. Read requests may retry first; POST requests do not.</p>
 <h3 id="3-data-interaction">3. Data Interaction</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Submit Event for transaction</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">submit_event</span><span class="p">(</span><span class="s2">"main_chain"</span><span class="p">,</span> <span class="p">{</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"user_sysadmin"</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"update_config"</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">})</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Successfully pushed to block, Message ID:"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Get Block by hash</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">block</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">block_id</span><span class="o">=</span><span class="s2">"8f2a9d..."</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Submit Event for transaction</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">submit_event</span><span class="p">(</span><span class="s2">"main_chain"</span><span class="p">,</span> <span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"user_sysadmin"</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"update_config"</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">})</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Event accepted, event_id:"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1"># Get Block by hash</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">block</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">block_id</span><span class="o">=</span><span class="s2">"8f2a9d..."</span><span class="p">)</span>
 </code></pre></div>
+<h3 id="json-transport">JSON transport</h3>
+<p>Both SDK clients encode request bodies and decode response JSON through standard-library <code>json</code> helpers, using UTF-8 and a default <code>Content-Type: application/json</code> while honoring configured headers. Non-finite numbers are rejected before sending; responses containing <code>NaN</code>, <code>Infinity</code> or overflowing float values are rejected. Python integers larger than 64 bits are preserved without conversion to floats, within Python's integer conversion limit. Invalid response JSON follows the existing failure and retry handling. Mutating requests are still not retried automatically.</p>
 
 
 

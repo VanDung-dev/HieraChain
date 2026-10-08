@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4325,19 +4323,20 @@
 <ul>
 <li>Merkle và chain link trong <code>hierachain/core/block.py</code> và <code>core/merkle_tree.py</code> (tiền tố phân tách domain <code>0x01</code>) và <code>consensus/ordering/storage.py:_verify_chain_links()</code> (chuỗi <code>previous_hash</code>).</li>
 <li>Xác minh proof trong <code>hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain</code> (quét fallback) và <code>security/verify/block_verifier.py</code>.</li>
-<li>Tính toàn vẹn rollback trong <code>hierachain/error_mitigation/rollback_manager.py:_verify_rollback_integrity</code> (kiểm tra <code>data_hash</code>) kèm guard chống path traversal.</li>
+<li>Cơ chế toàn vẹn runtime dùng chain link, Merkle root, xác minh proof và consensus validation. Snapshot trạng thái và rollback thuộc trách nhiệm deployment.</li>
+<li><code>BlockVerifier.verify_chain()</code> xác minh toàn bộ chain: block đầu tiên phải là genesis ở index <code>0</code> với <code>previous_hash</code> bằng <code>"0"</code>. API này không nhận lịch sử một phần; bên gọi phải cung cấp toàn bộ chain.</li>
 </ul>
 <pre class="mermaid"><code>graph LR
     A[Block finalize] --&gt; B[previous_hash check]
     B --&gt; C[Merkle root verify]
     C --&gt; D[Proof verify on MainChain]
-    D --&gt; E[Rollback data_hash nếu cần]</code></pre>
+    D --&gt; E[Phục hồi vận hành nếu cần]</code></pre>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href="../../modules/error-mitigation/">Xử lý lỗi</a></li>
 <li><a href="../../modules/monitoring/">Giám sát</a></li>
-<li><a href=".././lockdown-logging/">Cluster Lockdown</a></li>
+<li><a href=".././lockdown-logging/">Ghi nhật ký an toàn</a></li>
 </ul>
 
 

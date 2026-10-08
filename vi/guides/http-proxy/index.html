@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4407,13 +4405,13 @@
   <h1 id="__skip">Giới hạn Giao thức HTTP & Proxy</h1>
 
 <h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain được thiết kế như một <strong>Plugin Layer</strong> chuyên biệt cho doanh nghiệp, tập trung vào tính bất biến và xác thực dữ liệu thay vì thay thế các hạ tầng Web2 hiện có. Do đó, HieraChain có những quy định nghiêm ngặt về giao thức truyền tải.</p>
+<p>HieraChain chạy cùng hạ tầng Web2 doanh nghiệp như một lớp hỗ trợ tính bất biến và xác minh dữ liệu. Tài liệu này mô tả giao thức mà core hỗ trợ và cách đặt proxy phía trước.</p>
 <h2 id="tai-sao-khong-ho-tro-http2-va-http3">Tại sao không hỗ trợ HTTP/2 và HTTP/3?</h2>
-<p>HieraChain <strong>không hỗ trợ</strong> và <strong>không có kế hoạch hỗ trợ</strong> trực tiếp các giao thức HTTP/2 hoặc HTTP/3 (QUIC) từ bên trong nhân (core). Điều này xuất phát từ triết lý thiết kế "Không tái phát minh bánh xe" (Don't reinvent the wheel) và tối ưu hóa hiệu năng Python.</p>
+<p>Core HieraChain hiện hỗ trợ HTTP/1.1. Core không trực tiếp phục vụ HTTP/2 hoặc HTTP/3 (QUIC); hãy kết thúc các kết nối này tại reverse proxy rồi chuyển tiếp request tới HieraChain qua HTTP/1.1.</p>
 <h3 id="1-vi-tri-trong-kien-truc-he-thong">1. Vị trí trong kiến trúc hệ thống</h3>
 <p>HieraChain không thay thế Cơ sở dữ liệu hiện có mà hoạt động <strong>song song</strong> như một lớp xác thực bổ trợ. Dữ liệu được phân luồng dựa trên nhu cầu về tính bất biến:</p>
 <ul>
-<li><strong>Dữ liệu thường</strong>: Đi thẳng vào DB Web2 để đạt tốc độ tối đa.</li>
+<li><strong>Dữ liệu thường</strong>: Đi thẳng vào database Web2.</li>
 <li><strong>Dữ liệu cần xác thực</strong>: Đi qua HieraChain để tạo bằng chứng số trước khi đồng bộ.</li>
 </ul>
 <pre class="mermaid"><code>graph TD
@@ -4428,35 +4426,35 @@
 
     HC -. "Kiểm tra &amp; Đối soát" .-&gt; DB_Web2</code></pre>
 <h3 id="2-triet-ly-plugin-layer">2. Triết lý "Plugin Layer"</h3>
-<p>HieraChain được xây dựng để <strong>chạy song hành</strong> và bổ sung giá trị blockchain cho các hệ thống Enterprise Web2 sẵn có:</p>
+<p>HieraChain chạy cùng các hệ thống Web2 doanh nghiệp:</p>
 <ul>
-<li><strong>Tách biệt luồng dữ liệu</strong>: Không phải mọi dữ liệu đều cần blockchain. HieraChain chỉ xử lý các "sự kiện" (events) quan trọng cần tính bất biến, giúp hệ thống chính không bị quá tải.</li>
+<li><strong>Tách biệt luồng dữ liệu</strong>: HieraChain xử lý các event cần tính bất biến; dữ liệu khác có thể tiếp tục ở hệ thống Web2.</li>
 <li><strong>Cơ sở dữ liệu riêng biệt</strong>: HieraChain duy trì một DB riêng (World State/Ledger) để lưu trữ bằng chứng phân tán, tách biệt hoàn toàn với DB nghiệp vụ của Web2.</li>
 <li><strong>Khả năng kiểm tra chéo</strong>: HieraChain có cơ chế kết nối (read-only) vào DB Web2 để đối soát tính toàn vẹn giữa dữ liệu nghiệp vụ và bằng chứng trên chuỗi.</li>
-<li><strong>Bảo mật cổng HTTP</strong>: Việc bảo mật tại cổng giao tiếp (Port 80/443) vẫn được giao cho hạ tầng mạng Web2 đảm nhiệm.</li>
+<li><strong>Bảo mật cổng HTTP</strong>: Hạ tầng mạng Web2 xử lý bảo mật tại cổng 80 và 443.</li>
 </ul>
 <h3 id="3-ly-do-su-dung-http11">3. Lý do sử dụng HTTP/1.1</h3>
 <ul>
-<li><strong>Tốc độ trong mạng nội bộ</strong>: Trong môi trường mạng tin cậy (Trusted Network) giữa Reverse Proxy và HieraChain, HTTP/1.1 là giao thức đơn giản nhất, ít overhead nhất và đạt hiệu suất cao nhất cho các tác vụ API.</li>
-<li><strong>Khả năng tương thích</strong>: 100% các giải pháp API Gateway và Load Balancer hiện nay đều hỗ trợ chuyển tiếp xuống HTTP/1.1 một cách hoàn hảo.</li>
+<li><strong>Mạng nội bộ</strong>: Reverse proxy chuyển tiếp request API tới HieraChain qua HTTP/1.1.</li>
+<li><strong>Khả năng tương thích</strong>: API gateway và load balancer có thể chuyển tiếp request tới upstream HTTP/1.1.</li>
 <li>
-<p><strong>Tập trung tài nguyên</strong>: Thay vì tốn CPU cho việc đàm phán kết nối phức tạp, HieraChain dành toàn bộ tài nguyên cho:</p>
+<p><strong>Xử lý request</strong>: HieraChain có thể dùng tài nguyên cho:</p>
 <ul>
 <li>Xác thực chữ ký sự kiện (Event signatures).</li>
-<li>Đồng thuận BFT.</li>
-<li>Đảm bảo tính toàn vẹn của sổ cái.</li>
+<li>Đồng thuận trong thành phần BFT triển khai riêng.</li>
+<li>Kiểm tra tính toàn vẹn của sổ cái.</li>
 </ul>
 </li>
 </ul>
 <h2 id="cach-trien-khai-chuan-enterprise">Cách triển khai chuẩn Enterprise</h2>
-<p>Nếu hệ thống của bạn yêu cầu các tính năng hiện đại như HTTP/2, HTTP/3 hoặc gRPC để tối ưu hóa kết nối từ Client, bạn <strong>bắt buộc</strong> phải sử dụng mô hình <strong>Reverse Proxy Offloading</strong>.</p>
+<p>Nếu hệ thống cần HTTP/2 hoặc HTTP/3 cho kết nối từ client, hãy dùng mô hình <strong>Reverse Proxy Offloading</strong>.</p>
 <ol>
 <li><strong>Tầng Web2 (NGINX/Traefik/F5)</strong>: Tiếp nhận kết nối HTTPS (HTTP/2 hoặc HTTP/3 QUIC) từ người dùng, giải mã SSL.</li>
-<li><strong>Tầng HieraChain</strong>: Tiếp nhận yêu cầu đã được giải mã từ Proxy thông qua kết nối HTTP/1.1 siêu tốc.</li>
+<li><strong>Tầng HieraChain</strong>: Nhận request đã giải mã từ proxy qua HTTP/1.1.</li>
 </ol>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>HieraChain sẽ không bao giờ thay thế cho hạ tầng Web2 hiện có. HieraChain được xây dựng để chạy <strong>bên dưới</strong> các hệ thống đó, mang lại khả năng kiểm toán và tính bất biến mà các cơ sở dữ liệu truyền thống còn thiếu.</p>
+<p>Trong mô hình này, HieraChain chạy cùng hạ tầng Web2 và cung cấp khả năng kiểm toán, tính bất biến cho dữ liệu được chuyển qua nó.</p>
 </div>
 <h2 id="luu-y-ve-bao-mat">Lưu ý về Bảo mật</h2>
 <p>Dù chỉ chạy HTTP/1.1, HieraChain vẫn duy trì các lớp bảo mật nội tại:</p>

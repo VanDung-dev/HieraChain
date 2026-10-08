@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3568,10 +3566,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-cach-trieu-hoi-dashboard-qua-api" class="md-nav__link">
+  <a href="#2-render-dashboard-qua-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Cách triệu hồi Dashboard qua API
+        2. Render Dashboard qua API
       </span>
     </span>
   </a>
@@ -4300,10 +4298,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-cach-trieu-hoi-dashboard-qua-api" class="md-nav__link">
+  <a href="#2-render-dashboard-qua-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Cách triệu hồi Dashboard qua API
+        2. Render Dashboard qua API
       </span>
     </span>
   </a>
@@ -4348,31 +4346,31 @@
 
 <h1 id="su-dung-blockchain-explorer">Sử dụng Blockchain Explorer</h1>
 <h2 id="trinh-kham-pha-chuoi">Trình Khám phá Chuỗi</h2>
-<p>Khác với các ứng dụng Web ngoài lề, HieraChain cung cấp lõi API Dashboard trực quan chuyên sâu ngay trong core (<code>hierachain/api/blockchain_explorer.py</code>). Qua cấu trúc JSON trả về với mô đun <code>render</code>, bất kỳ web-view nào cũng có thể hiện thực hóa thành Dashboard kiểm toán theo thời gian thực (Real-time).</p>
+<p><code>BlockchainExplorer</code> trong <code>hierachain/api/blockchain_explorer.py</code> trả dữ liệu dashboard dưới dạng JSON. Web view có thể dùng dữ liệu này để hiển thị hoạt động của chain và kết quả xác minh.</p>
 <h3 id="1-thanh-phan-cua-explorer">1. Thành phần của Explorer</h3>
-<p>Giao diện (hoặc Render format từ API) sẽ bao gồm 4 khối chủ lực (Components):</p>
+<p>Dữ liệu render có thể gồm bốn thành phần sau:</p>
 <ul>
-<li><strong>Chain Overview Component (<code>chain_overview</code>)</strong>: Hiển thị bảng tóm tắt cấu trúc. Số liệu tổng quan độ cao Block, lượng Event trên cả Main-chain và dải Sub-chains cũng như các hoạt động mới nhất.</li>
-<li><strong>Entity Tracer Component (<code>entity_tracer</code>)</strong>: Thanh công cụ dò vết. Nhập thông tin ID hoặc bất kì đặc tả nào của Entity để tìm toàn cục xem Block và Event nào đang giao quyền kiểm soát cho đối tượng đó, hỗ trợ tracing mọi mắt xích tài sản.</li>
-<li><strong>Event Analytics Component (<code>event_analytics</code>)</strong>: Đổ ra Timeline lịch sử hoạt động lượng event rải trên Block (ví dụ tính mốc bucket 24 tiếng gần nhất) hoặc vẽ biểu đồ sự kiện (Chart Distribution). Đóng vai trò giám sát hoạt động tải cao (High-load monitoring).</li>
-<li><strong>Proof Visualizer Component (<code>proof_visualizer</code>)</strong>: Bản vẽ cây sơ đồ đệ quy (Hierarchy view). Thể hiện tỷ lệ thành công của Proof ZK, chỉ ra những chuỗi đang vướng mắc cơ chế Mock hay Production Mode xác minh.</li>
+<li><strong>Chain Overview Component (<code>chain_overview</code>)</strong>: Hiển thị độ cao block, số event trên Main-Chain và Sub-Chains, cùng hoạt động gần đây.</li>
+<li><strong>Entity Tracer Component (<code>entity_tracer</code>)</strong>: Tìm theo entity ID và hiển thị các block, event liên quan.</li>
+<li><strong>Event Analytics Component (<code>event_analytics</code>)</strong>: Hiển thị số event theo loại, timeline theo giờ trong 24 giờ gần nhất dựa trên block của Main-Chain, và tổng số event trên từng chain.</li>
+<li><strong>Proof Visualizer Component (<code>proof_visualizer</code>)</strong>: Hiển thị proof gần đây, tóm tắt trạng thái xác minh và cấu trúc block của Main-Chain, Sub-Chains.</li>
 </ul>
 <h3 id="tinh-nang-ipfs-trong-explorer">Tính năng IPFS trong Explorer</h3>
 <p>Explorer hỗ trợ trực quan hóa dữ liệu được lưu trữ ngoài chuỗi (Off-chain):</p>
 <ul>
 <li>
-<p><strong>Nhận diện dữ liệu</strong>: Tự động hiển thị Huy hiệu (Badge) cho các sự kiện lưu trên IPFS.</p>
+<p><strong>Nhận diện dữ liệu</strong>: Hiển thị huy hiệu cho các event lưu trên IPFS.</p>
 <ul>
 <li>📦 <strong>Màu vàng</strong>: Dữ liệu CID chưa tải (Unresolved).</li>
 <li>✓ <strong>Màu xanh</strong>: Dữ liệu đã được tải và giải mã (Resolved).</li>
 </ul>
 </li>
 <li>
-<p><strong>Tải dữ liệu tức thời</strong>: Cung cấp nút <strong>"Load Details"</strong> để fetch dữ liệu từ IPFS qua API Server mà không cần load lại trang.</p>
+<p><strong>Tải dữ liệu</strong>: Nút <strong>"Load Details"</strong> tải dữ liệu từ IPFS qua API Server mà không cần tải lại trang.</p>
 </li>
-<li><strong>Bảo mật</strong>: Dữ liệu được giải mã an toàn tại Server trước khi hiển thị trên giao diện người dùng.</li>
+<li><strong>Giải mã</strong>: Server giải mã dữ liệu trước khi hiển thị trên giao diện.</li>
 </ul>
-<h3 id="2-cach-trieu-hoi-dashboard-qua-api">2. Cách triệu hồi Dashboard qua API</h3>
+<h3 id="2-render-dashboard-qua-api">2. Render Dashboard qua API</h3>
 <p>Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của họ:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.api.blockchain_explorer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockchainExplorer</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
@@ -4385,7 +4383,7 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Hoặc Render riêng mục "Truy vết Entity"</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">tracer_form_ui</span> <span class="o">=</span> <span class="n">explorer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">component_id</span><span class="o">=</span><span class="s2">"entity_tracer"</span><span class="p">)</span>
 </code></pre></div>
-<p>Với cấu trúc JSON cực kì logic, nhà lập trình Front-end (React/Vue/HTML5) dễ dàng "xào nấu" render ra các ô card hiển thị số dư, block tương ứng mà không phải tốn sức ghép truy vấn tay.</p>
+<p>Dữ liệu JSON trả về cho phép lập trình viên front-end (React/Vue/HTML5) tạo các card hiển thị chỉ số và block liên quan.</p>
 
 
 

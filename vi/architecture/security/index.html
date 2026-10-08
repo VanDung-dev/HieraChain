@@ -1535,11 +1535,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4370,22 +4368,21 @@
 </ul>
 </li>
 <li>
-<p>Lockdown và logging:</p>
+<p>Logging và tính toàn vẹn:</p>
 <ul>
 <li><code>hierachain/security/secure_logging.py</code> ghi log có khả năng phát hiện giả mạo và che PII.</li>
-<li><code>hierachain/cluster/lockdown_protocol.py</code> xử lý phong tỏa khẩn cấp theo quorum và chứa <code>ClusterLockdownManager</code>.</li>
+<li><code>hierachain/risk_management/audit_logger.py</code> ghi các sự kiện kiểm toán vận hành.</li>
 </ul>
 </li>
 <li>
 <p>Fault tolerance và tính toàn vẹn:</p>
 <ul>
-<li><code>hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}</code> và <code>hierachain/cluster/lockdown_types.py</code> cung cấp kiểm tra toàn vẹn, snapshot rollback và HMAC lockdown. Không có <code>security/resource_guard.py</code> hay <code>security/integrity.py</code>, các đường dẫn này đã bị xóa hoặc chưa từng tồn tại.</li>
+<li><code>hierachain/error_mitigation/{consensus_validator.py, resource_validator.py}</code> và <code>hierachain/cluster/lockdown_types.py</code> cung cấp validation, kiểm tra tài nguyên và HMAC lockdown. Không có <code>security/resource_guard.py</code> hay <code>security/integrity.py</code>, các đường dẫn này đã bị xóa hoặc chưa từng tồn tại.</li>
 </ul>
 </li>
 <li>
-<p>Risk analyzer:</p>
+<p>Làm sạch input:</p>
 <ul>
-<li><code>hierachain/risk_management/risk_analyzer.py</code> xử lý chấm điểm rủi ro và dùng các validator trong <code>hierachain/error_mitigation/*</code>.</li>
 <li><code>hierachain/security/sanitization.py</code> giúp ngăn injection bằng cách trung hòa HTML/template và áp allowlist cho tên file.</li>
 </ul>
 </li>

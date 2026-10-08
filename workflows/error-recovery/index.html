@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Automated recovery and mitigation workflows for network failures, leader timeouts, or integrity anomalies.">
+        <meta name="description" content="Runtime validation, durable event journaling, and BFT view changes.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.hierachain.org/workflows/error-recovery/">
       
       
-        <link rel="prev" href="../cluster-lockdown/">
+        <link rel="prev" href="../cluster-lockdown.md">
       
       
         <link rel="next" href="../entity-tracing/">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Error Mitigation & Recovery - HieraChain Docs</title>
+        <title>Error Handling and Recovery - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#error-mitigation-and-recovery" class="md-skip">
+        <a href="#error-handling-and-recovery" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Error Mitigation & Recovery
+              Error Handling and Recovery
             
           </span>
         </div>
@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1523,10 +1521,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#runtime-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Runtime flow
       </span>
     </span>
   </a>
@@ -1534,10 +1532,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6a-network-recovery" class="md-nav__link">
+  <a href="#consensus-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A: Network recovery
+        Consensus recovery
       </span>
     </span>
   </a>
@@ -1545,10 +1543,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6b-consensus-recovery-leader-failure" class="md-nav__link">
+  <a href="#event-durability" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B: Consensus recovery (leader failure)
+        Event durability
       </span>
     </span>
   </a>
@@ -1556,43 +1554,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6c-state-rollback" class="md-nav__link">
+  <a href="#operational-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C: State rollback
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Operational recovery
       </span>
     </span>
   </a>
@@ -4304,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#runtime-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Runtime flow
       </span>
     </span>
   </a>
@@ -4315,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6a-network-recovery" class="md-nav__link">
+  <a href="#consensus-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A: Network recovery
+        Consensus recovery
       </span>
     </span>
   </a>
@@ -4326,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6b-consensus-recovery-leader-failure" class="md-nav__link">
+  <a href="#event-durability" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B: Consensus recovery (leader failure)
+        Event durability
       </span>
     </span>
   </a>
@@ -4337,43 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6c-state-rollback" class="md-nav__link">
+  <a href="#operational-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C: State rollback
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Operational recovery
       </span>
     </span>
   </a>
@@ -4422,182 +4354,49 @@
   
 
 
-<h1 id="error-mitigation-and-recovery">Error mitigation and recovery</h1>
-<h2 id="overview">Overview</h2>
-<p>HieraChain has layered recovery for three areas: network resilience, consensus leader recovery and state rollback. These run independently and can be active at the same time.</p>
-<hr />
-<h2 id="6a-network-recovery">6A: Network recovery</h2>
-<pre class="mermaid"><code>flowchart TB
-    NET["🌐 Network Issue Detected"]
-    LAT["📊 Collect Latency History"]
-    ADJ["⏱️ adjust_timeout()\nRecalculate based on avg + max latency"]
-    RED["📡 send_with_redundancy()\nSend via N parallel paths simultaneously"]
-    FIRST["✅ First successful response wins"]
-    PART["⚠️ Partition Detected?\navg_latency &gt; 5000ms"]
-    VC["🔄 _initiate_view_change()\nTrigger BFT view change"]
-
-    NET --&gt; LAT --&gt; ADJ --&gt; RED --&gt; FIRST
-    RED --&gt; PART
-    PART --&gt;|Yes| VC
-    PART --&gt;|No| FIRST</code></pre>
-<p><code>send_with_redundancy()</code> sends the same message over N parallel paths at once. The first successful response wins and the remaining in flight calls are cancelled. This hides intermittent path failures without explicit retries.</p>
-<hr />
-<h2 id="6b-consensus-recovery-leader-failure">6B: Consensus recovery (leader failure)</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant CRE as 🔧 ConsensusRecoveryEngine
-    participant VM as 🔄 BFTViewChangeManager
-    participant NEW as 👑 New Leader
-
-    Note over CRE: Leader timeout detected
-    CRE-&gt;&gt;CRE: handle_leader_failure(failed_leader_id, current_view)
-    CRE-&gt;&gt;CRE: Check recovery_attempts &lt; max (default 3)
-    CRE-&gt;&gt;VM: _initiate_view_change(failed_leader, new_view = view + 1)
-    VM-&gt;&gt;VM: Broadcast VIEW-CHANGE to all validators
-    VM-&gt;&gt;NEW: Elect new leader: Validators[new_view % n]
-    NEW-&gt;&gt;NEW: Restart PRE-PREPARE phase
-    CRE-&gt;&gt;CRE: Clear recovery_attempts on success</code></pre>
-<hr />
-<h2 id="6c-state-rollback">6C: State rollback</h2>
-<pre class="mermaid"><code>flowchart LR
-    ERR["❌ Critical Error\nor Integrity Failure"]
-    SNAP["📸 Load Snapshot\n(RollbackManager)"]
-    JRNL["📓 Replay Journal\n(EventJournal)"]
-    VER["🔍 Validate Restored State\n(DataValidator)"]
-    OK["✅ State Restored"]
-    ALERT["🚨 Alert + Escalate\n(AlertManager)"]
-
-    ERR --&gt; SNAP --&gt; JRNL --&gt; VER
-    VER --&gt;|Valid| OK
-    VER --&gt;|Invalid| ALERT</code></pre>
-<p>Rollback does four things in order:</p>
-<ol>
-<li><code>RollbackManager.load_snapshot()</code> loads the most recent consistent snapshot</li>
-<li><code>EventJournal.replay()</code> replays committed journal entries since that snapshot</li>
-<li><code>DataValidator.validate()</code> checks the restored state against cryptographic checksums</li>
-<li>If validation fails, an escalation alert is sent via Risk Alerts and manual intervention is needed</li>
-</ol>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Sub-flow</th>
-<th style="text-align: left;">Trigger</th>
-<th style="text-align: left;">Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>6A Network</strong></td>
-<td style="text-align: left;"><code>avg_latency &gt; threshold</code></td>
-<td style="text-align: left;">Adaptive timeout + parallel redundant send</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6A Partition</strong></td>
-<td style="text-align: left;"><code>avg_latency &gt; 5000ms</code></td>
-<td style="text-align: left;">Trigger BFT View Change (BFT Consensus)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6B Leader</strong></td>
-<td style="text-align: left;"><code>leader_timeout</code></td>
-<td style="text-align: left;"><code>ConsensusRecoveryEngine.handle_leader_failure()</code> → View Change</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6B Max retries</strong></td>
-<td style="text-align: left;"><code>recovery_attempts ≥ max</code></td>
-<td style="text-align: left;">Log critical error, alert, halt consensus</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6C Rollback</strong></td>
-<td style="text-align: left;">Integrity failure or critical error</td>
-<td style="text-align: left;">Snapshot → Journal replay → Validate</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Behavior</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">All recovery paths exhausted (6B)</td>
-<td style="text-align: left;">Critical alert sent, node halts consensus participation</td>
-</tr>
-<tr>
-<td style="text-align: left;">Snapshot not found (6C)</td>
-<td style="text-align: left;">Full rehydration from DB (Chain Rehydration) attempted</td>
-</tr>
-<tr>
-<td style="text-align: left;">Journal replay produces invalid state (6C)</td>
-<td style="text-align: left;">Alert escalated via Risk Alerts, manual intervention flagged</td>
-</tr>
-<tr>
-<td style="text-align: left;">Network partition heals</td>
-<td style="text-align: left;">Adaptive timeout reduces automatically, normal flow resumes</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="key-classes-and-methods">Key classes and methods</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
-<th style="text-align: left;">File</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Network adaptive timeout</td>
-<td style="text-align: left;"><code>NetworkRecoveryManager.adjust_timeout()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Redundant send</td>
-<td style="text-align: left;"><code>send_with_redundancy()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Leader failure</td>
-<td style="text-align: left;"><code>ConsensusRecoveryEngine.handle_leader_failure()</code></td>
-<td style="text-align: left;"><code>error_mitigation/recovery_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">View change trigger</td>
-<td style="text-align: left;"><code>BFTViewChangeManager._initiate_view_change()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Snapshot load</td>
-<td style="text-align: left;"><code>RollbackManager.load_snapshot()</code></td>
-<td style="text-align: left;"><code>error_mitigation/rollback_manager.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Journal replay</td>
-<td style="text-align: left;"><code>TransactionJournal.replay()</code></td>
-<td style="text-align: left;"><code>error_mitigation/journal.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">State validate</td>
-<td style="text-align: left;"><code>DataValidator.validate()</code></td>
-<td style="text-align: left;"><code>error_mitigation/validator.py</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h1 id="error-handling-and-recovery">Error handling and recovery</h1>
+<p>HieraChain keeps recovery responsibilities close to the component that owns the
+state: <code>ErrorClassifier</code> records and classifies failures, <code>TransactionJournal</code>
+protects pending events, and the BFT consensus implementation handles view
+changes when a leader becomes unavailable. Snapshot and infrastructure recovery
+are deployment responsibilities, not automatic services in this package.</p>
+<h2 id="runtime-flow">Runtime flow</h2>
+<pre class="mermaid"><code>flowchart TD
+    ERR["Error or node failure"] --&gt; CLASS["ErrorClassifier\nclassify and log"]
+    CLASS --&gt;|Pending event| JOURNAL["TransactionJournal\nreplay after restart"]
+    CLASS --&gt;|Consensus failure| VIEW["BFTViewChangeManager\nstart a new view"]
+    CLASS --&gt;|Validation failure| REJECT["Reject and report"]
+    JOURNAL --&gt; VALIDATE["Validate before ordering"]
+    VIEW --&gt; CONSENSUS["Resume BFT phases"]</code></pre>
+<h2 id="consensus-recovery">Consensus recovery</h2>
+<p><code>BFTConsensus</code> owns leader failure handling through <code>BFTViewChangeManager</code>.
+The manager broadcasts view-change messages, collects the quorum, and installs
+the new view. This path is part of the consensus runtime and does not depend on
+a separate recovery engine.</p>
+<h2 id="event-durability">Event durability</h2>
+<p><code>TransactionJournal</code> writes pending events before ordering. After a restart,
+the ordering service can replay journal entries and validate them before they
+re-enter the event pipeline.</p>
+<p>If an append fails after writing part of a frame, the journal truncates back to
+the frame's original offset and fsyncs that repair before accepting another
+append. If it cannot confirm the repair, it refuses later writes until the
+journal is closed and reopened as a new instance, which repairs an incomplete
+active tail during startup.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="operational-recovery">Operational recovery</h2>
+<p>Database backups, filesystem snapshots, key recovery, and infrastructure
+scaling must be provided by the deployment environment. The repository does not
+claim automatic rollback, backup restoration, redundant network transport, or
+node autoscaling through <code>error_mitigation</code> classes.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././bft-consensus/">BFT Consensus</a>: View Change detail</li>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown</a>: cluster-level recovery</li>
 <li><a href=".././chain-rehydration/">Chain Rehydration</a>: full chain reload from DB</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: escalation notifications</li>
+<li><a href="../../modules/error-mitigation/">Error Mitigation Module</a>: validation and journaling</li>
 </ul>
 
 
@@ -4639,7 +4438,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../cluster-lockdown/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Cluster Lockdown &amp; Recovery">
+          <a href="../cluster-lockdown.md" class="md-footer__link md-footer__link--prev" aria-label="Previous: Cluster Lockdown &amp; Recovery">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>

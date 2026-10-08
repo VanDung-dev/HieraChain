@@ -1552,11 +1552,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,8 +4400,6 @@
 <li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> xử lý khởi tạo organization, mạng multi-org và quan hệ giữa channel với organization.</li>
 <li>Private Data: <code>hierachain/hierarchical/private_data.py</code> giữ collection dữ liệu riêng ở tầng Sub-Chain.</li>
 <li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> điều phối giao dịch 2PC giữa các Sub-Chain.</li>
-<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code> gom và nén proof trước khi gửi hoặc ghi nhận. Phần này có thể cấu hình.</li>
-<li>Rebalancer: <code>hierachain/hierarchical/rebalancer/rebalancer.py</code> tách hoặc cân bằng Sub-Chain tự động khi tải vượt ngưỡng.</li>
 </ul>
 <h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
 <pre class="mermaid"><code>graph TD
@@ -4413,26 +4409,23 @@
     Consensus --&gt;|3. Validate| SubChain
     SubChain --&gt;|4. Finalize Block| SubChain
     SubChain --&gt;|5. Submit Proof| MainChain[Main Chain]
-    MainChain --&gt;|6. Store Root Hash| Storage[World State]</code></pre>
+    MainChain --&gt;|6. Persist Proof Anchor| Storage[Proof Storage]
+    SubChain --&gt;|Apply Finalized Events| Projection[WorldState Projection]</code></pre>
 <ol>
 <li>Tạo Sub-Chain bằng <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code>. Lệnh này khởi tạo DomainChain và nối vào Main Chain.</li>
 <li>Ghi event và đóng block bằng <code>SubChain.add_event()</code>, đi qua ordering và consensus rồi tới <code>finalize_block()</code>.</li>
 <li>Neo proof lên Main Chain bằng <code>SubChain.submit_proof_to_main(main_chain, ...)</code> hoặc <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
 <li>Chạy giao dịch liên chuỗi (2PC) bằng <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code>, xử lý prepare, commit và rollback.</li>
 <li>Channel và private data: tạo channel giữa các organization. Collection private được lưu ở Sub-Chain theo policy của channel.</li>
-<li>Cân bằng lại Sub-Chain: rebalancer theo dõi EPS và các ngưỡng đã cấu hình, sau đó đề xuất tách nhánh hoặc di chuyển tải.</li>
 </ol>
 <h2 id="cau-hinh-lien-quan-settingspy-thuc-te-hrc_">Cấu hình liên quan (settings.py, thực tế <code>HRC_*</code>)</h2>
 <ul>
-<li>Proof: <code>HRC_PROOF_AGGREGATION</code>, <code>HRC_PROOF_BATCH_SIZE</code>, <code>HRC_PROOF_BATCH_TIMEOUT</code>, <code>HRC_PROOF_COMPRESSION</code>.</li>
-<li>Rebalance: <code>HRC_REBALANCE_ENABLED</code>, <code>HRC_REBALANCE_THRESHOLD_EPS</code>, <code>HRC_REBALANCE_CHECK_INTERVAL</code>, <code>HRC_REBALANCE_MIN_EVENTS</code>, <code>HRC_REBALANCE_COOLDOWN</code>.</li>
-<li>K8s (cô lập Sub-Chain): <code>HRC_K8S_ENABLED</code>, <code>HRC_K8S_NAMESPACE_PREFIX</code>, <code>HRC_K8S_CPU_LIMIT</code>/<code>HRC_K8S_MEMORY_LIMIT</code>/<code>HRC_K8S_CPU_REQUEST</code>/<code>HRC_K8S_MEMORY_REQUEST</code>, <code>HRC_K8S_CONFIG</code>.</li>
 <li>Consensus/Ordering: xem <a href="../consensus/">Consensus &amp; Ordering</a> và <code>HRC_CONSENSUS_TYPE</code>/<code>HRC_MAINCHAIN_CONSENSUS</code>, <code>VALIDATOR_TIMEOUT</code>, <code>HRC_BLOCK_INTERVAL</code>.</li>
 </ul>
 <h2 id="tinh-nang-va-han-che">Tính năng và hạn chế</h2>
 <ul>
-<li>Tính năng: tách dữ liệu theo domain, neo proof tập trung trên Main Chain, hỗ trợ 2PC, channel và multi-org, private data và rebalancing.</li>
-<li>Hạn chế: vận hành channel và multi-org cần policy rõ ràng, 2PC cần đồng bộ tốt, và rebalancing có thể cần can thiệp vận hành ngoài luồng thông thường.</li>
+<li>Tính năng: tách dữ liệu theo domain, neo proof tập trung trên Main Chain, hỗ trợ 2PC, channel và multi-org và private data.</li>
+<li>Hạn chế: vận hành channel và multi-org cần policy rõ ràng và 2PC cần đồng bộ tốt.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

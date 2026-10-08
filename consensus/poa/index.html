@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Authority-based consensus protocol: Maximum performance, Node identity, and Round-Robin rotation.">
+        <meta name="description" content="Authority-based consensus protocol with node identities, block signatures, and round-robin rotation.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,7 +4400,7 @@
 
 <h1 id="proof-of-authority-hierachainconsensusproof_of_authoritypy">Proof of Authority (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>Proof of Authority (PoA)</strong> is an identity-based consensus protocol optimized for <strong>Intra-Organization enterprise networks</strong> (single MainChain managing internal domain Sub-Chains). In HieraChain's two-tiered consensus architecture, <code>SubChain</code> instances <strong>always default to PoA</strong> for processing internal domain events at ultra-fast speeds (~0ms base latency) without requiring cross-organizational roundtrips.</p>
+<p><strong>Proof of Authority (PoA)</strong> is an identity-based consensus protocol for <strong>intra-organization enterprise networks</strong>, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, <code>SubChain</code> instances default to PoA for internal events without requiring consensus between organizations.</p>
 <p>For cross-organizational inter-MainChain consensus between independent enterprises, see <a href=".././pof/">Proof of Federation (PoF)</a>.</p>
 <hr />
 <h2 id="how-it-works">How It Works</h2>
@@ -4415,19 +4413,19 @@
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg></span> <strong>Breakthrough Performance</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg></span> <strong>Timing Validation</strong></p>
 <hr />
-<p>Blocks are created instantly according to the configured cycle (<code>block_interval</code>), suitable for real-time response applications.</p>
+<p>By default, PoA adds no minimum spacing delay. Consecutive block timestamps must still be nondecreasing. A positive <code>block_interval</code> requires timestamps to be at least half that value apart.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 17v2H7v-2s0-4 6-4 6 4 6 4m-3-9a3 3 0 1 0-3 3 3 3 0 0 0 3-3m3.2 5.06A5.6 5.6 0 0 1 21 17v2h3v-2s0-3.45-4.8-3.94M18 5a2.9 2.9 0 0 0-.89.14 5 5 0 0 1 0 5.72A2.9 2.9 0 0 0 18 11a3 3 0 0 0 0-6M7.34 8.92l1.16 1.41-4.75 4.75-2.75-3 1.16-1.16 1.59 1.58z"/></svg></span> <strong>Identity Management</strong></p>
 <hr />
-<p>Supports flexible addition/removal of Authorities through the API, allowing network configuration changes without system downtime.</p>
+<p>The <code>ProofOfAuthority</code> class provides <code>add_authority()</code> and <code>remove_authority()</code> methods.</p>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Absolute Integrity</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Block Signatures</strong></p>
 <hr />
-<p>Every block carries the digital signature of a verified organization, completely eliminating risks from anonymous or spoofed nodes.</p>
+<p>Each block is signed by its designated Authority. Other nodes verify the signature before accepting the block.</p>
 </li>
 </ul>
 </div>
@@ -4444,8 +4442,8 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>block_interval</code></td>
-<td style="text-align: left;">Minimum time between two blocks.</td>
-<td style="text-align: left;"><code>10.0</code> seconds</td>
+<td style="text-align: left;">Optional spacing setting; <code>0</code> adds no delay, while a positive value retains a validator threshold of half this value.</td>
+<td style="text-align: left;"><code>0.0</code> seconds</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>max_authorities</code></td>
@@ -4453,12 +4451,15 @@
 <td style="text-align: left;"><code>100</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>require_signature</code></td>
+<td style="text-align: left;"><code>require_authority_signature</code></td>
 <td style="text-align: left;">Mandatory valid signature to accept a block.</td>
 <td style="text-align: left;"><code>True</code></td>
 </tr>
 </tbody>
 </table>
+<p>MainChain and SubChain instances using PoA read this value from <code>HRC_BLOCK_INTERVAL</code>, which defaults to <code>0.0</code>. Direct <code>ProofOfAuthority()</code> construction also defaults to <code>0.0</code>. Negative or nonfinite values are rejected when constructing PoA.</p>
+<p>The SubChain orderer still batches events according to <code>block_size</code> and <code>batch_timeout</code> (defaults: 50 events and 1.0 second). Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.</p>
+<p>For an existing deployment, an explicit <code>HRC_BLOCK_INTERVAL=10</code> retains the previous 5-second minimum spacing. Use <code>HRC_BLOCK_INTERVAL=0</code> to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.</p>
 <hr />
 <h2 id="deployment-example">Deployment Example</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProofOfAuthority</span>

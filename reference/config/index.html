@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3217,39 +3215,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#kubernetes-sub-chain-namespace-isolation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Kubernetes (sub-chain namespace isolation)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#proof-aggregation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof aggregation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sub-chain-rebalancing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sub-chain rebalancing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#cross-level-state-sync" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4718,39 +4683,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#kubernetes-sub-chain-namespace-isolation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Kubernetes (sub-chain namespace isolation)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#proof-aggregation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof aggregation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sub-chain-rebalancing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sub-chain rebalancing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#cross-level-state-sync" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4870,7 +4802,8 @@
 <h2 id="environment-variables-and-defaults">Environment variables and defaults</h2>
 <h3 id="runtime-environment">Runtime environment</h3>
 <ul>
-<li><code>HRC_ENV</code> selects the config class. Values are <code>dev</code> (default), <code>test</code>, or <code>product</code>.</li>
+<li><code>HRC_ENV</code> selects the config class; <code>ENV</code> is used when <code>HRC_ENV</code> is unset or blank. <code>HRC_ENV</code> takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace: <code>dev</code> / <code>development</code>, <code>test</code> / <code>testing</code>, or <code>production</code> / <code>prod</code> / <code>product</code> (default when both are blank: development). An unknown nonblank value raises an error instead of selecting development.</li>
+<li><code>.env</code> is loaded before environment-backed settings are defined. Set <code>HRC_ENV_FILE</code> to use another dotenv file. Existing process environment values take precedence over values in that file.</li>
 </ul>
 <h3 id="api">API</h3>
 <ul>
@@ -4887,17 +4820,18 @@
 <li>Block limits: <code>BLOCK_SIZE_LIMIT</code> (default: <code>1000</code> events/block in dev, <code>10</code> in test)</li>
 <li><code>PROOF_SUBMISSION_INTERVAL</code> (default: <code>300</code> seconds in dev, <code>10</code> in test)</li>
 <li><code>HRC_VALIDATOR_IDENTITY</code>: validator identity file path (default: <code>validator_key.json</code>)</li>
+<li><code>HRC_BLOCK_TRUSTED_KEYS_FILE</code>: required JSON file mapping <code>creator_id</code> to Ed25519 public-key hex. The local key in <code>HRC_VALIDATOR_IDENTITY</code> must match its entry. Missing or mismatched files stop chain/API startup. Every block, including genesis, requires a trusted signature. Existing unsigned chains need migration before startup.</li>
 </ul>
 <h3 id="storage-and-cache">Storage and cache</h3>
 <ul>
-<li><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code> / <code>HRC_DATABASE_URL</code> (auto-detects <code>postgres</code> from URL; defaults: <code>sqlite</code> dev, <code>memory</code> test, <code>redis</code> prod; values: <code>sqlite</code>, <code>postgres</code>, <code>redis</code>, <code>memory</code>, <code>parquet_only</code>)</li>
-<li><code>WORLD_STATE_CACHE_SIZE</code> (default: <code>1000</code>)</li>
-<li>Advanced caching: <code>ADVANCED_CACHING_ENABLED</code> (default: <code>True</code>)</li>
-<li><code>BLOCK_CACHE_SIZE</code> (default: <code>5000</code>), <code>EVENT_CACHE_SIZE</code> (<code>20000</code>), <code>ENTITY_CACHE_SIZE</code> (<code>10000</code>)</li>
-<li>Cache policies: <code>BLOCK_CACHE_POLICY</code> (<code>lru</code>), <code>EVENT_CACHE_POLICY</code> (<code>ttl</code>), <code>ENTITY_CACHE_POLICY</code> (<code>lfu</code>)</li>
-<li><code>ENTITY_TTL</code> (default: <code>3600</code> seconds)</li>
-<li>DB: <code>DATABASE_URL</code> (default: <code>sqlite:///hierachain.db</code>)</li>
-<li>Redis: <code>REDIS_HOST</code> (<code>localhost</code>), <code>REDIS_PORT</code> (<code>6379</code>), <code>REDIS_DB</code> (<code>0</code>)</li>
+<li><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code> / <code>HRC_DATABASE_URL</code> (defaults: <code>postgres</code> in development and production, <code>memory</code> in tests; recognized values: <code>sqlite</code>, <code>postgres</code> / <code>postgresql</code>, <code>redis</code>, <code>memory</code>). An unknown backend stops API startup and chain storage initialization. <code>HierarchyManager</code> also rejects <code>redis</code> at startup because durable signed-block persistence is unavailable; use <code>sqlite</code> or <code>postgres</code> for durable ledger storage. Redis remains available for the separate indexing, authentication-state, and rate-limit adapters.</li>
+<li>In production, when the selected backend is PostgreSQL, set <code>DATABASE_URL</code> or <code>HRC_DATABASE_URL</code> explicitly. API startup rejects the built-in local fallback URL; it does not test database connectivity.</li>
+<li><code>DATABASE_URL</code> takes precedence when nonblank. An empty or whitespace-only value falls back to <code>HRC_DATABASE_URL</code>.</li>
+<li>If PostgreSQL is unavailable, chain storage initialization fails. Set <code>HRC_STORAGE_BACKEND=sqlite</code> to select SQLite explicitly.</li>
+<li>Cache instances: <code>AdvancedCache(max_size=10000, eviction_policy="lru")</code> accepts per-instance settings; <code>set(key, value, ttl=...)</code> sets entry TTL. <code>KeyManager</code> uses its own key/permission caches and <code>cache_ttl</code> (default: <code>300</code> seconds). Ordering's <code>block_cache_size</code> remains a service configuration key (default: <code>100</code>), not a <code>Settings</code> attribute.</li>
+<li>Removed unused configuration: <code>ADVANCED_CACHING_ENABLED</code>, <code>BLOCK_CACHE_SIZE</code>, <code>EVENT_CACHE_SIZE</code>, <code>ENTITY_CACHE_SIZE</code>, <code>BLOCK_CACHE_POLICY</code>, <code>EVENT_CACHE_POLICY</code>, <code>ENTITY_CACHE_POLICY</code>, <code>ENTITY_TTL</code>, and <code>hierachain.core.cache.DEFAULT_CACHE_CONFIG</code>. These names never controlled runtime caches; remove direct imports/accesses and configure the cache instance or service that actually uses them.</li>
+<li>DB: <code>DATABASE_URL</code> (development fallback: <code>postgresql://hiera:hiera@localhost:5432/hierachain</code>; do not rely on this fallback in production)</li>
+<li>Redis: <code>HRC_REDIS_HOST</code> or <code>REDIS_HOST</code> (<code>localhost</code>), <code>HRC_REDIS_PORT</code> or <code>REDIS_PORT</code> (<code>6379</code>), <code>REDIS_DB</code> (<code>0</code>). HRC-prefixed names take precedence.</li>
 </ul>
 <h3 id="ipfs-off-chain-storage">IPFS (off-chain storage)</h3>
 <ul>
@@ -4909,25 +4843,30 @@
 </ul>
 <h3 id="parallel-processing-and-resources">Parallel processing and resources</h3>
 <ul>
-<li><code>PARALLEL_PROCESSING_ENABLED</code> (<code>True</code>), <code>MAX_WORKERS</code> (<code>None</code> means auto at 50% of CPU cores), <code>PROCESSING_CHUNK_SIZE</code> (<code>100</code>)</li>
 <li>DoS protection: <code>HRC_EVENT_POOL_MAX_SIZE</code> (default: <code>10000</code>), <code>HRC_RAM_CRITICAL_THRESHOLD</code> (<code>95.0</code> %)</li>
 </ul>
 <h3 id="security-and-authentication">Security and authentication</h3>
 <ul>
-<li>Authentication: <code>HRC_AUTH_ENABLED</code> (<code>false</code> in dev/test; <code>True</code> enforced in production)</li>
+<li>Authentication: <code>HRC_AUTH_ENABLED</code> (default <code>false</code> in dev/test and required <code>true</code> in production; an explicit <code>false</code> prevents production startup)</li>
+<li><code>HRC_API_KEYS_FILE</code>: required in production. Path to a readable, nonempty JSON key map; keys must be at least 32 characters and each entry needs a <code>user_id</code> and nonempty <code>permissions</code> list. The file is loaded when the API app starts; changing the key map still requires recreating each node or restarting each direct process.</li>
+<li><code>HRC_API_KEY_REVOCATIONS_DB</code> (default: <code>data/api_key_revocations.sqlite3</code>): durable local API key revocations and brute-force lockouts for the production API. All workers on one host must use the same persistent, writable file.</li>
+<li><code>HRC_AUTH_STATE_REDIS_URL</code> (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.</li>
 <li><code>HRC_API_KEY_LOCATION</code> (<code>header</code>), <code>HRC_API_KEY_NAME</code> (<code>X-API-Key</code>)</li>
-<li>Secret backend: <code>HRC_SECRET_BACKEND</code> (values: <code>env</code>, <code>vault</code>, <code>aws</code>). Default is <code>env</code>.</li>
-<li>Master key: <code>HRC_MASTER_KEY_SOURCE</code> (<code>auto</code> in dev/test, <code>env</code> in production), <code>HRC_MASTER_KEY_FILE</code> (default: <code>config/master_backup_key.key</code>)</li>
+<li>Secret backend: <code>HRC_SECRET_BACKEND</code> (values: <code>env</code>, <code>vault</code>, <code>aws</code>). Default is <code>env</code>; another value raises <code>ValueError</code>.</li>
+<li>AWS Secret Manager: <code>HRC_AWS_SECRET_NAME</code> (required secret name or ARN containing a JSON object), <code>HRC_AWS_REGION</code> (default: <code>us-east-1</code>). <code>SecretManager.get_secret(key)</code> selects a string field, never the whole <code>SecretString</code>; see <a href="../../modules/config/">Secret Manager</a> for defaults and migration.</li>
+<li><code>HRC_MASTER_KEY_SOURCE=env</code> remains accepted as a compatibility alias for the existing environment-secret behavior. Other <code>HRC_MASTER_KEY_SOURCE</code> values and any nonempty <code>HRC_MASTER_KEY_FILE</code> now stop configuration loading with an error because no alternate master-key provider is implemented. This does not change the separate <code>FileVaultProvider</code> API.</li>
 <li>Brute-force protection:<ul>
 <li><code>HRC_BF_MAX_FAILURES</code> (default: <code>5</code>)</li>
 <li><code>HRC_BF_LOCKOUT_SECONDS</code> (default: <code>900</code> = 15 minutes)</li>
 <li><code>HRC_BF_WINDOW_SECONDS</code> (default: <code>300</code> = 5 minutes)</li>
+<li>Redis lockout TTL follows <code>HRC_BF_LOCKOUT_SECONDS</code>; lockout checks read the shared key on each request. Failure counts remain process-local.</li>
 </ul>
 </li>
 <li>Identity and organization: <code>IDENTITY_MANAGER_ENABLED</code> (<code>True</code>), <code>REQUIRE_ORGANIZATION_VALIDATION</code> (<code>True</code>), <code>MSP_ENABLED</code> (<code>True</code>)</li>
 </ul>
 <h3 id="p2p-network-security">P2P network security</h3>
 <ul>
+<li>Node identity and P2P transport: <code>HRC_NODE_ID</code> (default: <code>default-node</code>; <code>NODE_ID</code> is a fallback alias), <code>HRC_P2P_PORT</code> (default: <code>5555</code>; <code>NODE_PORT</code> is a fallback alias), and <code>HRC_PEERS</code> (default: empty list; comma-separated seed nodes; <code>PEERS</code> is a fallback alias). Use <code>peer-id@host:port</code> when the remote transport identity differs from its hostname; plain <code>host:port</code> treats the hostname as the peer ID. HRC-prefixed names take precedence.</li>
 <li><code>HRC_P2P_TRUST_POLICY</code> (default: <code>open</code> in dev, <code>strict</code> in production; values: <code>open|strict</code>)</li>
 <li><code>HRC_P2P_PEER_ALLOWLIST</code> (comma-separated peer IDs for strict mode)</li>
 <li><code>HRC_P2P_REQUIRE_SIGNATURES</code> (<code>false</code> in dev, <code>true</code> in production)</li>
@@ -4949,6 +4888,7 @@
 <li><code>HRC_RATE_LIMIT</code> (<code>false</code> in dev/test; <code>true</code> in production)</li>
 <li><code>HRC_RATE_LIMIT_RPM</code> (default: <code>100</code> requests/minute)</li>
 <li><code>HRC_RATE_LIMIT_BACKEND</code>: <code>memory</code> (single node) or <code>redis</code> (multi-node or cluster).</li>
+<li>With the <code>redis</code> backend, Redis errors and timeouts reject non-exempt requests with HTTP 503 (fail-closed). Redis checks run off the API event loop.</li>
 </ul>
 <h3 id="monitoring-and-metrics">Monitoring and metrics</h3>
 <ul>
@@ -4969,36 +4909,6 @@
 <li><code>HRC_ZK_VERIFICATION_KEY</code>, <code>HRC_ZK_PROVING_KEY</code>, <code>HRC_ZK_CIRCUIT</code> (file paths)</li>
 <li><code>HRC_ZK_REQUIRED_MAINCHAIN</code> (default: <code>false</code>)</li>
 </ul>
-<h3 id="kubernetes-sub-chain-namespace-isolation">Kubernetes (sub-chain namespace isolation)</h3>
-<ul>
-<li><code>HRC_K8S_ENABLED</code> (default: <code>false</code>)</li>
-<li><code>HRC_K8S_NAMESPACE_PREFIX</code> (default: <code>hrc-subchain-</code>)</li>
-<li><code>HRC_K8S_CONFIG</code> (kubeconfig path, empty if in-cluster)</li>
-<li>
-<p>Limits and resources:</p>
-<ul>
-<li><code>HRC_K8S_CPU_LIMIT</code> (default: <code>1000m</code>)</li>
-<li><code>HRC_K8S_MEMORY_LIMIT</code> (default: <code>1Gi</code>)</li>
-<li><code>HRC_K8S_CPU_REQUEST</code> (default: <code>250m</code>)</li>
-<li><code>HRC_K8S_MEMORY_REQUEST</code> (default: <code>256Mi</code>)</li>
-</ul>
-</li>
-</ul>
-<h3 id="proof-aggregation">Proof aggregation</h3>
-<ul>
-<li><code>HRC_PROOF_AGGREGATION</code> (default: <code>true</code>)</li>
-<li><code>HRC_PROOF_BATCH_SIZE</code> (default: <code>10</code>)</li>
-<li><code>HRC_PROOF_BATCH_TIMEOUT</code> (default: <code>30.0</code> seconds)</li>
-<li><code>HRC_PROOF_COMPRESSION</code> (default: <code>true</code>)</li>
-</ul>
-<h3 id="sub-chain-rebalancing">Sub-chain rebalancing</h3>
-<ul>
-<li><code>HRC_REBALANCE_ENABLED</code> (default: <code>true</code>)</li>
-<li><code>HRC_REBALANCE_THRESHOLD_EPS</code> (default: <code>1000</code> events/sec)</li>
-<li><code>HRC_REBALANCE_CHECK_INTERVAL</code> (default: <code>60.0</code> seconds)</li>
-<li><code>HRC_REBALANCE_MIN_EVENTS</code> (default: <code>5000</code> events before split)</li>
-<li><code>HRC_REBALANCE_COOLDOWN</code> (default: <code>300.0</code> seconds = 5 minutes)</li>
-</ul>
 <h3 id="cross-level-state-sync">Cross-level state sync</h3>
 <ul>
 <li><code>HRC_CROSS_LEVEL_SYNC</code> (default: <code>true</code>)</li>
@@ -5012,14 +4922,14 @@
 </ul>
 <h3 id="logging">Logging</h3>
 <ul>
-<li><code>LOG_LEVEL</code> (default: <code>INFO</code> in dev, <code>DEBUG</code> in test, <code>WARNING</code> in production)</li>
+<li><code>LOG_LEVEL</code> (default: <code>DEBUG</code> in dev, <code>DEBUG</code> in test, <code>WARNING</code> in production)</li>
 <li><code>LOG_FORMAT</code> (standard Python logging format string).</li>
 <li><code>HRC_LOG_FORMAT</code>: <code>text</code> (default) or <code>json</code> (for centralized logging like ELK/Loki).</li>
-<li><code>HRC_LOG_SQL_DETAIL</code> (default: <code>true</code> in dev, <code>false</code> in production)</li>
+<li><code>HRC_LOG_SQL_DETAIL</code> (default: <code>false</code>)</li>
 </ul>
 <h3 id="cli">CLI</h3>
 <ul>
-<li><code>CLI_CONFIG_FILE</code> (default: <code>chains.json</code>)</li>
+<li><code>CLI_CONFIG_FILE</code> (default: <code>data/config.yaml</code>; default node config used by <code>hrc --config</code>)</li>
 <li><code>CLI_LOG_LEVEL</code> (default: <code>INFO</code>)</li>
 </ul>
 <h2 id="example-env-development">Example .env (development)</h2>
@@ -5029,23 +4939,21 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>HRC_CONSENSUS_TYPE=proof_of_authority
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>HRC_AUTH_ENABLED=false
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>HRC_CORS_ALLOW_ALL=true
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>DATABASE_URL=sqlite:///hierachain.db
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>LOG_LEVEL=DEBUG
 </code></pre></div>
 <h2 id="recommended-production-configuration-minimum">Recommended production configuration (minimum)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>HRC_ENV=product
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>HRC_ENV=production
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>HRC_API_HOST=0.0.0.0
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>HRC_AUTH_ENABLED=true
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HRC_CORS_ALLOW_ALL=false
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>HRC_CORS_ORIGINS=https://portal.example.com
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>HRC_RATE_LIMIT=true
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>DEFAULT_STORAGE_BACKEND=redis
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>REDIS_HOST=redis
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>REDIS_PORT=6379
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENABLED=true
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>DATABASE_URL=postgresql://user:pass@db:5432/hierachain
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>HRC_STORAGE_BACKEND=postgres
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>HRC_IPFS_ENABLED=true
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 </code></pre></div>
 
 

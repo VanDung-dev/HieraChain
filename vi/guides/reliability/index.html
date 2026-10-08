@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4339,14 +4337,13 @@
 <p>Đưa ra các thực hành để đảm bảo hệ thống vận hành ổn định, dễ hồi phục khi gặp sự cố.</p>
 <h2 id="thanh-phan-lien-quan">Thành phần liên quan</h2>
 <ul>
-<li>Journal/Recovery: <code>hierachain/error_mitigation/journal.py</code>, <code>rollback_manager.py</code>, <code>consensus_recovery.py</code>, <code>network_recovery.py</code>, <code>backup_recovery.py</code></li>
-<li>Cross-level Sync: <code>HRC_CROSS_LEVEL_SYNC</code> qua <code>hierarchical/hierarchy_manager/base.py</code>, <code>hierachain/cluster/state_sync_manager.py</code></li>
+<li>Journal/Recovery: <code>hierachain/error_mitigation/journal.py</code>, <code>error_classifier.py</code> và BFT view change trong <code>hierachain/consensus/bft/view_change.py</code></li>
+<li>Cross-level Sync: <code>HRC_CROSS_LEVEL_SYNC</code> qua <code>hierarchical/hierarchy_manager/base.py</code>, <code>hierachain/cluster/cross_level_sync.py</code></li>
 </ul>
 <h2 id="mau-hinh">Mẫu hình</h2>
 <ul>
 <li>Nhật ký bền vững (Journal): ghi trước khi áp dụng thay đổi.</li>
-<li>Hoàn tác an toàn (Rollback): trạng thái có thể quay lại điểm an toàn.</li>
-<li>Phục hồi tự động (Recovery): kịch bản tiêu chuẩn cho mất kết nối/DB lỗi.</li>
+<li>Phục hồi vận hành: backup, snapshot và thay thế node do deployment sở hữu.</li>
 <li>Idempotency + Retry with backoff: lặp lại hành động mà không gây nhân đôi hiệu ứng.</li>
 </ul>
 <h2 id="khuyen-nghi-trien-khai">Khuyến nghị triển khai</h2>

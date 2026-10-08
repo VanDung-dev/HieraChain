@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cơ chế phong tỏa khẩn cấp và hệ thống ghi nhật ký an toàn chống giả mạo.">
+        <meta name="description" content="Hệ thống ghi nhật ký an toàn có khả năng phát hiện giả mạo.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Lockdown & Secure Logging - HieraChain Docs</title>
+        <title>Ghi nhật ký an toàn - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#lockdown-logging" class="md-skip">
+        <a href="#ghi-nhat-ky-an-toan" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Lockdown & Secure Logging
+              Ghi nhật ký an toàn
             
           </span>
         </div>
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2555,32 +2553,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-lockdown-protocol" class="md-nav__link">
+  <a href="#ghi-nhat-ky-an-toan_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Lockdown Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-secure-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Secure Logging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-phan-ung-lockdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Phản ứng Lockdown
+        Ghi nhật ký an toàn
       </span>
     </span>
   </a>
@@ -4260,32 +4236,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-lockdown-protocol" class="md-nav__link">
+  <a href="#ghi-nhat-ky-an-toan_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Lockdown Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-secure-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Secure Logging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-phan-ung-lockdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Phản ứng Lockdown
+        Ghi nhật ký an toàn
       </span>
     </span>
   </a>
@@ -4334,17 +4288,9 @@
   
 
 
-<h1 id="lockdown-logging">Lockdown &amp; Logging</h1>
-<p>Lớp bảo mật này tập trung vào việc phản ứng nhanh khi hệ thống bị xâm nhập thông qua cơ chế phong tỏa và hệ thống ghi nhật ký an toàn chống giả mạo.</p>
-<h2 id="1-lockdown-protocol">1. Lockdown Protocol</h2>
-<p><strong>File</strong>: <code>hierachain/cluster/lockdown_protocol.py</code></p>
-<p>Cơ chế "ngắt mạch" khẩn cấp cho toàn bộ cụm (Cluster):</p>
-<ul>
-<li><strong>Kích hoạt Quorum</strong>: Chế độ phong tỏa chỉ được kích hoạt hoặc gỡ bỏ khi có đủ số lượng nút (Quorum) đồng thuận.</li>
-<li><strong>Trạng thái Read-only</strong>: Khi ở chế độ Lockdown, hệ thống từ chối mọi yêu cầu thay đổi dữ liệu (Write) để bảo vệ tính toàn vẹn.</li>
-<li><strong>HMAC Lockdown</strong>: Sử dụng mã bí mật <code>HRC_CLUSTER_SECRET</code> để xác thực các lệnh phong tỏa giữa các nút.</li>
-</ul>
-<h2 id="2-secure-logging">2. Secure Logging</h2>
+<h1 id="ghi-nhat-ky-an-toan">Ghi nhật ký an toàn</h1>
+<p>Lớp bảo mật này cung cấp log có cấu trúc và khả năng phát hiện giả mạo cho các thao tác nhạy cảm.</p>
+<h2 id="ghi-nhat-ky-an-toan_1">Ghi nhật ký an toàn</h2>
 <p><strong>File</strong>: <code>hierachain/security/secure_logging.py</code></p>
 <p>Hệ thống ghi nhật ký được thiết kế chuyên biệt cho an ninh:</p>
 <ul>
@@ -4352,24 +4298,10 @@
 <li><strong>Structured Logs</strong>: Log được ghi dưới dạng JSON để dễ dàng tích hợp với các hệ thống giám sát tập trung (SIEM).</li>
 <li><strong>Phân quyền Log</strong>: Các module nhạy cảm (như <code>security</code>, <code>consensus</code>) sử dụng <code>SecureLogger</code> riêng biệt với mức độ bảo vệ cao hơn.</li>
 </ul>
-<hr />
-<h2 id="co-che-phan-ung-lockdown">Cơ chế Phản ứng Lockdown</h2>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; Operational
-    Operational --&gt; LockdownInitiated: Anomaly Detected
-    LockdownInitiated --&gt; Lockdown: Quorum Consensus Reached
-    state Lockdown {
-        direction TB
-        ReadOnly: Only GET requests allowed
-        RejectWrites: Block all POST/PUT/DELETE
-        AlertAdmin: Notify via all channels
-    }
-    Lockdown --&gt; Operational: Admin Reset + Quorum Vote</code></pre>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././risk-analyzer/">Phân tích rủi ro</a></li>
-<li><a href="../../modules/cluster/">Quản trị Cluster</a></li>
+<li><a href=".././risk-analyzer/">Làm sạch input</a></li>
+<li><a href="../../modules/security/">Security module</a></li>
 </ul>
 
 

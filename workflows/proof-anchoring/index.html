@@ -1568,11 +1568,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4424,8 +4422,8 @@
 
 <h1 id="proof-anchoring">Proof anchoring</h1>
 <h2 id="overview">Overview</h2>
-<p>After a block is finalized on a Sub-Chain, the Sub-Chain submits a cryptographic proof (hash and optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. This keeps domain data off the root chain while still enforcing global immutability.</p>
-<p>This is not a user initiated call. It is a post-block trigger that fires when <code>chain_length % proof_interval == 0</code>.</p>
+<p>After a block is finalized on a Sub-Chain, the Sub-Chain submits a cryptographic proof (hash and optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. Submission succeeds only after a signed MainChain block containing the proof is finalized, saved through durable SQL storage, and read back with its hash, Merkle root, and signature verified. SQLite uses WAL with <code>synchronous=FULL</code> for these commits. An unavailable or unsupported storage backend causes submission to fail.</p>
+<p>Automatic submission runs after a Sub-Chain block is finalized when the configured time interval has elapsed and a newer block has not yet been submitted. The authenticated REST endpoint can also trigger submission.</p>
 <hr />
 <h2 id="flow-diagram">Flow diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4449,8 +4447,9 @@
     SC-&gt;&gt;SC: _generate_default_proof_metadata()
     SC-&gt;&gt;MC: add_proof(sub_chain_name, proof_hash, metadata, zk_proof)
     MC-&gt;&gt;MC: Verify ZK proof (if enabled)
-    MC-&gt;&gt;MC: Store proof block on Main Chain
-    MC--&gt;&gt;SC: True (success)
+    MC--&gt;&gt;SC: Proof queued
+    SC-&gt;&gt;MC: Finalize signed proof block, save and read back from storage
+    MC--&gt;&gt;SC: Durable proof confirmed
 
     SC-&gt;&gt;SC: Record proof_submitted event
     SC-&gt;&gt;SC: Update last_proof_submission timestamp</code></pre>
@@ -4466,7 +4465,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>1. Trigger check</strong></td>
-<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> checks <code>len(chain) &gt; 1</code> and block has been finalized</td>
+<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> checks the elapsed interval and whether a newer finalized block exists.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>2. ZK generation</strong></td>
@@ -4474,15 +4473,15 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>3. Proof metadata</strong></td>
-<td style="text-align: left;"><code>_generate_default_proof_metadata()</code> builds <code>{ sub_chain_name, block_count, latest_hash, timestamp }</code></td>
+<td style="text-align: left;"><code>_generate_default_proof_metadata()</code> builds summary metadata; MainChain rejects forbidden detail fields inside nested dictionaries or lists and sanitizes accepted containers recursively before recording them</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>4. Main Chain write</strong></td>
-<td style="text-align: left;"><code>MainChain.add_proof()</code> verifies ZK proof, appends a new proof block</td>
+<td style="text-align: left;"><code>MainChain.add_proof()</code> verifies and queues the proof; the submission path finalizes and reads back the signed block from durable storage.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>5. Record</strong></td>
-<td style="text-align: left;">Sub-Chain logs a <code>proof_submitted</code> internal event and updates <code>last_proof_submission</code></td>
+<td style="text-align: left;">Only after durable readback, Sub-Chain logs a <code>proof_submitted</code> event and updates <code>last_proof_submission</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -4556,8 +4555,12 @@
 <td style="text-align: left;">Exception logged, <code>last_proof_submission</code> not updated; retry on next block</td>
 </tr>
 <tr>
-<td style="text-align: left;">Main Chain ZK verification fails</td>
-<td style="text-align: left;"><code>add_proof()</code> raises, proof block not appended</td>
+<td style="text-align: left;">Durable storage is absent, unsupported, or readback fails</td>
+<td style="text-align: left;">Submission returns <code>False</code>; a retry can persist an already queued or finalized proof without adding a duplicate.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Required ZK proof is missing or verification fails</td>
+<td style="text-align: left;"><code>MainChain.add_proof()</code> returns <code>False</code>; no proof is recorded</td>
 </tr>
 </tbody>
 </table>
@@ -4585,7 +4588,7 @@
 <tr>
 <td style="text-align: left;">Proof metadata</td>
 <td style="text-align: left;"><code>_generate_default_proof_metadata()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;"><code>hierarchical/sub_chain/proof.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Anchor on Main</td>
@@ -4594,7 +4597,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">ZK verify</td>
-<td style="text-align: left;"><code>ZKVerifier.verify_proof()</code></td>
+<td style="text-align: left;"><code>ZKVerifier.verify()</code></td>
 <td style="text-align: left;"><code>security/verify/zk_verifier.py</code></td>
 </tr>
 </tbody>

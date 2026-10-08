@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3076,18 +3074,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tham-chieu-graphql-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tham chiếu GraphQL API
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tham chiếu GraphQL API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#1-truy-van-queries" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -3097,8 +3083,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#2-tuong-tac-thay-oi-mutations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -3106,11 +3092,6 @@
       </span>
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4255,18 +4236,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tham-chieu-graphql-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tham chiếu GraphQL API
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tham chiếu GraphQL API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#1-truy-van-queries" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4276,8 +4245,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#2-tuong-tac-thay-oi-mutations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4285,11 +4254,6 @@
       </span>
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4325,26 +4289,27 @@
 
 
 <h1 id="graphql-api-reference">GraphQL API Reference</h1>
-<h2 id="tham-chieu-graphql-api">Tham chiếu GraphQL API</h2>
-<p>Hệ thống cho phép tương tác trực tiếp qua cổng <strong>GraphQL Endpoint</strong>. Thư mục chứa cấu hình lõi: <code>hierachain/api/graphql/schema.py</code>. Cấu trúc GraphQL tối ưu cho việc truy vấn (query) chọn lọc đa dữ liệu mà không gọi quá nhiều tài nguyên mạng như REST.</p>
+<p>GraphQL endpoint cung cấp các trường Query và Mutation được định nghĩa trong <code>hierachain/api/graphql/schema.py</code>. Client có thể chọn trường cần đọc trên Main-Chain và Sub-Chains.</p>
 <h3 id="1-truy-van-queries">1. Truy vấn (Queries)</h3>
-<p>Giao diện GraphQL Schema hỗ trợ trích xuất mạnh mẽ theo phân cấp Main-Chain và Sub-Chains.</p>
+<p>Dùng các truy vấn sau để đọc block, event và trạng thái chain trên Main-Chain và Sub-Chains.</p>
 <p><strong>Lấy dữ liệu Block đơn lẻ:</strong></p>
-<p>Truy vấn cục bộ một hàm Block duy nhất qua tên chuỗi và số <code>index</code>.</p>
+<p>Lấy block theo tên chain và <code>index</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">query</span><span class="w"> </span><span class="nf">GetSingleBlock</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">block</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"sub_chain_finance"</span><span class="p">,</span><span class="w"> </span><span class="n">blockIndex</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">index</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">hash</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">timestamp</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">events</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="n">eventId</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="n">entityId</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="n">eventType</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Lọc các đối tượng Lịch sử Sự kiện (Events) bằng tham số:</strong></p>
-<p>Có thể filter nhanh gọn.</p>
+<p>Lọc event theo tên chain, loại event và giới hạn kết quả.</p>
+<p><code>blocks</code> và <code>events</code> trả tối đa 100 kết quả cho mỗi trường. Mặc định là 100; <code>limit: 0</code> trả danh sách rỗng. Giới hạn này cũng áp dụng khi <code>limit</code> được truyền qua biến GraphQL.</p>
+<p><code>events</code> đọc event đã finalize theo thứ tự block/row. Với chain native, <code>entityId</code> và <code>eventType</code> dùng index event; bộ lọc kết hợp chọn danh sách ứng viên nhỏ hơn. Giá trị không có trong index trả danh sách rỗng mà không quét block. Chỉ kết quả khớp mới được sao chép và chuyển thành GraphQL, bao gồm JSON details. <code>fromTimestamp</code> và <code>toTimestamp</code> bao gồm cả hai đầu và chấp nhận giá trị zero. Truy vấn chỉ theo thời gian lọc metadata Arrow theo batch trước khi giải mã payload; đường này vẫn có thể kiểm tra toàn bộ phần lịch sử còn lại khi không có event khớp. Danh sách ứng viên theo entity/type kết hợp bộ lọc thời gian chọn lọc cũng có thể cần kiểm tra các ứng viên còn lại.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">query</span><span class="w"> </span><span class="nf">FilterEvents</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"main_chain"</span><span class="p">,</span><span class="w"> </span>
@@ -4357,16 +4322,27 @@
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
 </code></pre></div>
+<p><strong>Đọc trang event tiếp theo:</strong></p>
+<p>Mỗi event do <code>events</code> trả về có <code>cursor</code> dạng opaque. Truyền cursor cuối cùng vào <code>after</code> và giữ nguyên chain cùng các bộ lọc. Phân trang tiếp tục sau vị trí block/row đó, nên timestamp trùng nhau không làm lặp hay bỏ sót event. Truy vấn native dùng index tìm vị trí trong danh sách ứng viên; truy vấn native không lọc hoặc chỉ lọc thời gian bắt đầu tại block của cursor. Kết quả rỗng chỉ ra điểm kết thúc với các bộ lọc hiện tại. Cursor thuộc riêng từng chain; cursor sai định dạng hoặc khác chain tạo query error. Event đang pending không được trả về. Phân trang đọc trực tiếp chain append-only, không phải snapshot xuyên các request; event finalize về sau có thể xuất hiện trong trang tiếp theo. Trường <code>cursor</code> được điền bởi query gốc <code>events</code>, không phải <code>block.events</code>/<code>blocks.events</code> lồng nhau.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">query</span><span class="w"> </span><span class="nf">EventPage</span><span class="p">(</span><span class="nv">$after</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"main_chain"</span><span class="p">,</span><span class="w"> </span><span class="n">eventType</span><span class="p">:</span><span class="w"> </span><span class="s">"user_registered"</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">after</span><span class="p">:</span><span class="w"> </span><span class="nv">$after</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">entityId</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">eventType</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="n">cursor</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>Index theo loại dùng chung payload event đã cache với index entity hiện có và được dựng lại khi recovery chain. Nó thêm tham chiếu và vị trí row trong bộ nhớ; không tạo kho payload event riêng và không bỏ xác thực chữ ký. Chain bên ngoài không có index native dùng đường tương thích Arrow/list.</p>
 <p><strong>Trạng thái Blockchain:</strong></p>
-<p>Cung cấp cái nhìn toàn vẹn với <code>chainStatus</code> (kiểm tra một chain) hoặc <code>allChains</code> (phản chiếu dashboard của mạng lưới).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">query</span><span class="w"> </span><span class="nf">OverallSystem</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">allChains</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="n">chainName</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">blockCount</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="n">latestBlockHash</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="n">status</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">}</span>
+<p>Dùng <code>chainStatus</code> để xem một chain hoặc <code>allChains</code> để lấy trạng thái của mọi chain.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">query</span><span class="w"> </span><span class="nf">OverallSystem</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">allChains</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">chainName</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">blockCount</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">latestBlockHash</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="n">status</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="2-tuong-tac-thay-oi-mutations">2. Tương tác Thay đổi (Mutations)</h3>
 <p>Schema GraphQL hỗ trợ tính năng Mutation dùng để truyền Event trực tiếp vào sub-chain hoặc main-chain.</p>
@@ -4376,18 +4352,18 @@
 - <code>eventType</code> (Required String)
 - <code>details</code> (Optional String - dạng JSON string hóa)</p>
 <p><strong>Ví dụ:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">mutation</span><span class="w"> </span><span class="nf">CreateNewEvent</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">addEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"sub_chain_logistics"</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"driver_443"</span><span class="p">,</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">eventType</span><span class="p">:</span><span class="w"> </span><span class="s">"delivery_confirmed"</span><span class="p">,</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="n">details</span><span class="p">:</span><span class="w"> </span><span class="s">"{</span><span class="se">\"</span><span class="s">status</span><span class="se">\"</span><span class="s">: </span><span class="se">\"</span><span class="s">ok</span><span class="se">\"</span><span class="s">, </span><span class="se">\"</span><span class="s">location</span><span class="se">\"</span><span class="s">: </span><span class="se">\"</span><span class="s">zone-b</span><span class="se">\"</span><span class="s">}"</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="n">success</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="n">blockIndex</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="n">error</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">mutation</span><span class="w"> </span><span class="nf">CreateNewEvent</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">addEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"sub_chain_logistics"</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"driver_443"</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="n">eventType</span><span class="p">:</span><span class="w"> </span><span class="s">"delivery_confirmed"</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="n">details</span><span class="p">:</span><span class="w"> </span><span class="s">"{</span><span class="se">\"</span><span class="s">status</span><span class="se">\"</span><span class="s">: </span><span class="se">\"</span><span class="s">ok</span><span class="se">\"</span><span class="s">, </span><span class="se">\"</span><span class="s">location</span><span class="se">\"</span><span class="s">: </span><span class="se">\"</span><span class="s">zone-b</span><span class="se">\"</span><span class="s">}"</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="n">success</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="n">blockIndex</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="n">error</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="p">}</span>
 </code></pre></div>
 
 

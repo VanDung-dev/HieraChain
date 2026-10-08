@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1792,6 +1790,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         ERP event translation example
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformer-registry-and-task-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformer registry and task snapshots
       </span>
     </span>
   </a>
@@ -4359,6 +4368,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#transformer-registry-and-task-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Transformer registry and task snapshots
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#supported-erp-systems" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4529,6 +4549,11 @@
 <a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">}</span>
 </code></pre></div>
 <hr />
+<h2 id="transformer-registry-and-task-snapshots">Transformer registry and task snapshots</h2>
+<p><code>ERPIntegrationLedger</code> shares its <code>MappingEngine</code> with <code>EventTranslator</code>. A transformer registered through <code>integration.mapping_engine.register_transformer(name, function)</code> is called with <code>(value, params)</code> from the mapping rule. Standalone callers can use <code>EventTranslator(mapping_engine)</code> with their own registry; simple path mappings also work with <code>EventTranslator()</code>.</p>
+<p>The template returned by <code>create_sap_integration_profile()</code> maps <code>created</code> to <code>creation</code>, converts a quantity such as <code>"12.50"</code> to <code>12.5</code>, and converts <code>"20260930123045"</code> with format <code>%Y%m%d%H%M%S</code> to <code>"2026-09-30T12:30:45"</code>.</p>
+<p><code>SyncScheduler.get_all_tasks()</code> returns detached status dictionaries while acquiring its lock once. Editing a returned dictionary does not change the scheduled task.</p>
+<hr />
 <h2 id="supported-erp-systems">Supported ERP systems</h2>
 <table>
 <thead>
@@ -4624,6 +4649,10 @@
 <td style="text-align: left;">Logged as warning; event submitted with partial data</td>
 </tr>
 <tr>
+<td style="text-align: left;">Transformer missing or raises an exception</td>
+<td style="text-align: left;">Warning logged; the affected field is omitted from the translated event</td>
+</tr>
+<tr>
 <td style="text-align: left;"><code>add_event()</code> validation fails (forbidden term)</td>
 <td style="text-align: left;">Event discarded; logged with raw ERP data</td>
 </tr>
@@ -4633,6 +4662,7 @@
 </tr>
 </tbody>
 </table>
+<p><code>_execute_sync()</code> currently ignores the return value of <code>chain.add_event()</code> and can return <code>SyncStatus.COMPLETED</code> even when individual events have errors. This status does not prove ledger acceptance or durable storage; callers must inspect <code>SyncResult.errors</code>. Production ERP delivery has not been verified by the transformer and scheduler tests.</p>
 <hr />
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>

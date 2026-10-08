@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Guide to Two-Phase Commit (2PC) mechanism and distributed operation coordination.">
+        <meta name="description" content="How to initiate and recover durable Two-Phase Commit (2PC) operations.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3687,72 +3685,49 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Purpose">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-operation-state-lifecycle" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transaction-states" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Operation State Lifecycle
+        Transaction states
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-two-phase-commit-2pc-model" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#transaction-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Two-Phase Commit (2PC) Model
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. Two-Phase Commit (2PC) Model">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#phase-1-prepare-phase" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Phase 1: Prepare Phase
+        Transaction flow
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-2-commit-phase" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#initiate-an-operation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Phase 2: Commit Phase
+        Initiate an operation
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-command-initialization-guide" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#recover-unresolved-operations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Command Initialization Guide
+        Recover unresolved operations
       </span>
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4302,72 +4277,49 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Purpose">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-operation-state-lifecycle" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transaction-states" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Operation State Lifecycle
+        Transaction states
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-two-phase-commit-2pc-model" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#transaction-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Two-Phase Commit (2PC) Model
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. Two-Phase Commit (2PC) Model">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#phase-1-prepare-phase" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Phase 1: Prepare Phase
+        Transaction flow
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-2-commit-phase" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#initiate-an-operation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Phase 2: Commit Phase
+        Initiate an operation
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-command-initialization-guide" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#recover-unresolved-operations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Command Initialization Guide
+        Recover unresolved operations
       </span>
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4404,52 +4356,46 @@
 
 <h1 id="cross-chain-operations-2pc">Cross-Chain Operations (2PC)</h1>
 <h2 id="purpose">Purpose</h2>
-<p>HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset state transitions across two (or more) different systems, HieraChain integrates a coordination mechanism called <strong>Two-Phase Commit (2PC)</strong>.</p>
-<p>This mechanism is primarily managed by the <code>CrossChainTransactionManager</code> module at <code>hierachain/hierarchical/transaction_manager.py</code>.</p>
-<h3 id="1-operation-state-lifecycle">1. Operation State Lifecycle</h3>
-<p>Each cross-chain operation moves sequentially through the following states to prevent loss:</p>
+<p><code>CrossChainTransactionManager</code> coordinates a transaction between two <code>DomainChain</code> participants. Its coordinator-owned journal stores transaction metadata and the durable commit decision separately from each chain's ordering event journal.</p>
+<h2 id="transaction-states">Transaction states</h2>
 <ul>
-<li><strong><code>PENDING</code></strong>: Operation has been initialized, network is waiting to execute the main process.</li>
-<li><strong><code>PREPARED</code></strong>: Both source and destination chains have committed that conditions are sufficient for execution, resources have been successfully locked.</li>
-<li><strong><code>COMMITTED</code></strong>: Operation completed on all network chains with consensus.</li>
-<li><strong><code>ROLLED_BACK</code></strong>: Operation cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.</li>
-<li><strong><code>FAILED</code></strong>: Operation failed completely (likely due to internal TCP connection failure or critical logic error).</li>
+<li><strong><code>PENDING</code></strong>: The coordinator has created the transaction.</li>
+<li><strong><code>PREPARED</code></strong>: Both participants accepted the prepare request; no commit decision has been made yet.</li>
+<li><strong><code>IN_DOUBT</code></strong>: The coordinator cannot confirm completion. Before a durable COMMIT decision it retries abort; after that decision it retries commit.</li>
+<li><strong><code>COMMITTED</code></strong>: Both participants acknowledged that their operation events were fsynced to their ordering journals. Block finalization may still be running asynchronously.</li>
+<li><strong><code>ROLLED_BACK</code></strong>: Both participants acknowledged abort before any durable COMMIT decision.</li>
+<li><strong><code>FAILED</code></strong>: The transaction could not start, for example because a named chain is missing or does not support 2PC.</li>
 </ul>
-<h3 id="2-two-phase-commit-2pc-model">2. Two-Phase Commit (2PC) Model</h3>
-<p>In <code>CrossChainTransactionManager</code>, <code>_execute_2pc(transaction)</code> clearly allocates the main process to handle cross-chain operations. The core logic consists of two phases:</p>
-<h4 id="phase-1-prepare-phase">Phase 1: Prepare Phase</h4>
-<ul>
-<li>The manager retrieves objects from <code>get_sub_chain()</code> of HierarchyManager.</li>
-<li>Calls <code>prepare_transaction(tx_id, payload, is_source=True)</code> on the <strong>Source</strong> chain to lock source resources.</li>
-<li>Then calls <code>prepare_transaction</code> on the <strong>Destination</strong> chain to mark the transaction receipt.</li>
-<li>Goal of Phase 1: Force all participating chains to commit that they can perform the change.</li>
-<li>If Source or Destination chain cannot Prepare successfully (e.g. due to lock balance errors), the system immediately proceeds to <code>_rollback()</code>.</li>
-</ul>
-<h4 id="phase-2-commit-phase">Phase 2: Commit Phase</h4>
-<ul>
-<li>Only executed if Phase 1 returns success for all participants.</li>
-<li>Module calls <code>commit_transaction(tx_id)</code> on the Source chain.</li>
-<li>Simultaneously performs the same on the Destination chain structure for final Commit.</li>
-<li>At this step, the actual block will be created on both Sub-chains to finalize the data exchange.</li>
-<li>If an error occurs during the Commit process (though rare), the transaction state is flagged as <code>FAILED</code> to await manual recovery tools via that ID.</li>
-</ul>
-<h3 id="3-command-initialization-guide">3. Command Initialization Guide</h3>
-<p>When needing to issue a command via DApp or external Module, developers access the following API/Function:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Get instance from existing HierarchyManager</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">CrossChainTransactionManager</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="o">=</span><span class="n">hierarchy_manager_instance</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Execute initiate transaction command</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_transaction</span><span class="p">(</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_finance"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_logistics"</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">"event_name"</span><span class="p">:</span> <span class="s2">"asset_transfer"</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"PKG-099238"</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">500</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">}</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
+<h2 id="transaction-flow">Transaction flow</h2>
+<ol>
+<li>The coordinator fsyncs a <code>begin</code> record before preparing either participant.</li>
+<li>It prepares the source and destination, then fsyncs a <code>prepared</code> record.</li>
+<li>It fsyncs the COMMIT decision before calling either participant's <code>commit_transaction()</code>.</li>
+<li>Each participant acknowledges only after its transaction-tagged start and completion events have been accepted by its ordering journal.</li>
+<li>After both acknowledgments, the coordinator fsyncs <code>committed</code> and exposes <code>COMMITTED</code>.</li>
+</ol>
+<p>If prepare fails, the coordinator attempts abort on both participants. It reports <code>ROLLED_BACK</code> only if both return <code>True</code>; otherwise it records <code>IN_DOUBT</code> and retries abort later. After a durable COMMIT decision, it never calls rollback. A failed commit remains <code>IN_DOUBT</code> and is retried forward.</p>
+<h2 id="initiate-an-operation">Initiate an operation</h2>
+<p>Use the <code>HierarchyManager</code> coordinator so its durable journal and recovery state remain shared:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_finance"</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PKG-099238"</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"operation_type"</span><span class="p">:</span> <span class="s2">"transfer"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">500</span><span class="p">},</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">},</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">transaction</span> <span class="o">=</span> <span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">transaction_manager</span><span class="o">.</span><span class="n">get_transaction</span><span class="p">(</span><span class="n">tx_id</span><span class="p">)</span>
 </code></pre></div>
-<p>This will trigger <code>_execute_2pc</code> automatically and synchronously within the management logic without requiring additional client-side operations.</p>
+<p>The entity must be registered on both chains and the operation payload must pass both participants' validation.</p>
+<h2 id="recover-unresolved-operations">Recover unresolved operations</h2>
+<p>The coordinator retries durable decisions at startup and when participants are registered. To retry after a runtime failure:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">transaction_manager</span><span class="o">.</span><span class="n">retry_pending</span><span class="p">()</span>
+</code></pre></div>
+<p>Persisted chains named by unresolved 2PC records are restored as <code>DomainChain</code> participants. Other persisted chains remain generic <code>SubChain</code> instances. If a generic placeholder must be promoted explicitly, call <code>create_sub_chain()</code> with its existing name and domain type; the replacement connects before the placeholder shuts down.</p>
+<p>After a durable COMMIT, the coordinator's <code>prepared</code> record confirms both participants validated the payload before the decision. Recovery restores participant input from that payload and skips operation events already marked in the ordering journal, so it does not depend on volatile entity registries being restored.</p>
 
 
 

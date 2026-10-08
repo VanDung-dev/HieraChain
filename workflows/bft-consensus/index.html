@@ -18,7 +18,7 @@
         <link rel="prev" href="../cross-chain-2pc/">
       
       
-        <link rel="next" href="../cluster-lockdown/">
+        <link rel="next" href="../cluster-lockdown.md">
       
       
         
@@ -1568,11 +1568,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4424,49 +4422,49 @@
 
 <h1 id="bft-consensus">BFT consensus</h1>
 <h2 id="overview">Overview</h2>
-<p>The Byzantine Fault Tolerant consensus uses 3-phase PBFT to finalize blocks. It needs <code>n &gt;= 3f + 1</code> nodes to tolerate <code>f</code> faulty or malicious nodes. In BFT mode this replaces the <code>finalize_block()</code> step from event submission.</p>
+<p>The exported BFT library component and its standalone demo use 3-phase PBFT. It needs <code>n &gt;= 3f + 1</code> nodes to tolerate <code>f</code> faulty or malicious nodes. The current MainChain and SubChain runtime paths do not instantiate BFT; callers use <code>BFTConsensus.request()</code> explicitly.</p>
 <p>For PoA and PoF flows, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <p>You need at least 4 nodes to tolerate 1 Byzantine failure (n=4, f=1: 3×1+1=4).</p>
 <hr />
 <h2 id="flow-diagram-3-phase-pbft">Flow diagram: 3-phase PBFT</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant OS as ⚙️ OrderingService
-    participant L as 👑 Leader Node
-    participant admin as 🖥️ Validator 1
-    participant business as 🖥️ Validator 2
-    participant Vf as 🖥️ Validator f
-
-    OS-&gt;&gt;L: Events batch ready → trigger consensus
+    participant C as Client
+    participant L as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+    participant R3 as Replica 3
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHASE 1 — PRE-PREPARE
-        L-&gt;&gt;L: Assign sequence number, create PRE-PREPARE message
-        L-&gt;&gt;admin: PRE-PREPARE(view, seq, block_digest)
-        L-&gt;&gt;business: PRE-PREPARE(view, seq, block_digest)
-        L-&gt;&gt;Vf: PRE-PREPARE(view, seq, block_digest)
+        Note over L,R3: PHASE 1 — PRE-PREPARE
+        C-&gt;&gt;L: request(operation)
+        L-&gt;&gt;L: Hash full canonical request and record local PREPARE
+        L-&gt;&gt;R1: PRE-PREPARE(view, seq, digest, request)
+        L-&gt;&gt;R2: PRE-PREPARE(view, seq, digest, request)
+        L-&gt;&gt;R3: PRE-PREPARE(view, seq, digest, request)
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHASE 2 — PREPARE
-        ledger-&gt;&gt;ledger: Validate PRE-PREPARE, broadcast PREPARE
-        ledger-&gt;&gt;L: PREPARE(view, seq, digest)
-        ledger-&gt;&gt;business: PREPARE(view, seq, digest)
-        business-&gt;&gt;L: PREPARE(view, seq, digest)
-        business-&gt;&gt;ledger: PREPARE(view, seq, digest)
-        Note over L: Collect 2f PREPARE votes
+        Note over L,R3: PHASE 2 — PREPARE
+        R1-&gt;&gt;R1: Recompute digest and record local PREPARE
+        R2-&gt;&gt;R2: Recompute digest and record local PREPARE
+        R3-&gt;&gt;R3: Recompute digest and record local PREPARE
+        R1-&gt;&gt;L: PREPARE(view, seq, digest)
+        R2-&gt;&gt;L: PREPARE(view, seq, digest)
+        R3-&gt;&gt;L: PREPARE(view, seq, digest)
+        Note over L,R3: Each node records its local COMMIT after 2f unique PREPARE votes
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHASE 3 — COMMIT
-        L-&gt;&gt;ledger: COMMIT(view, seq, digest)
-        L-&gt;&gt;business: COMMIT(view, seq, digest)
-        ledger-&gt;&gt;L: COMMIT(view, seq, digest)
-        business-&gt;&gt;L: COMMIT(view, seq, digest)
-        Note over L: Collect 2f+1 COMMIT votes → finalize
-        L-&gt;&gt;L: Finalize &amp; sign block
-        L-&gt;&gt;OS: Block committed → push to commit_queue
+        Note over L,R3: PHASE 3 — COMMIT
+        L-&gt;&gt;R1: COMMIT(view, seq, digest)
+        R1-&gt;&gt;L: COMMIT(view, seq, digest)
+        R2-&gt;&gt;L: COMMIT(view, seq, digest)
+        Note over L,R3: Apply after 2f+1 unique COMMIT votes, including the local vote
+        R1-&gt;&gt;R1: Apply event to the attached chain
     end</code></pre>
+<p>The primary and replicas count their own signed phase vote once. A PRE-PREPARE is rejected if its request body does not match the signed digest. If an attached chain write raises an error or returns <code>False</code>, the node keeps the quorum messages and the same event in memory; a repeated valid COMMIT can retry the write. It marks the sequence committed only after the write succeeds.</p>
+<p>Without an attached application chain, the component runs in protocol-only mode and records consensus status without writing an event, as in the standalone demo.</p>
 <hr />
 <h2 id="flow-diagram-view-change-leader-failure">Flow diagram: view change (leader failure)</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4477,13 +4475,12 @@
 
     Note over ledger: Leader timeout detected (no PRE-PREPARE received)
 
-    ledger-&gt;&gt;VM: trigger_view_change(current_view, failed_leader)
-    VM-&gt;&gt;VM: view += 1
+    ledger-&gt;&gt;VM: initiate_view_change(new_view)
     VM-&gt;&gt;VM: Broadcast VIEW-CHANGE to all validators
-    VM-&gt;&gt;VM: Collect f+1 VIEW-CHANGE votes
+    VM-&gt;&gt;VM: Collect and validate 2f+1 VIEW-CHANGE votes
     VM-&gt;&gt;NEW: Elect new leader: Validators[new_view % n]
     NEW-&gt;&gt;NEW: Broadcast NEW-VIEW message
-    NEW-&gt;&gt;NEW: Restart from Phase 1 — PRE-PREPARE</code></pre>
+    NEW-&gt;&gt;NEW: Activate the new view</code></pre>
 <hr />
 <h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
 <table>
@@ -4496,19 +4493,19 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>PRE-PREPARE</strong></td>
-<td style="text-align: left;">Leader assigns sequence number and broadcasts block digest to all validators</td>
+<td style="text-align: left;">Primary assigns a sequence number, hashes the complete canonical request, signs the digest, and broadcasts the request</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>PREPARE</strong></td>
-<td style="text-align: left;">Each validator validates the PRE-PREPARE, then broadcasts its own PREPARE vote. Leader collects 2f votes</td>
+<td style="text-align: left;">Each node recomputes the digest and records its own PREPARE once. Each node moves to COMMIT after <code>2f</code> unique PREPARE votes, including its own</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>COMMIT</strong></td>
-<td style="text-align: left;">Leader broadcasts COMMIT. Each node collects 2f+1 COMMIT votes, then finalizes locally</td>
+<td style="text-align: left;">Each prepared node records and broadcasts its own COMMIT once. A node applies the event after <code>2f + 1</code> unique COMMIT votes, including its own</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>View Change</strong></td>
-<td style="text-align: left;">If leader silent &gt; timeout: validators increment <code>view</code>, elect <code>Validators[view % n]</code> as new leader</td>
+<td style="text-align: left;">If the leader is silent past the timeout, the manager collects <code>2f + 1</code> signed VIEW-CHANGE votes before accepting the new view</td>
 </tr>
 </tbody>
 </table>
@@ -4538,9 +4535,9 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>BFT</strong></td>
-<td style="text-align: left;">3-phase PBFT</td>
+<td style="text-align: left;">3-phase PBFT library component</td>
 <td style="text-align: left;">Up to <code>f</code> Byzantine nodes in <code>3f+1</code></td>
-<td style="text-align: left;">Critical / adversarial environments</td>
+<td style="text-align: left;">Explicit callers and the standalone demo</td>
 </tr>
 </tbody>
 </table>
@@ -4556,7 +4553,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;">Leader timeout</td>
-<td style="text-align: left;">View Change triggered, new leader elected (<code>Validators[new_view % n]</code>)</td>
+<td style="text-align: left;">View Change triggered; the new primary is <code>all_nodes[new_view % n]</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Validator sends invalid digest</td>
@@ -4569,6 +4566,10 @@
 <tr>
 <td style="text-align: left;">Network partition ≥ f+1 nodes</td>
 <td style="text-align: left;">Protocol halts until partition heals (safety over liveness)</td>
+</tr>
+<tr>
+<td style="text-align: left;">Attached chain write fails</td>
+<td style="text-align: left;">Keep the current commit quorum and retry the same event when a valid COMMIT is repeated</td>
 </tr>
 </tbody>
 </table>
@@ -4584,34 +4585,34 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">3-Phase PBFT</td>
-<td style="text-align: left;"><code>BFTConsensus.run_consensus()</code></td>
+<td style="text-align: left;">Request and PRE-PREPARE</td>
+<td style="text-align: left;"><code>BFTConsensus.request()</code></td>
 <td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">PRE-PREPARE</td>
-<td style="text-align: left;"><code>BFTConsensus._send_pre_prepare()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
+<td style="text-align: left;">PRE-PREPARE validation and local PREPARE</td>
+<td style="text-align: left;"><code>BFTConsensusEngine.handle_pre_prepare()</code></td>
+<td style="text-align: left;"><code>consensus/bft/engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">PREPARE collect</td>
-<td style="text-align: left;"><code>BFTConsensus._handle_prepare()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
+<td style="text-align: left;">PREPARE quorum and local COMMIT</td>
+<td style="text-align: left;"><code>BFTConsensusEngine.handle_prepare()</code></td>
+<td style="text-align: left;"><code>consensus/bft/engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">COMMIT finalize</td>
-<td style="text-align: left;"><code>BFTConsensus._handle_commit()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
+<td style="text-align: left;">COMMIT quorum and event apply</td>
+<td style="text-align: left;"><code>BFTConsensusEngine.process_commit_quorum()</code></td>
+<td style="text-align: left;"><code>consensus/bft/engine.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">View Change</td>
-<td style="text-align: left;"><code>BFTViewChangeManager.trigger_view_change()</code></td>
-<td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
+<td style="text-align: left;"><code>BFTViewChangeManager.initiate_view_change()</code></td>
+<td style="text-align: left;"><code>consensus/bft/view_change.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Transport</td>
-<td style="text-align: left;"><code>ZmqTransport.send()</code> / <code>receive()</code></td>
-<td style="text-align: left;"><code>network/zmq_transport.py</code></td>
+<td style="text-align: left;"><code>BFTMessageDispatcher.broadcast_msg()</code></td>
+<td style="text-align: left;"><code>consensus/bft/dispatcher.py</code></td>
 </tr>
 </tbody>
 </table>
@@ -4619,7 +4620,7 @@
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a>: PoA and PoF details</li>
-<li><a href=".././event-submission/">Event Submission</a>: BFT replaces the <code>finalize_block()</code> step</li>
+<li><a href=".././event-submission/">Event Submission</a>: MainChain and SubChain submission flow</li>
 <li><a href=".././error-recovery/">Error Mitigation</a>: handles leader failure recovery at system level</li>
 </ul>
 
@@ -4679,7 +4680,7 @@
         
         
           
-          <a href="../cluster-lockdown/" class="md-footer__link md-footer__link--next" aria-label="Next: Cluster Lockdown &amp; Recovery">
+          <a href="../cluster-lockdown.md" class="md-footer__link md-footer__link--next" aria-label="Next: Cluster Lockdown &amp; Recovery">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next

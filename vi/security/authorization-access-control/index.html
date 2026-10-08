@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2563,6 +2561,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. API Key Verification
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kiem-tra-uy-quyen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm tra ủy quyền
       </span>
     </span>
   </a>
@@ -4326,6 +4335,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#kiem-tra-uy-quyen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm tra ủy quyền
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#luong-xac-thuc-uy-quyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4410,6 +4430,12 @@
 <li><strong>API Key Management</strong>: Tạo, thu hồi và kiểm tra API Key.</li>
 <li><strong>Middleware Tích hợp</strong>: Tự động xác thực API Key cho mọi yêu cầu HTTP vào server.</li>
 <li><strong>Permission Mapping</strong>: Ánh xạ API Key với các quyền hạn cụ thể trong hệ thống.</li>
+</ul>
+<h2 id="kiem-tra-uy-quyen">Kiểm tra ủy quyền</h2>
+<ul>
+<li>MSP chỉ cho phép hành động khi thực thể đang hoạt động và chứng chỉ hiện còn hiệu lực, chưa bị thu hồi. Tính hợp lệ của chứng chỉ được kiểm tra ở mỗi lần xác minh để lần kiểm tra thành công trước đó không kéo dài quyền sau khi chứng chỉ hết hạn.</li>
+<li>Quyền API key phải là danh sách chuỗi. Quyền wildcard là giá trị chính xác <code>all</code>; dữ liệu quyền sai định dạng sẽ bị từ chối.</li>
+<li>Kết quả policy trong cache gắn với phiên bản policy đã đăng ký. Các thay đổi qua <code>Policy.add_rule()</code> và <code>Policy.remove_rule()</code> có hiệu lực ở lần đánh giá tiếp theo.</li>
 </ul>
 <hr />
 <h2 id="luong-xac-thuc-uy-quyen">Luồng Xác thực &amp; Ủy quyền</h2>

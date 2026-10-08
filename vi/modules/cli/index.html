@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4614,7 +4612,7 @@
 
 <h1 id="cli-module-hierachaincli">CLI Module (<code>hierachain/cli/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>CLI</strong> cung cấp công cụ dòng lệnh mạnh mẽ mang tên <code>hrc</code>, giúp các nhà vận hành và phát triển tương tác nhanh chóng với hệ thống HieraChain mà không cần qua giao diện web hoặc gọi API thủ công. </p>
+<p>CLI <code>hrc</code> cho phép nhà vận hành và lập trình viên quản lý HieraChain từ terminal.</p>
 <p>Công cụ được xây dựng trên thư viện <strong>Click</strong>, hỗ trợ phân nhóm lệnh logic, gợi ý lệnh (tab-completion) và xử lý tham số chặt chẽ.</p>
 <h3 id="cach-cai-at-khoi-chay">Cách cài đặt &amp; Khởi chạy</h3>
 <p>Khi cài đặt HieraChain ở chế độ phát triển (<code>pip install -e .</code>), lệnh <code>hrc</code> sẽ được đăng ký vào hệ thống. Bạn có thể kiểm tra bằng cách:</p>
@@ -4631,12 +4629,13 @@
 <ul>
 <li><em>Tham số</em>: <code>[supply_chain|healthcare|finance|manufacturing]</code></li>
 <li><em>Option</em>: <code>--name</code> (Bắt buộc), <code>--parent</code> (Mặc định: <code>main</code>).</li>
+<li>Hierarchy manager hiện tại gắn sub-chain vào <code>main</code>; yêu cầu parent lồng tên khác sẽ bị từ chối rõ ràng.</li>
 </ul>
 </li>
 <li>
 <p><strong><code>hrc chain list</code></strong>: Liệt kê toàn bộ các chuỗi hiện có và số lượng block của chúng.</p>
 </li>
-<li><strong><code>hrc chain submit-proof</code></strong>: Gửi bằng chứng mã hóa từ Sub-Chain lên Main Chain để xác thực liên chuỗi.</li>
+<li><strong><code>hrc chain submit-proof</code></strong>: Hiện trả exit code khác 0. Dùng endpoint REST gửi proof có xác thực và SQL storage bền vững.</li>
 </ul>
 <h3 id="nhom-lenh-event-quan-ly-su-kien">Nhóm lệnh <code>event</code> (Quản lý Sự kiện)</h3>
 <p>Dùng để ghi và truy vấn các hoạt động kinh doanh.</p>
@@ -4659,9 +4658,9 @@
 <p>Dùng để tạo và kiểm tra các cặp khóa Ed25519 cho Validator.</p>
 <ul>
 <li>
-<p><strong><code>hrc key generate</code></strong>: Tạo cặp khóa mới.</p>
+<p><strong><code>hrc key generate</code></strong>: Tạo cặp khóa trong file mới với mode <code>0600</code> trên hệ POSIX. Không ghi đè file đã có và không in khóa bí mật.</p>
 <ul>
-<li><em>Option</em>: <code>--output</code> (Mặc định: <code>validator_key.json</code>), <code>--format</code> (json/hex).</li>
+<li><em>Option</em>: <code>--output</code> (Mặc định: <code>validator_key.json</code>), <code>--format</code> (<code>json</code> hoặc <code>hex</code>). File hex ghi khóa bí mật ở dòng đầu và khóa công khai ở dòng thứ hai.</li>
 </ul>
 </li>
 <li>
@@ -4675,7 +4674,7 @@
 <li>
 <p><strong><code>hrc node start</code></strong>: Khởi chạy server FastAPI.</p>
 <ul>
-<li><em>Option</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (Dành cho phát triển).</li>
+<li><em>Option</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (Dành cho phát triển). Option toàn cục <code>--config</code> chọn cấu hình node được nạp trước khi khởi chạy.</li>
 </ul>
 </li>
 <li>
@@ -4685,14 +4684,11 @@
 <h3 id="nhom-lenh-verify-kiem-inh">Nhóm lệnh <code>verify</code> (Kiểm định)</h3>
 <p>Công cụ dành cho kiểm toán viên để kiểm tra tính toàn vẹn của sổ cái.</p>
 <ul>
-<li><strong><code>hrc verify chain</code></strong>: Kiểm tra cấu trúc liên kết giữa các block (hash chaining).</li>
-<li>
-<p><strong><code>hrc verify signatures</code></strong>: Kiểm tra toàn bộ chữ ký số của các block và sự kiện trong cơ sở dữ liệu.</p>
-<ul>
-<li><em>Option</em>: <code>--limit</code> (Chỉ kiểm tra N block gần nhất), <code>--db</code> (Đường dẫn cơ sở dữ liệu).</li>
+<li><strong><code>hrc verify chain</code></strong>: Kiểm tra hash block, Merkle root, liên kết chuỗi và chữ ký block bắt buộc bằng khóa tin cậy đã cấu hình. Thiếu block, cơ sở dữ liệu rỗng, thiếu khóa tin cậy hoặc dữ liệu sai đều trả exit code khác 0.</li>
+<li><strong><code>hrc verify signatures</code></strong>: Kiểm tra chữ ký block bắt buộc và các sự kiện đã ký. Sự kiện không ký được đếm là chưa xác minh; sự kiện thiếu dữ liệu ký hoặc có chữ ký sai trả exit code khác 0. Cơ sở dữ liệu rỗng cũng trả exit code khác 0.</li>
 </ul>
-</li>
-</ul>
+<p>Cả hai lệnh nhận <code>--db</code> (đường dẫn/URL SQLite hoặc URL PostgreSQL; nếu bỏ qua thì dùng cơ sở dữ liệu đã cấu hình). <code>verify signatures</code> còn nhận <code>--limit</code> để chỉ kiểm tra N block gần nhất trong từng chain. Sự kiện đã ký cần khóa công khai trong <code>details.public_key</code> hoặc <code>details.sender_public_key</code> để xác minh.</p>
+<p>Các lệnh này kiểm tra block đã lưu. Lệnh tạo chain và event dùng registry bền vững của <code>HierarchyManager</code> và khôi phục các sub-chain đã đăng ký từ SQLite hoặc PostgreSQL đã cấu hình ở mỗi lần chạy. Việc sắp thứ tự event dùng journal bền vững riêng của từng sub-chain.</p>
 <hr />
 <h2 id="vi-du-su-dung-thuc-te">Ví dụ sử dụng thực tế</h2>
 <h3 id="1-khoi-tao-he-thong-va-tao-chuoi-cung-ung">1. Khởi tạo hệ thống và tạo chuỗi cung ứng</h3>
@@ -4700,14 +4696,17 @@
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>hrc<span class="w"> </span>node<span class="w"> </span>init<span class="w"> </span>--data-dir<span class="w"> </span>./my_data
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Tạo chuỗi cung ứng linh kiện</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
 </code></pre></div>
 <h3 id="2-ghi-nhan-quy-trinh-san-xuat">2. Ghi nhận quy trình sản xuất</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Bắt đầu sản xuất thực thể ITEM-99</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">'{"line": "A1"}'</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">'{"line": "A1"}'</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Hoàn tất và gửi proof lên Main Chain</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>submit-proof<span class="w"> </span>logistics_01
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Khởi chạy API với cùng cấu hình node</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>node<span class="w"> </span>start
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Gửi proof qua REST API có xác thực và SQL storage bền vững</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-API-Key: </span><span class="nv">$HRC_API_KEY</span><span class="s2">"</span><span class="w"> </span>http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 </code></pre></div>
 <h3 id="3-kiem-inh-an-toan-du-lieu">3. Kiểm định an toàn dữ liệu</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Kiểm tra 100 block gần nhất xem có bị sửa đổi không</span>
@@ -4715,9 +4714,11 @@
 </code></pre></div>
 <hr />
 <h2 id="cau-hinh-bien-moi-truong">Cấu hình &amp; Biến môi trường</h2>
-<p>CLI ưu tiên đọc cấu hình từ file <code>chains.json</code> hoặc file được chỉ định qua option toàn cục:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--config<span class="w"> </span>custom_config.json<span class="w"> </span>chain<span class="w"> </span>list
+<p>CLI đọc <code>data/config.yaml</code> mặc định hoặc file được chỉ định trước lệnh bằng option toàn cục:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>chain<span class="w"> </span>list
 </code></pre></div>
+<p><code>hrc node init</code> ghi YAML gồm <code>database_url</code> và <code>node_id</code>. CLI cũng nhận object JSON có các trường này. Các giá trị được áp dụng cho lệnh chain và lúc khởi chạy API. Các biến môi trường <code>DATABASE_URL</code>, <code>HRC_DATABASE_URL</code>, <code>HRC_NODE_ID</code> hoặc <code>NODE_ID</code> được cấu hình tường minh sẽ được ưu tiên. File cấu hình chỉ được chứa <code>database_url</code> và <code>node_id</code>.</p>
+<p>Journal sắp thứ tự sub-chain được lưu trong <code>data/&lt;chain-name&gt;</code> tương đối với thư mục làm việc hiện tại. Hãy giữ thư mục này bền vững và chạy CLI từ một thư mục làm việc ổn định; <code>--data-dir</code> tùy chỉnh hiện chỉ di chuyển cấu hình và database hierarchy, chưa di chuyển các journal đó.</p>
 <hr />
 <h2 id="nguyen-tac-thiet-ke-developer-notes">Nguyên tắc thiết kế (Developer Notes)</h2>
 <ol>

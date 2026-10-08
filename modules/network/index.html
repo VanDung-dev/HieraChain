@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4536,10 +4534,10 @@
 
 <h1 id="network-module-hierachainnetwork">Network Module (<code>hierachain/network/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The <strong>Network</strong> module is the backbone that allows nodes in the HieraChain network to communicate with each other. Designed with a "Defense-in-Depth" philosophy, this module combines the transmission power of <strong>ZeroMQ</strong> with modern cryptographic algorithms to ensure every message is encrypted, authenticated, and tamper-proof.</p>
+<p>The <strong>Network</strong> module handles communication between HieraChain nodes over <strong>ZeroMQ</strong>. It uses cryptographic checks to encrypt and authenticate network messages.</p>
 <hr />
 <h2 id="layered-security-architecture">Layered Security Architecture</h2>
-<p>HieraChain does not rely on a single security layer but combines three independent protection layers:</p>
+<p>HieraChain uses three independent security layers for network communication:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4560,6 +4558,8 @@
 <li>Authenticates node identity through MSP (Membership Service Provider) certificates.</li>
 <li>Only allows nodes from valid organizations to join the network.</li>
 <li>2-step Handshake process: <code>INIT</code> and <code>ACK</code>.</li>
+<li>Binds the active certificate subject and signing key to the ZeroMQ routing ID
+  and registered organization identity.</li>
 </ul>
 </li>
 <li>
@@ -4569,6 +4569,7 @@
 <ul>
 <li>Every P2P message is digitally signed.</li>
 <li>Prevents replay attacks by checking unique Nonce and Timestamp within the allowed window (60s).</li>
+<li>Both handshake messages carry signed <code>timestamp</code> and <code>nonce</code> fields accepted by the transport replay gate.</li>
 </ul>
 </li>
 </ul>
@@ -4578,9 +4579,11 @@
 <h3 id="1-zmq-transport-zmq_transportpy">1. ZMQ Transport (<code>zmq_transport.py</code>)</h3>
 <p>Implements the asynchronous P2P model using <strong>ROUTER</strong> (for receiving) and <strong>DEALER</strong> (for sending) sockets.</p>
 <ul>
-<li><strong>Performance</strong>: Processes thousands of messages per second with extremely low latency.</li>
+<li><strong>Transport</strong>: Uses asynchronous sockets; broadcasts send to registered peers sequentially.</li>
 <li><strong>Identity Management</strong>: Manages node identities at the socket level for accurate routing.</li>
+<li><strong>Replay buffer</strong>: Retains at most 1,000 timestamp/nonce pairs with nonce strings of at most 128 characters. When all entries are still within the 60-second window, new messages are rejected until an entry expires.</li>
 </ul>
+<p><code>NetworkClient</code> tracks seed and manually registered peers in the same registry. Removing a peer also closes its outbound DEALER socket. A peer is initially healthy for 60 seconds after registration; each accepted inbound message from its registered socket identity renews that period. An idle peer becomes unhealthy when status or peers are read. This health indicator does not authenticate the peer or confirm delivery of outbound messages.</p>
 <h3 id="2-secure-connection-manager-secure_connectionpy">2. Secure Connection Manager (<code>secure_connection.py</code>)</h3>
 <p>Orchestrates the secure connection establishment process:</p>
 <ol>
@@ -4611,6 +4614,11 @@
     Note left of NodeA: Verify ACK Signature
 
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready</code></pre>
+<p>The responder echoes the <code>HANDSHAKE_INIT</code> nonce in the signed ACK. The initiator
+accepts an ACK only while a matching outbound handshake is pending, the peer
+passes the configured trust policy, and the ACK certificate is active and bound
+to that peer's routing ID and signing key. A missing or mismatched CA
+certificate, identity record, organization, or key is rejected.</p>
 <hr />
 <h2 id="usage-examples">Usage Examples</h2>
 <h3 id="1-initialize-a-secure-node">1. Initialize a Secure Node</h3>
@@ -4666,6 +4674,7 @@
 <li><a href="../../consensus/bft_consensus/">BFT Consensus</a></li>
 <li><a href=".././monitoring/">Network Monitoring</a></li>
 </ul>
+<p>ZeroMQ accepts frames up to 1 MiB and exactly two application frames (sender identity and body); excess frames are drained without accumulating a Python multipart list. Secure connections validate identities and signatures before retaining replay entries, with a separate 1,000-entry cache per verified peer. Plain transport requires configured peer IDs and isolates their caches; it provides no cryptographic identity guarantee. These limits do not replace upstream connection and bandwidth controls.</p>
 
 
 

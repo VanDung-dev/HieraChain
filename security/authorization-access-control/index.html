@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2563,6 +2561,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. API Key Verification
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authorization checks
       </span>
     </span>
   </a>
@@ -4326,6 +4335,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#authorization-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Authorization checks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#authentication-authorization-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4410,6 +4430,12 @@
 <li><strong>API Key Management</strong>: Creates, revokes, and validates API Keys.</li>
 <li><strong>Integrated Middleware</strong>: Automatically authenticates API Keys for every HTTP request to the server.</li>
 <li><strong>Permission Mapping</strong>: Maps API Keys to specific permissions within the system.</li>
+</ul>
+<h2 id="authorization-checks">Authorization checks</h2>
+<ul>
+<li>MSP actions are allowed only while the entity is active and its certificate is currently valid and not revoked. Certificate validity is checked on each verification so an earlier successful check cannot outlive the certificate.</li>
+<li>API key permissions must be a list of strings. The wildcard is the exact permission <code>all</code>; malformed permission data denies access.</li>
+<li>Policy decision cache entries include the registered policy version. <code>Policy.add_rule()</code> and <code>Policy.remove_rule()</code> changes take effect on the next evaluation.</li>
 </ul>
 <hr />
 <h2 id="authentication-authorization-flow">Authentication &amp; Authorization Flow</h2>

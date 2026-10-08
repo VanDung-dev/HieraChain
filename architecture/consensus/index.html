@@ -1552,11 +1552,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4398,7 +4396,7 @@
 <li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> defines the base interface and framework for consensus algorithms.</li>
 <li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> provides intra-organization consensus with a single MainChain that manages internal domain Sub-Chains.</li>
 <li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> provides inter-organization P2P MainChain alliance consensus for a consortium without a central RootChain.</li>
-<li>BFT Consensus: <code>hierachain/consensus/bft/</code> adds Byzantine fault tolerance at the hierarchical level.</li>
+<li>BFT Consensus: <code>hierachain/consensus/bft/</code> contains a separate implementation. The runtime paths for MainChain and SubChain use PoA or PoF.</li>
 <li>Ordering Service: <code>hierachain/consensus/ordering/</code> orders events before block creation and is built from several components (Processor, Certifier, BlockBuilder).</li>
 </ul>
 <h3 id="typical-flow">Typical flow</h3>
@@ -4410,23 +4408,25 @@
 
     SC-&gt;&gt;OS: 1. Submit Event
     OS-&gt;&gt;OS: Queue &amp; Batch
-    OS-&gt;&gt;C: 2. Propose Batch
-    C-&gt;&gt;C: Validate &amp; Sign
-    C--&gt;&gt;SC: 3. Approved Block
-    SC-&gt;&gt;SC: Finalize &amp; Store
+    OS-&gt;&gt;OS: 2. Create, store and enqueue block
+    SC-&gt;&gt;OS: get_next_block()
+    OS--&gt;&gt;SC: Block
+    SC-&gt;&gt;C: 3. Finalize block
+    C--&gt;&gt;SC: Finalized block
+    SC-&gt;&gt;SC: Store block and update state
     SC-&gt;&gt;MC: 4. Submit Proof (Root Hash)
     MC--&gt;&gt;SC: Acknowledge</code></pre>
 <ol>
 <li>A Sub-Chain receives an event and pushes it to the Ordering Service queue.</li>
-<li>The Ordering Service builds a batch based on size and time thresholds and sends it to the selected consensus mechanism.</li>
-<li>The consensus mechanism (PoA, PoF or BFT) confirms the batch or block, then the Sub-Chain closes the block.</li>
+<li>The Ordering Service batches events by size and time thresholds, creates a block, and places it in the commit queue.</li>
+<li>The Sub-Chain finalizes blocks with PoA by default or PoF when configured.</li>
 <li>If Main Chain anchoring is enabled, the Sub-Chain sends the proof (Merkle root or hash) to the Main Chain for recording.</li>
 </ol>
 <h2 id="configuration">Configuration</h2>
 <p>Variables in <code>hierachain/config/settings.py</code>:</p>
 <ul>
 <li><code>CONSENSUS_TYPE</code>: <code>proof_of_authority</code> (default) or <code>proof_of_federation</code>.</li>
-<li><code>BFT_ENABLED</code>: turns the BFT layer on or off for Byzantine-resistant scenarios.</li>
+<li><code>BFT_ENABLED</code>: the <code>Settings</code> class defines this attribute, but it does not select consensus for MainChain or SubChain. It is not an environment variable.</li>
 <li><code>VALIDATOR_TIMEOUT</code>: timeout between validators.</li>
 <li><code>CONSENSUS_FEDERATION_CONFIG</code>: federation parameters (for example <code>min_validators</code> and <code>block_interval</code>).</li>
 </ul>
@@ -4438,7 +4438,7 @@
 <ul>
 <li>PoA is simple to deploy and has low latency, but it depends on a central validator for trust.</li>
 <li>PoF balances trust and distribution, but it requires federation membership to be managed.</li>
-<li>BFT tolerates Byzantine faults well, but it adds complexity and higher message overhead.</li>
+<li>The BFT implementation lives under <code>hierachain/consensus/bft/</code> and is separate from the MainChain and SubChain runtime paths.</li>
 <li>Ordering keeps event order and batching stable before a block is finalized.</li>
 </ul>
 <h2 id="related">Related</h2>

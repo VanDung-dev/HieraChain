@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối hoạt động phân tán.">
+        <meta name="description" content="Cách khởi tạo và phục hồi giao dịch Two-Phase Commit (2PC) bền vững.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#thao-tac-lien-chuoi-cross-chain-operations" class="md-skip">
+        <a href="#thao-tac-lien-chuoi-2pc" class="md-skip">
           Bỏ qua
         </a>
       
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3679,80 +3677,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-inh" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mục đính
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Mục đính">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-vong-oi-trang-thai-thao-tac-transactionstate" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. Vòng đời Trạng thái Thao tác (TransactionState)
+        Mục đích
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-mo-hinh-two-phase-commit-2pc" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-giao-dich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Mô hình Two-Phase Commit (2PC)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. Mô hình Two-Phase Commit (2PC)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pha-1-chuan-bi-prepare-phase" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pha 1: Chuẩn bị (Prepare Phase)
+        Trạng thái giao dịch
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#pha-2-chot-xac-nhan-commit-phase" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#luong-giao-dich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pha 2: Chốt xác nhận (Commit Phase)
+        Luồng giao dịch
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-huong-dan-khoi-tao-lenh" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#khoi-tao-thao-tac" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Hướng dẫn Khởi tạo Lệnh
+        Khởi tạo thao tác
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#phuc-hoi-giao-dich-chua-hoan-tat" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phục hồi giao dịch chưa hoàn tất
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4294,80 +4269,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-inh" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mục đính
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Mục đính">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-vong-oi-trang-thai-thao-tac-transactionstate" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. Vòng đời Trạng thái Thao tác (TransactionState)
+        Mục đích
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-mo-hinh-two-phase-commit-2pc" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-giao-dich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Mô hình Two-Phase Commit (2PC)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. Mô hình Two-Phase Commit (2PC)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pha-1-chuan-bi-prepare-phase" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pha 1: Chuẩn bị (Prepare Phase)
+        Trạng thái giao dịch
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#pha-2-chot-xac-nhan-commit-phase" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#luong-giao-dich" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pha 2: Chốt xác nhận (Commit Phase)
+        Luồng giao dịch
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-huong-dan-khoi-tao-lenh" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#khoi-tao-thao-tac" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Hướng dẫn Khởi tạo Lệnh
+        Khởi tạo thao tác
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#phuc-hoi-giao-dich-chua-hoan-tat" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phục hồi giao dịch chưa hoàn tất
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4402,54 +4354,48 @@
   
 
 
-<h1 id="thao-tac-lien-chuoi-cross-chain-operations">Thao tác Liên chuỗi (Cross-Chain Operations)</h1>
-<h2 id="muc-inh">Mục đính</h2>
-<p>Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi trạng thái ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là <strong>Two-Phase Commit (2PC)</strong>.</p>
-<p>Cơ chế này được quản lý chủ đạo bởi module <code>CrossChainTransactionManager</code> tại <code>hierachain/hierarchical/transaction_manager.py</code>.</p>
-<h3 id="1-vong-oi-trang-thai-thao-tac-transactionstate">1. Vòng đời Trạng thái Thao tác (TransactionState)</h3>
-<p>Mỗi thao tác liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:</p>
+<h1 id="thao-tac-lien-chuoi-2pc">Thao tác Liên chuỗi (2PC)</h1>
+<h2 id="muc-ich">Mục đích</h2>
+<p><code>CrossChainTransactionManager</code> điều phối giao dịch giữa hai participant <code>DomainChain</code>. Journal thuộc coordinator lưu metadata giao dịch và quyết định commit bền vững, tách biệt với ordering event journal của từng chain.</p>
+<h2 id="trang-thai-giao-dich">Trạng thái giao dịch</h2>
 <ul>
-<li><strong><code>PENDING</code></strong>: Thao tác đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.</li>
-<li><strong><code>PREPARED</code></strong>: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện thao tác, thực tế đã khóa (lock) trước tài nguyên thành công.</li>
-<li><strong><code>COMMITTED</code></strong>: Thao tác hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.</li>
-<li><strong><code>ROLLED_BACK</code></strong>: Thao tác bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.</li>
-<li><strong><code>FAILED</code></strong>: Thao tác thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).</li>
+<li><strong><code>PENDING</code></strong>: Coordinator đã tạo giao dịch.</li>
+<li><strong><code>PREPARED</code></strong>: Cả hai participant đã chấp nhận yêu cầu prepare; chưa có quyết định commit.</li>
+<li><strong><code>IN_DOUBT</code></strong>: Coordinator chưa thể xác nhận giao dịch đã hoàn tất. Trước quyết định COMMIT bền vững, coordinator retry abort; sau quyết định đó, coordinator retry commit.</li>
+<li><strong><code>COMMITTED</code></strong>: Cả hai participant xác nhận operation event đã được fsync vào ordering journal. Block có thể vẫn đang được hoàn thiện bất đồng bộ.</li>
+<li><strong><code>ROLLED_BACK</code></strong>: Cả hai participant xác nhận abort trước khi có quyết định COMMIT bền vững.</li>
+<li><strong><code>FAILED</code></strong>: Giao dịch không thể bắt đầu, ví dụ chain được chỉ định không tồn tại hoặc không hỗ trợ 2PC.</li>
 </ul>
-<h3 id="2-mo-hinh-two-phase-commit-2pc">2. Mô hình Two-Phase Commit (2PC)</h3>
-<p>Trong <code>CrossChainTransactionManager</code>, chức năng <code>_execute_2pc(transaction)</code> phân bổ rõ ràng quá trình chạy quy trình chính để xử lý thao tác liên chuỗi. Logic hoạt động cốt lõi gồm có hai pha:</p>
-<h4 id="pha-1-chuan-bi-prepare-phase">Pha 1: Chuẩn bị (Prepare Phase)</h4>
-<ul>
-<li>Người quản lý lấy ra đối tượng từ hàm cấp <code>get_sub_chain()</code> của HierarchyManager.</li>
-<li>Lần lượt gọi phương thức <code>prepare_transaction(tx_id, payload, is_source=True)</code> của chuỗi <strong>Nguồn</strong> để khóa các tài khoản nguồn lại.</li>
-<li>Tiếp tục gọi <code>prepare_transaction</code> lên chuỗi <strong>Đích</strong> để yêu cầu đánh dấu nhận giao dịch.</li>
-<li>Mục tiêu của Phase 1: Buộc mọi chuỗi tham gia giao dịch đưa ra lời cam kết có khả năng thực hiện thay đổi.</li>
-<li>Nếu chuỗi Nguồn hoặc Đích không thể Prepare thành công (ví dụ do lỗi số dư khóa), hệ thống đi ngay vào khâu <code>_rollback()</code>.</li>
-</ul>
-<h4 id="pha-2-chot-xac-nhan-commit-phase">Pha 2: Chốt xác nhận (Commit Phase)</h4>
-<ul>
-<li>Được thực hiện nếu và chỉ nếu Phase 1 trả về thành công ở tất cả các bên tham gia giao dịch.</li>
-<li>Module gọi tới API <code>commit_transaction(tx_id)</code> của chuỗi Nguồn.</li>
-<li>Đồng thời chạy tương tự tới cấu trúc của chuỗi Đích định danh là Commit hoàn tất.</li>
-<li>Ở bước này, block thực thụ sẽ được tạo trên hai Sub-chain để dứt điểm quá trình hoán đổi dữ liệu.</li>
-<li>Nếu lỗi trong quy trình Commit (mặc dù hãn hữu), trạng thái giao dịch sẽ bị gắn cờ <code>FAILED</code> để đợi công cụ sửa chữa thủ công (Recovery) kiểm tra qua ID đó.</li>
-</ul>
-<h3 id="3-huong-dan-khoi-tao-lenh">3. Hướng dẫn Khởi tạo Lệnh</h3>
-<p>Khi cần phát sinh lệnh qua DApp hoặc Module ngoài, lập trình viên truy xuất API/Function sau:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Gọi instance từ HierarchyManager đã sẵn có</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">CrossChainTransactionManager</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="o">=</span><span class="n">hierarchy_manager_instance</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Thực hiện lệnh initiate giao dịch</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_transaction</span><span class="p">(</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_finance"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_logistics"</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">"event_name"</span><span class="p">:</span> <span class="s2">"asset_transfer"</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"PKG-099238"</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">500</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">}</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
+<h2 id="luong-giao-dich">Luồng giao dịch</h2>
+<ol>
+<li>Coordinator fsync bản ghi <code>begin</code> trước khi prepare participant nào.</li>
+<li>Coordinator prepare source và destination, sau đó fsync bản ghi <code>prepared</code>.</li>
+<li>Coordinator fsync quyết định COMMIT trước khi gọi <code>commit_transaction()</code> ở participant nào.</li>
+<li>Mỗi participant chỉ xác nhận sau khi event bắt đầu và hoàn tất có gắn mã giao dịch đã được ordering journal chấp nhận.</li>
+<li>Sau khi có cả hai xác nhận, coordinator fsync <code>committed</code> và đặt trạng thái <code>COMMITTED</code>.</li>
+</ol>
+<p>Nếu prepare lỗi, coordinator thử abort cả hai participant. Chỉ đặt trạng thái <code>ROLLED_BACK</code> khi cả hai trả về <code>True</code>; nếu không, giao dịch ở <code>IN_DOUBT</code> và sẽ retry abort. Sau quyết định COMMIT bền vững, coordinator không gọi rollback. Commit lỗi giữ trạng thái <code>IN_DOUBT</code> và được retry theo hướng commit.</p>
+<h2 id="khoi-tao-thao-tac">Khởi tạo thao tác</h2>
+<p>Dùng coordinator của <code>HierarchyManager</code> để journal bền vững và trạng thái phục hồi được chia sẻ:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_finance"</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"sub_chain_logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PKG-099238"</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"operation_type"</span><span class="p">:</span> <span class="s2">"transfer"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">500</span><span class="p">},</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">},</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">transaction</span> <span class="o">=</span> <span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">transaction_manager</span><span class="o">.</span><span class="n">get_transaction</span><span class="p">(</span><span class="n">tx_id</span><span class="p">)</span>
 </code></pre></div>
-<p>Điều này sẽ kích hoạt <code>_execute_2pc</code> tự động và đồng bộ trực tiếp trong logic quản lý mà không cần thêm thao tác phụ từ phía client.</p>
+<p>Entity phải được đăng ký trên cả hai chain và payload thao tác phải vượt qua bước xác thực của cả hai participant.</p>
+<h2 id="phuc-hoi-giao-dich-chua-hoan-tat">Phục hồi giao dịch chưa hoàn tất</h2>
+<p>Coordinator retry quyết định bền vững khi khởi động lại và khi participant được đăng ký. Để retry sau lỗi trong lúc chạy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">transaction_manager</span><span class="o">.</span><span class="n">retry_pending</span><span class="p">()</span>
+</code></pre></div>
+<p>Các chain đã lưu có tên trong bản ghi 2PC chưa hoàn tất được khôi phục thành participant <code>DomainChain</code>. Các chain đã lưu khác vẫn là <code>SubChain</code> chung. Nếu cần nâng cấp tường minh placeholder chung, gọi <code>create_sub_chain()</code> với tên và domain type hiện có; chain mới kết nối trước khi placeholder được dừng.</p>
+<p>Sau COMMIT bền vững, bản ghi <code>prepared</code> của coordinator xác nhận cả hai participant đã xác thực payload trước quyết định. Quá trình phục hồi khôi phục dữ liệu participant từ payload và bỏ qua operation event đã có marker trong ordering journal, nên không phụ thuộc vào entity registry chỉ lưu trong bộ nhớ.</p>
 
 
 

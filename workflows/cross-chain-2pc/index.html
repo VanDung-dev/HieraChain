@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Two-Phase Commit (2PC) protocol coordination for atomic cross-chain event operations.">
+        <meta name="description" content="Durable Two-Phase Commit coordination with forward recovery for cross-chain transactions.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1447,10 +1447,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-happy-path" class="md-nav__link">
+  <a href="#successful-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: happy path
+        Successful flow
       </span>
     </span>
   </a>
@@ -1458,10 +1458,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-failure-paths" class="md-nav__link">
+  <a href="#failure-and-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: failure paths
+        Failure and recovery
       </span>
     </span>
   </a>
@@ -1469,10 +1469,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operation-state-machine" class="md-nav__link">
+  <a href="#guarantees-and-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operation state machine
+        Guarantees and limits
       </span>
     </span>
   </a>
@@ -1480,32 +1480,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#key-methods" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Key methods
       </span>
     </span>
   </a>
@@ -1568,11 +1546,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4315,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-happy-path" class="md-nav__link">
+  <a href="#successful-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: happy path
+        Successful flow
       </span>
     </span>
   </a>
@@ -4326,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-failure-paths" class="md-nav__link">
+  <a href="#failure-and-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: failure paths
+        Failure and recovery
       </span>
     </span>
   </a>
@@ -4337,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operation-state-machine" class="md-nav__link">
+  <a href="#guarantees-and-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operation state machine
+        Guarantees and limits
       </span>
     </span>
   </a>
@@ -4348,32 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#key-methods" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Key methods
       </span>
     </span>
   </a>
@@ -4424,122 +4378,45 @@
 
 <h1 id="cross-chain-operation-2pc">Cross-chain operation (2PC)</h1>
 <h2 id="overview">Overview</h2>
-<p>When a business operation must span two Sub-Chains atomically, for example when an asset moves from the <code>logistics</code> chain to the <code>finance</code> chain, HieraChain uses Two-Phase Commit. Either both chains commit or both roll back. No partial state is left behind.</p>
-<p>A typical trigger is an inventory transfer between departments. The source chain records a <code>deduct</code> event and the destination chain records a <code>receive</code> event. Both have to succeed.</p>
-<hr />
-<h2 id="flow-diagram-happy-path">Flow diagram: happy path</h2>
+<p>The coordinator prepares both <code>DomainChain</code> participants, then fsyncs and reads back a COMMIT decision from its own journal before asking either participant to commit. A participant acknowledges only after both transaction-tagged operation events can be read back from that chain's ordering journal; block finalization remains asynchronous. The terminal <code>committed</code> record must also be read back before reporting <code>COMMITTED</code>. Once COMMIT is durable, recovery always retries forward and never rolls a participant back.</p>
+<p>Before COMMIT is durable, the coordinator asks both participants to abort. It reports <code>ROLLED_BACK</code> only when both acknowledge. If either abort cannot be confirmed, the transaction remains <code>IN_DOUBT</code> and the coordinator retries the abort when both participants are available.</p>
+<p>On startup, unresolved coordinator records identify which persisted chains need <code>DomainChain</code> participants. Other persisted chains remain generic <code>SubChain</code> instances. A generic placeholder can also be explicitly rebound by calling <code>create_sub_chain()</code> with the same name and domain type; the old chain is shut down only after the replacement connects.</p>
+<h2 id="successful-flow">Successful flow</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
+    participant Client
+    participant TM as CrossChainTransactionManager
+    participant SRC as Source DomainChain
+    participant DST as Destination DomainChain
+    participant CJ as Coordinator journal
 
-    HM-&gt;&gt;TM: initiate_cross_chain_operation(src, dst, payload)
-    TM-&gt;&gt;TM: Create CrossChainOperation (UUID, state=PENDING)
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHASE 1 — PREPARE
-        TM-&gt;&gt;SRC: prepare_operation(op_id, payload, is_source=True)
-        SRC-&gt;&gt;SRC: Lock resources, validate payload
-        SRC--&gt;&gt;TM: True ✅
-
-        TM-&gt;&gt;DST: prepare_operation(op_id, payload, is_source=False)
-        DST-&gt;&gt;DST: Verify capacity to accept
-        DST--&gt;&gt;TM: True ✅
-
-        TM-&gt;&gt;TM: state = PREPARED
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHASE 2 — COMMIT
-        TM-&gt;&gt;SRC: commit_operation(op_id)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_operation(op_id)
-        DST--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;TM: state = COMMITTED
-    end
-
-    TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
-<hr />
-<h2 id="flow-diagram-failure-paths">Flow diagram: failure paths</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: SCENARIO A — Phase 1 Prepare Fails
-        TM-&gt;&gt;SRC: prepare_operation(op_id, payload)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: prepare_operation(op_id, payload)
-        DST--&gt;&gt;TM: False ❌  (capacity / validation fail)
-        TM-&gt;&gt;TM: state = PENDING → rollback triggered
-        TM-&gt;&gt;SRC: rollback_operation(op_id)
-        TM-&gt;&gt;DST: rollback_operation(op_id)
-        TM-&gt;&gt;TM: state = ROLLED_BACK ⚠️
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: SCENARIO B — Phase 2 Partial Commit Fails
-        TM-&gt;&gt;SRC: commit_operation(op_id)
-        SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_operation(op_id)
-        DST--&gt;&gt;TM: Exception ❌
-        TM-&gt;&gt;TM: state = FAILED ❌
-        Note over TM: Manual reconciliation required&lt;br/&gt;Inspect logs for partial state
-    end</code></pre>
-<hr />
-<h2 id="operation-state-machine">Operation state machine</h2>
-<pre class="mermaid"><code>flowchart LR
-    P["PENDING"] --&gt; PR["PREPARED"]
-    PR --&gt; C["COMMITTED ✅"]
-    PR --&gt; RB["ROLLED_BACK ⚠️"]
-    P --&gt; F["FAILED ❌"]
-    PR --&gt; F</code></pre>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Initiate</strong></td>
-<td style="text-align: left;"><code>HierarchyManager</code> creates a <code>CrossChainTransaction</code> with UUID and <code>state=PENDING</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Phase 1: Prepare SRC</strong></td>
-<td style="text-align: left;">Source chain locks resources, validates payload schema</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Phase 1: Prepare DST</strong></td>
-<td style="text-align: left;">Destination chain checks capacity and constraints</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Phase 1 result</strong></td>
-<td style="text-align: left;">If both return <code>True</code>: state → <code>PREPARED</code>. If either fails: immediate rollback on both</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Phase 2: Commit SRC</strong></td>
-<td style="text-align: left;">Source chain finalizes the operation (emits event via Event Submission)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Phase 2: Commit DST</strong></td>
-<td style="text-align: left;">Destination chain finalizes (emits event via Event Submission)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Result</strong></td>
-<td style="text-align: left;">State → <code>COMMITTED</code>. <code>tx_id</code> returned to caller</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
+    Client-&gt;&gt;TM: initiate_transaction(src, dst, payload)
+    TM-&gt;&gt;CJ: fsync and read back begin
+    TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload, true)
+    SRC--&gt;&gt;TM: prepared
+    TM-&gt;&gt;DST: prepare_transaction(tx_id, payload, false)
+    DST--&gt;&gt;TM: prepared
+    TM-&gt;&gt;CJ: fsync and read back prepared
+    TM-&gt;&gt;CJ: fsync and read back COMMIT decision
+    TM-&gt;&gt;SRC: commit_transaction(tx_id)
+    SRC--&gt;&gt;TM: ordering events read back
+    TM-&gt;&gt;DST: commit_transaction(tx_id)
+    DST--&gt;&gt;TM: ordering events read back
+    TM-&gt;&gt;CJ: fsync and read back committed
+    TM--&gt;&gt;Client: tx_id</code></pre>
+<h2 id="failure-and-recovery">Failure and recovery</h2>
+<pre class="mermaid"><code>flowchart TD
+    PENDING --&gt; PREPARED
+    PENDING --&gt; ABORTING
+    PREPARED --&gt; ABORTING
+    ABORTING --&gt;|both abort acks| ROLLED_BACK
+    ABORTING --&gt;|an abort is unconfirmed| IN_DOUBT
+    IN_DOUBT --&gt;|no durable COMMIT| ABORTING
+    PREPARED --&gt;|fsynced COMMIT decision| COMMITTING
+    COMMITTING --&gt;|both participant acks| COMMITTED
+    COMMITTING --&gt;|an ack is missing| IN_DOUBT
+    IN_DOUBT --&gt;|durable COMMIT| COMMITTING
+    PENDING --&gt; FAILED</code></pre>
 <table>
 <thead>
 <tr>
@@ -4550,34 +4427,47 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Phase 1 fails on SRC</td>
-<td style="text-align: left;"><code>ROLLED_BACK</code></td>
-<td style="text-align: left;">Automatic rollback on DST</td>
+<td style="text-align: left;">A participant fails to prepare</td>
+<td style="text-align: left;"><code>ROLLED_BACK</code> only after both abort acknowledgments; otherwise <code>IN_DOUBT</code></td>
+<td style="text-align: left;">Retry both aborts after the participants are available.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Phase 1 fails on DST</td>
-<td style="text-align: left;"><code>ROLLED_BACK</code></td>
-<td style="text-align: left;">Automatic rollback on SRC</td>
-</tr>
-<tr>
-<td style="text-align: left;">Phase 2 commit fails on either</td>
+<td style="text-align: left;">A chain is missing or does not support 2PC before prepare</td>
 <td style="text-align: left;"><code>FAILED</code></td>
-<td style="text-align: left;">Manual reconciliation via audit log</td>
+<td style="text-align: left;">Register the required <code>DomainChain</code> participants, then start a new transaction.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Network timeout during Phase 2</td>
-<td style="text-align: left;"><code>FAILED</code></td>
-<td style="text-align: left;">Operator must inspect last committed state</td>
+<td style="text-align: left;">Writing the COMMIT decision has an ambiguous result</td>
+<td style="text-align: left;"><code>IN_DOUBT</code></td>
+<td style="text-align: left;">Read the coordinator journal before taking action. A durable COMMIT retries forward; no COMMIT retries abort.</td>
+</tr>
+<tr>
+<td style="text-align: left;">A participant commit fails after durable COMMIT</td>
+<td style="text-align: left;"><code>IN_DOUBT</code></td>
+<td style="text-align: left;">Never roll back. The durable <code>prepared</code> record confirms both participants validated the payload; restore missing participant state from that payload and journal markers, then retry only missing events.</td>
+</tr>
+<tr>
+<td style="text-align: left;">The process restarts with unresolved records</td>
+<td style="text-align: left;"><code>IN_DOUBT</code> until participants are available</td>
+<td style="text-align: left;">Restore the named participants as <code>DomainChain</code> and retry.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="key-classes-and-methods">Key classes and methods</h2>
+<h2 id="guarantees-and-limits">Guarantees and limits</h2>
+<ul>
+<li>The coordinator journal is stored separately from OrderingService event journals, so its records are not replayed as ledger events.</li>
+<li>A <code>COMMITTED</code> transaction means both participant event pairs and the coordinator's terminal record were read back from durable journals. It does not mean the blocks have already been finalized.</li>
+<li>Participant event markers include the transaction ID and operation step. A retry skips a start or completion event already accepted by that participant, including after restart.</li>
+<li>After durable COMMIT, participant recovery uses the previously validated coordinator payload and accepted event markers; it does not rerun business validation against volatile entity registries.</li>
+<li><code>IN_DOUBT</code> is recoverable state, not a terminal failure. Call <code>transaction_manager.retry_pending()</code> to retry after a runtime participant failure; startup and participant registration also trigger retries.</li>
+<li>Recovery claims each transaction while its coordinator path is active. A concurrent <code>retry_pending()</code> skips that transaction and can retry it after the active path releases it. The coordinator also refuses abort after a durable or ambiguous COMMIT decision.</li>
+</ul>
+<h2 id="key-methods">Key methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Action</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
@@ -4585,35 +4475,24 @@
 <tr>
 <td style="text-align: left;">Initiate</td>
 <td style="text-align: left;"><code>HierarchyManager.initiate_cross_chain_transaction()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager.py</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Create transaction</td>
-<td style="text-align: left;"><code>CrossChainTransactionManager.__init__()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
+<td style="text-align: left;">Coordinate and recover</td>
+<td style="text-align: left;"><code>CrossChainTransactionManager.initiate_transaction()</code> / <code>retry_pending()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/transaction_manager.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Prepare</td>
-<td style="text-align: left;"><code>DomainChain.prepare_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Commit</td>
-<td style="text-align: left;"><code>DomainChain.commit_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Rollback</td>
-<td style="text-align: left;"><code>DomainChain.rollback_transaction()</code></td>
-<td style="text-align: left;"><code>domains/generic/chains/domain_chain.py</code></td>
+<td style="text-align: left;">Prepare, commit, or abort</td>
+<td style="text-align: left;"><code>DomainChain.prepare_transaction()</code> / <code>commit_transaction()</code> / <code>rollback_transaction()</code></td>
+<td style="text-align: left;"><code>hierachain/domains/chains/domain_chain.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a>: each <code>commit_transaction()</code> internally calls <code>add_event()</code></li>
-<li><a href=".././error-recovery/">Error Mitigation</a>: handles state rollback at the system level</li>
+<li><a href=".././event-submission/">Event Submission</a>: operation events enter each chain's ordering journal before asynchronous block finalization.</li>
+<li><a href=".././error-recovery/">Error Mitigation</a>: system-level error handling and journal recovery.</li>
 </ul>
 
 

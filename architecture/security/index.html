@@ -1535,11 +1535,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4370,22 +4368,21 @@
 </ul>
 </li>
 <li>
-<p>Lockdown and logging:</p>
+<p>Logging and integrity:</p>
 <ul>
 <li><code>hierachain/security/secure_logging.py</code> provides tamper-evident logs and masks PII.</li>
-<li><code>hierachain/cluster/lockdown_protocol.py</code> provides emergency lockdown with quorum and contains <code>ClusterLockdownManager</code>.</li>
+<li><code>hierachain/risk_management/audit_logger.py</code> records operational audit events.</li>
 </ul>
 </li>
 <li>
 <p>Fault tolerance and integrity:</p>
 <ul>
-<li><code>hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}</code> and <code>hierachain/cluster/lockdown_types.py</code> provide integrity checks, rollback snapshots and HMAC lockdown. There is no <code>security/resource_guard.py</code> or <code>security/integrity.py</code>; those paths were removed or never existed.</li>
+<li><code>hierachain/error_mitigation/{consensus_validator.py, resource_validator.py}</code> and <code>hierachain/cluster/lockdown_types.py</code> provide validation, resource checks and HMAC lockdown. There is no <code>security/resource_guard.py</code> or <code>security/integrity.py</code>; those paths were removed or never existed.</li>
 </ul>
 </li>
 <li>
-<p>Risk analyzer:</p>
+<p>Input sanitization:</p>
 <ul>
-<li><code>hierachain/risk_management/risk_analyzer.py</code> handles risk scoring and uses validators in <code>hierachain/error_mitigation/*</code>.</li>
 <li><code>hierachain/security/sanitization.py</code> helps prevent injection by neutralizing HTML/templates and enforcing a filename allowlist.</li>
 </ul>
 </li>

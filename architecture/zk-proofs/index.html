@@ -1541,11 +1541,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4369,7 +4367,7 @@
 
 
 <h1 id="zero-knowledge-proofs">Zero-Knowledge Proofs</h1>
-<p>HieraChain uses <strong>Zero-Knowledge Proofs (ZK)</strong> to ensure transaction authenticity across the hierarchical system without revealing detailed data of each Event. Sub-chains generate Proofs demonstrating valid state transitions, and the Main-chain verifies those Proofs.</p>
+<p>HieraChain exposes a ZK proof interface for Sub-chain submissions to MainChain. The current implementation supports mock proofs for development; production proving and verification are not implemented.</p>
 <h3 id="1-how-zkprover-zkverifier-work">1. How ZKProver &amp; ZKVerifier Work</h3>
 <p>The system provides two core modules for this task:</p>
 <ul>
@@ -4377,16 +4375,16 @@
 <p><strong><code>ZKProver</code></strong> (Located at Sub-chain - <code>hierachain/security/zk_prover.py</code>):</p>
 <ul>
 <li>Acts as the Prover.</li>
-<li>When a Sub-chain generates a new block, it creates a new state (World State).</li>
-<li><code>ZKProver</code> generates Proof code segments to prove the state transition logic from <code>old_state_root</code> to <code>new_state_root</code> at the corresponding <code>block_index</code>.</li>
+<li>Sub-chain proof inputs use the previous and latest block event Merkle roots.</li>
+<li>The current mock implementation binds those inputs to a hash. It does not prove an entity projection transition or validate business rules.</li>
 </ul>
 </li>
 <li>
 <p><strong><code>ZKVerifier</code></strong> (Located at Main-chain - <code>hierachain/security/verify/zk_verifier.py</code>):</p>
 <ul>
 <li>Acts as the Verifier.</li>
-<li>Upon receiving Proof signals from Sub-chain, <code>ZKVerifier</code> analyzes and verifies mathematical validity and state integrity.</li>
-<li>Completely resolves <strong>Fake Proofs</strong> risk. If a Proof fails verification, the attached transaction on Main-chain will be outright rejected.</li>
+<li>For mock proofs, <code>ZKVerifier</code> checks the format and the commitment to the supplied public inputs.</li>
+<li>A rejected proof prevents its MainChain submission. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.</li>
 </ul>
 </li>
 </ul>
@@ -4395,25 +4393,26 @@
 <h4 id="a-mock-mode-default">a. Mock Mode (Default)</h4>
 <ul>
 <li>This is the Development (Dev) or Testing environment mode.</li>
-<li>Mock Mode simulates Groth16/Plonk ZK-SNARK by generating a simulated proof format of 2KB - 4KB with <code>mock_zkp_business\x00</code>.</li>
+<li>Mock mode uses the <code>mock_zkp_v2\x00</code> format with a SHA-256 commitment to public inputs; it does not execute a SNARK circuit.</li>
 <li>Instead of running algorithm circuits, mock mode uses interpolated hash computation (<code>hashlib.sha256</code>) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.</li>
 <li>Supports Main/Sub integrated development without requiring significant hardware resources.</li>
 </ul>
 <h4 id="b-production-mode-zokrates">b. Production Mode (ZoKrates)</h4>
 <ul>
-<li>This is the actual production operation mode for Mainnet/Enterprise environments.</li>
+<li>This is a reserved production interface, currently unsupported.</li>
 <li>Requires the proving key directory at <code>ZK_PROVING_KEY_PATH</code> and verification key at <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
-<li>Proofs are generated via an External Service (like ZoKrates) containing high-order SNARK mathematical equations that are extremely secure and hard to forge.</li>
+<li>The current production methods raise <code>NotImplementedError</code>; configuring key paths does not enable an external proving service.</li>
 </ul>
 <h3 id="3-public-inputs">3. Public Inputs</h3>
 <p>As defined by <code>ZKPublicInputs</code>, the input arguments (synchronized between Prover and Verifier) include:</p>
 <ul>
-<li><strong><code>old_state_root</code> (str)</strong>: Merkle Root of the World State at the immediately preceding block. Must be a valid hash.</li>
-<li><strong><code>new_state_root</code> (str)</strong>: Latest Merkle Root after events are incorporated into the current update block.</li>
-<li><strong><code>block_index</code> (int)</strong>: Block sequence number (this mechanism completely prevents Replay attacks).</li>
+<li><strong><code>old_state_root</code> (str)</strong>: Event Merkle root of the immediately preceding block; the submission path uses <code>genesis</code> when no preceding block exists.</li>
+<li><strong><code>new_state_root</code> (str)</strong>: Event Merkle root of the latest block, with the existing block-hash fallback when needed.</li>
+<li><strong><code>block_index</code> (int)</strong>: Block sequence number bound into the proof; the submission layer must still enforce freshness and deduplication.</li>
 <li><strong><code>sub_chain_name</code> (str)</strong>: Full identifier or name of the Sub-chain pushing the Proof.</li>
 </ul>
 <p>These parameters are serialized as standardized JSON bytes (using <code>sort_keys=True</code>) before being hashed for Proof generation.</p>
+<p><code>WorldState.get_state_root()</code> hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. Production proving and verification currently raise <code>NotImplementedError</code>; this root clarification does not implement a production ZK circuit.</p>
 
 
 

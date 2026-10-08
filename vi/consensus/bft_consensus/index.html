@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Đồng thuận chịu lỗi Byzantine (PBFT): An toàn tuyệt đối, Chống tấn công giả mạo và Cơ chế View Change tự động.">
+        <meta name="description" content="Đồng thuận PBFT chịu lỗi Byzantine với cơ chế View Change.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4458,58 +4456,75 @@
 
 <h1 id="bft-consensus-hierachainconsensusbft">BFT Consensus (<code>hierachain/consensus/bft/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p><strong>BFT Consensus</strong> là cơ chế đồng thuận chịu lỗi Byzantine cao cấp của HieraChain, cho phép hệ thống duy trì tính nhất quán ngay cả khi một phần các nút (<code>f</code>) bị lỗi hoặc có hành vi độc hại (phá hoại dữ liệu, từ chối dịch vụ). Hệ thống tuân thủ công thức <code>n &gt;= 3f + 1</code>, đảm bảo an ninh tối đa cho các chuỗi Main Chain hoặc các liên minh doanh nghiệp (Consortium).</p>
+<p><strong>BFT Consensus</strong> là cơ chế đồng thuận chịu lỗi Byzantine của HieraChain. Giao thức dùng công thức <code>n &gt;= 3f + 1</code> để chịu được tối đa <code>f</code> nút lỗi hoặc có hành vi độc hại như làm sai lệch dữ liệu hay từ chối dịch vụ. Triển khai này tách khỏi luồng runtime của MainChain và SubChain.</p>
 <hr />
 <h2 id="kien-truc-module-bft">Kiến trúc Module BFT</h2>
-<p>Hệ thống được chia nhỏ thành các thành phần chuyên biệt để đảm bảo tính module hóa và dễ bảo trì:</p>
+<p>Module gồm các thành phần sau:</p>
 <div class="grid cards">
 <ul>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>BFT Engine</strong></p>
 <hr />
-<p><strong>File</strong>: <code>consensus.py</code></p>
-<p>Thực thi lõi giao thức <strong>PBFT</strong> với quy trình 3 pha (3-phase commit): <strong>Pre-prepare</strong>, <strong>Prepare</strong>, và <strong>Commit</strong>.</p>
+<p><strong>Files</strong>: <code>consensus.py</code>, <code>engine.py</code></p>
+<p><code>BFTConsensus.request()</code> khởi chạy các pha <strong>PBFT</strong>. <code>BFTConsensusEngine</code> xác thực PRE-PREPARE, ghi nhận phiếu bầu và áp dụng hoạt động đã cam kết khi thao tác ghi ứng dụng thành công.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m6 9h-5l1.81-1.81A3.94 3.94 0 0 0 12 8a4 4 0 1 0 3.86 5h2.05A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L18 6Z"/></svg></span> <strong>View Manager</strong></p>
 <hr />
-<p><strong>File</strong>: <code>view_manager.py</code></p>
-<p>Tự động phát hiện lỗi của nút Primary và kích hoạt quy trình <strong>View Change</strong> để bầu chọn Leader mới, đảm bảo hệ thống không bị dừng.</p>
+<p><strong>File</strong>: <code>view_change.py</code></p>
+<p>Phát hiện khi nút Primary không phản hồi và kích hoạt <strong>View Change</strong> để bầu chọn Leader mới.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 10v3h6v5H8v3l-6-5.5zm14-1.5L16 3v3h-6v5h6v3z"/></svg></span> <strong>BFT Network</strong></p>
 <hr />
-<p><strong>File</strong>: <code>network.py</code></p>
-<p>Lớp truyền thông chuyên biệt sử dụng <strong>ZeroMQ</strong>, hỗ trợ quảng bá (Broadcast) và định tuyến thông điệp đồng thuận với độ trễ cực thấp.</p>
+<p><strong>File</strong>: <code>dispatcher.py</code></p>
+<p>Dùng <strong>ZeroMQ</strong> để quảng bá và định tuyến thông điệp đồng thuận.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 18v4h-4v-3h-3v-3h-3l-2.26-2.26c-.55.17-1.13.26-1.74.26a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6c0 .61-.09 1.19-.26 1.74zM7 5a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2"/></svg></span> <strong>BFT Crypto</strong></p>
 <hr />
-<p><strong>File</strong>: <code>cryptographic.py</code></p>
+<p><strong>Files</strong>: <code>helpers.py</code>, <code>types.py</code></p>
 <p>Xử lý ký số Ed25519, băm (Hashing) và xác thực bằng chứng <strong>Zero-Knowledge (ZK)</strong> cho từng thông điệp đồng thuận.</p>
 </li>
 </ul>
 </div>
 <hr />
 <h2 id="quy-trinh-ong-thuan-pbft-protocol-flow">Quy trình Đồng thuận PBFT (Protocol Flow)</h2>
-<p>Hệ thống yêu cầu sự đồng thuận của ít nhất <code>2f + 1</code> nút trước khi thực thi lệnh:</p>
+<p>Thành phần BFT độc lập với luồng runtime MainChain và SubChain hiện tại. Demo và API thư viện sử dụng <code>BFTConsensus</code> một cách tường minh.</p>
+<p>JSON chuẩn hóa của request dùng <code>json</code> chuẩn của Python thông qua <code>hierachain.serialization.dumps_canonical_json</code>. Định dạng digest BFT hiện có được giữ: sắp xếp trường, dấu phân cách gọn, văn bản UTF-8 không escape Unicode và cách biểu diễn số hữu hạn của Python. Số không hữu hạn, dữ liệu vòng lặp và kiểu không được JSON hỗ trợ bị từ chối.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant C as Client
-    participant P as Primary (Leader)
-    participant R as Replicas (Nodes)
+    participant P as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+    participant R3 as Replica 3
+    C-&gt;&gt;P: request(operation)
+    P-&gt;&gt;P: Hash canonical request and record local PREPARE
+    P-&gt;&gt;R1: PRE-PREPARE(view, seq, digest, request)
 
-    C-&gt;&gt;P: Request Operation
-    P-&gt;&gt;R: 1. PRE-PREPARE (Seq, View, Digest)
-    R-&gt;&gt;R: Validate &amp; Sign
-    R-&gt;&gt;P: 2. PREPARE (Quorum 2f)
-    R-&gt;&gt;R: 2. PREPARE (Broadcast)
-    P-&gt;&gt;R: 3. COMMIT (Quorum 2f+1)
-    R-&gt;&gt;R: Execute &amp; Commit to Ledger
-    R-&gt;&gt;C: Reply (Optional)</code></pre>
+    P-&gt;&gt;R2: PRE-PREPARE(view, seq, digest, request)
+    P-&gt;&gt;R3: PRE-PREPARE(view, seq, digest, request)
+    R1-&gt;&gt;R1: Recompute digest, record local PREPARE
+    R2-&gt;&gt;R2: Recompute digest, record local PREPARE
+    R3-&gt;&gt;R3: Recompute digest, record local PREPARE
+    R1-&gt;&gt;P: PREPARE(view, seq, digest)
+    R2-&gt;&gt;P: PREPARE(view, seq, digest)
+    R3-&gt;&gt;P: PREPARE(view, seq, digest)
+    Note over P,R3: Each node records its local COMMIT after 2f PREPARE votes
+    P-&gt;&gt;R1: COMMIT(view, seq, digest)
+    R1-&gt;&gt;P: COMMIT(view, seq, digest)
+    R2-&gt;&gt;P: COMMIT(view, seq, digest)
+    Note over P,R3: Apply after 2f+1 unique COMMIT votes</code></pre>
+<p>Primary băm toàn bộ request dưới dạng JSON chuẩn. Mỗi replica tính lại digest trước khi chấp nhận PRE-PREPARE, vì vậy thay đổi bất kỳ trường nào trong request mà vẫn giữ digest và chữ ký ban đầu sẽ bị từ chối. Digest được đưa vào thông điệp BFT đã ký.</p>
+<p>Phiếu giai đoạn cục bộ được theo dõi theo từng sequence. Quorum PREPARE của một request đã nhận vẫn tạo được COMMIT cục bộ dù sequence khác đã thay đổi trạng thái consensus hiển thị.</p>
+<p>Mỗi node ghi nhận đúng một phiếu PREPARE và COMMIT có chữ ký của chính mình trước khi phát phiếu. Quorum đếm các sender duy nhất, bao gồm phiếu cục bộ: <code>2f</code> phiếu PREPARE và <code>2f + 1</code> phiếu COMMIT.</p>
+<p>Với node được gắn application chain, nếu <code>chain.add_event()</code> thất bại thì quorum COMMIT và event ổn định trong bộ nhớ, cùng event ID xác định, vẫn sẵn sàng để thử lại. Một COMMIT hợp lệ được gửi lại có thể ghi lại cùng event; node chỉ tăng <code>committed_sequence</code> sau khi ghi thành công. Thành phần không lưu trạng thái thử lại qua lần khởi động lại tiến trình. Các message gần đây được giữ lại; cleanup chỉ xóa message khi sequence cũ hơn committed sequence trên 100.</p>
+<p>Khi không gắn application chain, BFT chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event ứng dụng. Demo độc lập sử dụng chế độ này.</p>
+<p>Request sau không thể nâng committed sequence vượt qua request trước chưa áp dụng hoặc chưa nhận được. Việc áp dụng diễn ra liên tiếp từ sequence 1. Quorum đã nhận cho các request sau được giữ lại và thử áp dụng theo thứ tự sau khi thao tác ghi trước thành công. Trạng thái thử lại vẫn nằm trong bộ nhớ. Nếu backend đã lưu event rồi phát sinh lỗi, retry có thể ghi trùng trừ khi backend khử trùng bằng <code>event_id</code> ổn định; <code>SubChain.add_event()</code> hiện không dùng ID BFT này để khử trùng. Vì vậy thành phần không bảo đảm event được áp dụng đúng một lần khi kết quả ghi không rõ ràng hoặc qua restart.</p>
 <hr />
 <h2 id="cac-co-che-bao-ve-nang-cao">Các cơ chế Bảo vệ Nâng cao</h2>
 <h3 id="1-view-change-proof">1. View Change Proof</h3>
-<p>Khi một nút nhận thấy Leader hiện tại không hoạt động (Timeout), nó sẽ yêu cầu thay đổi View. Quy trình này đòi hỏi bằng chứng (<strong>Proof</strong>) bao gồm ít nhất <code>2f + 1</code> chữ ký từ các nút khác, ngăn chặn việc đảo chính trái phép.</p>
+<p>Khi một nút nhận thấy Leader hiện tại không hoạt động (Timeout), nó yêu cầu thay đổi View. View mới cần bằng chứng có ít nhất <code>2f + 1</code> chữ ký hợp lệ từ các node duy nhất, bao gồm phiếu cục bộ nếu có, nhằm ngăn chặn việc chiếm quyền trái phép.</p>
 <h3 id="2-sequence-number-nonce">2. Sequence Number &amp; Nonce</h3>
 <p>Mỗi thông điệp BFT đều có số thứ tự tăng dần và một giá trị ngẫu nhiên (Nonce) duy nhất để chống lại các cuộc tấn công phát lại (<strong>Replay Attacks</strong>).</p>
 <h3 id="3-zk-integration">3. ZK Integration</h3>

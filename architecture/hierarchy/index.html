@@ -1552,11 +1552,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,8 +4400,6 @@
 <li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> handles organization initialization, the multi-org network, and the relationship between channels and organizations.</li>
 <li>Private Data: <code>hierachain/hierarchical/private_data.py</code> holds private data collections at the Sub-Chain level.</li>
 <li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> coordinates 2PC transactions between Sub-Chains.</li>
-<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code> groups and compresses proofs before they are sent or recorded. This is configurable.</li>
-<li>Rebalancer: <code>hierachain/hierarchical/rebalancer/rebalancer.py</code> splits or balances Sub-Chains automatically when load crosses thresholds.</li>
 </ul>
 <h3 id="typical-flow">Typical flow</h3>
 <pre class="mermaid"><code>graph TD
@@ -4413,26 +4409,23 @@
     Consensus --&gt;|3. Validate| SubChain
     SubChain --&gt;|4. Finalize Block| SubChain
     SubChain --&gt;|5. Submit Proof| MainChain[Main Chain]
-    MainChain --&gt;|6. Store Root Hash| Storage[World State]</code></pre>
+    MainChain --&gt;|6. Persist Proof Anchor| Storage[Proof Storage]
+    SubChain --&gt;|Apply Finalized Events| Projection[WorldState Projection]</code></pre>
 <ol>
 <li>Create a Sub-Chain with <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code>. This initializes a DomainChain and connects it to the Main Chain.</li>
 <li>Write an event and close a block with <code>SubChain.add_event()</code>, which goes through ordering and consensus to <code>finalize_block()</code>.</li>
 <li>Anchor the proof to the Main Chain with <code>SubChain.submit_proof_to_main(main_chain, ...)</code> or <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
 <li>Run cross-chain transactions (2PC) with <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code>, which handles prepare, commit and rollback.</li>
 <li>Channels and private data: create a channel between organizations. Private collections are stored at the Sub-Chain according to the channel policy.</li>
-<li>Sub-Chain rebalancing: the rebalancer watches EPS and configured thresholds, then proposes branch splitting or load movement.</li>
 </ol>
 <h2 id="related-configuration-settingspy-actual-hrc_">Related configuration (settings.py, actual <code>HRC_*</code>)</h2>
 <ul>
-<li>Proof: <code>HRC_PROOF_AGGREGATION</code>, <code>HRC_PROOF_BATCH_SIZE</code>, <code>HRC_PROOF_BATCH_TIMEOUT</code>, <code>HRC_PROOF_COMPRESSION</code>.</li>
-<li>Rebalance: <code>HRC_REBALANCE_ENABLED</code>, <code>HRC_REBALANCE_THRESHOLD_EPS</code>, <code>HRC_REBALANCE_CHECK_INTERVAL</code>, <code>HRC_REBALANCE_MIN_EVENTS</code>, <code>HRC_REBALANCE_COOLDOWN</code>.</li>
-<li>K8s (Sub-Chain isolation): <code>HRC_K8S_ENABLED</code>, <code>HRC_K8S_NAMESPACE_PREFIX</code>, <code>HRC_K8S_CPU_LIMIT</code>/<code>HRC_K8S_MEMORY_LIMIT</code>/<code>HRC_K8S_CPU_REQUEST</code>/<code>HRC_K8S_MEMORY_REQUEST</code>, <code>HRC_K8S_CONFIG</code>.</li>
 <li>Consensus/Ordering: see <a href="../consensus/">Consensus &amp; Ordering</a> and <code>HRC_CONSENSUS_TYPE</code>/<code>HRC_MAINCHAIN_CONSENSUS</code>, <code>VALIDATOR_TIMEOUT</code>, <code>HRC_BLOCK_INTERVAL</code>.</li>
 </ul>
 <h2 id="features-and-limitations">Features and limitations</h2>
 <ul>
-<li>Features: domain data separation, centralized proof anchoring on the Main Chain, 2PC support, channels and multi-org, private data, and rebalancing.</li>
-<li>Limitations: channel and multi-org operations need clear policies, 2PC needs good synchronization, and rebalancing can require operational intervention outside the normal flow.</li>
+<li>Features: domain data separation, centralized proof anchoring on the Main Chain, 2PC support, channels and multi-org, and private data.</li>
+<li>Limitations: channel and multi-org operations need clear policies, and 2PC needs good synchronization.</li>
 </ul>
 <h2 id="related">Related</h2>
 <ul>

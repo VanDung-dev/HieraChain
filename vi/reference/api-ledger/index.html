@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3144,6 +3142,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gui-su-kien-vao-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Gửi Sự kiện vào Channel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#schema-chinh-trich-tu-hierachainapiledgerschemaspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4443,6 +4452,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gui-su-kien-vao-channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Gửi Sự kiện vào Channel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#schema-chinh-trich-tu-hierachainapiledgerschemaspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4636,9 +4656,9 @@
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s1">       "entity_id": "CONTRACT-2024-001",</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "event": "contract_signed",</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "event_type": "contract_signed",</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s1">       "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s1">       "details_nonce": "98765"</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s1">       "details_nonce": "a1b2c3d4e5f6789012345678"</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s1">     }'</span>
 </code></pre></div>
 <p>Dữ liệu này sẽ được HieraChain bảo chứng tính toàn vẹn thông qua mã băm, trong khi nội dung thực tế được lưu trữ an toàn trên mạng lưới IPFS.</p>
@@ -4649,16 +4669,22 @@
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client-&gt;&gt;API: POST /chains/create
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/create
     API-&gt;&gt;Sub: Khởi tạo Sub-Chain
     API--&gt;&gt;Client: 201 Created
 
-    Client-&gt;&gt;API: POST /chains/events
-    API-&gt;&gt;Sub: Ghi sự kiện (Add Event)
-    Sub-&gt;&gt;Sub: Đóng Block
-    API--&gt;&gt;Client: 200 OK (Event ID)
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/events
+    API-&gt;&gt;Sub: add_event(event)
+    Sub-&gt;&gt;Sub: OrderingService.receive_event()
+    Sub-&gt;&gt;Sub: Ghi Journal và đưa sự kiện vào hàng đợi
+    API--&gt;&gt;Client: 200 OK (event_id; đã tiếp nhận, chưa phải block finality)
 
-    Client-&gt;&gt;API: POST /chains/submit-proof
+    Note over Sub: Xử lý nền sau phản hồi API
+    Sub-&gt;&gt;Sub: Gom batch và tạo block
+    Sub-&gt;&gt;Sub: Finalize bằng consensus PoA hoặc PoF đã cấu hình
+    Sub-&gt;&gt;Sub: Lưu block đã finalize
+
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/submit-proof
     API-&gt;&gt;Sub: Lấy Proof
     Sub-&gt;&gt;Main: Gửi Proof (Neo dữ liệu)
     Main--&gt;&gt;Sub: Xác nhận
@@ -4668,12 +4694,25 @@
 <li>GET <code>/api/ledger/chains</code>: Liệt kê Main Chain và tất cả Sub-Chain.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Thêm sự kiện vào Sub-Chain.</li>
+<li>POST <code>/api/ledger/channels/{channel_id}/organizations/{org_id}/events</code>: Thêm sự kiện vào channel bằng user của API key đã xác thực và role ghi đã đăng ký trong organization.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code>: Gửi proof từ Sub-Chain lên Main Chain.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/stats</code>: Lấy thống kê chuỗi.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code>: Lấy danh sách block (có phân trang). Nếu <code>resolve_cid=true</code>, tự động tải dữ liệu chi tiết từ IPFS.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code>: Lấy chi tiết một block cụ thể.</li>
 <li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code>: Truy vết sự kiện. Nếu <code>resolve_cid=true</code>, giải mã chi tiết sự kiện từ IPFS.</li>
 </ul>
+<h2 id="gui-su-kien-vao-channel">Gửi Sự kiện vào Channel</h2>
+<p>Gửi sự kiện vào channel và organization đã được provision trong <code>HierarchyManager</code> đang hoạt động. API key cần có quyền <code>events</code>. Server dùng <code>user_id</code> đã xác thực từ API key làm người gửi và kiểm tra role đã đăng ký của user trong organization theo write policy của channel; trường <code>sender</code> do caller gửi không quyết định membership hoặc role.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/channels/supply_chain/organizations/acme/events"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s1">       "entity_id": "PRODUCT-2024-001",</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s1">       "event_type": "production_start",</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s1">       "details": {"batch": "BATCH-001"}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">     }'</span>
+</code></pre></div>
+<p>Channel không tồn tại trả về <code>404</code>; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về <code>403</code>. Phải bật xác thực API key và key cần có quyền <code>events</code>. <code>HierarchyManager</code> đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Ledger event của channel vẫn ở trong bộ nhớ khi manager restart.</p>
 <h2 id="schema-chinh-trich-tu-hierachainapiledgerschemaspy">Schema chính (trích từ <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
 <li>
@@ -4734,43 +4773,44 @@
 <h2 id="vi-du-su-dung">Ví dụ sử dụng</h2>
 <p>Giả định server đang chạy tại <code>http://localhost:2661</code>:</p>
 <h3 id="1-health-check">1. Health check</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/health
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/health
 </code></pre></div>
 <h3 id="2-tao-sub-chain">2. Tạo Sub-Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
 </code></pre></div>
 <p>Phản hồi (201):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Sub-chain 'supply_chain' created successfully"</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Sub-chain 'supply_chain' created successfully"</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="3-them-su-kien-vao-sub-chain">3. Thêm sự kiện vào Sub-Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s1">        "entity_id": "PROD-001",</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s1">        "event_type": "production_complete",</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s1">        "details": {"quantity": 100}</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s1">      }'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="s1">        "entity_id": "PROD-001",</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="s1">        "event_type": "production_complete",</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="s1">        "details": {"quantity": 100}</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">      }'</span>
 </code></pre></div>
 <p>Phản hồi:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </code></pre></div>
+<p>Phản hồi xác nhận sự kiện đã được ghi journal và đưa vào hàng đợi Ordering; tạo block và lưu block diễn ra bất đồng bộ sau đó.</p>
 <h3 id="4-gui-proof-len-main-chain">4. Gửi proof lên Main Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 <p>Phản hồi:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="5-lay-thong-tin-khoi-chi-tiet">5. Lấy thông tin khối (Chi tiết)</h3>
 <p><strong>Endpoint</strong>: <code>GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code></p>
@@ -4780,20 +4820,20 @@
 <li><code>resolve_cid</code> (boolean): Nếu <code>True</code>, server sẽ giải mã các <code>details_cid</code> từ IPFS và trả về dữ liệu gốc trong trường <code>details</code>.</li>
 </ul>
 <p><strong>Ví dụ</strong>:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span>
 </code></pre></div></p>
 <h3 id="6-truy-vet-entity-tren-tat-ca-chuoi">6. Truy vết entity trên tất cả chuỗi</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace"</span>
 </code></pre></div>
 <p>Hoặc giới hạn trong một chuỗi:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"</span>
 </code></pre></div>
 <h3 id="6-lay-thong-ke-chuoi">6. Lấy thống kê chuỗi</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/stats
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/stats
 </code></pre></div>
 <h3 id="7-lay-block-theo-trang">7. Lấy block theo trang</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&amp;offset=0"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&amp;offset=0"</span>
 </code></pre></div>
 <h2 id="ma-trang-thai-loi-pho-bien">Mã trạng thái &amp; lỗi phổ biến</h2>
 <ul>
@@ -4807,7 +4847,7 @@
 <ul>
 <li>DI lười (lazy DI): dùng các singleton nhẹ <code>get_hierarchy_manager()</code> và <code>get_entity_tracer()</code> cho request lifecycle.</li>
 <li><code>POST /chains/{chain_name}/events</code>: server sẽ đặt <code>timestamp = time.time()</code>; <code>details</code> vắng mặt sẽ thành <code>{}</code>.</li>
-<li><code>POST /chains/{chain_name}/submit-proof</code>: nếu <code>SubChain</code> không có <code>submit_proof_to_main</code>, endpoint rơi vào nhánh dự phòng (mock) để tránh crash.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/submit-proof</code>: gọi <code>HierarchyManager.submit_proof_to_main_chain()</code>; thành công nghĩa là block proof MainChain đã ký được hoàn tất và kiểm tra lại sau khi đọc từ SQL bền vững. Thiếu storage hoặc backend chưa hỗ trợ sẽ trả lỗi.</li>
 <li><code>GET /chains/{chain_name}/blocks</code>: khi <code>Block</code> không có <code>to_event_list</code>, có fallback chuyển đổi từ Arrow Table (<code>to_pylist</code>) để an toàn.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>
@@ -4816,6 +4856,7 @@
 <li>Hierarchical module: <a href="../../modules/hierarchical/">Hierarchical</a></li>
 <li>Core module: <a href="../../modules/core/">Core</a></li>
 </ul>
+<p>Danh sách block nhận <code>limit</code> từ 1 đến 100 (mặc định 10) và <code>offset &gt;= 0</code>; giá trị không hợp lệ trả HTTP 422. Giới hạn này áp dụng cho số block, không phải tổng byte của các sự kiện. Xung đột đăng ký sub-chain đồng thời trả HTTP 409.</p>
 
 
 

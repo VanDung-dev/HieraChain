@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4313,36 +4311,31 @@
 
 
 <h1 id="themtuy-bien-consensus">Thêm/Tùy biến Consensus</h1>
-<p>Trang này hướng dẫn hai con đường: (A) chỉ cấu hình để chọn PoA/PoF/BFT hiện có; (B) mở rộng bằng cách thêm cơ chế đồng thuận mới dựa trên <code>BaseConsensus</code>.</p>
+<p>Hướng dẫn này trình bày cách cấu hình PoA hoặc PoF cho MainChain và SubChain, đồng thời chỉ cách tích hợp cơ chế đồng thuận khác qua <code>BaseConsensus</code>.</p>
 <h2 id="chi-cau-hinh-khong-can-viet-ma">Chỉ cấu hình (không cần viết mã)</h2>
 <ol>
 <li>
-<p>Đặt biến môi trường (ví dụ dùng <code>.env</code> hoặc shell):</p>
+<p>Chọn PoA hoặc PoF cho MainChain. Ví dụ dưới đây dùng <code>HRC_CONSENSUS_TYPE</code>; <code>HRC_MAINCHAIN_CONSENSUS</code> cũng được hỗ trợ:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># .env (ví dụ)
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>HRC_CONSENSUS_TYPE=proof_of_authority   # hoặc proof_of_federation
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>HRC_ZK_REQUIRED_MAINCHAIN=false         # nếu dùng ZK, đặt true
 </code></pre></div>
 </li>
-<li>
-<p>Bật/tắt BFT (nếu áp dụng luồng sắp xếp/Byzantine):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># .env
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a># BFT trong thiết kế phân cấp thường gắn với Ordering/BFT layer ở hierarchical/consensus
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a># Bật/tắt theo nhu cầu mô phỏng
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>HRC_BFT_ENABLED=true
-</code></pre></div>
-</li>
+</ol>
+<p>Trong luồng runtime hiện tại, MainChain và SubChain dùng PoA hoặc PoF. BFT có triển khai riêng trong <code>hierachain/consensus/bft/</code>; API Ledger không chọn cơ chế này và không có biến môi trường <code>HRC_BFT_ENABLED</code>. SubChain mặc định dùng PoA; truyền <code>consensus_type="proof_of_federation"</code> khi khởi tạo để dùng PoF.</p>
+<ol>
 <li>
 <p>Khởi động API server và xác minh luồng cơ bản hoạt động:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
 </code></pre></div>
 </li>
 <li>
-<p>Kiểm thử nhanh bằng API Ledger:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"entity_id":"PROD-001","event_type":"production_complete","details":{"quantity":100}}'</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
+<p>Gửi request thử qua API Ledger:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"entity_id":"PROD-001","event_type":"production_complete","details":{"quantity":100}}'</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 </li>
 </ol>
@@ -4354,33 +4347,33 @@
 <li>Base: <code>hierachain/consensus/base_consensus.py</code></li>
 <li>PoA: <code>hierachain/consensus/proof_of_authority.py</code></li>
 <li>PoF: <code>hierachain/consensus/proof_of_federation.py</code></li>
-<li>BFT (phân cấp): <code>hierachain/consensus/bft/</code></li>
+<li>BFT (triển khai riêng, không được chọn bởi cấu hình MainChain/SubChain hiện tại): <code>hierachain/consensus/bft/</code></li>
 </ul>
 </li>
 <li>
 <p>Tạo lớp mới kế thừa <code>BaseConsensus</code> (ví dụ):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># hierachain/core/consensus/my_consensus.py (ví dụ mô tả)</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyConsensus</span><span class="p">(</span><span class="n">BaseConsensus</span><span class="p">):</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">validate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">previous_block</span><span class="p">):</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="c1"># xác thực chữ ký/merkle/tính nhất quán</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="o">...</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">return</span> <span class="kc">True</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">finalize_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">):</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="c1"># đóng block/áp dụng chữ ký/metadata đồng thuận</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="o">...</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="k">return</span> <span class="n">block</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">can_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">authority_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="c1"># kiểm tra quyền tạo block</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    <span class="o">...</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="k">return</span> <span class="kc">True</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># hierachain/core/consensus/my_consensus.py (ví dụ mô tả)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyConsensus</span><span class="p">(</span><span class="n">BaseConsensus</span><span class="p">):</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">validate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">previous_block</span><span class="p">):</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="c1"># xác thực chữ ký/merkle/tính nhất quán</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="o">...</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="k">return</span> <span class="kc">True</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">finalize_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">):</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="c1"># đóng block/áp dụng chữ ký/metadata đồng thuận</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="o">...</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="k">return</span> <span class="n">block</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">can_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">authority_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="c1"># kiểm tra quyền tạo block</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="o">...</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="k">return</span> <span class="kc">True</span>
 </code></pre></div>
 </li>
 <li>
 <p>Wiring điểm khởi tạo (factory/điểm tích hợp):</p>
 <ul>
-<li>Tại nơi khởi tạo chuỗi (Sub‑Chain/DomainChain) hoặc dịch vụ Ordering, tham chiếu cơ chế mới khi <code>HRC_CONSENSUS_TYPE=my_consensus</code>.</li>
+<li>Tích hợp cơ chế mới bằng cách sửa điểm khởi tạo hoặc factory để tham chiếu lớp mới. <code>HRC_CONSENSUS_TYPE</code> hiện chỉ chấp nhận PoA/PoF; không đặt biến này thành tên consensus mới nếu chưa bổ sung hỗ trợ cấu hình.</li>
 <li>Nếu có factory, bổ sung case ánh xạ <code>my_consensus</code> → <code>MyConsensus</code>.</li>
 </ul>
 </li>

@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4458,7 +4456,7 @@
 
 <h1 id="config-module-hierachainconfig">Config Module (<code>hierachain/config/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Config</strong> là trung tâm điều khiển của HieraChain, chịu trách nhiệm quản lý hàng trăm tham số vận hành, đảm bảo tính bảo mật của các khóa bí mật và cung cấp cơ chế ghi log chuẩn hóa cho cả môi trường phát triển và vận hành thực tế.</p>
+<p>Module <strong>Config</strong> quản lý các tham số vận hành, khóa bí mật và cấu hình ghi log của HieraChain.</p>
 <hr />
 <h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
 <div class="grid cards">
@@ -4480,7 +4478,7 @@
 <ul>
 <li>Truy xuất bí mật (secrets) độc lập với hạ tầng.</li>
 <li>Hỗ trợ backends: Environment, HashiCorp Vault, AWS Secrets Manager.</li>
-<li>Tự động fallback linh hoạt.</li>
+<li>Trả giá trị mặc định khi bí mật thiếu hoặc không truy xuất được.</li>
 </ul>
 </li>
 <li>
@@ -4497,33 +4495,35 @@
 </div>
 <hr />
 <h2 id="quan-ly-cau-hinh-theo-moi-truong">Quản lý cấu hình theo môi trường</h2>
-<p>HieraChain sử dụng biến môi trường <code>HRC_ENV</code> để tự động chuyển đổi giữa các cấu hình tối ưu:</p>
+<p>HieraChain dùng <code>HRC_ENV</code> để chọn cấu hình và dùng <code>ENV</code> khi <code>HRC_ENV</code> không được đặt hoặc để trống. Nếu đặt cả hai, <code>HRC_ENV</code> được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu:</p>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Môi trường</th>
-<th style="text-align: left;">Giá trị <code>HRC_ENV</code></th>
+<th style="text-align: left;">Giá trị được chấp nhận</th>
 <th style="text-align: left;">Đặc điểm chính</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>Development</strong></td>
-<td style="text-align: left;"><code>dev</code> (Mặc định)</td>
-<td style="text-align: left;">Log level DEBUG, lưu trữ SQLite/Memory, cho phép CORS từ mọi nơi.</td>
+<td style="text-align: left;"><code>dev</code>, <code>development</code> (mặc định)</td>
+<td style="text-align: left;">Log level DEBUG, mặc định lưu trữ PostgreSQL, cho phép CORS từ mọi nơi.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Production</strong></td>
-<td style="text-align: left;"><code>product</code></td>
-<td style="text-align: left;">Ép buộc xác thực (Auth), HSTS, P2P Strict Trust, log định dạng JSON.</td>
+<td style="text-align: left;"><code>production</code>, <code>prod</code>, <code>product</code></td>
+<td style="text-align: left;">Bật xác thực theo mặc định, HSTS, P2P Strict Trust.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Testing</strong></td>
-<td style="text-align: left;"><code>test</code></td>
+<td style="text-align: left;"><code>test</code>, <code>testing</code></td>
 <td style="text-align: left;">Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory.</td>
 </tr>
 </tbody>
 </table>
+<p>Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn development.</p>
+<p>Module settings nạp <code>.env</code> trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt <code>HRC_ENV_FILE</code> để nạp tệp dotenv khác; giá trị đã có trong môi trường tiến trình được ưu tiên.</p>
 <hr />
 <h2 id="secret-manager-quan-ly-bi-mat">Secret Manager (Quản lý Bí mật)</h2>
 <p>Đây là thành phần quan trọng để bảo vệ các khóa nhạy cảm như <code>HRC_CLUSTER_SECRET</code> hoặc <code>IPFS_ENCRYPTION_KEY</code>.</p>
@@ -4531,15 +4531,19 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.secret_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecretManager</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sm</span> <span class="o">=</span> <span class="n">SecretManager</span><span class="p">()</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Tự động lấy từ Vault, AWS hoặc Env tùy theo cấu hình</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Retrieve the configured field</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">cluster_key</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">get_secret</span><span class="p">(</span><span class="s2">"HRC_CLUSTER_SECRET"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="backends-ho-tro">Backends hỗ trợ:</h3>
 <ol>
 <li><strong>Environment (<code>env</code>)</strong>: Mặc định, đọc trực tiếp từ biến môi trường.</li>
 <li><strong>Vault (<code>vault</code>)</strong>: Kết nối tới HashiCorp Vault KV v2.</li>
-<li><strong>AWS (<code>aws</code>)</strong>: Kết nối tới AWS Secrets Manager.</li>
+<li><strong>AWS (<code>aws</code>)</strong>: Đọc trường chuỗi từ JSON object trong AWS Secrets Manager.</li>
 </ol>
+<p><code>get_secret(key, default=None)</code> nhận tên biến môi trường cho <code>env</code>, hoặc tên trường cho Vault/AWS. Với AWS, <code>key</code> không phải SecretId: đặt <code>HRC_AWS_SECRET_NAME</code> thành tên secret hoặc ARN và tùy chọn <code>HRC_AWS_REGION</code> (mặc định <code>us-east-1</code>). <code>SecretString</code> phải là JSON object với trường được yêu cầu có kiểu chuỗi; mỗi lần gọi chỉ trả trường đó, kể cả chuỗi rỗng đã lưu.</p>
+<p>Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, <code>SecretBinary</code> và lỗi backend đều trả <code>default</code> (hoặc <code>None</code>). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.</p>
+<p>Vault trả <code>default</code> (hoặc <code>None</code>) khi thiếu URL hoặc thông tin xác thực; trong trường hợp đó, nó không đọc biến môi trường cùng tên. Backend không được hỗ trợ sẽ gây <code>ValueError</code>. Caller phải gọi <code>SecretManager</code> trực tiếp: cấu hình backend không tự thay mọi lời gọi <code>os.getenv()</code> trong ứng dụng.</p>
+<p><code>SecretManager</code> độc lập với xử lý master key. <code>HRC_MASTER_KEY_SOURCE=env</code> vẫn được chấp nhận để tương thích với hành vi secret qua biến môi trường hiện có. Giá trị nguồn khác và mọi <code>HRC_MASTER_KEY_FILE</code> không rỗng đều gây lỗi cấu hình vì runtime chưa có master-key provider thay thế. Hãy xóa các thiết lập không được hỗ trợ trước khi khởi động.</p>
 <hr />
 <h2 id="ghi-log-chuan-hoa-observability">Ghi log chuẩn hóa (Observability)</h2>
 <p>Bạn có thể thay đổi định dạng log thông qua biến môi trường <code>HRC_LOG_FORMAT</code>:</p>

@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4458,7 +4456,8 @@
 
 <h1 id="monitoring-module-hierachainmonitoring">Monitoring Module (<code>hierachain/monitoring/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Monitoring</strong> cung cấp khả năng quan sát (Observability) 360 độ cho hệ thống HieraChain. Nó không chỉ theo dõi các chỉ số hạ tầng truyền thống (CPU, RAM, Disk) mà còn giám sát sâu các chỉ số đặc thù của blockchain như thông lượng sự kiện (throughput), thời gian đóng khối, và tỷ lệ thành công của đồng thuận BFT.</p>
+<p>Module <strong>Monitoring</strong> theo dõi các chỉ số hạ tầng như CPU, RAM và dung lượng đĩa. Module cũng ghi nhận chỉ số của HieraChain, gồm thông lượng event, thời gian đóng block và tỷ lệ thành công của BFT.</p>
+<p>Module được bật theo nhu cầu. Import <code>PerformanceMonitor</code> nạp phần thu thập metric độc lập với alerting; import <code>AlertManager</code> nạp phần cảnh báo độc lập với thu thập metric. Ứng dụng chủ quản chủ động khởi chạy và dừng monitoring, ghi nhận hoạt động ledger qua các phương thức <code>record_*</code>, và có thể đăng ký callback <code>add_alert_handler()</code> cho hệ thống observability hiện có. Thu thập, kiểm tra ngưỡng và báo cáo thuộc <code>PerformanceMonitor</code>; rule, trạng thái cảnh báo và gửi thông báo thuộc <code>AlertManager</code>.</p>
 <hr />
 <h2 id="cac-thanh-phan-chinh">Các thành phần chính</h2>
 <div class="grid cards">
@@ -4490,24 +4489,14 @@
 <ul>
 <li>Phát hiện các hành vi bất thường dựa trên thuật toán <strong>Z-Score</strong>.</li>
 <li>Phân tích lịch sử dữ liệu trong các cửa sổ thời gian (Sliding Windows) để xác định độ lệch chuẩn.</li>
-<li>Giúp phát hiện sớm các cuộc tấn công DDoS hoặc nghẽn thắt nút cổ chai.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 21H2V3h2v16h2v-9h4v9h2V6h4v13h2v-5h4z"/></svg></span> <strong>Blockchain Metrics</strong></p>
-<hr />
-<p><strong>File</strong>: <code>performance_metrics.py</code></p>
-<ul>
-<li><strong>Throughput</strong>: Số lượng sự kiện xử lý trên mỗi giây (EPS).</li>
-<li><strong>Latency</strong>: Thời gian trung bình để một sự kiện được xác thực và đóng khối.</li>
-<li><strong>Consensus Health</strong>: Tỷ lệ vòng đồng thuận thành công và thời gian hội tụ.</li>
+<li>Xác định các giá trị metric lệch khỏi phân bố thống kê.</li>
 </ul>
 </li>
 </ul>
 </div>
 <hr />
 <h2 id="quy-trinh-giam-sat-va-canh-bao">Quy trình Giám sát và Cảnh báo</h2>
-<p>Hệ thống hoạt động theo một vòng lặp liên tục để đảm bảo tính sẵn sàng cao:</p>
+<p>Gọi <code>start_monitoring()</code> để bắt đầu vòng lặp thu thập. Callback cảnh báo chỉ chạy khi đã được đăng ký và <code>enable_alerts</code> được bật. Ứng dụng chủ quản truyền dữ liệu vào phần cảnh báo tùy chọn qua <code>check_metric()</code>, <code>create_alert()</code> hoặc <code>send_alert()</code>.</p>
 <pre class="mermaid"><code>graph LR
     subgraph "Data Collection"
         A[System Metrics]
@@ -4526,13 +4515,15 @@
     end
 
     A &amp; B &amp; C --&gt; D
-    D --&gt; E
-    E --&gt; G
     D --&gt; F
+    D --&gt; K[Registered Application Callback]
+    K --&gt; J[Existing Observability System]
+    K --&gt; G
+    G --&gt; E
     G --&gt; H[Email/Webhook Notification]</code></pre>
 <hr />
 <h2 id="chi-so-suc-khoe-he-thong-health-score">Chỉ số Sức khỏe Hệ thống (Health Score)</h2>
-<p>HieraChain tính toán điểm số sức khỏe tổng thể (0-100) dựa trên các trọng số và ngưỡng cảnh báo:</p>
+<p>Monitor lấy trung bình điểm của các metric có dữ liệu: normal = 100, warning = 50, critical = 0. Metric chưa có dữ liệu không được tính:</p>
 <table>
 <thead>
 <tr>
@@ -4543,24 +4534,24 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Excellent</strong></td>
-<td style="text-align: left;">90 - 100</td>
-<td style="text-align: left;">Hệ thống hoạt động hoàn hảo, không có cảnh báo.</td>
+<td style="text-align: left;"><code>excellent</code></td>
+<td style="text-align: left;">100</td>
+<td style="text-align: left;">Tất cả metric có dữ liệu đều normal.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Good</strong></td>
-<td style="text-align: left;">70 - 89</td>
-<td style="text-align: left;">Hoạt động ổn định, có thể có một vài cảnh báo nhẹ.</td>
+<td style="text-align: left;"><code>warning</code></td>
+<td style="text-align: left;">Từ 50 đến dưới 100</td>
+<td style="text-align: left;">Có ít nhất một warning; không có metric critical.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Poor</strong></td>
-<td style="text-align: left;">&lt; 70</td>
-<td style="text-align: left;">Hiệu năng bị ảnh hưởng rõ rệt, cần kiểm tra.</td>
+<td style="text-align: left;"><code>critical</code></td>
+<td style="text-align: left;">Từ 0 đến dưới 100</td>
+<td style="text-align: left;">Có ít nhất một metric critical.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Critical</strong></td>
-<td style="text-align: left;">N/A</td>
-<td style="text-align: left;">Có ít nhất một chỉ số ở mức <strong>Critical Alert</strong>.</td>
+<td style="text-align: left;"><code>no_data</code></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Không có metric nào có dữ liệu.</td>
 </tr>
 </tbody>
 </table>
@@ -4570,35 +4561,39 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceMonitor</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">monitor</span> <span class="o">=</span> <span class="n">PerformanceMonitor</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"collection_interval"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">})</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">monitor</span><span class="o">.</span><span class="n">start_monitoring</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Lấy báo cáo sức khỏe tức thì</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">health_score</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">get_health_score</span><span class="p">()</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"System Health: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">health_score</span><span class="si">}</span><span class="s2">/100)"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">monitor</span><span class="o">.</span><span class="n">start_monitoring</span><span class="p">()</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">health_score</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">get_health_score</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"System Health: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">health_score</span><span class="si">}</span><span class="s2">/100)"</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">monitor</span><span class="o">.</span><span class="n">stop_monitoring</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="2-inh-nghia-quy-tac-canh-bao-alert-rules">2. Định nghĩa Quy tắc Cảnh báo (Alert Rules)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring.alert_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertRule</span><span class="p">,</span> <span class="n">AlertSeverity</span><span class="p">,</span> <span class="n">AlertCategory</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">rule</span> <span class="o">=</span> <span class="n">AlertRule</span><span class="p">(</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">rule_id</span><span class="o">=</span><span class="s2">"TPS_DROP"</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"Thông lượng giảm mạnh"</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">"Thông lượng sự kiện giảm xuống dưới mức tối thiểu"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">category</span><span class="o">=</span><span class="n">AlertCategory</span><span class="o">.</span><span class="n">PERFORMANCE</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">metric_name</span><span class="o">=</span><span class="s2">"event_throughput"</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">condition</span><span class="o">=</span><span class="s2">"less_than"</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">severity</span><span class="o">=</span><span class="n">AlertSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">escalation_time</span><span class="o">=</span><span class="mi">600</span>  <span class="c1"># Leo thang sau 10 phút nếu không xử lý</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">)</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">alert_manager</span><span class="o">.</span><span class="n">add_alert_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertManager</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring.alert_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertRule</span><span class="p">,</span> <span class="n">AlertSeverity</span><span class="p">,</span> <span class="n">AlertCategory</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">alert_manager</span> <span class="o">=</span> <span class="n">AlertManager</span><span class="p">()</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">rule</span> <span class="o">=</span> <span class="n">AlertRule</span><span class="p">(</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">rule_id</span><span class="o">=</span><span class="s2">"TPS_DROP"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"Sharp throughput drop"</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">"Event throughput dropped below minimum threshold"</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">category</span><span class="o">=</span><span class="n">AlertCategory</span><span class="o">.</span><span class="n">PERFORMANCE</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">metric_name</span><span class="o">=</span><span class="s2">"event_throughput"</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">condition</span><span class="o">=</span><span class="s2">"less_than"</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">severity</span><span class="o">=</span><span class="n">AlertSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">escalation_time</span><span class="o">=</span><span class="mi">600</span>  <span class="c1"># Escalate after 10 minutes if not handled</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">alert_manager</span><span class="o">.</span><span class="n">add_alert_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 </code></pre></div>
+<p>Ứng dụng chủ quản truyền giá trị metric vào <code>alert_manager.check_metric("event_throughput", value)</code>. Hai thành phần không tự động kết nối với nhau. Với <code>enable_alerts=False</code>, monitor vẫn thu thập metric và tạo báo cáo nhưng không gọi callback cảnh báo.</p>
 <hr />
 <h2 id="thong-bao-va-leo-thang-escalation">Thông báo và Leo thang (Escalation)</h2>
 <p>Khi một cảnh báo được tạo ra mà không được <strong>Acknowledge</strong> (Xác nhận) trong khoảng thời gian quy định:</p>
 <ol>
-<li>Hệ thống sẽ tự động tăng mức độ nghiêm trọng (ví dụ từ WARNING lên CRITICAL).</li>
-<li>Gửi thông báo bổ sung đến các danh sách người nhận khẩn cấp qua kênh Email/Webhook.</li>
-<li>Ghi nhật ký chi tiết vào hệ thống Audit để phục vụ điều tra sau sự cố.</li>
+<li>Bộ đếm escalation tăng và một thông báo critical được tạo.</li>
+<li>Các notifier Email/Webhook đã cấu hình nhận thông báo đó.</li>
+<li>Escalation được ghi log. Xác nhận hoặc giải quyết cảnh báo gốc sẽ hủy timer escalation đang chờ của cảnh báo đó.</li>
 </ol>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
@@ -4607,6 +4602,7 @@
 <li><a href=".././security/">Bảo mật và Resource Guard</a></li>
 <li><a href=".././config/">Cấu hình hệ thống (Config)</a></li>
 </ul>
+<p>Với metric mặc định của PerformanceMonitor, tỷ lệ đồng thuận thành công trên 95% là bình thường, từ 95% trở xuống là warning, từ 90% trở xuống là critical. Cảnh báo critical thay thế cảnh báo active có mức thấp hơn. Gửi thông báo dùng một worker và hàng đợi tối đa 128 cảnh báo; khi đầy, hệ thống ghi nhận gửi thất bại nhưng giữ lịch sử cảnh báo. SMTP và webhook dùng timeout 10 giây. Gọi <code>AlertManager.close()</code> để ngừng nhận thông báo mới và chờ gửi hàng đợi trong giới hạn timeout; tiến trình thoát đột ngột có thể mất thông báo còn trong hàng đợi.</p>
 
 
 

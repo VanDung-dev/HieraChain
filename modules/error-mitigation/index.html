@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Fault tolerance and recovery: Validation, durable journaling, rollback snapshots, and recovery handlers.">
+        <meta name="description" content="Runtime validation, durable journaling, and error classification.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2154,10 +2152,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-rollback-manager-rollback_managerpy" class="md-nav__link">
+  <a href="#23-recoverable-encryption-encryption_validatorpy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3 Rollback manager (<code>rollback_manager.py</code>)
+        2.3 Recoverable encryption (<code>encryption_validator.py</code>)
       </span>
     </span>
   </a>
@@ -2165,10 +2163,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-recovery-subsystems" class="md-nav__link">
+  <a href="#24-capacity-and-key-rotation-advice" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Recovery subsystems
+        2.4 Capacity and key rotation advice
       </span>
     </span>
   </a>
@@ -2196,28 +2194,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. Transaction journaling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-recovery-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        5. Recovery workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-snapshot-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Snapshot types
       </span>
     </span>
   </a>
@@ -4388,10 +4364,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-rollback-manager-rollback_managerpy" class="md-nav__link">
+  <a href="#23-recoverable-encryption-encryption_validatorpy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3 Rollback manager (<code>rollback_manager.py</code>)
+        2.3 Recoverable encryption (<code>encryption_validator.py</code>)
       </span>
     </span>
   </a>
@@ -4399,10 +4375,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#24-recovery-subsystems" class="md-nav__link">
+  <a href="#24-capacity-and-key-rotation-advice" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.4 Recovery subsystems
+        2.4 Capacity and key rotation advice
       </span>
     </span>
   </a>
@@ -4430,28 +4406,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         4. Transaction journaling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-recovery-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        5. Recovery workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-snapshot-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        6. Snapshot types
       </span>
     </span>
   </a>
@@ -4502,33 +4456,45 @@
 
 <h1 id="error-mitigation-module-hierachainerror_mitigation">Error Mitigation Module (<code>hierachain/error_mitigation/*</code>)</h1>
 <h2 id="1-overview">1. Overview</h2>
-<p>The <code>error_mitigation</code> module handles fault tolerance, state validation, and system recovery. It provides append-only event journals, automated error classification, rollback snapshots, and targeted recovery engines for network, consensus, and state failures.</p>
+<p>The <code>error_mitigation</code> module provides the runtime primitives for state validation, durable journaling, and error classification. Consensus view changes and operational restoration remain owned by their respective runtime or deployment layers.</p>
 <h2 id="2-core-components">2. Core components</h2>
 <p>Components reside in <code>hierachain/error_mitigation/</code>.</p>
 <h3 id="21-validation-layer-validatorpy-data_validatorpy">2.1 Validation layer (<code>validator.py</code>, <code>data_validator.py</code>)</h3>
 <ul>
-<li><code>Validator</code>: Validates block and event structure against ledger rules.</li>
+<li><code>validate_certificate()</code>: Rejects expired certificates.</li>
 <li><code>DataValidator</code>: Checks event payload consistency, Arrow schema alignment, and input constraints.</li>
 </ul>
+<p>Custom field validators return <code>(is_valid, message)</code>. If a callback raises an exception or returns an invalid result, <code>DataValidator</code> records an error and returns <code>ValidationResult.is_valid=False</code>, including in batch validation. Validation level and automatic fixes do not override this failure.</p>
 <h3 id="22-durable-journaling-journalpy">2.2 Durable journaling (<code>journal.py</code>)</h3>
 <ul>
 <li>Implements <code>TransactionJournal</code> using Apache Parquet and Arrow for disk-backed event logging.</li>
 <li>Enforces append-only storage before events commit to blockchain state.</li>
 <li>Provides replay generators to reconstruct uncommitted events after ungraceful shutdowns.</li>
 </ul>
-<h3 id="23-rollback-manager-rollback_managerpy">2.3 Rollback manager (<code>rollback_manager.py</code>)</h3>
-<ul>
-<li>Creates and verifies point-in-time state snapshots (<code>FULL_SYSTEM</code>, <code>CHAIN_STATE</code>, <code>CONSENSUS_STATE</code>, <code>CONFIGURATION</code>).</li>
-<li>Validates SHA-256 snapshot hashes prior to applying rollbacks.</li>
-<li>Integrates quarantine mechanisms for corrupt state blocks.</li>
-</ul>
-<h3 id="24-recovery-subsystems">2.4 Recovery subsystems</h3>
-<ul>
-<li><code>backup_recovery.py</code>: Manages backup archives, snapshot restoration, and retention policies.</li>
-<li><code>consensus_recovery.py</code>: Handles view change synchronization, leader failure recovery, and BFT round restarts.</li>
-<li><code>network_recovery.py</code>: Detects network partition events, initiates reconnect backoffs, and manages peer alerts.</li>
-<li><code>auto_scaler.py</code>: Monitors memory and CPU utilization to dynamically scale validator thresholds.</li>
-</ul>
+<p><code>read_since(cursor=None)</code> flushes and fsyncs the active writer, reads durable frames, and returns <code>(records, (inode, byte_offset))</code>. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.</p>
+<p>Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.</p>
+<h3 id="23-recoverable-encryption-encryption_validatorpy">2.3 Recoverable encryption (<code>encryption_validator.py</code>)</h3>
+<p><code>EncryptionValidator(config, key_resolver)</code> uses AES-256-GCM. Encryption requires <code>config["key_id"]</code> and a caller-supplied <code>key_resolver(key_id)</code> that returns exactly 32 bytes for an approved, retained key. Missing IDs, unavailable keys, or invalid key material raise <code>SecurityError</code>; the validator does not generate disposable encryption keys.</p>
+<p><code>encrypt_data(text)</code> returns <code>ciphertext</code>, <code>tag</code>, and <code>iv</code> as bytes, plus <code>algorithm</code>, <code>key_id</code>, and <code>timestamp</code>. The GCM tag authenticates the ciphertext, algorithm, key ID, and timestamp. <code>decrypt_data(envelope)</code> resolves the key ID in the envelope, so older data remains readable after the configured encryption key ID changes, provided its original key is retained. Missing or tampered envelope fields raise <code>SecurityError</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers.aead</span><span class="w"> </span><span class="kn">import</span> <span class="n">AESGCM</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncryptionValidator</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"data-v1"</span><span class="p">:</span> <span class="n">AESGCM</span><span class="o">.</span><span class="n">generate_key</span><span class="p">(</span><span class="n">bit_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">validator</span> <span class="o">=</span> <span class="n">EncryptionValidator</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="p">{</span><span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"AES-256-GCM"</span><span class="p">,</span> <span class="s2">"key_id"</span><span class="p">:</span> <span class="s2">"data-v1"</span><span class="p">},</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">key_resolver</span><span class="o">=</span><span class="n">keys</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">envelope</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">encrypt_data</span><span class="p">(</span><span class="s2">"business event"</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">reader</span> <span class="o">=</span> <span class="n">EncryptionValidator</span><span class="p">({</span><span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"AES-256-GCM"</span><span class="p">},</span> <span class="n">key_resolver</span><span class="o">=</span><span class="n">keys</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">assert</span> <span class="n">reader</span><span class="o">.</span><span class="n">decrypt_data</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"business event"</span>
+</code></pre></div>
+<p>This example retains keys in memory. Production callers must preserve keys in their existing secure key store and restore the resolver after restart; keys are never embedded in the envelope. Encode the byte fields as Base64 for JSON storage and decode them back to bytes before decryption. The module's rotation notification does not provision or retain keys automatically. Older ciphertext whose random key was discarded by the previous implementation cannot be recovered by this change.</p>
+<h3 id="24-capacity-and-key-rotation-advice">2.4 Capacity and key rotation advice</h3>
+<p><code>ConsensusValidator.validate_node_count()</code> still rejects fewer than <code>3f+1</code> nodes. The legacy <code>monitor_and_scale()</code> method only returns healthy nodes and logs a capacity recommendation when their ratio falls below <code>auto_scale_threshold</code>; it neither changes membership nor restores quorum. The BFT runtime calls the node-count validator, but does not automatically invoke this health monitor.</p>
+<p><code>ResourceValidator.validate_resources()</code> reports CPU, memory, and disk threshold violations. The legacy <code>auto_scale=True</code> flag additionally writes CPU/memory capacity recommendations; disk violations only produce warnings. Callers must invoke these checks themselves and handle provisioning through their host infrastructure.</p>
+<p>Thresholds default to CPU 70%, memory 80%, and disk 85%, configurable through <code>cpu_threshold</code>, <code>memory_threshold</code>, and <code>disk_threshold</code>. Checks run in CPU, memory, disk order; only usage strictly above a threshold is a violation, so equality passes.</p>
+<p><code>EncryptionValidator.validate_config()</code> warns when <code>key_rotation_interval</code> is below the existing <code>min_key_rotation_interval</code> (2,592,000 seconds). This is an advisory configuration comparison, not an evaluation of key age or an expiry policy. It creates no schedule, deadline, or replacement key. The host application manages rotation and retention of old keys.</p>
+<p>Log consumers must update their event filters: <code>auto_scaling_triggered</code> and its <code>consensus_scaling</code> wrapper become <code>consensus_capacity_recommendation</code>; <code>resource_scaling_triggered</code> becomes <code>resource_capacity_recommendation</code>. The legacy Parquet paths <code>log/error_mitigation/consensus_scaling.parquet</code> and <code>log/error_mitigation/resource_scaling.parquet</code>, payload fields (including <code>auto_scale_enabled</code>), and existing records remain compatible. The misleading <code>key_rotation_scheduled</code> log and <code>next_rotation</code> field are removed; the interval warning remains.</p>
 <h2 id="3-error-classification-strategy">3. Error classification strategy</h2>
 <p><code>ErrorClassifier</code> in <code>error_classifier.py</code> categorizes errors by severity and recommends mitigation actions:</p>
 <table>
@@ -4553,7 +4519,7 @@
 <tr>
 <td style="text-align: left;">CRITICAL</td>
 <td style="text-align: left;">State corruption or Merkle root mismatch</td>
-<td style="text-align: left;">Rollback and quarantine</td>
+<td style="text-align: left;">Reject, log, and require operational recovery</td>
 </tr>
 <tr>
 <td style="text-align: left;">FATAL</td>
@@ -4565,42 +4531,23 @@
 <h2 id="4-transaction-journaling">4. Transaction journaling</h2>
 <p>The <code>TransactionJournal</code> provides write-ahead persistence:</p>
 <ol>
-<li>Durable writes: Writes records to Parquet files on disk before blocks finalize.</li>
+<li>Durable writes: Appends framed Arrow records and fsyncs them on disk before blocks finalize; legacy Parquet remains readable.</li>
 <li>Schema enforcement: Guarantees every journal record matches the required event schema.</li>
 <li>Replay ability: Replays logged events from disk into the ordering pipeline during node restart.</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="5-recovery-workflow">5. Recovery workflow</h2>
-<pre class="mermaid"><code>graph TD
-    A[Incident detected] --&gt; B{ErrorClassifier}
-    B --&gt;|Low Severity| C[Log and continue]
-    B --&gt;|Medium Severity| D[Retry / Automated recovery]
-    B --&gt;|High Severity| E[Rollback to verified snapshot]
-
-    D --&gt; D1[Network Recovery]
-    D --&gt; D2[Consensus Recovery]
-    D --&gt; D3[Auto Scaling]
-
-    E --&gt; F[Validate post-rollback state]
-    F --&gt; G[Replay journal to restore valid delta]</code></pre>
-<h2 id="6-snapshot-types">6. Snapshot types</h2>
-<p><code>RollbackManager</code> manages four snapshot scopes:</p>
-<ul>
-<li><code>CONFIGURATION</code>: Node settings and environment parameters.</li>
-<li><code>CHAIN_STATE</code>: Block hashes and world state registers across Main Chain and Sub-Chains.</li>
-<li><code>CONSENSUS_STATE</code>: Current view number, validator set, and leader status.</li>
-<li><code>FULL_SYSTEM</code>: Comprehensive archive combining configuration, chain blocks, and consensus state.</li>
-</ul>
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././adapters/">Adapters Module</a></li>
 <li><a href=".././core/">Core Module</a></li>
 <li><a href=".././cluster/">Cluster Lockdown</a></li>
 </ul>
+<p><code>ErrorClassifier</code> invokes a supplied lockdown callback for HIGH or CRITICAL security classifications and CRITICAL performance classifications. <code>DataValidator.validate_table()</code> checks required Arrow types at all levels; strict validation additionally rejects nulls. Consistency checks compare rows in order, including decoded JSON details. Journal directory walks and file opens reject symlinks using directory descriptors and no-follow flags.</p>
+<p>The journal fsyncs directory entries after creation and rotation. New journal frames preserve typed <code>details</code> and original field presence in the binary envelope, so domain registration and stable-ID retries survive replay. The updated reader accepts older envelopes and legacy Parquet archives; older readers do not understand the extended envelope, so upgrade the reader before writing the new format. Metadata omitted from historical registration events cannot be reconstructed. Each journal path requires one owning process; see <a href="../../consensus/ordering/#local-journal-ownership">local journal ownership</a>.</p>
 
 
 

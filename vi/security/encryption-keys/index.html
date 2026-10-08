@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4389,11 +4387,11 @@
 <p>Provider có thể thay thế hỗ trợ nhiều nguồn khóa:</p>
 <ul>
 <li><code>LocalKeyProvider</code> giữ khóa trong bộ nhớ cục bộ.</li>
-<li><code>FileVaultProvider</code> giữ dữ liệu mã hóa trên đĩa với AES-256-GCM.</li>
+<li><code>FileVaultProvider</code> giữ dữ liệu mã hóa trên đĩa bằng Fernet, dùng AES-128-CBC với HMAC.</li>
 </ul>
 </li>
 <li>
-<p>Vòng đời API key bao phủ toàn bộ vòng đời API key từ lúc tạo đến khi thu hồi.</p>
+<p><code>KeyManager.revoke_key()</code> của API server lưu bền vững API key đã thu hồi qua SQLite hoặc Redis dùng chung đã cấu hình. Kiểm tra thu hồi không dùng kết quả permission trong cache.</p>
 </li>
 </ul>
 <h2 id="chung-chi-va-inh-danh-msp">Chứng chỉ và định danh (MSP)</h2>
@@ -4402,20 +4400,20 @@
 <ul>
 <li>Chứng chỉ nội bộ là dataclass <code>Certificate</code> với <code>cert_id</code>, <code>subject</code>, <code>public_key</code>, <code>signature</code> (ký Ed25519 qua <code>_sign_certificate</code>) và kiểm tra thời hạn <code>is_valid()</code>. Không có ASN.1 X.509 và không có mTLS.</li>
 <li>Vận hành CA gồm <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> và <code>verify_certificate()</code> với tập <code>issued_certificates</code> và <code>revoked_certificates</code> lưu trong bộ nhớ. <code>HierarchicalMSP</code> dùng cơ chế này để đăng ký org và entity.</li>
-<li>Hạn chế: thu hồi chỉ tồn tại trong bộ nhớ. Không có phân phối CRL, không có xác thực chuỗi X.509 và không có mutual TLS giữa các component. TLS được đặt ở reverse proxy theo quy tắc kiến trúc.</li>
+<li>Hạn chế: thu hồi chứng chỉ MSP chỉ tồn tại trong bộ nhớ. Không có phân phối CRL, không có xác thực chuỗi X.509 và không có mutual TLS giữa các component. TLS được đặt ở reverse proxy theo quy tắc kiến trúc.</li>
 </ul>
 <h2 id="sao-luu-va-khoi-phuc-khoa">Sao lưu và khôi phục khóa</h2>
 <p>File: <code>hierachain/cli/key.py</code>, <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
 <p>Không có <code>key_backup_manager.py</code> riêng. Cơ chế thực tế tối giản:</p>
 <ul>
-<li>Tạo khóa chạy <code>python -m hierachain key generate --output validator_key.json</code> (CLI) để tạo cặp Ed25519 qua <code>Ed25519PrivateKey.generate()</code> và ghi JSON <code>{private_key, public_key}</code> dạng hex. Lệnh <code>show</code> và <code>verify</code> dùng để kiểm tra kết quả.</li>
-<li>Vault mã hóa (chỉ cho dev và test) dùng <code>FileVaultProvider</code> để mã hóa file vault bằng <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> và <code>Fernet</code>. Phần này phù hợp cho dev và test và được ghi rõ không dùng cho production. Với production hãy dùng HSM hoặc KMS qua interface <code>KeyProvider</code> và <code>HRC_VAULT_*</code>.</li>
+<li>Tạo khóa chạy <code>python -m hierachain key generate --output validator_key.json</code> (CLI) để tạo cặp Ed25519 qua <code>Ed25519PrivateKey.generate()</code> và ghi JSON <code>{private_key, public_key}</code> dạng hex. File mới có mode <code>0600</code> trên hệ POSIX; lệnh từ chối ghi đè file đã có. Lệnh <code>show</code> và <code>verify</code> dùng để kiểm tra kết quả.</li>
+<li>Vault mã hóa (chỉ cho dev và test) dùng <code>FileVaultProvider</code> để mã hóa file vault bằng <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> và <code>Fernet(AES-128-CBC+HMAC)</code>. Password được truyền vào constructor. Hỗ trợ HSM hoặc KMS ở production cần một <code>KeyProvider</code> riêng cho ứng dụng; runtime không có master-key provider dựng sẵn. <code>HRC_VAULT_TOKEN</code> và <code>HRC_VAULT_PATH</code> cấu hình backend Vault riêng của <code>SecretManager</code>.</li>
 <li>Không có sao lưu đa vị trí, không có kiểm tra toàn vẹn SHA-512 và không có tự động phân phối hay dọn dẹp. Operator phải tự sao chép <code>validator_key.json</code> hoặc <code>.vault</code> bằng công cụ sao lưu ngoài.</li>
 </ul>
 <hr />
 <h2 id="pham-vi-khoa-thuc-te">Phạm vi khóa (thực tế)</h2>
 <ul>
-<li>Khóa validator và node là một <code>KeyPair</code> Ed25519 cho mỗi node (qua <code>LocalKeyProvider</code> hoặc <code>FileVaultProvider</code>), được tham chiếu bởi <code>HRC_VALIDATOR_IDENTITY</code> và <code>HRC_MASTER_KEY_FILE</code>/<code>HRC_MASTER_KEY_SOURCE</code>.</li>
+<li>Khóa validator và node là một <code>KeyPair</code> Ed25519 cho mỗi node (qua <code>LocalKeyProvider</code> hoặc <code>FileVaultProvider</code>), được tham chiếu bởi <code>HRC_VALIDATOR_IDENTITY</code>. <code>HRC_MASTER_KEY_SOURCE=env</code> chỉ là alias tương thích; giá trị khác và <code>HRC_MASTER_KEY_FILE</code> không rỗng sẽ bị từ chối vì chưa có master-key provider.</li>
 <li>API key được quản lý bởi <code>KeyManager</code> (tạo, thu hồi, phân quyền, cache qua <code>KeyStorage</code>/<code>KeyCacheManager</code>), không phải khóa ký cho từng entity.</li>
 <li>Không có phân cấp sẵn như Master tới Domain tới Entity. Cách ly domain dựa trên việc tách Sub-Chain và role của MSP.</li>
 </ul>

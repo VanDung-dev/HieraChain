@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2202,10 +2200,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#query-example-lazy-loading-ipfs" class="md-nav__link">
+  <a href="#query-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Query example (lazy-loading IPFS)
+        Query example
       </span>
     </span>
   </a>
@@ -2314,6 +2312,23 @@
       </span>
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Related">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON encoding
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4634,10 +4649,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#query-example-lazy-loading-ipfs" class="md-nav__link">
+  <a href="#query-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Query example (lazy-loading IPFS)
+        Query example
       </span>
     </span>
   </a>
@@ -4747,6 +4762,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Related">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON encoding
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -4784,6 +4816,7 @@
 <h2 id="overview">Overview</h2>
 <p>The API module handles communication between external clients and the HieraChain core. It is built on FastAPI and supports REST, GraphQL, and WebSocket. Performance is the main design goal, so the same service can serve all three protocols without separate deployments.</p>
 <h3 id="core-components">Core components</h3>
+<p>Importing API client helpers, such as <code>hierachain.api.storage.ipfs_client</code>, does not create the server application. The <code>app</code> and <code>create_app</code> exports load the server when requested; production authentication requirements remain enforced. API lifespan shutdown closes its hierarchy manager and resets the lazy manager/tracer providers, including cleanup after a P2P startup failure.</p>
 <ul>
 <li>FastAPI server (<code>server.py</code>) is the entry point. It sets up middleware, authentication, and routers.</li>
 <li>Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.</li>
@@ -4808,7 +4841,7 @@
 </ul>
 <p>The default limit is 100 requests per minute, configured with <code>HRC_RATE_LIMIT_RPM</code>.</p>
 <h3 id="authentication">Authentication</h3>
-<p><code>APIKeyVerifier</code> checks the <code>X-API-Key</code> header. Enable or disable it with <code>HRC_AUTH_ENABLED</code>.</p>
+<p><code>APIKeyVerifier</code> checks the <code>X-API-Key</code> header for HTTP and WebSocket access. Production requires <code>HRC_AUTH_ENABLED=true</code> and a provisioned <code>HRC_API_KEYS_FILE</code>; dev/test can disable authentication. With authentication enabled, GraphQL checks scopes for every operation: chain and block queries require <code>chains</code>, event queries and <code>addEvent</code> require <code>events</code>, and a block query that selects nested events requires both scopes. WebSocket streams contain both block and event messages, so connecting and subscribing requires <code>chains</code> and <code>events</code> (or <code>all</code>). Production GraphQL and WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.</p>
 <hr />
 <h2 id="rest-api-reference">REST API reference</h2>
 <h3 id="ledger-core-ledger">ledger: core ledger</h3>
@@ -4829,8 +4862,8 @@
 <p>These endpoints support business workflows:</p>
 <ul>
 <li>Channels create private communication paths between organizations (<code>POST /api/business/channels</code>).</li>
-<li>Private data collections hold data that is not shared on the common ledger.</li>
-<li>Domain contracts deploy and run business-specific smart contracts.</li>
+<li>Private collection metadata can be managed, but <code>POST /api/business/private-data</code> currently returns HTTP 501 because this API has no private-data store. It does not accept inline values or IPFS references as stored data.</li>
+<li>Domain contracts register metadata; <code>POST /api/business/contracts/execute</code> returns HTTP 501 because the execution engine is not implemented.</li>
 <li>Organizations register and manage identities through MSP.</li>
 </ul>
 <h3 id="admin-system-and-admin">admin: system and admin</h3>
@@ -4850,21 +4883,20 @@
 <li>Complexity is limited to 1000 points per query, based on field and operation counts.</li>
 <li>Introspection (<code>__schema</code>) is disabled in production.</li>
 </ul>
-<h3 id="query-example-lazy-loading-ipfs">Query example (lazy-loading IPFS)</h3>
-<p>You can choose whether to fetch and decrypt IPFS data with <code>resolveCid</code>.</p>
+<h3 id="query-example">Query example</h3>
+<p>Event queries require the <code>events</code> permission. Block and chain queries require <code>chains</code>; selecting events nested under a block requires both.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">query</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"PROD-001"</span><span class="p">,</span><span class="w"> </span><span class="n">resolveCid</span><span class="p">:</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">events</span><span class="p">(</span><span class="n">chainName</span><span class="p">:</span><span class="w"> </span><span class="s">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="n">entityId</span><span class="p">:</span><span class="w"> </span><span class="s">"PROD-001"</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">eventType</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">details</span><span class="w">  </span><span class="c"># Will be automatically fetched from IPFS and decrypted if needed</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">details</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">timestamp</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">isOffchain</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
 </code></pre></div>
 <hr />
 <h2 id="websocket-real-time-streaming">WebSocket (real-time streaming)</h2>
-<p>Endpoint: <code>/ws</code></p>
-<p>The server pushes data as soon as a block is committed or an event arrives.</p>
+<p>Connect to <code>/ws</code>. To select a chain when connecting, pass <code>chain_name</code>, for example <code>/ws?chain_name=supply_chain</code>.</p>
+<p>When authentication is enabled, send the <code>X-API-Key</code> header in the WebSocket handshake. The connection and each subscription require both <code>chains</code> and <code>events</code> permissions because the current stream sends both kinds of messages to chain subscribers. The server pushes data as soon as a block is committed or an event arrives.</p>
 <h3 id="main-message-types">Main message types</h3>
 <ul>
 <li>Client to server<ul>
@@ -4920,6 +4952,9 @@
 <li><a href=".././storage/">Storage &amp; IPFS Integration</a></li>
 <li><a href="../../security/encryption-keys/">Security &amp; Identity</a></li>
 </ul>
+<p>GraphQL reads Arrow events as rows and awaits asynchronous field resolvers, including event details. Nested block events require both <code>chains</code> and <code>events</code> scopes. Unknown chain names return no query result and reject mutations; they do not fall back to the main chain.</p>
+<h3 id="json-encoding">JSON encoding</h3>
+<p>Explicit JSON responses and HTTP exception handlers use FastAPI/Starlette <code>JSONResponse</code>. Default responses and response models retain FastAPI/Pydantic validation, serialization and OpenAPI schemas. Request-validation errors retain status <code>422</code> and the <code>detail</code> list. WebSocket messages use standard-library JSON encoded as UTF-8 text frames.</p>
 
 
 

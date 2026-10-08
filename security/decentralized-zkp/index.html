@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Protecting private data with ZK technology: Proving correctness without revealing raw data.">
+        <meta name="description" content="Current ZK implementation scope: mock proof-flow fixtures and unsupported production placeholders.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2693,21 +2691,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#zk-operation-flow" class="md-nav__link">
+  <a href="#3-configuration-and-runtime-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        ZK Operation Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#real-world-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Real-world Applications
+        3. Configuration and runtime boundary
       </span>
     </span>
   </a>
@@ -4293,21 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#zk-operation-flow" class="md-nav__link">
+  <a href="#3-configuration-and-runtime-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        ZK Operation Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#real-world-applications" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Real-world Applications
+        3. Configuration and runtime boundary
       </span>
     </span>
   </a>
@@ -4357,50 +4333,27 @@
 
 
 <h1 id="decentralized-zero-knowledge-proofs">Decentralized Zero-Knowledge Proofs</h1>
-<p>HieraChain's most advanced security layer, enabling evidence sharing about data between sub-chains and the main chain without exposing sensitive business content.</p>
+<p>HieraChain exposes prover and verifier interfaces for cross-chain proof flows. The implemented mode is a development mock based on a SHA-256 commitment to public inputs. It does not prove business rules, state-transition correctness, or zero-knowledge privacy. Production proving and verification are not implemented.</p>
 <h2 id="1-zk-prover">1. ZK Prover</h2>
 <p><strong>File</strong>: <code>hierachain/security/zk_prover.py</code></p>
-<p>The component that generates proofs at Sub-Chains:</p>
 <ul>
-<li><strong>Proof Generation</strong>: Creates mathematical proofs asserting that an event or state is valid.</li>
-<li><strong>Data Hiding</strong>: Detailed event content is replaced by a unique identifier (Hash).</li>
-<li><strong>Privacy Preservation</strong>: Ensures the Main Chain never sees raw Sub-Chain data.</li>
+<li><code>ZKProver(mode="mock")</code> generates a fixture containing a hash of public inputs and random padding. Anyone with the inputs can construct a matching commitment.</li>
+<li><code>ZKProver(mode="production").generate_proof(...)</code> returns <code>ZKProofResult(success=False, proof=b"", error=...)</code> because the production backend is unimplemented.</li>
+<li><code>generate_proof_bytes(...)</code> raises <code>ZKProvingError</code> when generation fails. Loading a proving key or setting a circuit path does not implement the backend.</li>
 </ul>
 <h2 id="2-zk-verifier">2. ZK Verifier</h2>
 <p><strong>File</strong>: <code>hierachain/security/verify/zk_verifier.py</code></p>
-<p>The verification component at the Main Chain:</p>
 <ul>
-<li><strong>Efficient Verification</strong>: Validates ZK proof correctness with low computational cost.</li>
-<li><strong>Trustless Validation</strong>: Allows the Main Chain to trust Sub-Chain data without needing access to that data.</li>
-<li><strong>Cross-chain Integrity</strong>: Ensures data integrity when moving between tiers in the hierarchical architecture.</li>
+<li>Mock verification compares the commitment with a hash of the public inputs. A matching hash establishes no mathematical proof of a valid transition.</li>
+<li>Production verification raises <code>ZKVerificationError</code> wrapping the unimplemented backend error for well-formed inputs; malformed inputs return <code>False</code> before backend dispatch.</li>
+<li>Loading a verification key does not make production verification available.</li>
 </ul>
-<hr />
-<h2 id="zk-operation-flow">ZK Operation Flow</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    participant SC as Sub-Chain (Prover)
-    participant MC as Main Chain (Verifier)
-
-    SC-&gt;&gt;SC: Process Private Business Event
-    SC-&gt;&gt;SC: Generate ZK Proof (f(x) = y)
-    SC-&gt;&gt;MC: Submit Hash + ZK Proof
-    MC-&gt;&gt;MC: Verify ZK Proof (Fast Check)
-    alt Proof is Valid
-        MC--&gt;&gt;MC: Commit Proof to Ledger
-        MC--&gt;&gt;SC: Acknowledge Success
-    else Proof is Invalid
-        MC--&gt;&gt;SC: Reject &amp; Flag Security Alert
-    end</code></pre>
-<hr />
-<h2 id="real-world-applications">Real-world Applications</h2>
-<ul>
-<li><strong>Financial Reporting</strong>: Proving total revenue meets a certain threshold without revealing individual invoice details.</li>
-<li><strong>Supply Chain Management</strong>: Confirming a shipment has passed quality inspection without disclosing proprietary production formulas.</li>
-<li><strong>Authorization Validation</strong>: Proving a user has sufficient rights to perform an action without revealing their specific identity on the main chain.</li>
-</ul>
-<hr />
+<h2 id="3-configuration-and-runtime-boundary">3. Configuration and runtime boundary</h2>
+<p><code>HRC_ENABLE_ZK_PROOFS</code> defaults to <code>false</code>; <code>HRC_ZK_MODE</code> defaults to <code>mock</code>. Enabling verification does not install a production backend. Keep mock mode confined to development and test proof flows. Setting <code>HRC_ZK_MODE=production</code> alone cannot provide a functioning ZK deployment.</p>
+<p>Signed block verification, Merkle roots and durable MainChain anchors are separate implemented integrity mechanisms. They must not be described as zero-knowledge proofs of business correctness. Applications needing real ZK validation require a separately implemented and validated proving/verifying backend and circuit contract.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href="../../modules/hierarchical/">Hierarchical architecture</a></li>
+<li><a href="../../modules/hierarchical/">Hierarchical architecture and feature support</a></li>
 <li><a href=".././authorization-access-control/">Authorization &amp; Access Control</a></li>
 </ul>
 

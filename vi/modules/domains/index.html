@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4548,7 +4546,7 @@
 <h3 id="22-su-kien-doanh-nghiep-eventsbase_eventpy-eventsevent_creatorspy">2.2 Sự kiện doanh nghiệp (<code>events/base_event.py</code>, <code>events/event_creators.py</code>)</h3>
 <ul>
 <li><code>BaseEvent</code>: Lớp cơ sở cho các sự kiện nghiệp vụ có cấu trúc kèm kiểm tra lược đồ.</li>
-<li><code>event_creators.py</code>: Các hàm tiện ích tạo dữ liệu hợp lệ cho các thao tác: <code>create_quality_check</code>, <code>create_approval</code>, <code>create_resource_allocation</code> và <code>create_status_update</code>.</li>
+<li><code>event_creators.py</code>: Các hàm tiện ích tạo đối tượng sự kiện cho các thao tác: <code>create_quality_check</code>, <code>create_approval</code>, <code>create_resource_allocation</code> và <code>create_status_update</code>.</li>
 </ul>
 <h3 id="23-tien-ich-toan-ven-utilscross_chain_validatorpy-utilsentity_tracerpy">2.3 Tiện ích toàn vẹn (<code>utils/cross_chain_validator.py</code>, <code>utils/entity_tracer.py</code>)</h3>
 <ul>
@@ -4561,9 +4559,13 @@
 <ol>
 <li>Đăng ký: Gắn định danh <code>entity_id</code> duy nhất với loại thực thể và thuộc tính metadata.</li>
 <li>Cập nhật trạng thái: Theo dõi các trạng thái tuần tự (<code>in_progress</code>, <code>quality_approved</code>, <code>completed</code>).</li>
-<li>Phân bổ tài nguyên: Ghi nhận thiết bị, nhân sự hoặc vị trí kho được phân công.</li>
+<li>Phân bổ tài nguyên: Theo dõi tài nguyên đã phân công và đã giữ chỗ. <code>assigned</code> thêm vào <code>allocated_resources</code> (và bỏ giữ chỗ); <code>reserved</code> thêm vào <code>reserved_resources</code>; <code>released</code> xóa khỏi một trong hai danh sách; <code>transferred</code> chuyển tài nguyên đã phân công sang thực thể đã đăng ký khác theo <code>details.target_entity_id</code>. Chuyển trạng thái không hợp lệ bị từ chối trước khi gửi event.</li>
 <li>Chỉ số vận hành: <code>OperationMetricsTracker</code> tính toán các chỉ số thực thi theo từng loại thao tác.</li>
 </ol>
+<p>Sự kiện nghiệp vụ yêu cầu thực thể đã đăng ký. <code>register_entity</code> lưu dữ liệu ban đầu được cung cấp trong event đăng ký của Sub-Chain để có thể dựng lại registry sau khi khởi động lại; dữ liệu này trở thành nội dung sổ cái nên không được chứa bí mật. Event đăng ký cũ không có <code>initial_data</code> chỉ khôi phục metadata đăng ký mà hệ thống hỗ trợ.</p>
+<p>Dữ liệu ban đầu của thực thể dùng JSON chuẩn với số hữu hạn. Giá trị số nguyên Python, kể cả lớn hơn 64 bit, được khôi phục chính xác trong giới hạn chuyển đổi số nguyên đã cấu hình của Python. Định danh số cần đi qua client có khoảng số nguyên nhỏ hơn nên dùng chuỗi. Giá trị không được hỗ trợ khiến <code>register_entity</code> trả về <code>False</code> trước khi ghi event đăng ký.</p>
+<p>Event bắt đầu và hoàn tất thao tác được thêm vào sổ cái, đồng thời cập nhật projection trong bộ nhớ dưới khóa của chain. Khi event bắt đầu được chấp nhận, <code>current_operation</code> được đặt nên thao tác bắt đầu khác của cùng thực thể bị từ chối cho đến khi hoàn tất. Event nghiệp vụ trả <code>False</code> đã bị từ chối trước khi thêm. Trả <code>True</code> có nghĩa ordering service đã chấp nhận event; điều đó không có nghĩa signed block đã finalize hoặc lưu bền vững. Nếu handler chạy sau khi thêm event bị lỗi, event vẫn được chấp nhận, lỗi được ghi log và <code>domain_projection_healthy</code> chuyển thành <code>false</code>. Sau đó các lần ghi domain bị từ chối cho tới khi <code>rebuild_domain_state()</code> thành công. Rebuild chỉ chạy lại projection built-in có tính xác định; nếu lịch sử có custom handler thì hệ thống báo không thể tự phục hồi handler đó, vì chạy lại có thể lặp side effect bên ngoài.</p>
+<p>Bộ đếm thao tác hoàn tất được dựng lại từ các event thao tác đã chấp nhận. Các bộ đếm chi tiết của <code>OperationMetricsTracker</code> chỉ tồn tại trong tiến trình và trở về zero sau khi khởi động lại. Participant 2PC giữ snapshot sâu của payload đã xác thực khi prepare. <code>pending_transactions</code> trả snapshot tách rời; prepare lặp chỉ thành công khi payload và vai trò participant đều khớp. Kiểm tra proof đánh dấu event thiếu <code>sub_chain_name</code>, <code>proof_hash</code> hoặc <code>timestamp</code> là không nhất quán. Event có <code>details</code> sai cấu trúc được báo lỗi cấu trúc và bỏ qua trong lượt phân tích logic thay vì gây exception.</p>
 <h2 id="4-ieu-phoi-two-phase-commit-2pc">4. Điều phối Two-Phase Commit (2PC)</h2>
 <p>Các thao tác phối hợp giữa nhiều Sub-Chain thực thi qua giao thức Two-Phase Commit:</p>
 <pre class="mermaid"><code>sequenceDiagram

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giao thức đồng thuận dựa trên thẩm quyền: Hiệu năng tối đa, Định danh nút và Luân phiên Round-Robin.">
+        <meta name="description" content="Giao thức đồng thuận dựa trên Authority, với định danh nút, chữ ký block và luân phiên Round-Robin.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4402,7 +4400,7 @@
 
 <h1 id="proof-of-authority-hierachainconsensusproof_of_authoritypy">Proof of Authority (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p><strong>Proof of Authority (PoA)</strong> là giao thức đồng thuận dựa trên định danh, được tối ưu hóa cho <strong>nội bộ một Doanh nghiệp / Tổ chức</strong> (1 MainChain quản lý các Sub-Chains thuộc các phân khu/tên miền nội bộ). Trong kiến trúc đồng thuận 2 tầng của HieraChain, các đối tượng <code>SubChain</code> <strong>mặc định luôn sử dụng PoA</strong> để xử lý các sự kiện nghiệp vụ nội bộ với tốc độ cực nhanh (~0ms latency) mà không cần chờ đợi đồng thuận liên tổ chức.</p>
+<p><strong>Proof of Authority (PoA)</strong> là giao thức đồng thuận dựa trên định danh dành cho <strong>mạng nội bộ doanh nghiệp hoặc tổ chức</strong>, trong đó một MainChain quản lý các Sub-Chain nội bộ. Trong kiến trúc đồng thuận hai tầng của HieraChain, <code>SubChain</code> mặc định dùng PoA cho event nội bộ mà không cần đồng thuận giữa các tổ chức.</p>
 <p>Đối với kịch bản liên kết đồng thuận giữa các MainChain của nhiều doanh nghiệp độc lập, xem <a href=".././pof/">Proof of Federation (PoF)</a>.</p>
 <hr />
 <h2 id="nguyen-ly-hoat-ong">Nguyên lý hoạt động</h2>
@@ -4415,19 +4413,19 @@
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg></span> <strong>Hiệu năng Đột phá</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg></span> <strong>Kiểm tra thời gian block</strong></p>
 <hr />
-<p>Khối được tạo ngay lập tức theo chu kỳ cấu hình (<code>block_interval</code>), phù hợp cho các ứng dụng yêu cầu phản hồi thời gian thực.</p>
+<p>Mặc định, PoA không thêm thời gian chờ tối thiểu giữa các block. Timestamp của các block liên tiếp vẫn không được giảm. Khi <code>block_interval</code> dương, timestamp phải cách nhau ít nhất bằng một nửa giá trị đó.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 17v2H7v-2s0-4 6-4 6 4 6 4m-3-9a3 3 0 1 0-3 3 3 3 0 0 0 3-3m3.2 5.06A5.6 5.6 0 0 1 21 17v2h3v-2s0-3.45-4.8-3.94M18 5a2.9 2.9 0 0 0-.89.14 5 5 0 0 1 0 5.72A2.9 2.9 0 0 0 18 11a3 3 0 0 0 0-6M7.34 8.92l1.16 1.41-4.75 4.75-2.75-3 1.16-1.16 1.59 1.58z"/></svg></span> <strong>Quản trị Danh tính</strong></p>
 <hr />
-<p>Hỗ trợ thêm/xóa Authority linh hoạt thông qua API, cho phép thay đổi cấu hình mạng mà không cần dừng hệ thống.</p>
+<p>Lớp <code>ProofOfAuthority</code> cung cấp các method <code>add_authority()</code> và <code>remove_authority()</code>.</p>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Tính Toàn vẹn Tuyệt đối</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Chữ ký block</strong></p>
 <hr />
-<p>Mọi khối đều mang chữ ký số của một tổ chức được xác thực, loại bỏ hoàn toàn rủi ro từ các nút vô danh hoặc giả mạo.</p>
+<p>Authority được chỉ định ký từng block. Các nút khác xác minh chữ ký trước khi chấp nhận block.</p>
 </li>
 </ul>
 </div>
@@ -4444,8 +4442,8 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>block_interval</code></td>
-<td style="text-align: left;">Khoảng thời gian tối thiểu giữa hai khối.</td>
-<td style="text-align: left;"><code>10.0</code> giây</td>
+<td style="text-align: left;">Cấu hình khoảng cách tùy chọn; <code>0</code> không thêm thời gian chờ, còn giá trị dương giữ ngưỡng validator bằng một nửa giá trị này.</td>
+<td style="text-align: left;"><code>0.0</code> giây</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>max_authorities</code></td>
@@ -4453,12 +4451,15 @@
 <td style="text-align: left;"><code>100</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>require_signature</code></td>
+<td style="text-align: left;"><code>require_authority_signature</code></td>
 <td style="text-align: left;">Bắt buộc phải có chữ ký hợp lệ để chấp nhận khối.</td>
 <td style="text-align: left;"><code>True</code></td>
 </tr>
 </tbody>
 </table>
+<p>MainChain và SubChain dùng PoA đọc giá trị này từ <code>HRC_BLOCK_INTERVAL</code>, mặc định là <code>0.0</code>. Khởi tạo trực tiếp <code>ProofOfAuthority()</code> cũng mặc định là <code>0.0</code>. Giá trị âm hoặc không hữu hạn bị từ chối khi khởi tạo PoA.</p>
+<p>Orderer của SubChain vẫn gom event theo <code>block_size</code> và <code>batch_timeout</code> (mặc định: 50 event và 1.0 giây). Bỏ thời gian chờ PoA không loại bỏ thời gian gom batch, xác thực chữ ký, đồng bộ journal hay công việc lưu trữ. PoF giữ cấu hình thời gian riêng.</p>
+<p>Với triển khai hiện có, cấu hình tường minh <code>HRC_BLOCK_INTERVAL=10</code> giữ khoảng cách tối thiểu 5 giây như trước. Dùng <code>HRC_BLOCK_INTERVAL=0</code> để bỏ khoảng cách này và cấu hình nhất quán giữa bên tạo block và validator: validator giữ khoảng cách cũ sẽ từ chối các block nhanh hơn. Các block đã đáp ứng khoảng cách cũ vẫn hợp lệ với mặc định mới.</p>
 <hr />
 <h2 id="vi-du-trien-khai">Ví dụ triển khai</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProofOfAuthority</span>

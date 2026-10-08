@@ -1580,11 +1580,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4483,8 +4481,8 @@
 <tr>
 <td style="text-align: left;"><a href=".././event-submission/">Gửi Sự kiện</a></td>
 <td style="text-align: left;">A</td>
-<td style="text-align: left;"><code>POST /api/ledger/chains/{name}/events</code></td>
-<td style="text-align: left;">Khối được thêm vào Sub-Chain</td>
+<td style="text-align: left;"><code>POST /api/ledger/chains/{chain_name}/events</code></td>
+<td style="text-align: left;">API trả <code>event_id</code>; block được tạo và finalize ở xử lý nền</td>
 <td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code> (<code>SubChain.add_event</code>)</td>
 </tr>
 <tr>
@@ -4498,29 +4496,22 @@
 <td style="text-align: left;"><a href=".././cross-chain-2pc/">Giao dịch Liên chuỗi 2PC</a></td>
 <td style="text-align: left;">A</td>
 <td style="text-align: left;"><code>HierarchyManager.transaction_manager</code></td>
-<td style="text-align: left;"><code>COMMITTED</code> hoặc <code>ROLLED_BACK</code></td>
+<td style="text-align: left;"><code>COMMITTED</code>, <code>ROLLED_BACK</code> hoặc <code>IN_DOUBT</code> có thể phục hồi</td>
 <td style="text-align: left;"><code>hierarchical/hierarchy_manager/base.py</code> + <code>hierarchical/transaction_manager.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././bft-consensus/">Đồng thuận BFT</a></td>
 <td style="text-align: left;">B</td>
-<td style="text-align: left;"><code>HRC_MAINCHAIN_CONSENSUS</code> / <code>HRC_CONSENSUS_TYPE</code></td>
-<td style="text-align: left;">Khối được xác nhận bởi 2f+1 validator</td>
+<td style="text-align: left;">Thành phần consensus BFT được sử dụng tường minh; không được chọn qua biến cấu hình MainChain/SubChain</td>
+<td style="text-align: left;">Quy trình đồng thuận BFT riêng</td>
 <td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href=".././cluster-lockdown/">Khóa băng Cụm</a></td>
-<td style="text-align: left;">C</td>
-<td style="text-align: left;">Bất thường vượt ngưỡng rủi ro</td>
-<td style="text-align: left;">Tất cả node bị đóng băng / khôi phục</td>
-<td style="text-align: left;"><code>cluster/lockdown_types.py</code> + <code>cluster/lockdown_protocol.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a></td>
 <td style="text-align: left;">C</td>
-<td style="text-align: left;">Lỗi mạng / hết hạn leader / lỗi toàn vẹn</td>
-<td style="text-align: left;">Trạng thái khôi phục từ snapshot</td>
-<td style="text-align: left;"><code>error_mitigation/rollback_manager.py</code> + <code>consensus_recovery.py</code></td>
+<td style="text-align: left;">Lỗi xác thực / hết hạn leader / sự kiện bị gián đoạn</td>
+<td style="text-align: left;">Lỗi được phân loại, replay journal hoặc BFT view change</td>
+<td style="text-align: left;"><code>error_mitigation/error_classifier.py</code> + <code>journal.py</code> + <code>consensus/bft/view_change.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././entity-tracing/">Truy vết Thực thể</a></td>
@@ -4553,7 +4544,7 @@
 <tr>
 <td style="text-align: left;"><a href=".././websocket-streaming/">Luồng dữ liệu WebSocket</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Client kết nối tới <code>/ws/{chain_name}</code></td>
+<td style="text-align: left;">Client kết nối tới <code>/ws</code>, có thể truyền <code>chain_name</code> qua query</td>
 <td style="text-align: left;">Đẩy khối/sự kiện thời gian thực</td>
 <td style="text-align: left;"><code>api/websocket/manager.py</code></td>
 </tr>
@@ -4622,7 +4613,6 @@
 <hr />
 <p>Quản trị, kích hoạt khóa băng và phục hồi.</p>
 <ul>
-<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a></li>
 <li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a></li>
 </ul>
 </li>
@@ -4678,15 +4668,13 @@
     WF1 --&gt;|upload large data| WF12["🗄️ IPFS Storage"]
 
     WF1 --&gt;|cross-chain op| WF3["2PC Cross-Chain"]
-    WF1 --&gt;|BFT mode| WF4["👑 BFT Consensus"]
+    WF4["👑 BFT Consensus"] -. Separate component .-&gt; WF1
 
     WF9["🔍 Integrity Scan"] --&gt;|DEGRADED| WF13["🚨 Risk &amp; Alerts"]
-    WF13 --&gt;|critical threshold| WF5["🔒 Cluster Lockdown"]
-    WF5 -.-&gt;|after lockdown| WF6["🔧 Error Recovery"]
+    WF13 --&gt;|critical alert| WF6["🔧 Error Recovery"]
     WF6 -.-&gt;|snapshot fail| WF8["♻️ Rehydration"]
     WF8 -.-&gt;|restore state| WF1
 
-    WF5 -.-&gt;|key rotation| WF16["🔑 Key Backup"]
     WF15 -.-&gt;|cert issued| WF16
 
     WF7["🗂️ Entity Tracing"] -.-&gt;|reads| WF1
@@ -4710,16 +4698,12 @@
 <td style="text-align: left;">Đường xác thực bảo mật: xác minh cert nội bộ (<code>msp.py:verify_certificate</code>) → kiểm tra chính sách ABAC → chấp nhận/từ chối sự kiện.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Khóa băng Cụm → Phục hồi Lỗi</strong></td>
-<td style="text-align: left;">Đường phát hiện bất thường: <code>block_verifier</code>/<code>risk_analyzer</code> → gửi cảnh báo → khóa băng → <code>rollback_manager</code> khôi phục.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Khóa băng Cụm → Sao lưu Khóa</strong></td>
-<td style="text-align: left;">Không có liên kết tự động trong mã: xoay vòng/sao lưu khóa là thao tác thủ công qua <code>cli/key.py</code> (không do khóa băng kích hoạt).</td>
+<td style="text-align: left;"><strong>Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Phục hồi Lỗi</strong></td>
+<td style="text-align: left;">Đường phát hiện bất thường: <code>block_verifier</code> → gửi cảnh báo → phục hồi vận hành.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Phục hồi Lỗi → Nạp lại Trạng thái</strong></td>
-<td style="text-align: left;">Dự phòng đồng bộ trạng thái: xác thực snapshot cục bộ thất bại kích hoạt dựng lại chuỗi trong bộ nhớ từ nhật ký DB.</td>
+<td style="text-align: left;">Dự phòng đồng bộ trạng thái: replay journal và nạp lại chuỗi dựng lại trạng thái trong bộ nhớ từ storage bền vững.</td>
 </tr>
 </tbody>
 </table>

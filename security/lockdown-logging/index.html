@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Emergency lockdown mechanism and tamper-proof secure logging system.">
+        <meta name="description" content="Tamper-evident secure logging system.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Lockdown & Secure Logging - HieraChain Docs</title>
+        <title>Secure Logging - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#lockdown-logging" class="md-skip">
+        <a href="#secure-logging" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Lockdown & Secure Logging
+              Secure Logging
             
           </span>
         </div>
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2555,32 +2553,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-lockdown-protocol" class="md-nav__link">
+  <a href="#secure-logging_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Lockdown Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-secure-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Secure Logging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lockdown-response-mechanism" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Lockdown Response Mechanism
+        Secure Logging
       </span>
     </span>
   </a>
@@ -4260,32 +4236,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-lockdown-protocol" class="md-nav__link">
+  <a href="#secure-logging_1" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Lockdown Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-secure-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Secure Logging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lockdown-response-mechanism" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Lockdown Response Mechanism
+        Secure Logging
       </span>
     </span>
   </a>
@@ -4334,17 +4288,9 @@
   
 
 
-<h1 id="lockdown-logging">Lockdown &amp; Logging</h1>
-<p>This security layer focuses on rapid response when the system is compromised through a lockdown mechanism and a tamper-proof secure logging system.</p>
-<h2 id="1-lockdown-protocol">1. Lockdown Protocol</h2>
-<p><strong>File</strong>: <code>hierachain/cluster/lockdown_protocol.py</code></p>
-<p>Emergency "circuit breaker" mechanism for the entire cluster:</p>
-<ul>
-<li><strong>Quorum Activation</strong>: Lockdown mode can only be activated or removed with sufficient node quorum consensus.</li>
-<li><strong>Read-only State</strong>: In Lockdown mode, the system rejects all data modification requests (Write) to protect integrity.</li>
-<li><strong>HMAC Lockdown</strong>: Uses the <code>HRC_CLUSTER_SECRET</code> secret to authenticate lockdown commands between nodes.</li>
-</ul>
-<h2 id="2-secure-logging">2. Secure Logging</h2>
+<h1 id="secure-logging">Secure Logging</h1>
+<p>This security layer provides tamper-evident structured logs for security-sensitive operations.</p>
+<h2 id="secure-logging_1">Secure Logging</h2>
 <p><strong>File</strong>: <code>hierachain/security/secure_logging.py</code></p>
 <p>A logging system specifically designed for security:</p>
 <ul>
@@ -4352,24 +4298,10 @@
 <li><strong>Structured Logs</strong>: Logs are recorded in JSON format for easy integration with centralized monitoring systems (SIEM).</li>
 <li><strong>Log Segmentation</strong>: Sensitive modules (such as <code>security</code>, <code>consensus</code>) use separate <code>SecureLogger</code> instances with higher protection levels.</li>
 </ul>
-<hr />
-<h2 id="lockdown-response-mechanism">Lockdown Response Mechanism</h2>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; Operational
-    Operational --&gt; LockdownInitiated: Anomaly Detected
-    LockdownInitiated --&gt; Lockdown: Quorum Consensus Reached
-    state Lockdown {
-        direction TB
-        ReadOnly: Only GET requests allowed
-        RejectWrites: Block all POST/PUT/DELETE
-        AlertAdmin: Notify via all channels
-    }
-    Lockdown --&gt; Operational: Admin Reset + Quorum Vote</code></pre>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././risk-analyzer/">Risk analysis</a></li>
-<li><a href="../../modules/cluster/">Cluster management</a></li>
+<li><a href=".././risk-analyzer/">Input sanitization</a></li>
+<li><a href="../../modules/security/">Security module</a></li>
 </ul>
 
 

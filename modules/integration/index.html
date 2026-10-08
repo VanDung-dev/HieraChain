@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Enterprise system bridge for ERP integration: SAP, Oracle, and Dynamics connectors with field mapping and change detection.">
+        <meta name="description" content="ERP mapping and scheduling primitives with explicitly gated synthetic vendor fixtures.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2259,10 +2257,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enterprise-adapters-enterprisepy" class="md-nav__link">
+  <a href="#22-exported-vendor-fixtures-enterprisepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2 Enterprise adapters (<code>enterprise.py</code>)
+        2.2 Exported vendor fixtures (<code>enterprise.py</code>)
       </span>
     </span>
   </a>
@@ -2297,10 +2295,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-synchronization-flow" class="md-nav__link">
+  <a href="#4-synchronization-and-retries" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Synchronization flow
+        4. Synchronization and retries
       </span>
     </span>
   </a>
@@ -2316,30 +2314,13 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Usage example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configure-mapping-and-scheduled-sync" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configure mapping and scheduled sync
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-resilience-and-security" class="md-nav__link">
+  <a href="#6-runtime-scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Resilience and security
+        6. Runtime scope
       </span>
     </span>
   </a>
@@ -2351,6 +2332,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Related
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-detection-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change detection identity
       </span>
     </span>
   </a>
@@ -4383,10 +4375,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enterprise-adapters-enterprisepy" class="md-nav__link">
+  <a href="#22-exported-vendor-fixtures-enterprisepy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2 Enterprise adapters (<code>enterprise.py</code>)
+        2.2 Exported vendor fixtures (<code>enterprise.py</code>)
       </span>
     </span>
   </a>
@@ -4421,10 +4413,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-synchronization-flow" class="md-nav__link">
+  <a href="#4-synchronization-and-retries" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Synchronization flow
+        4. Synchronization and retries
       </span>
     </span>
   </a>
@@ -4440,30 +4432,13 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Usage example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configure-mapping-and-scheduled-sync" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configure mapping and scheduled sync
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-resilience-and-security" class="md-nav__link">
+  <a href="#6-runtime-scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Resilience and security
+        6. Runtime scope
       </span>
     </span>
   </a>
@@ -4475,6 +4450,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Related
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-detection-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Change detection identity
       </span>
     </span>
   </a>
@@ -4514,34 +4500,31 @@
 
 <h1 id="integration-module-hierachainintegration">Integration Module (<code>hierachain/integration/*</code>)</h1>
 <h2 id="1-overview">1. Overview</h2>
-<p>The <code>integration</code> module connects HieraChain to enterprise software systems such as SAP, Oracle, and Microsoft Dynamics. It extracts records from external ERP systems, normalizes data through a mapping engine, and records verifiable state events on domain sub-chains.</p>
+<p>The <code>integration</code> module provides field mapping, change detection, and scheduling utilities for applications that connect an ERP adapter to a HieraChain event sink. It does not include a real SAP, Oracle, or Microsoft Dynamics transport, and the API server does not start ERP synchronization automatically. Callers register their own adapter and chain sink.</p>
 <h2 id="2-core-components">2. Core components</h2>
-<p>All integration components reside in <code>hierachain/integration/</code>.</p>
 <h3 id="21-erp-integration-ledger-erp_ledgerpy-erpbasepy">2.1 ERP Integration Ledger (<code>erp_ledger.py</code>, <code>erp/base.py</code>)</h3>
 <ul>
-<li>Coordinates data synchronization pipelines.</li>
-<li>Integrates <code>MappingEngine</code> for field transformations.</li>
-<li>Manages <code>SyncScheduler</code> to poll external APIs on recurring intervals.</li>
+<li>Coordinates caller-provided adapters and translates their records through a mapping profile.</li>
+<li>Passes the profile's <code>config</code> to the registered adapter constructor.</li>
+<li>Requires a chain sink for scheduled delivery; use <code>translate_erp_to_blockchain()</code> for translation-only work.</li>
+<li>Accepts optional <code>detect_changes</code> and <code>key_fields</code> profile metadata. Key fields support dotted paths such as <code>material.document_number</code>.</li>
 </ul>
-<h3 id="22-enterprise-adapters-enterprisepy">2.2 Enterprise adapters (<code>enterprise.py</code>)</h3>
-<ul>
-<li>Connectors for SAP, Oracle, and Microsoft Dynamics.</li>
-<li>Reads endpoint URLs and credentials from environment variables (<code>HRC_SAP_*</code>, <code>HRC_ORACLE_*</code>, <code>HRC_DYNAMICS_*</code>).</li>
-<li>Handles authentication handshakes and HTTP session lifecycles.</li>
-</ul>
+<p>An adapter registered with <code>register_adapter()</code> must provide <code>get_changes_since_last_sync()</code>. A sink's <code>add_event()</code> must return <code>True</code> or a non-empty event identifier for the event to count as accepted.</p>
+<h3 id="22-exported-vendor-fixtures-enterprisepy">2.2 Exported vendor fixtures (<code>enterprise.py</code>)</h3>
+<p><code>SAPIntegration</code>, <code>OracleIntegration</code>, and <code>DynamicsIntegration</code> return synthetic fixture records. <code>EnterpriseIntegration.connect_to_erp()</code> rejects them by default. Pass <code>{"simulation_mode": True}</code> to opt in during tests or demonstrations. These classes make no network requests and do not authenticate against a vendor system.</p>
 <h3 id="23-change-detector-erpchange_detectorpy">2.3 Change detector (<code>erp/change_detector.py</code>)</h3>
 <ul>
-<li>Compares incoming ERP data against previous state snapshots.</li>
-<li>Isolates delta modifications to avoid recording redundant events.</li>
+<li>Compares business fields against an in-memory snapshot scoped by profile and entity key.</li>
+<li>Ignores its own <code>changes</code> and <code>change_detected</code> metadata when taking the next snapshot, so an unchanged record remains unchanged.</li>
 </ul>
 <h2 id="3-mapping-engine">3. Mapping engine</h2>
-<p>The <code>MappingEngine</code> transforms enterprise payload fields into standardized event properties:</p>
+<p>The mapping engine transforms source fields into event fields and builds nested objects from dotted destinations such as <code>details.quantity</code>.</p>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Transformer</th>
 <th style="text-align: left;">Function</th>
-<th style="text-align: left;">Example Transformation</th>
+<th style="text-align: left;">Example transformation</th>
 </tr>
 </thead>
 <tbody>
@@ -4552,8 +4535,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>amount</code></td>
-<td style="text-align: left;">Normalizes numbers and currencies</td>
-<td style="text-align: left;"><code>5000</code> -&gt; <code>5000.0</code> (float)</td>
+<td style="text-align: left;">Normalizes numeric values</td>
+<td style="text-align: left;"><code>5000</code> -&gt; <code>5000.0</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>status</code></td>
@@ -4562,7 +4545,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>id</code></td>
-<td style="text-align: left;">Prefixes identifiers</td>
+<td style="text-align: left;">Adds identifier prefixes</td>
 <td style="text-align: left;"><code>123</code> -&gt; <code>ERP_123</code></td>
 </tr>
 <tr>
@@ -4572,60 +4555,46 @@
 </tr>
 </tbody>
 </table>
-<h2 id="4-synchronization-flow">4. Synchronization flow</h2>
-<p><code>SyncScheduler</code> manages polling and retries for external data sources:</p>
-<pre class="mermaid"><code>sequenceDiagram
-    participant ERP as ERP System (SAP/Oracle)
-    participant Sync as SyncScheduler
-    participant Map as MappingEngine
-    participant HRC as HieraChain SubChain
-
-    Sync-&gt;&gt;ERP: Poll for changes (interval)
-    ERP--&gt;&gt;Sync: Return ERP records
-
-    loop Per Record
-        Sync-&gt;&gt;Map: Translate ERP -&gt; Blockchain event
-        Map-&gt;&gt;Map: Apply transformers (ID, date, status)
-        Map--&gt;&gt;Sync: Normalized event dict
-        Sync-&gt;&gt;HRC: Submit event to Sub-Chain
-    end</code></pre>
+<p>Mapping rules, adapter config, and key fields are copied when a profile is created and when it is read. Changes to caller-owned input objects do not alter the registered profile.</p>
+<h2 id="4-synchronization-and-retries">4. Synchronization and retries</h2>
+<p><code>SyncScheduler</code> invokes a caller-provided adapter, translates each returned record, and submits it to the supplied chain sink. A record counts as processed only after the sink acknowledges it. A missing sink fails before the adapter is queried. Per-record translation or delivery errors make the run <code>failed</code>; <code>get_sync_status()</code> exposes accepted-event counts and errors.</p>
+<p>Successful runs use the configured interval. Failed runs retry after 30, 60, then 120 seconds by default, with the delay capped at 300 seconds. After three retries beyond the initial attempt, the task reports <code>retry_exhausted</code> and stops scheduling further runs. Scheduler status is in memory and does not survive a process restart. Delivery is at least once when a batch is retried: records accepted during an earlier partial run can be submitted again. Use stable event identifiers, an adapter delivery cursor, and sink-side deduplication or operator reconciliation; this module does not provide exactly-once delivery.</p>
+<p>Replacing or stopping a profile cancels its pending timer and prevents stale generations from starting another run. It cannot cancel an adapter call that is already running; that call may still deliver records before it returns, while its stale result is ignored by the scheduler.</p>
 <h2 id="5-usage-example">5. Usage example</h2>
-<h3 id="configure-mapping-and-scheduled-sync">Configure mapping and scheduled sync</h3>
+<p>Register an adapter implemented by your application and provide a sink:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.integration.erp_ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERPIntegrationLedger</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sap_mapping</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"material.document_number"</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"source_path"</span><span class="p">:</span> <span class="s2">"material.event_type"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"transformer"</span><span class="p">:</span> <span class="s2">"status"</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">"params"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mapping"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"GR"</span><span class="p">:</span> <span class="s2">"GOODS_RECEIPT"</span><span class="p">}}</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">},</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="s2">"details.quantity"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"source_path"</span><span class="p">:</span> <span class="s2">"material.qty"</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="s2">"transformer"</span><span class="p">:</span> <span class="s2">"amount"</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">}</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">ledger</span> <span class="o">=</span> <span class="n">ERPIntegrationLedger</span><span class="p">()</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Start syncing with a domain sub-chain</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">ledger</span><span class="o">.</span><span class="n">start_scheduled_sync</span><span class="p">(</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">profile_name</span><span class="o">=</span><span class="s2">"SAP_Logistics"</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">interval_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain_instance</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">ledger</span> <span class="o">=</span> <span class="n">ERPIntegrationLedger</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">ledger</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="s2">"sap"</span><span class="p">,</span> <span class="n">MyConfiguredSapAdapter</span><span class="p">)</span>  <span class="c1"># application-provided</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">ledger</span><span class="o">.</span><span class="n">create_mapping_profile</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="s2">"SAP_Logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="s2">"sap"</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">{</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"material.document_number"</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"material.event_type"</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"details.quantity"</span><span class="p">:</span> <span class="s2">"material.qty"</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">},</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"tenant"</span><span class="p">:</span> <span class="s2">"example"</span><span class="p">},</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">detect_changes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">key_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"material.document_number"</span><span class="p">],</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">ledger</span><span class="o">.</span><span class="n">start_scheduled_sync</span><span class="p">(</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">profile_name</span><span class="o">=</span><span class="s2">"SAP_Logistics"</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">interval_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain_instance</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="p">)</span>
 </code></pre></div>
-<h2 id="6-resilience-and-security">6. Resilience and security</h2>
-<ul>
-<li>Thread concurrency: Uses <code>ThreadPoolExecutor</code> to handle concurrent sync profiles without blocking main event processing.</li>
-<li>Secret isolation: Credentials use environment variables rather than configuration files in version control.</li>
-<li>Automatic retry: Sync workers use exponential backoff when encountering transient network timeouts.</li>
-</ul>
+<p><code>MyConfiguredSapAdapter</code> and <code>sub_chain_instance</code> are supplied by the calling application. Vendor fixture classes are separate, simulation-only examples.</p>
+<h2 id="6-runtime-scope">6. Runtime scope</h2>
+<p>The integration ledger is a library component; it is not wired into the REST server lifecycle. Applications must register adapters, choose a chain sink, manage credentials in their own adapter, and monitor the returned sync status.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././hierarchical/">Hierarchical Module</a></li>
 <li><a href=".././core/">Core Module</a></li>
 <li><a href=".././error-mitigation/">Error Mitigation</a></li>
 </ul>
+<h2 id="change-detection-identity">Change detection identity</h2>
+<p>Configured <code>key_fields</code> must be a non-empty list of non-empty field paths. Missing, null or empty-string identity values raise <code>ValueError</code> before the detector mutates its snapshot or the record. Numeric <code>0</code> remains valid. Nested SAP paths such as <code>material.document_number</code> distinguish records; missing identities are never grouped under an <code>unknown</code> key. Scheduled synchronization reports such records as failed translation rather than successful delivery.</p>
 
 
 

@@ -1541,11 +1541,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4369,7 +4367,7 @@
 
 
 <h1 id="bang-chung-khong-tiet-lo-zero-knowledge-proofs">Bằng chứng Không tiết lộ (Zero-Knowledge Proofs)</h1>
-<p>HieraChain sử dụng <strong>Zero-Knowledge Proofs (ZK)</strong> để đảm bảo tính xác thực của các giao dịch trên hệ thống phân cấp mà không cần tiết lộ toàn bộ dữ liệu chi tiết của từng sự kiện (Event). Các Sub-chain sẽ tạo Proof chứng minh một quá trình chuyển đổi trạng thái là hợp lệ, và Main-chain sẽ tiến hành xác minh Proof đó.</p>
+<p>HieraChain cung cấp interface proof ZK cho việc submit từ Sub-chain lên MainChain. Triển khai hiện tại hỗ trợ mock proof cho phát triển; proving và verification production chưa được triển khai.</p>
 <h3 id="1-co-che-hoat-ong-cua-zkprover-zkverifier">1. Cơ chế Hoạt động của ZKProver &amp; ZKVerifier</h3>
 <p>Hệ thống cung cấp hai module cốt lõi đảm nhiệm công việc này:</p>
 <ul>
@@ -4377,16 +4375,16 @@
 <p><strong><code>ZKProver</code></strong> (Nằm tại Sub-chain - <code>hierachain/security/zk_prover.py</code>):</p>
 <ul>
 <li>Đóng vai trò là bên chứng minh (Prover).</li>
-<li>Khi một Sub-chain sinh ra một block mới, nó tạo ra một trạng thái mới (World State).</li>
-<li><code>ZKProver</code> sẽ sinh ra các đoạn mã Proof để chứng minh cho logic chuyển trạng thái từ <code>old_state_root</code> sang <code>new_state_root</code> trong <code>block_index</code> tương ứng vừa được kích hoạt.</li>
+<li>Đầu vào proof Sub-chain dùng Merkle root của event trong block trước và block mới nhất.</li>
+<li>Triển khai mock hiện tại gắn các đầu vào này vào một hash. Nó không chứng minh chuyển trạng thái projection entity hoặc xác thực quy tắc nghiệp vụ.</li>
 </ul>
 </li>
 <li>
 <p><strong><code>ZKVerifier</code></strong> (Nằm tại Main-chain - <code>hierachain/security/verify/zk_verifier.py</code>):</p>
 <ul>
 <li>Đóng vai trò là bên xác minh (Verifier).</li>
-<li>Khi nhận được tín hiệu Proof từ Sub-chain gửi lên Main-chain, <code>ZKVerifier</code> sẽ phân tích và xác minh tính hợp lệ của toán học cũng như tính toàn vẹn trạng thái.</li>
-<li>Giải quyết triệt để nguy cơ <strong>Fake Proofs</strong> (Chứng cứ giả). Nếu Proof không vượt qua xác minh, giao dịch đính kèm trên Main-chain sẽ bị từ chối thẳng thừng.</li>
+<li>Với mock proof, <code>ZKVerifier</code> kiểm tra định dạng và commitment tới public inputs được cung cấp.</li>
+<li>Proof bị từ chối sẽ chặn submission tương ứng lên MainChain. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.</li>
 </ul>
 </li>
 </ul>
@@ -4395,25 +4393,26 @@
 <h4 id="a-mock-mode-mac-inh">a. Mock Mode (Mặc định)</h4>
 <ul>
 <li>Đây là chế độ phát triển (Dev) hoặc môi trường kiểm thử (Testing).</li>
-<li>Mock Mode mô phỏng lại Groth16/Plonk ZK-SNARK bằng cách tạo ra một định dạng proof giả lập kích thước 2KB - 4KB với <code>mock_zkp_business\x00</code>.</li>
+<li>Mock mode dùng định dạng <code>mock_zkp_v2\x00</code> với commitment SHA-256 tới public inputs; không chạy circuit SNARK.</li>
 <li>Thay vì chạy circuit thuật toán, mock mode sử dụng tính toán hàm lượng băm nội suy (<code>hashlib.sha256</code>) đối với các tham số đầu vào (Public Inputs) và giả lập một độ trễ từ 100-500ms để đảm bảo giống với hệ thống proof thực.</li>
 <li>Hỗ trợ quá trình dev tích hợp Main/Sub mà không yêu cầu cấu hình tài nguyên phần cứng lớn.</li>
 </ul>
 <h4 id="b-production-mode-zokrates">b. Production Mode (ZoKrates)</h4>
 <ul>
-<li>Đây là chế độ vận hành sản xuất thực tế trên môi trường Mainnet/Enterprise.</li>
+<li>Đây là interface dành cho production, hiện chưa được hỗ trợ.</li>
 <li>Đòi hỏi thư mục khóa chứng minh ở biến <code>ZK_PROVING_KEY_PATH</code> và khóa xác minh ở <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
-<li>Proof được sinh ra qua một External Service (như ZoKrates) chứa những phương trình tính toán hàm bậc cao SNARKs vô cùng an toàn và khó giả mạo.</li>
+<li>Các method production hiện gây <code>NotImplementedError</code>; cấu hình đường dẫn khóa không kích hoạt proving service bên ngoài.</li>
 </ul>
 <h3 id="3-public-inputs-au-vao-cong-khai">3. Public Inputs (Đầu vào Công khai)</h3>
 <p>Theo định nghĩa của <code>ZKPublicInputs</code>, các đối số đầu vào (được cả Prover và Verifier đồng bộ thống nhất) bao gồm:</p>
 <ul>
-<li><strong><code>old_state_root</code> (str)</strong>: Merkle Root của World State ở block ngay trước đó. Phải là mã hash hợp lệ.</li>
-<li><strong><code>new_state_root</code> (str)</strong>: Merkle Root mới nhất sau khi các event được đưa vào block cập nhật hiện tại.</li>
-<li><strong><code>block_index</code> (int)</strong>: Số thứ tự block (cơ chế này giúp chặn hoàn toàn rủi ro Replay attacks).</li>
+<li><strong><code>old_state_root</code> (str)</strong>: Merkle root của event trong block ngay trước đó; đường submit dùng <code>genesis</code> khi không có block trước.</li>
+<li><strong><code>new_state_root</code> (str)</strong>: Merkle root của event trong block mới nhất, có fallback block hash hiện hành khi cần.</li>
+<li><strong><code>block_index</code> (int)</strong>: Số thứ tự block được gắn vào proof; tầng submission vẫn phải kiểm tra freshness và chống trùng.</li>
 <li><strong><code>sub_chain_name</code> (str)</strong>: ID hoặc tên định danh đầy đủ của Sub-chain đẩy Proof.</li>
 </ul>
 <p>Các tham số này đều được serialize định dạng JSON bytes chuẩn hóa chặt chẽ (sử dụng <code>sort_keys=True</code>) trước khi đem đi hash sinh Proof.</p>
+<p><code>WorldState.get_state_root()</code> băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Proving và verification production hiện gây <code>NotImplementedError</code>; việc làm rõ root không triển khai circuit ZK production.</p>
 
 
 

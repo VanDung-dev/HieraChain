@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4430,25 +4428,9 @@
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant PM as 📊 PerformanceMonitor
-    participant RA as 🔍 RiskAnalyzer
     participant AM as 🚨 AlertManager
     participant AD as 📈 AnomalyDetector
     participant NTF as 📧 Email / Webhook Notifier
-
-    PM-&gt;&gt;RA: perform_comprehensive_analysis(system_data)
-
-    par Consensus risks
-        RA-&gt;&gt;RA: analyze_consensus_risks()&lt;br/&gt;Check: node_count &gt;= 3f+1, leader_timeout, msg_verify_rate
-    and Security risks
-        RA-&gt;&gt;RA: analyze_security_risks()&lt;br/&gt;Check: cert_expiry, failed_auth, encryption_strength
-    and Performance risks
-        RA-&gt;&gt;RA: analyze_performance_risks()&lt;br/&gt;Check: CPU%, memory%, event_pool_size
-    and Storage risks
-        RA-&gt;&gt;RA: analyze_storage_risks()&lt;br/&gt;Check: world_state_size, backup_age
-    end
-
-    RA-&gt;&gt;RA: Update active_risks + risk_history
-    RA--&gt;&gt;PM: all_risks { consensus, security, performance, storage }
 
     PM-&gt;&gt;AM: check_metric(metric_name, value, source)
     AM-&gt;&gt;AD: add_data_point(metric_name, value)
@@ -4546,35 +4528,31 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>1. Analysis</strong></td>
-<td style="text-align: left;"><code>RiskAnalyzer.perform_comprehensive_analysis()</code> runs 4 domain checks in parallel</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Metric check</strong></td>
+<td style="text-align: left;"><strong>1. Metric check</strong></td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code> evaluates each incoming metric against defined rules</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Anomaly detection</strong></td>
+<td style="text-align: left;"><strong>2. Anomaly detection</strong></td>
 <td style="text-align: left;"><code>AnomalyDetector</code> uses statistical baseline to flag outliers</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Cooldown check</strong></td>
+<td style="text-align: left;"><strong>3. Cooldown check</strong></td>
 <td style="text-align: left;">Rules have configurable cooldown period to suppress alert storms</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Duplicate check</strong></td>
+<td style="text-align: left;"><strong>4. Duplicate check</strong></td>
 <td style="text-align: left;"><code>_is_duplicate_alert()</code> suppresses if same rule + same source already active</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Notification</strong></td>
+<td style="text-align: left;"><strong>5. Notification</strong></td>
 <td style="text-align: left;">Email and/or Webhook notifiers dispatch concurrently</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Escalation</strong></td>
+<td style="text-align: left;"><strong>6. Escalation</strong></td>
 <td style="text-align: left;">Unacknowledged alerts auto-escalate: <code>escalation_level += 1</code>, re-notified</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. Lifecycle end</strong></td>
+<td style="text-align: left;"><strong>7. Lifecycle end</strong></td>
 <td style="text-align: left;">Operator acknowledges → <code>ACKNOWLEDGED</code>; metric recovers → <code>RESOLVED</code></td>
 </tr>
 </tbody>
@@ -4601,10 +4579,6 @@
 <td style="text-align: left;">Alert storm (too many duplicates)</td>
 <td style="text-align: left;">Cooldown mechanism suppresses duplicates per rule</td>
 </tr>
-<tr>
-<td style="text-align: left;">RiskAnalyzer raises exception</td>
-<td style="text-align: left;">Exception caught, partial risk data returned, alert triggered for analysis failure</td>
-</tr>
 </tbody>
 </table>
 <hr />
@@ -4618,11 +4592,6 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td style="text-align: left;">Trigger analysis</td>
-<td style="text-align: left;"><code>RiskAnalyzer.perform_comprehensive_analysis()</code></td>
-<td style="text-align: left;"><code>risk_management/risk_analyzer.py</code></td>
-</tr>
 <tr>
 <td style="text-align: left;">Metric check</td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code></td>
@@ -4663,7 +4632,6 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown</a>: unresolved critical alerts may trigger lockdown</li>
 <li><a href=".././integrity-validation/">System Integrity Validation</a>: DEGRADED integrity status triggers alerts here</li>
 </ul>
 

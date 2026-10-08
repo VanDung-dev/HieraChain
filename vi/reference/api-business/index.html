@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3156,6 +3154,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cap-tai-nguyen-va-quyen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cấp tài nguyên và quyền
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#vi-du-lenh-curl" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4293,6 +4302,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cap-tai-nguyen-va-quyen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cấp tài nguyên và quyền
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#vi-du-lenh-curl" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4357,7 +4377,7 @@
 
 
 <h1 id="api-business">API Business</h1>
-<p>API Busines mở rộng khả năng làm việc với các channel, dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations).</p>
+<p>API Business mở rộng khả năng làm việc với các channel, bộ sưu tập dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations). Route ghi private data hiện chưa được hỗ trợ vì chưa có kho lưu dữ liệu riêng tư.</p>
 <h2 id="cac-thanh-phan-ma-nguon">Các thành phần Mã nguồn</h2>
 <ul>
 <li>Định tuyến/Endpoint: <code>hierachain/api/business/router.py</code></li>
@@ -4369,7 +4389,6 @@
     participant User as Người dùng
     participant API as API business
     participant Channel as Quản lý Channel
-    participant Store as Kho Lưu trữ Riêng tư
 
     User-&gt;&gt;API: POST /channels (Tạo)
     API-&gt;&gt;Channel: Khởi tạo Channel
@@ -4380,23 +4399,18 @@
     API--&gt;&gt;User: OK
 
     User-&gt;&gt;API: POST /private-data (Ghi)
-    API-&gt;&gt;Store: Lưu trữ Dữ liệu Riêng (Đã mã hóa)
-    API--&gt;&gt;User: OK
+    API--&gt;&gt;User: 501 Not Implemented
 
     User-&gt;&gt;API: POST /contracts/execute
     API-&gt;&gt;API: Thực thi Logic (Smart Contract)
     API--&gt;&gt;User: Kết quả</code></pre>
 <ul>
 <li><code>GET  /api/business/health</code>: kiểm tra trạng thái hoạt động dịch vụ (health check).</li>
-<li><code>POST /api/business/channels</code>: tạo một channel mới.</li>
+<li><code>POST /api/business/channels</code>: tạo một channel mới. API key cần quyền <code>chains</code> và <code>channels:manage</code>.</li>
 <li><code>GET  /api/business/channels/{channel_id}</code>: lấy thông tin channel.</li>
 <li><code>POST /api/business/channels/{channel_id}/private-collections</code>: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).</li>
 <li>
-<p><code>POST /api/business/private-data</code>: Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp <code>value</code> hoặc tham chiếu qua IPFS <code>value_cid</code>).</p>
-<ul>
-<li><code>value_nonce: str | None</code></li>
-<li><code>event_metadata: dict[str, Any]</code> (Entity ID, Loại sự kiện, Dấu thời gian)</li>
-</ul>
+<p><code>POST /api/business/private-data</code>: hiện trả HTTP 501 với collection đã tồn tại. Endpoint không lưu <code>value</code> inline hoặc dữ liệu <code>value_cid</code>.</p>
 </li>
 <li>
 <p><code>ContractCreateRequest</code></p>
@@ -4413,49 +4427,70 @@
 <p><code>POST /api/business/contracts</code>: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua <code>implementation</code> hoặc tham chiếu IPFS qua <code>implementation_cid</code>).</p>
 </li>
 <li><code>POST /api/business/contracts/execute</code>: thực thi một hợp đồng miền.</li>
-<li><code>POST /api/business/organizations</code>: đăng ký một tổ chức mới.</li>
+<li><code>POST /api/business/organizations</code>: đăng ký một tổ chức mới. Cần quyền <code>chains</code> và <code>organizations:manage</code>; user ID từ API key đã xác thực trở thành quản trị viên đầu tiên.</li>
+<li><code>POST /api/business/organizations/{org_id}/members</code>: quản trị viên tổ chức đăng ký member với role <code>admin</code> hoặc <code>member</code>. Member ID phải trùng user ID trong API key của member đó.</li>
 </ul>
 <p><em>Lưu ý bổ sung: một số kịch bản test/giám sát trong <code>tests/integration/api_business/test_api_business.py</code> và <code>scripts/security/*</code> sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.</em></p>
-<h2 id="vi-du-lenh-curl">Ví dụ lệnh Curl</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Kiểm tra Trạng thái</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Tạo channel</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name": "test_channel"}'</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Tạo bộ sưu tập riêng tư cho channel</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>http://localhost:2661/api/business/channels/test_channel/private-collections<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"collection": "sensitive_docs"}'</span>
+<h2 id="cap-tai-nguyen-va-quyen">Cấp tài nguyên và quyền</h2>
+<p>Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope <code>organizations:manage</code> và <code>channels:manage</code> khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope <code>chains</code>, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope <code>chains</code> và caller phải là quản trị viên hiện có của organization. Tạo channel cần <code>chains</code> và <code>channels:manage</code>. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.</p>
+<p>Registry organization, member và channel được lưu và khôi phục qua SQLite hoặc PostgreSQL đã cấu hình. <code>HierarchyManager</code> từ chối Redis ledger storage khi khởi động vì Redis adapter chưa lưu bền vững block đã ký. Backend in-memory chỉ tồn tại trong process hiện tại. Giá trị private data chưa được lưu: route ghi trả HTTP 501 trước khi xử lý giá trị inline hoặc tham chiếu IPFS. <code>ca_config</code> chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">ORG_PROVISIONER_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">ORG_ADMIN_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">CHANNEL_PROVISIONER_KEY</span><span class="o">=</span>replace-me
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$ORG_PROVISIONER_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "ca_config": {}}'</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations/orgA/members<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$ORG_ADMIN_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"member_id": "userB", "role": "member"}'</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Ghi dữ liệu riêng tư</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/private-data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1"># Đăng ký &amp; thực thi hợp đồng miền (domain contract)</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="s1">        "contract_id": "quality_control", </span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="s1">        "version": "1.0.0",</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="s1">        "implementation": "def logic()...",</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="s1">        "metadata": {"domain": "mfg"}</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="s1">      }'</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts/execute<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="s1">        "contract_id": "quality_control", </span>
-<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="s1">        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="s1">        "context": {"chain": "sub_chain_1"}</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="s1">      }'</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="c1"># Đăng ký Tổ chức</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "name": "Org A"}'</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-API-Key: '</span><span class="s2">"</span><span class="nv">$CHANNEL_PROVISIONER_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\\</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'</span>
+</code></pre></div>
+<p>Gửi event cũng cần API key có quyền <code>events</code>.</p>
+<h2 id="vi-du-lenh-curl">Ví dụ lệnh Curl</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Kiểm tra Trạng thái</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Tạo channel</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/channels<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Tạo bộ sưu tập riêng tư cho channel</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>http://localhost:2661/api/business/channels/test_channel/private-collections<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># Private-data writes currently return HTTP 501 Not Implemented.</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Đăng ký &amp; thực thi hợp đồng miền (domain contract)</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s1">        "contract_id": "quality_control", </span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="s1">        "version": "1.0.0",</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s1">        "implementation": "def logic()...",</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="s1">        "metadata": {"domain": "mfg"}</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="s1">      }'</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/contracts/execute<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="s1">        "contract_id": "quality_control", </span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="s1">        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="s1">        "context": {"chain": "sub_chain_1"}</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="s1">      }'</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1"># Đăng ký Tổ chức</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/business/organizations<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"org_id": "orgA", "ca_config": {}}'</span>
 </code></pre></div>
 <p>Nếu bật xác thực bằng API key (trong môi trường sản xuất - production), hãy thêm header tương ứng với <code>settings.API_KEY_NAME</code> (mặc định là <code>X-API-Key</code>).</p>
 <h2 id="bao-mat-cau-hinh">Bảo mật &amp; Cấu hình</h2>
@@ -4470,6 +4505,7 @@
 <li>Kiến trúc Bảo mật: <a href="../../architecture/security/">Bảo mật (chuyên sâu)</a></li>
 <li>Các mô-đun: <a href="../../modules/api/">API</a></li>
 </ul>
+<p>Contract đã đăng ký trả HTTP 501 từ <code>/api/business/contracts/execute</code> vì chưa có engine thực thi; contract không tồn tại trả HTTP 404. Đăng ký chỉ lưu metadata triển khai, không đồng nghĩa hỗ trợ thực thi.</p>
 
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Chi tiết cơ chế TransactionJournal, RollbackManager và KeyBackupManager để xử lý gián đoạn và khôi phục hệ thống HieraChain.">
+        <meta name="description" content="Cách HieraChain bảo vệ sự kiện đang chờ và tiếp tục đồng thuận sau gián đoạn.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Khôi phục sau thảm họa - HieraChain Docs</title>
+        <title>Độ bền dữ liệu và phục hồi sau sự cố - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#khoi-phuc-sau-tham-hoa" class="md-skip">
+        <a href="#o-ben-du-lieu-va-phuc-hoi-sau-su-co" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Khôi phục sau thảm họa
+              Độ bền dữ liệu và phục hồi sau sự cố
             
           </span>
         </div>
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3650,105 +3648,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-co-che-transaction-journaling-replay-data" class="md-nav__link">
+  <a href="#1-ghi-nhat-ky-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Cơ chế Transaction Journaling (Replay Data)
+        1. Ghi nhật ký sự kiện
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Cơ chế Transaction Journaling (Replay Data)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cach-thuc-hoat-ong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cách thức hoạt động
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#huong-dan-khoi-phuc-replay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Hướng dẫn Khôi phục (Replay)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-quan-ly-rollback-state-rollbackmanager" class="md-nav__link">
+  <a href="#2-hanh-vi-cua-ong-thuan-sau-restart" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Quản lý Rollback State (<code>RollbackManager</code>)
+        2. Hành vi của đồng thuận sau restart
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Quản lý Rollback State (RollbackManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quy-trinh-rollback" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quy trình Rollback
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-sao-luu-va-khoi-phuc-khoa-keybackupmanager" class="md-nav__link">
+  <a href="#3-trach-nhiem-phuc-hoi-cua-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Sao lưu và Khôi phục Khóa (<code>KeyBackupManager</code>)
+        3. Trách nhiệm phục hồi của deployment
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Sao lưu và Khôi phục Khóa (KeyBackupManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#khoi-phuc-khi-can-thiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Khôi phục khi cần thiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-xu-ly-loi-mang-va-suy-trai-bft-consensus-recovery" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Xử lý Lỗi Mạng và Suy Trái (BFT Consensus Recovery)
+        Tài liệu liên quan
       </span>
     </span>
   </a>
@@ -4322,105 +4258,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-co-che-transaction-journaling-replay-data" class="md-nav__link">
+  <a href="#1-ghi-nhat-ky-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Cơ chế Transaction Journaling (Replay Data)
+        1. Ghi nhật ký sự kiện
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Cơ chế Transaction Journaling (Replay Data)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cach-thuc-hoat-ong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cách thức hoạt động
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#huong-dan-khoi-phuc-replay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Hướng dẫn Khôi phục (Replay)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-quan-ly-rollback-state-rollbackmanager" class="md-nav__link">
+  <a href="#2-hanh-vi-cua-ong-thuan-sau-restart" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Quản lý Rollback State (<code>RollbackManager</code>)
+        2. Hành vi của đồng thuận sau restart
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Quản lý Rollback State (RollbackManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quy-trinh-rollback" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quy trình Rollback
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-sao-luu-va-khoi-phuc-khoa-keybackupmanager" class="md-nav__link">
+  <a href="#3-trach-nhiem-phuc-hoi-cua-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Sao lưu và Khôi phục Khóa (<code>KeyBackupManager</code>)
+        3. Trách nhiệm phục hồi của deployment
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Sao lưu và Khôi phục Khóa (KeyBackupManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#khoi-phuc-khi-can-thiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Khôi phục khi cần thiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-xu-ly-loi-mang-va-suy-trai-bft-consensus-recovery" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Xử lý Lỗi Mạng và Suy Trái (BFT Consensus Recovery)
+        Tài liệu liên quan
       </span>
     </span>
   </a>
@@ -4458,51 +4332,48 @@
   
 
 
-<h1 id="khoi-phuc-sau-tham-hoa">Khôi phục sau thảm họa</h1>
-<p>HieraChain được thiết kế với tiêu chí ưu tiên cao nhất cho tính bền vững (Durability) và tính không thể đảo ngược hệ thống. Tài liệu này hướng dẫn cách hệ thống tự động xử lý và cách vận hành quy trình khôi phục khi xảy ra gián đoạn hoặc thảm họa máy chủ.</p>
-<hr />
-<h2 id="1-co-che-transaction-journaling-replay-data">1. Cơ chế Transaction Journaling (Replay Data)</h2>
-<p>Nhằm chống lại việc mất dữ liệu do crash ứng dụng, mất điện, hoặc hệ điều hành bị tắt đột ngột, HieraChain triển khai một module gọi là <strong><code>TransactionJournal</code></strong> trước khi sự kiện (event) được đưa vào Ordering Service để xử lý.</p>
-<h3 id="cach-thuc-hoat-ong">Cách thức hoạt động</h3>
+<h1 id="o-ben-du-lieu-va-phuc-hoi-sau-su-co">Độ bền dữ liệu và phục hồi sau sự cố</h1>
+<p>Repository cung cấp journaling sự kiện và view change của đồng thuận. Backup
+database, snapshot filesystem, khôi phục khóa và mở rộng hạ tầng thuộc về
+deployment.</p>
+<h2 id="1-ghi-nhat-ky-su-kien">1. Ghi nhật ký sự kiện</h2>
+<p><code>TransactionJournal</code> ghi các sự kiện đang chờ trước khi chúng đi vào ordering
+service. Cơ chế này bảo vệ sự kiện khi ứng dụng crash hoặc hệ điều hành tắt đột
+ngột.</p>
+<p>Mỗi event được ghi nối tiếp và fsync đồng bộ trước khi đưa vào hàng đợi. Fsync
+luôn được bật và không thể tắt qua cấu hình. Khi khởi động, recovery replay các
+entry journal và ghi event đã khôi phục vào block storage trước khi Ordering
+Service hoạt động. Frame cuối chưa hoàn chỉnh trong journal đang hoạt động sẽ
+bị cắt bỏ trước khi ghi entry mới. Frame hoàn chỉnh nhưng chứa Arrow data lỗi
+khiến recovery thất bại; lỗi replay, chứng thực hoặc xử lý block giữ Ordering
+Service ở <code>MAINTENANCE</code> cho đến khi recovery thành công.</p>
+<p>Trong lúc khởi động, kiểm tra <code>GET /api/ledger/ready</code>. Endpoint trả HTTP 200 khi
+Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái <code>ACTIVE</code>, và HTTP
+503 khi còn service đang recovery hoặc ở trạng thái maintenance.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="2-hanh-vi-cua-ong-thuan-sau-restart">2. Hành vi của đồng thuận sau restart</h2>
+<p><code>BFTConsensus</code> sử dụng <code>BFTViewChangeManager</code> khi leader hiện tại hỏng hoặc
+timeout view change hết hạn. Manager điều phối quorum và cài đặt view mới để
+đồng thuận tiếp tục mà không cần recovery engine riêng.</p>
+<h2 id="3-trach-nhiem-phuc-hoi-cua-deployment">3. Trách nhiệm phục hồi của deployment</h2>
+<p>Deployment phải cung cấp và xác minh:</p>
 <ul>
-<li><strong>Storage Format:</strong> Các log journal được tuần tự hóa theo định dạng <strong>Apache Arrow RecordBatch</strong>, cho phép tốc độ đọc/ghi cực nhanh và bảo toàn cấu trúc schema.</li>
-<li><strong>Length-Prefixed Framing:</strong> Tập tin append-only ghi theo cấu trúc <code>[Độ dài 4 Bytes][Dữ liệu Batch]</code>.</li>
-<li><strong>Sync &amp; Fsync:</strong> Mọi thao tác log sự kiện đều được gọi <code>os.fsync()</code> đảm bảo disk I/O thực sự ghi xuống phần cứng trước khi phản hồi thành công.</li>
+<li>backup database và filesystem;</li>
+<li>quy trình backup và khôi phục khóa;</li>
+<li>chính sách snapshot retention và rollback;</li>
+<li>thay thế node và mở rộng hạ tầng.</li>
 </ul>
-<h3 id="huong-dan-khoi-phuc-replay">Hướng dẫn Khôi phục (Replay)</h3>
-<p>Khi Node khởi động lại sau một sự cố không mong muốn (Crash), hệ thống tự động kiểm tra thư mục Log (mặc định <code>data/journal/current.log</code>). Node sẽ tự gọi vòng lặp qua phương thức <code>replay()</code> để phát lại chuỗi RecordBatch và khôi phục mảng sự kiện vào bộ nhớ (MemPool hoặc World State) một cách đầy đủ.</p>
-<hr />
-<h2 id="2-quan-ly-rollback-state-rollbackmanager">2. Quản lý Rollback State (<code>RollbackManager</code>)</h2>
-<p>Trong trường hợp rủi cấu ro lớn hơn, như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn, hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.</p>
-<p><code>RollbackManager</code> sẽ lưu lại các điểm trạng thái hệ thống:</p>
+<p>Các thao tác này cố ý không được expose thành các class tự động trong
+<code>hierachain.error_mitigation</code>.</p>
+<h2 id="tai-lieu-lien-quan">Tài liệu liên quan</h2>
 <ul>
-<li><strong>Configuration State</strong>: Cấu hình file YAML, JSON, PY.</li>
-<li><strong>Chain State</strong>: Khối lượng block và Hash gần nhất.</li>
-<li><strong>Consensus State</strong>: View Number, Node ID của Leader hiện tại.</li>
-<li><strong>Storage State</strong>: Snapshot của World State.</li>
-</ul>
-<h3 id="quy-trinh-rollback">Quy trình Rollback</h3>
-<ol>
-<li>Lấy danh sách snapshot bằng <code>manager.get_snapshots()</code>.</li>
-<li>Hệ thống kiểm tra <strong>Integrity Hash (Hàm băm nguyên vẹn)</strong> của snapshot. Snapshot không nguyên vẹn hoặc quá cũ (hơn 72 giờ) có khả năng bị từ chối nếu không bật cờ <code>force=True</code>.</li>
-<li>Thực thi hàm <code>rollback_to_snapshot(snapshot_id)</code>. Nó sẽ khôi phục từng phần của <code>Configuration</code> và <code>Chain State</code>.</li>
-</ol>
-<hr />
-<h2 id="3-sao-luu-va-khoi-phuc-khoa-keybackupmanager">3. Sao lưu và Khôi phục Khóa (<code>KeyBackupManager</code>)</h2>
-<p>Bảo vệ cặp quá ký ECDSA/Ed25519 là nhiệm vụ quan trọng. <code>KeyBackupManager</code> tự động sao lưu an toàn khi hệ thống tạo Key mới:</p>
-<ul>
-<li><strong>Bảo mật AES-256-GCM</strong>: Key Public / Private của Node được thu thập, mã hóa GCM (Authenticate Encryption) với Key Master được cấp bởi Admin.</li>
-<li><strong>Xác minh toàn vẹn (Integrity)</strong>: Sử dụng cấu hình băm <code>SHA-512</code> kết hợp <code>HMAC</code> để đối chiếu mỗi khi khôi phục.</li>
-<li><strong>Phân phối đa vị trí (Multi-location)</strong>: Mã băm và file <code>.enc</code> được hệ thống "copy" phân tán ra nhiều đường dẫn <code>locations</code> nhằm chống Single Point of Failure (SPOF).</li>
-</ul>
-<h3 id="khoi-phuc-khi-can-thiet">Khôi phục khi cần thiết</h3>
-<p>Sử dụng <code>restore_keys(backup_id)</code>. Manger sẽ đọc luồng IO, xác minh checksum <code>SHA-512</code>, giải mã GCM, và ngay lập tức tiêm vào tiến trình Node mà không cần stop hệ thống. Định dạng cặp khóa luôn được <code>_validate_keys</code> xác minh để tránh lỗi load key hỏng.</p>
-<hr />
-<h2 id="4-xu-ly-loi-mang-va-suy-trai-bft-consensus-recovery">4. Xử lý Lỗi Mạng và Suy Trái (BFT Consensus Recovery)</h2>
-<p>Cụm BFT của HieraChain (với thuật toán dựa trên View Change) tự chứa các đặc tính "Tự phục hồi" (Self-recovery) đối với các sự cố liên lạc:</p>
-<ul>
-<li><strong>Sự cố Leader bị Node-down</strong>: Nếu Leader gặp crash, timeout (không broadcast block mới đúng hạn), các Validators sẽ gửi tin nhắn kháng nghị. Khi đạt trên <code>2f + 1</code> tin nhắn kháng nghị, hệ thống khởi tạo <strong>View Change</strong>, chuyển qua Leader tiếp theo (ví dụ: <code>Leader_ID = View_Number % Total_Nodes</code>).</li>
-<li><strong>Sự cố Network Partition (Chia cắt mạng)</strong>: Nếu mạng bị chia làm 2 mảnh, mảnh không chiếm đa số (<strong><em>&lt; 2f + 1</em></strong>) sẽ tự động ngừng (Halt). Mảng lớn hơn (trên 66% số node) tiếp tục giao dịch. Khi kết nối khôi phục, mảnh nhỏ hơn tự động gọi API P2P để đồng bộ (Sync Blocks) với nhánh dài nhất.</li>
+<li><a href="../../workflows/error-recovery/">Xử lý lỗi và phục hồi</a></li>
+<li><a href="../../modules/error-mitigation/">Module Error Mitigation</a></li>
+<li><a href="../../workflows/chain-rehydration/">Nạp lại trạng thái chuỗi</a></li>
 </ul>
 
 

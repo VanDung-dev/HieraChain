@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4389,11 +4387,11 @@
 <p>Pluggable providers support several key sources:</p>
 <ul>
 <li><code>LocalKeyProvider</code> keeps keys in local memory.</li>
-<li><code>FileVaultProvider</code> keeps encrypted data on disk with AES-256-GCM.</li>
+<li><code>FileVaultProvider</code> keeps encrypted data on disk with Fernet, using AES-128-CBC with HMAC.</li>
 </ul>
 </li>
 <li>
-<p>API key lifecycle covers the full API key lifecycle from creation to revocation.</p>
+<p>The API server's <code>KeyManager.revoke_key()</code> persists API key revocation through SQLite or a configured shared Redis backend. Revocation checks bypass cached key permissions.</p>
 </li>
 </ul>
 <h2 id="certificate-and-identity-msp">Certificate and identity (MSP)</h2>
@@ -4402,20 +4400,20 @@
 <ul>
 <li>Internal certificate is the <code>Certificate</code> dataclass with <code>cert_id</code>, <code>subject</code>, <code>public_key</code>, <code>signature</code> (Ed25519 via <code>_sign_certificate</code>) and <code>is_valid()</code> time check. There is no X.509 ASN.1 and no mTLS.</li>
 <li>CA operations are <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> and <code>verify_certificate()</code> with an in-memory <code>issued_certificates</code> set and <code>revoked_certificates</code> set. <code>HierarchicalMSP</code> uses this for org and entity registration.</li>
-<li>Limitation: revocation lives only in memory. There is no CRL distribution, no X.509 chain validation and no mutual TLS between components. TLS is expected at the reverse proxy per architecture rules.</li>
+<li>Limitation: MSP certificate revocation lives only in memory. There is no CRL distribution, no X.509 chain validation and no mutual TLS between components. TLS is expected at the reverse proxy per architecture rules.</li>
 </ul>
 <h2 id="key-backup-and-recovery">Key backup and recovery</h2>
 <p>Files: <code>hierachain/cli/key.py</code>, <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
 <p>There is no dedicated <code>key_backup_manager.py</code>. The actual mechanism is minimal:</p>
 <ul>
-<li>Generation runs <code>python -m hierachain key generate --output validator_key.json</code> (CLI) to create an Ed25519 pair via <code>Ed25519PrivateKey.generate()</code> and write <code>{private_key, public_key}</code> hex JSON. The <code>show</code> and <code>verify</code> commands inspect the result.</li>
-<li>Encrypted vault (dev and test only) uses <code>FileVaultProvider</code> to encrypt the vault file with <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> and <code>Fernet(AES-128-CBC+HMAC)</code>. This is suitable for dev and test and is documented as not for production. For production use HSM or KMS through the <code>KeyProvider</code> interface and <code>HRC_VAULT_*</code>.</li>
+<li>Generation runs <code>python -m hierachain key generate --output validator_key.json</code> (CLI) to create an Ed25519 pair via <code>Ed25519PrivateKey.generate()</code> and write <code>{private_key, public_key}</code> hex JSON. The new file has mode <code>0600</code> on POSIX systems; generation refuses to overwrite an existing file. The <code>show</code> and <code>verify</code> commands inspect the result.</li>
+<li>Encrypted vault (dev and test only) uses <code>FileVaultProvider</code> to encrypt the vault file with <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> and <code>Fernet(AES-128-CBC+HMAC)</code>. Its password is passed to the provider constructor. Production HSM or KMS support requires an application-specific <code>KeyProvider</code>; no built-in master-key provider exists. <code>HRC_VAULT_TOKEN</code> and <code>HRC_VAULT_PATH</code> configure the separate <code>SecretManager</code> Vault backend.</li>
 <li>There is no multi-location backup, no SHA-512 integrity check and no auto distribution or cleanup. Operators must copy <code>validator_key.json</code> or <code>.vault</code> with external backup tooling.</li>
 </ul>
 <hr />
 <h2 id="key-scope-actual">Key scope (actual)</h2>
 <ul>
-<li>Validator and node key is a single Ed25519 <code>KeyPair</code> per node (via <code>LocalKeyProvider</code> or <code>FileVaultProvider</code>), referenced by <code>HRC_VALIDATOR_IDENTITY</code> and <code>HRC_MASTER_KEY_FILE</code>/<code>HRC_MASTER_KEY_SOURCE</code>.</li>
+<li>Validator and node key is a single Ed25519 <code>KeyPair</code> per node (via <code>LocalKeyProvider</code> or <code>FileVaultProvider</code>), referenced by <code>HRC_VALIDATOR_IDENTITY</code>. <code>HRC_MASTER_KEY_SOURCE=env</code> is only a compatibility alias; other values and nonempty <code>HRC_MASTER_KEY_FILE</code> are rejected because no master-key provider is implemented.</li>
 <li>API keys are managed by <code>KeyManager</code> (create, revoke, permission, cached via <code>KeyStorage</code>/<code>KeyCacheManager</code>), not per-entity signing keys.</li>
 <li>There is no built-in hierarchy like Master to Domain to Entity. Domain isolation relies on Sub-Chain separation and MSP roles.</li>
 </ul>

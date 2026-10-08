@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4536,10 +4534,10 @@
 
 <h1 id="network-module-hierachainnetwork">Network Module (<code>hierachain/network/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Network</strong> là lớp xương sống cho phép các nút (Nodes) trong mạng lưới HieraChain giao tiếp với nhau. Được thiết kế với triết lý "Bảo mật đa tầng" (Defense-in-Depth), module này kết hợp sức mạnh truyền tải của <strong>ZeroMQ</strong> với các thuật toán mật mã hiện đại để đảm bảo mọi thông điệp đều được mã hóa, xác thực và chống giả mạo.</p>
+<p>Module <strong>Network</strong> quản lý giao tiếp giữa các node HieraChain qua <strong>ZeroMQ</strong>. Module dùng các cơ chế mật mã để mã hóa và xác thực thông điệp.</p>
 <hr />
 <h2 id="kien-truc-bao-mat-a-tang-layered-security">Kiến trúc Bảo mật Đa tầng (Layered Security)</h2>
-<p>HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết hợp ba lớp bảo vệ độc lập:</p>
+<p>HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4560,6 +4558,8 @@
 <li>Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).</li>
 <li>Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.</li>
 <li>Quy trình Handshake 2 bước: <code>INIT</code> và <code>ACK</code>.</li>
+<li>Ràng buộc subject và khóa ký của chứng chỉ còn hiệu lực với routing ID
+  ZeroMQ và danh tính tổ chức đã đăng ký.</li>
 </ul>
 </li>
 <li>
@@ -4569,6 +4569,7 @@
 <ul>
 <li>Mọi thông điệp P2P đều được ký số (Digital Signature).</li>
 <li>Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).</li>
+<li>Cả hai thông điệp handshake đều có <code>timestamp</code> và <code>nonce</code> đã ký, được replay gate của transport chấp nhận.</li>
 </ul>
 </li>
 </ul>
@@ -4578,9 +4579,11 @@
 <h3 id="1-zmq-transport-zmq_transportpy">1. ZMQ Transport (<code>zmq_transport.py</code>)</h3>
 <p>Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket <strong>ROUTER</strong> (để nhận) và <strong>DEALER</strong> (để gửi). </p>
 <ul>
-<li><strong>Hiệu năng</strong>: Xử lý hàng nghìn thông điệp mỗi giây với độ trễ cực thấp.</li>
+<li><strong>Truyền tải</strong>: Dùng socket không đồng bộ; broadcast gửi tuần tự tới các peer đã đăng ký.</li>
 <li><strong>Identity Management</strong>: Quản lý định danh các nút ở mức socket để định tuyến chính xác.</li>
+<li><strong>Replay buffer</strong>: Giữ tối đa 1.000 cặp timestamp/nonce với nonce dạng chuỗi dài tối đa 128 ký tự. Khi tất cả mục vẫn nằm trong cửa sổ 60 giây, thông điệp mới bị từ chối cho đến khi có mục hết hạn.</li>
 </ul>
+<p><code>NetworkClient</code> theo dõi seed và peer đăng ký thủ công trong cùng registry. Gỡ peer cũng đóng socket DEALER gửi đi của peer đó. Peer được xem là healthy trong 60 giây đầu sau khi đăng ký; mỗi thông điệp nhận vào hợp lệ từ định danh socket đã đăng ký sẽ gia hạn khoảng này. Peer im lặng chuyển unhealthy khi đọc trạng thái hoặc danh sách peer. Chỉ báo health này không xác thực peer hay xác nhận thông điệp gửi đi đã được nhận.</p>
 <h3 id="2-secure-connection-manager-secure_connectionpy">2. Secure Connection Manager (<code>secure_connection.py</code>)</h3>
 <p>Điều phối quy trình thiết lập kết nối an toàn:</p>
 <ol>
@@ -4611,6 +4614,11 @@
     Note left of NodeA: Verify ACK Signature
 
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready</code></pre>
+<p>Responder gửi lại nonce của <code>HANDSHAKE_INIT</code> trong ACK đã ký. Initiator chỉ
+nhận ACK khi đang có handshake gửi đi tương ứng, peer vượt qua chính sách tin
+cậy đã cấu hình, và chứng chỉ ACK còn hiệu lực, được ràng buộc với routing ID
+cùng khóa ký của peer. Chứng chỉ CA, bản ghi danh tính, tổ chức hoặc khóa bị
+thiếu hay không khớp đều bị từ chối.</p>
 <hr />
 <h2 id="vi-du-su-dung">Ví dụ sử dụng</h2>
 <h3 id="1-khoi-tao-node-bao-mat">1. Khởi tạo Node Bảo mật</h3>
@@ -4666,6 +4674,7 @@
 <li><a href="../../consensus/bft_consensus/">Đồng thuận BFT (Consensus)</a></li>
 <li><a href=".././monitoring/">Giám sát mạng (Monitoring)</a></li>
 </ul>
+<p>ZeroMQ nhận frame tối đa 1 MiB và đúng hai frame ứng dụng (định danh bên gửi và nội dung); frame thừa được đọc bỏ, không gom vào danh sách multipart Python. Kết nối secure xác minh danh tính và chữ ký trước khi lưu replay, với cache riêng tối đa 1.000 mục mỗi peer đã xác minh. Transport plain yêu cầu peer ID đã cấu hình và tách cache theo peer; không bảo đảm danh tính bằng chữ ký. Các giới hạn này cần đi cùng kiểm soát kết nối và băng thông ở tầng triển khai.</p>
 
 
 

@@ -1568,11 +1568,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4424,8 +4422,8 @@
 
 <h1 id="neo-giu-bang-chung">Neo giữ bằng chứng</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Sau khi khối hoàn tất trên Sub-Chain, Sub-Chain gửi bằng chứng mã hóa (hash và proof ZK tùy chọn) lên Main Chain. Main Chain chỉ lưu bằng chứng này, không lưu dữ liệu sự kiện thô. Cách này giữ tính bất biến toàn cục mà không lưu dữ liệu nhạy cảm trên chuỗi gốc.</p>
-<p>Đây là trigger sau khối, không phải lệnh do người dùng gọi. Nó tự kích hoạt khi <code>chain_length % proof_interval == 0</code>.</p>
+<p>Sau khi khối hoàn tất trên Sub-Chain, Sub-Chain gửi bằng chứng mã hóa (hash và proof ZK tùy chọn) lên Main Chain. Main Chain chỉ lưu bằng chứng này, không lưu dữ liệu sự kiện thô. Lệnh gửi chỉ thành công sau khi block MainChain chứa proof được ký, hoàn tất, lưu qua SQL bền vững và đọc lại để kiểm tra hash, Merkle root và chữ ký. SQLite dùng WAL với <code>synchronous=FULL</code> cho các lần commit này. Storage thiếu hoặc không hỗ trợ sẽ làm lệnh thất bại.</p>
+<p>Luồng tự động chạy sau khi block Sub-Chain hoàn tất, khi đã hết khoảng thời gian cấu hình và có block mới chưa được gửi. Endpoint REST có xác thực cũng có thể kích hoạt gửi proof.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4449,8 +4447,9 @@
     SC-&gt;&gt;SC: _generate_default_proof_metadata()
     SC-&gt;&gt;MC: add_proof(sub_chain_name, proof_hash, metadata, zk_proof)
     MC-&gt;&gt;MC: Xác thực bằng chứng ZK (nếu bật)
-    MC-&gt;&gt;MC: Lưu khối bằng chứng trên Main Chain
-    MC--&gt;&gt;SC: True (thành công)
+    MC--&gt;&gt;SC: Proof đã vào hàng chờ
+    SC-&gt;&gt;MC: Hoàn tất block proof đã ký, lưu và đọc lại từ storage
+    MC--&gt;&gt;SC: Proof bền vững đã xác nhận
 
     SC-&gt;&gt;SC: Ghi nhận sự kiện nội bộ proof_submitted
     SC-&gt;&gt;SC: Cập nhật timestamp last_proof_submission</code></pre>
@@ -4466,7 +4465,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>1. Kiểm tra kích hoạt</strong></td>
-<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> kiểm tra <code>len(chain) &gt; 1</code> và khối đã hoàn tất.</td>
+<td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> kiểm tra thời gian đã trôi qua và có block mới đã hoàn tất.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>2. Tạo proof ZK</strong></td>
@@ -4474,15 +4473,15 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>3. Metadata proof</strong></td>
-<td style="text-align: left;"><code>_generate_default_proof_metadata()</code> tạo <code>{ sub_chain_name, block_count, latest_hash, timestamp }</code>.</td>
+<td style="text-align: left;"><code>_generate_default_proof_metadata()</code> tạo metadata tóm tắt; MainChain từ chối trường chi tiết bị cấm trong dict hoặc list lồng nhau và lọc đệ quy các container được chấp nhận trước khi ghi.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>4. Ghi lên Main Chain</strong></td>
-<td style="text-align: left;"><code>MainChain.add_proof()</code> xác thực proof ZK, rồi nối khối proof mới vào Main Chain.</td>
+<td style="text-align: left;"><code>MainChain.add_proof()</code> xác thực rồi đưa proof vào hàng chờ; đường submit hoàn tất và đọc lại block đã ký từ storage bền vững.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>5. Ghi nhận</strong></td>
-<td style="text-align: left;">Sub-Chain ghi log sự kiện nội bộ <code>proof_submitted</code> và cập nhật <code>last_proof_submission</code>.</td>
+<td style="text-align: left;">Chỉ sau khi đọc lại thành công, Sub-Chain ghi event <code>proof_submitted</code> và cập nhật <code>last_proof_submission</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -4556,8 +4555,12 @@
 <td style="text-align: left;">Ghi log exception, không cập nhật <code>last_proof_submission</code>; thử lại ở khối tiếp theo</td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác thực ZK trên Main Chain lỗi</td>
-<td style="text-align: left;"><code>add_proof()</code> ném exception, khối proof không được nối</td>
+<td style="text-align: left;">Thiếu storage bền vững, backend chưa hỗ trợ hoặc đọc lại lỗi</td>
+<td style="text-align: left;">Lệnh trả <code>False</code>; retry có thể lưu proof đã chờ hoặc đã hoàn tất mà không ghi bản trùng.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Thiếu proof ZK bắt buộc hoặc xác thực thất bại</td>
+<td style="text-align: left;"><code>MainChain.add_proof()</code> trả <code>False</code>; proof không được ghi</td>
 </tr>
 </tbody>
 </table>
@@ -4585,7 +4588,7 @@
 <tr>
 <td style="text-align: left;">Metadata proof</td>
 <td style="text-align: left;"><code>_generate_default_proof_metadata()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;"><code>hierarchical/sub_chain/proof.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Neo lên Main</td>
@@ -4594,7 +4597,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">Xác thực ZK</td>
-<td style="text-align: left;"><code>ZKVerifier.verify_proof()</code></td>
+<td style="text-align: left;"><code>ZKVerifier.verify()</code></td>
 <td style="text-align: left;"><code>security/verify/zk_verifier.py</code></td>
 </tr>
 </tbody>

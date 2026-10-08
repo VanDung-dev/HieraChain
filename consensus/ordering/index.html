@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2960,6 +2958,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#4-commit-and-cross-chain-costs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Commit and cross-chain costs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2970,6 +2979,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Usage Example
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-journal-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Local journal ownership
       </span>
     </span>
   </a>
@@ -4398,6 +4418,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#4-commit-and-cross-chain-costs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Commit and cross-chain costs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4408,6 +4439,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Usage Example
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-journal-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Local journal ownership
       </span>
     </span>
   </a>
@@ -4478,7 +4520,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Processor</strong></td>
-<td style="text-align: left;">Async processing, event flow coordination.</td>
+<td style="text-align: left;">Async collection, batch signature verification, certification and event processing.</td>
 <td style="text-align: left;"><code>processor.py</code></td>
 </tr>
 <tr>
@@ -4501,8 +4543,14 @@
 <td style="text-align: left;">Restores state from <strong>Event Journal</strong> after failures.</td>
 <td style="text-align: left;"><code>recovery.py</code></td>
 </tr>
+<tr>
+<td style="text-align: left;"><strong>Journal lookup</strong></td>
+<td style="text-align: left;">Indexes durable ID/channel/content commitments for stable-ID admission.</td>
+<td style="text-align: left;"><code>journal_lookup.py</code></td>
+</tr>
 </tbody>
 </table>
+<p><code>OrderingService</code> owns the event queue, pending events, certifier, block builder, storage and metrics. <code>OrderingProcessor</code> accesses these dependencies through the service and processes both live batches and replayed events directly. Block creation and commit remain in <code>OrderingBlockManager</code>; journal replay remains in <code>OrderingRecovery</code>.</p>
 <hr />
 <h2 id="event-processing-flow-ordering-pipeline">Event Processing Flow (Ordering Pipeline)</h2>
 <pre class="mermaid"><code>graph TD
@@ -4517,16 +4565,25 @@
 <hr />
 <h2 id="core-features">Core Features</h2>
 <h3 id="1-persistence-durability">1. Persistence &amp; Durability</h3>
-<p>Before entering the processing queue, every event is written to the <strong>Event Journal</strong>. If the service stops unexpectedly, the <code>Recovery</code> module reads the Journal to reconstruct state, ensuring no data is lost.</p>
+<p>Accepted events are synchronously written to the <strong>Event Journal</strong> and fsynced before they are queued. Fsync is always enabled and cannot be disabled through configuration. On restart, <code>Recovery</code> replays journal entries and commits recovered events to block storage before the ordering service becomes active. An incomplete final frame in the active journal is truncated before the file is reopened for append. A complete frame with corrupt Arrow data fails recovery, and replay, certification, or block-processing errors leave the service in <code>MAINTENANCE</code> rather than activating with events missing.</p>
+<p>The <code>GET /api/ledger/ready</code> endpoint returns HTTP 200 only when every registered Sub-Chain's Ordering Service is <code>ACTIVE</code>; it returns HTTP 503 while any service is recovering or in maintenance.</p>
+<p><code>TransactionJournal.log_event()</code> still flushes and fsyncs every successful append before returning. <code>read_since()</code> reads records from disk but reuses a successful sync when the active file's device, inode, size, modification time and change time match the synchronized state. Opening/closing the writer, rotation and failed writes invalidate that state. Unknown or changed state requires another fsync; read and sync failures propagate. An active path replaced with another inode is rejected. Explicit <code>flush()</code> continues to synchronize every call. These rules retain the single-owner append-only journal contract; they do not make read-back a memory-only ACK.</p>
+<p>Stable IDs first check live pending/batch/processed state and block storage. For remaining IDs, <code>JournalEventLookup</code> scans journal history once on first use, then reads only the suffix after its cursor and stores compact channel/content commitments. It rejects conflicting IDs, including conflicting repeated records. An older journal-only event whose payload must be requeued still uses a full disk read; no historical payload copies are retained in the index. Custom or replaced journals without this lookup keep the compatibility scan. Missing/truncated cursor history fails closed. Initial scanning, archive enumeration and index metadata still grow with retained history; no retention/compaction is added.</p>
+<p><code>lockdown()</code> waits for any in-flight commit to finish, then blocks further commits and incoming events until <code>resume()</code>. Queued events and an already cut batch remain available for resume; their journal entries are retained for crash recovery. Recovery completion does not override <code>LOCKDOWN</code>, and <code>resume()</code> cannot reactivate a stopped service.</p>
 <h3 id="2-batching-strategy">2. Batching Strategy</h3>
+<p>Queue admission waits at most <code>enqueue_timeout</code> seconds (default <code>1.0</code>, allowed range greater than zero through <code>60</code>). A full queue or shutdown raises <code>OrderingBackpressureError</code>, carrying <code>event_id</code> and <code>journaled</code>. New submissions reserve capacity before writing, so rejection at this boundary has <code>journaled=False</code>. Reconciliation of an existing durable event reports <code>journaled=True</code> and can retry the same ID without another append. <code>POST /api/ledger/chains/{chain_name}/events</code> maps this error to HTTP 503 with these fields in <code>detail</code>. Shutdown wakes waiting producers. Admission holds the queue condition through fsync; disk latency therefore also delays consumers.</p>
 <p>To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
-*   <code>batch_size</code>: Maximum events per block (Default: 100).
-*   <code>batch_timeout</code>: Maximum wait time before forcing block creation (Default: 2.0 seconds).</p>
+*   A directly initialized <code>OrderingService</code> uses <code>batch_size=100</code> and <code>batch_timeout=2.0</code> seconds by default.
+*   Sub-Chain defaults are <code>block_size=50</code> and <code>batch_timeout=1.0</code> second.</p>
 <h3 id="3-event-certification">3. Event Certification</h3>
 <p>The <code>Certifier</code> module integrates closely with the <strong>Security</strong> system to check:
 *   Data format (Schema Validation).
 *   Submitter's digital signature (Identity Verification).
 *   Channel access permissions (Policy Enforcement).</p>
+<p>The certifier retains the most recent 10,000 results by default (<code>EventCertifier(max_history=...)</code>). Rejected events leave the pending map. After a result is evicted, <code>get_event_status()</code> queries durable storage for committed events and returns <code>ordered</code> without a certification result; an older rejected event can return <code>None</code>. This history is not durable certification evidence.</p>
+<h3 id="4-commit-and-cross-chain-costs">4. Commit and cross-chain costs</h3>
+<p><code>events_committed</code> and <code>average_batch_size</code> count only events in successfully persisted blocks. Latency uses the receipt times of those events; timing state for events still waiting in another batch is retained. Processor <code>batch_size</code> can differ from block <code>block_size</code> without counting uncommitted events.</p>
+<p>Block index assignment, previous-hash linkage, signing and storage commitment remain serialized per Ordering Service. Signature verification retains the existing batch thread pool and certification checks. The 2PC coordinator keeps durable phase records and read-back before participant commits; uncertain COMMIT decisions remain in doubt and cannot trigger rollback. Reducing journal rereads does not remove these integrity boundaries or imply that an event acceptance ACK is block finality. Independent chains can partition load with separate journal owners; batching blocks does not batch event durability ACKs.</p>
 <hr />
 <h2 id="usage-example">Usage Example</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingService</span>
@@ -4540,7 +4597,7 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">service</span> <span class="o">=</span> <span class="n">OrderingService</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Submit event to queue</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Submit event; the returned ID acknowledges journaling and enqueueing, not block finality</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">receive_event</span><span class="p">(</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">event_data</span><span class="o">=</span><span class="p">{</span><span class="s2">"item"</span><span class="p">:</span> <span class="s2">"container_45"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"shipped"</span><span class="p">},</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">channel_id</span><span class="o">=</span><span class="s2">"logistics_chain"</span><span class="p">,</span>
@@ -4548,6 +4605,8 @@
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">)</span>
 </code></pre></div>
 <hr />
+<h2 id="local-journal-ownership">Local journal ownership</h2>
+<p>A local journal path has one owning instance/process at a time, enforced by a nonblocking POSIX advisory writer lock. A second owner fails to open until the first closes or exits; this guard does not turn the journal into a shared multiwriter log. Multiple threads must share the same <code>TransactionJournal</code> instance. Give independent writers distinct node identities and storage directories, or separate local volumes on a filesystem that supports POSIX locks and directory fsync. The Kubernetes StatefulSet's per-pod PVC pattern keeps node journals separate. Upgrade every process using a path before writing the new journal format; older versions do not acquire the writer lock.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><a href="../../modules/error-mitigation/">Journal System</a></li>

@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3144,6 +3142,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#channel-event-submission" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Channel Event Submission
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#main-schemas-from-hierachainapiledgerschemaspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -3271,10 +3280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#implementation-notes-abbreviated-from-endpointspy" class="md-nav__link">
+  <a href="#implementation-notes-abbreviated-from-hierachainapiledgereventspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Implementation Notes (abbreviated from <code>endpoints.py</code>)
+        Implementation Notes (abbreviated from <code>hierachain/api/ledger/events.py</code>)
       </span>
     </span>
   </a>
@@ -4443,6 +4452,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#channel-event-submission" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Channel Event Submission
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#main-schemas-from-hierachainapiledgerschemaspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4570,10 +4590,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#implementation-notes-abbreviated-from-endpointspy" class="md-nav__link">
+  <a href="#implementation-notes-abbreviated-from-hierachainapiledgereventspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Implementation Notes (abbreviated from <code>endpoints.py</code>)
+        Implementation Notes (abbreviated from <code>hierachain/api/ledger/events.py</code>)
       </span>
     </span>
   </a>
@@ -4636,9 +4656,9 @@
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s1">       "entity_id": "CONTRACT-2024-001",</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "event": "contract_signed",</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "event_type": "contract_signed",</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s1">       "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s1">       "details_nonce": "98765"</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s1">       "details_nonce": "a1b2c3d4e5f6789012345678"</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s1">     }'</span>
 </code></pre></div>
 <p>This data will be integrity-guaranteed by HieraChain through hash chaining, while the actual content is securely stored on the IPFS network.</p>
@@ -4649,16 +4669,17 @@
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client-&gt;&gt;API: POST /chains/create
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/create
     API-&gt;&gt;Sub: Initialize Sub-Chain
     API--&gt;&gt;Client: 201 Created
 
-    Client-&gt;&gt;API: POST /chains/events
-    API-&gt;&gt;Sub: Add Event
-    Sub-&gt;&gt;Sub: Close Block
-    API--&gt;&gt;Client: 200 OK (Event ID)
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/events
+    API-&gt;&gt;Sub: Add event to ordering service
+    Sub-&gt;&gt;Sub: Journal and enqueue event
+    API--&gt;&gt;Client: 200 OK (Event ID accepted for ordering)
+    Note over Sub: Background batching, block finalization, and persistence happen later
 
-    Client-&gt;&gt;API: POST /chains/submit-proof
+    Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/submit-proof
     API-&gt;&gt;Sub: Get Proof
     Sub-&gt;&gt;Main: Submit Proof (Data Anchoring)
     Main--&gt;&gt;Sub: Confirm
@@ -4668,12 +4689,25 @@
 <li>GET <code>/api/ledger/chains</code>: List Main Chain and all Sub-Chains.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Create a new Sub-Chain (auto-creates Main Chain if not exists).</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Add an event to a Sub-Chain.</li>
+<li>POST <code>/api/ledger/channels/{channel_id}/organizations/{org_id}/events</code>: Add an event to a channel using the authenticated API-key user and the organization's registered write role.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code>: Submit proof from Sub-Chain to Main Chain.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/stats</code>: Get chain statistics.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code>: Get block list (paginated). If <code>resolve_cid=true</code>, automatically load detailed data from IPFS.</li>
 <li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code>: Get details of a specific block.</li>
 <li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code>: Trace events. If <code>resolve_cid=true</code>, decrypt event details from IPFS.</li>
 </ul>
+<h2 id="channel-event-submission">Channel Event Submission</h2>
+<p>Submit an event to a channel and organization already provisioned in the active <code>HierarchyManager</code>. The API key must have <code>events</code> permission. The server uses the verified API-key <code>user_id</code> as the submitter and checks that user's registered organization role against the channel write policy; caller-provided <code>sender</code> does not determine membership or role.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/channels/supply_chain/organizations/acme/events"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s1">       "entity_id": "PRODUCT-2024-001",</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s1">       "event_type": "production_start",</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s1">       "details": {"batch": "BATCH-001"}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">     }'</span>
+</code></pre></div>
+<p>Unknown channels return <code>404</code>; an absent authenticated user or a user outside the organization's allowed write role returns <code>403</code>. API-key authentication must be enabled and the key must have <code>events</code> permission. The active <code>HierarchyManager</code> must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Channel event ledger data remains in memory across manager restarts.</p>
 <h2 id="main-schemas-from-hierachainapiledgerschemaspy">Main Schemas (from <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
 <li>
@@ -4734,43 +4768,44 @@
 <h2 id="usage-examples">Usage Examples</h2>
 <p>Assuming the server is running at <code>http://localhost:2661</code>:</p>
 <h3 id="1-health-check">1. Health check</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/health
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/health
 </code></pre></div>
 <h3 id="2-create-sub-chain">2. Create Sub-Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
 </code></pre></div>
 <p>Response (201):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Sub-chain 'supply_chain' created successfully"</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Sub-chain 'supply_chain' created successfully"</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="3-add-event-to-sub-chain">3. Add event to Sub-Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s1">        "entity_id": "PROD-001",</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s1">        "event_type": "production_complete",</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s1">        "details": {"quantity": 100}</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s1">      }'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="s1">        "entity_id": "PROD-001",</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="s1">        "event_type": "production_complete",</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="s1">        "details": {"quantity": 100}</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">      }'</span>
 </code></pre></div>
 <p>Response:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </code></pre></div>
+<p>The response acknowledges that the event was journaled and queued for ordering; block creation and persistence happen asynchronously.</p>
 <h3 id="4-submit-proof-to-main-chain">4. Submit proof to Main Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 <p>Response:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="5-get-block-details">5. Get block details</h3>
 <p><strong>Endpoint</strong>: <code>GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code></p>
@@ -4780,20 +4815,20 @@
 <li><code>resolve_cid</code> (boolean): If <code>True</code>, the server will decrypt <code>details_cid</code> from IPFS and return the original data in <code>details</code> field.</li>
 </ul>
 <p><strong>Example</strong>:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">"X-API-Key: your_api_key"</span>
 </code></pre></div></p>
 <h3 id="6-trace-entity-across-all-chains">6. Trace entity across all chains</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace"</span>
 </code></pre></div>
 <p>Or limited to a single chain:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"</span>
 </code></pre></div>
 <h3 id="6-get-chain-statistics">6. Get chain statistics</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/stats
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/stats
 </code></pre></div>
 <h3 id="7-get-paginated-blocks">7. Get paginated blocks</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&amp;offset=0"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&amp;offset=0"</span>
 </code></pre></div>
 <h2 id="status-codes-common-errors">Status Codes &amp; Common Errors</h2>
 <ul>
@@ -4803,12 +4838,12 @@
 <li>404 Not Found: Chain or sub-chain not found.</li>
 <li>500 Internal Server Error: Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).</li>
 </ul>
-<h2 id="implementation-notes-abbreviated-from-endpointspy">Implementation Notes (abbreviated from <code>endpoints.py</code>)</h2>
+<h2 id="implementation-notes-abbreviated-from-hierachainapiledgereventspy">Implementation Notes (abbreviated from <code>hierachain/api/ledger/events.py</code>)</h2>
 <ul>
 <li>Lazy DI: uses lightweight singletons <code>get_hierarchy_manager()</code> and <code>get_entity_tracer()</code> for request lifecycle.</li>
-<li><code>POST /chains/{chain_name}/events</code>: server sets <code>timestamp = time.time()</code>; missing <code>details</code> defaults to <code>{}</code>.</li>
-<li><code>POST /chains/{chain_name}/submit-proof</code>: if <code>SubChain</code> has no <code>submit_proof_to_main</code>, the endpoint falls back to a mock branch to avoid crash.</li>
-<li><code>GET /chains/{chain_name}/blocks</code>: when <code>Block</code> has no <code>to_event_list</code>, there is a fallback conversion from Arrow Table (<code>to_pylist</code>) for safety.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/events</code>: server sets <code>timestamp = time.time()</code>; missing <code>details</code> defaults to <code>{}</code>.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/submit-proof</code>: delegates to <code>HierarchyManager.submit_proof_to_main_chain()</code>; success means the signed MainChain proof block was finalized and verified after durable SQL readback. Missing or unsupported storage returns an error.</li>
+<li><code>GET /api/ledger/chains/{chain_name}/blocks</code>: when <code>Block</code> has no <code>to_event_list</code>, there is a fallback conversion from Arrow Table (<code>to_pylist</code>) for safety.</li>
 </ul>
 <h2 id="related">Related</h2>
 <ul>
@@ -4816,6 +4851,7 @@
 <li>Hierarchical module: <a href="../../modules/hierarchical/">Hierarchical</a></li>
 <li>Core module: <a href="../../modules/core/">Core</a></li>
 </ul>
+<p>Block listing accepts <code>limit</code> from 1 to 100 (default 10) and <code>offset &gt;= 0</code>; invalid values return HTTP 422. This bounds the number of blocks, not the total bytes of their events. A concurrent sub-chain registration conflict returns HTTP 409.</p>
 
 
 

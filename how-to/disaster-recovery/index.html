@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Details of TransactionJournal, RollbackManager, and KeyBackupManager mechanisms for handling interruptions and recovering the HieraChain system.">
+        <meta name="description" content="How HieraChain protects pending events and resumes consensus after interruptions.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Disaster Recovery - HieraChain Docs</title>
+        <title>Durability and Disaster Recovery - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#disaster-recovery" class="md-skip">
+        <a href="#durability-and-disaster-recovery" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Disaster Recovery
+              Durability and Disaster Recovery
             
           </span>
         </div>
@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3650,105 +3648,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-transaction-journaling-replay-data" class="md-nav__link">
+  <a href="#1-event-journaling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Transaction Journaling (Replay Data)
+        1. Event journaling
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Transaction Journaling (Replay Data)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-guide-replay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Recovery Guide (Replay)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-rollback-state-management-rollbackmanager" class="md-nav__link">
+  <a href="#2-consensus-restart-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Rollback State Management (<code>RollbackManager</code>)
+        2. Consensus restart behavior
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Rollback State Management (RollbackManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rollback-procedure" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Rollback Procedure
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-key-backup-and-recovery-keybackupmanager" class="md-nav__link">
+  <a href="#3-deployment-recovery-responsibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Key Backup and Recovery (<code>KeyBackupManager</code>)
+        3. Deployment recovery responsibilities
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Key Backup and Recovery (KeyBackupManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#recovery-when-needed" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Recovery When Needed
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-network-error-and-partition-handling-bft-consensus-recovery" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Network Error and Partition Handling (BFT Consensus Recovery)
+        Related
       </span>
     </span>
   </a>
@@ -4322,105 +4258,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-transaction-journaling-replay-data" class="md-nav__link">
+  <a href="#1-event-journaling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Transaction Journaling (Replay Data)
+        1. Event journaling
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Transaction Journaling (Replay Data)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-guide-replay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Recovery Guide (Replay)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-rollback-state-management-rollbackmanager" class="md-nav__link">
+  <a href="#2-consensus-restart-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Rollback State Management (<code>RollbackManager</code>)
+        2. Consensus restart behavior
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Rollback State Management (RollbackManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rollback-procedure" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Rollback Procedure
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-key-backup-and-recovery-keybackupmanager" class="md-nav__link">
+  <a href="#3-deployment-recovery-responsibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Key Backup and Recovery (<code>KeyBackupManager</code>)
+        3. Deployment recovery responsibilities
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Key Backup and Recovery (KeyBackupManager)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#recovery-when-needed" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Recovery When Needed
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-network-error-and-partition-handling-bft-consensus-recovery" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Network Error and Partition Handling (BFT Consensus Recovery)
+        Related
       </span>
     </span>
   </a>
@@ -4458,51 +4332,48 @@
   
 
 
-<h1 id="disaster-recovery">Disaster Recovery</h1>
-<p>HieraChain is designed with the highest priority on durability and system irreversibility. This document explains how the system automatically handles and how to operate recovery procedures when interruptions or server disasters occur.</p>
-<hr />
-<h2 id="1-transaction-journaling-replay-data">1. Transaction Journaling (Replay Data)</h2>
-<p>To prevent data loss due to application crashes, power outages, or abrupt OS shutdown, HieraChain implements a <strong><code>TransactionJournal</code></strong> module before events are submitted to the Ordering Service for processing.</p>
-<h3 id="how-it-works">How It Works</h3>
+<h1 id="durability-and-disaster-recovery">Durability and disaster recovery</h1>
+<p>The repository provides event journaling and consensus view changes. Database
+backups, filesystem snapshots, key recovery, and infrastructure scaling remain
+deployment responsibilities.</p>
+<h2 id="1-event-journaling">1. Event journaling</h2>
+<p><code>TransactionJournal</code> records pending events before they enter the ordering
+service. This protects events from application crashes or abrupt shutdowns.</p>
+<p>Each event is synchronously appended and fsynced before it is queued. Fsync is
+always enabled and cannot be disabled through configuration. On startup,
+recovery replays journal entries and commits recovered events to block storage
+before the Ordering Service becomes active. An incomplete final frame in the
+active journal is truncated before new entries are appended. A complete frame
+with corrupt Arrow data fails recovery; replay, certification, or
+block-processing errors keep the Ordering Service in <code>MAINTENANCE</code> until
+recovery succeeds.</p>
+<p>Check <code>GET /api/ledger/ready</code> during startup. It returns HTTP 200 when every
+registered Sub-Chain's Ordering Service is <code>ACTIVE</code>, and HTTP 503 while any
+service is recovering or in maintenance.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="2-consensus-restart-behavior">2. Consensus restart behavior</h2>
+<p><code>BFTConsensus</code> uses <code>BFTViewChangeManager</code> when the current leader fails or a
+view-change timeout expires. The manager coordinates the quorum and installs a
+new view so consensus can continue without a separate recovery engine.</p>
+<h2 id="3-deployment-recovery-responsibilities">3. Deployment recovery responsibilities</h2>
+<p>The application deployment must provide and verify:</p>
 <ul>
-<li><strong>Storage Format:</strong> Journal logs are serialized in <strong>Apache Arrow RecordBatch</strong> format, enabling extremely fast read/write speeds and preserving schema structure.</li>
-<li><strong>Length-Prefixed Framing:</strong> Append-only files written in <code>[4-Byte Length][Batch Data]</code> structure.</li>
-<li><strong>Sync &amp; Fsync:</strong> All event log operations call <code>os.fsync()</code> to ensure disk I/O actually writes to hardware before returning success.</li>
+<li>database and filesystem backups;</li>
+<li>key backup and restoration procedures;</li>
+<li>snapshot retention and rollback policy;</li>
+<li>node replacement and infrastructure scaling.</li>
 </ul>
-<h3 id="recovery-guide-replay">Recovery Guide (Replay)</h3>
-<p>When a Node restarts after an unexpected crash, the system automatically checks the Log directory (default <code>data/journal/current.log</code>). The Node automatically iterates through the <code>replay()</code> method to replay RecordBatch sequences and fully restore the event array to memory (MemPool or World State).</p>
-<hr />
-<h2 id="2-rollback-state-management-rollbackmanager">2. Rollback State Management (<code>RollbackManager</code>)</h2>
-<p>In case of larger risks, such as data corruption or mistaken upgrades, the system allows rolling back the entire state to a safe checkpoint.</p>
-<p><code>RollbackManager</code> saves system state checkpoints:</p>
+<p>These operations are intentionally not exposed as automatic classes in
+<code>hierachain.error_mitigation</code>.</p>
+<h2 id="related">Related</h2>
 <ul>
-<li><strong>Configuration State</strong>: YAML, JSON, PY configuration files.</li>
-<li><strong>Chain State</strong>: Block count and latest hash.</li>
-<li><strong>Consensus State</strong>: View Number, current Leader Node ID.</li>
-<li><strong>Storage State</strong>: World State Snapshot.</li>
-</ul>
-<h3 id="rollback-procedure">Rollback Procedure</h3>
-<ol>
-<li>Get snapshot list via <code>manager.get_snapshots()</code>.</li>
-<li>System checks <strong>Integrity Hash</strong> of the snapshot. Corrupted or too old (over 72 hours) snapshots will likely be rejected unless <code>force=True</code> is set.</li>
-<li>Execute <code>rollback_to_snapshot(snapshot_id)</code>. It will restore each part of <code>Configuration</code> and <code>Chain State</code>.</li>
-</ol>
-<hr />
-<h2 id="3-key-backup-and-recovery-keybackupmanager">3. Key Backup and Recovery (<code>KeyBackupManager</code>)</h2>
-<p>Protecting ECDSA/Ed25519 key pairs is critical. <code>KeyBackupManager</code> automatically creates secure backups when the system generates new Keys:</p>
-<ul>
-<li><strong>AES-256-GCM Security</strong>: Node Public/Private Keys are collected, encrypted with GCM (Authenticated Encryption) using the Master Key provided by Admin.</li>
-<li><strong>Integrity Verification</strong>: Uses <code>SHA-512</code> hashing combined with <code>HMAC</code> for verification each time recovery is performed.</li>
-<li><strong>Multi-location Distribution</strong>: Hash and <code>.enc</code> files are distributed across multiple <code>locations</code> to prevent Single Point of Failure (SPOF).</li>
-</ul>
-<h3 id="recovery-when-needed">Recovery When Needed</h3>
-<p>Use <code>restore_keys(backup_id)</code>. The Manager will read the IO stream, verify <code>SHA-512</code> checksum, decrypt GCM, and immediately inject into the Node process without stopping the system. The key pair format is always verified by <code>_validate_keys</code> to prevent loading corrupted keys.</p>
-<hr />
-<h2 id="4-network-error-and-partition-handling-bft-consensus-recovery">4. Network Error and Partition Handling (BFT Consensus Recovery)</h2>
-<p>HieraChain's BFT cluster (with View Change based algorithm) inherently contains "Self-recovery" properties for communication failures:</p>
-<ul>
-<li><strong>Leader Node-down Failure</strong>: If the Leader crashes, times out (fails to broadcast new blocks on time), Validators send protest messages. When over <code>2f + 1</code> protest messages are reached, the system initiates a <strong>View Change</strong>, transferring to the next Leader (e.g., <code>Leader_ID = View_Number % Total_Nodes</code>).</li>
-<li><strong>Network Partition</strong>: If the network splits into 2 partitions, the partition without the majority (<strong><em>&lt; 2f + 1</em></strong>) automatically halts. The larger partition (over 66% of nodes) continues processing. When connection is restored, the smaller partition automatically calls P2P API to sync blocks with the longest chain.</li>
+<li><a href="../../workflows/error-recovery/">Error Handling and Recovery</a></li>
+<li><a href="../../modules/error-mitigation/">Error Mitigation Module</a></li>
+<li><a href="../../workflows/chain-rehydration/">Chain Rehydration</a></li>
 </ul>
 
 

@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4361,7 +4359,7 @@
 <p>The <strong>Consensus</strong> module is responsible for ensuring consistency and deterministic ordering of data across the entire HieraChain network. The system provides flexible consensus mechanisms, allowing enterprises to choose between extreme performance in trusted environments or absolute security in environments at risk of attack.</p>
 <hr />
 <h2 id="supported-consensus-protocols">Supported Consensus Protocols</h2>
-<p>HieraChain natively integrates 3 main protocols, configurable via <code>HRC_CONSENSUS_TYPE</code>:</p>
+<p>The Ordering Service batches events, while PoA and PoF finalize Sub-Chain blocks. The repository also contains a separate BFT component. <code>HRC_CONSENSUS_TYPE</code> selects <code>proof_of_authority</code> or <code>proof_of_federation</code>; it does not select BFT:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4398,21 +4396,18 @@
 <hr />
 <h2 id="overall-architecture">Overall Architecture</h2>
 <pre class="mermaid"><code>graph TD
-    A[Event Submission] --&gt; B{Consensus Engine}
-    B -- Config: ordering --&gt; C[Ordering Service]
-    B -- Config: bft --&gt; D[BFT Consensus]
-
-    C --&gt; E[Block Building]
-    D --&gt; E
-
-    E --&gt; F[Storage Commitment]
-    F --&gt; G[(Ledger Persistence)]</code></pre>
+    A[Event Submission] --&gt; B[Ordering Service]
+    B --&gt; C[Block Building]
+    C --&gt; D[Sub-Chain finalization: PoA or PoF]
+    D --&gt; E[Storage Commitment]
+    E --&gt; F[(Ledger Persistence)]
+    G[BFT Consensus component] -. separate component .-&gt; H[Consensus workflows]</code></pre>
 <hr />
 <h2 id="integration-into-hierarchy">Integration into Hierarchy</h2>
 <p>In HieraChain's hierarchical model:</p>
 <ol>
-<li><strong>Main Chain</strong>: Typically uses <strong>BFT Consensus</strong> for maximum system-wide security.</li>
-<li><strong>Sub-Chains</strong>: Can use <strong>Ordering Service</strong> or <strong>PoA</strong> for high transaction processing speed, then periodically submit Proofs to the Main Chain.</li>
+<li><strong>Main Chain</strong>: Uses <strong>PoA</strong> by default and can be configured for <strong>PoF</strong> through <code>HRC_MAINCHAIN_CONSENSUS</code>. The BFT implementation is a separate consensus component; <code>MainChain</code> does not select it as its default.</li>
+<li><strong>Sub-Chains</strong>: Use the <strong>Ordering Service</strong> for batching and can finalize blocks with the configured Sub-Chain consensus (PoA by default). Proofs can then be submitted to the Main Chain.</li>
 </ol>
 <hr />
 <h2 id="related">Related</h2>

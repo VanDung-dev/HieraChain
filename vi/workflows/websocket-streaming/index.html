@@ -1431,11 +1431,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4435,7 +4433,7 @@
     participant WSM as 📡 WebSocketManager
     participant SC as 📦 SubChain
 
-    Client-&gt;&gt;WS: Nâng cấp giao thức WebSocket (GET /ws/{chain_name})
+    Client-&gt;&gt;WS: Nâng cấp WebSocket (GET /ws?chain_name={chain_name})
     WS-&gt;&gt;WSM: connect(connection_id, websocket, chain_name)
     WSM-&gt;&gt;WSM: Kiểm tra max_connections (mặc định 1000)
     WSM-&gt;&gt;WSM: Registry.add(connection_id, conn)
@@ -4443,7 +4441,7 @@
     WS--&gt;&gt;Client: Kết nối thành công ✅
 
     opt Client lọc theo loại sự kiện cụ thể
-        Client-&gt;&gt;WS: { "action": "subscribe", "event_types": ["quality_check", ...] }
+        Client-&gt;&gt;WS: { "type": "subscribe", "chain_name": "supply_chain", "event_types": ["quality_check", ...] }
         WS-&gt;&gt;WSM: subscribe(connection_id, chain_name, event_types)
         WSM-&gt;&gt;WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
@@ -4453,7 +4451,7 @@
     SC-&gt;&gt;WSM: broadcast_new_block(chain_name, block_data)
     WSM-&gt;&gt;WSM: get_chain_subscribers(chain_name)
     loop Với từng người đăng ký
-        WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", data: block_data })
+        WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", chain_name: "supply_chain", data: block_data })
     end</code></pre>
 <hr />
 <h2 id="bieu-o-luong-vong-lap-ping-va-don-dep">Biểu đồ luồng: vòng lặp ping và dọn dẹp</h2>
@@ -4480,7 +4478,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Thông báo khi có khối mới</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"block_added"</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"chain"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="nt">"index"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nt">"hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a3f8b2c1..."</span><span class="p">,</span>
@@ -4493,14 +4491,13 @@
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1">// Thông báo sự kiện (nếu đăng ký lọc theo event_types)</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">{</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">"chain"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"event_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">}</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">}</span>
 </code></pre></div>
 <hr />
 <h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
@@ -4514,7 +4511,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>1. Nâng cấp giao thức</strong></td>
-<td style="text-align: left;">Gửi HTTP GET kèm header <code>Upgrade: websocket</code>.</td>
+<td style="text-align: left;">Kết nối <code>/ws</code> và truyền <code>chain_name</code> qua query string, ví dụ <code>/ws?chain_name=supply_chain</code>.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>2. Kiểm tra giới hạn</strong></td>

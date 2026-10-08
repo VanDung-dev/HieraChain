@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -3217,39 +3215,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#kubernetes-co-lap-namespace-cho-sub-chain" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Kubernetes (cô lập namespace cho Sub-Chain)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#proof-aggregation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof aggregation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#can-bang-lai-sub-chain" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cân bằng lại Sub-Chain
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#ong-bo-trang-thai-cross-level" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4718,39 +4683,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#kubernetes-co-lap-namespace-cho-sub-chain" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Kubernetes (cô lập namespace cho Sub-Chain)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#proof-aggregation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof aggregation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#can-bang-lai-sub-chain" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cân bằng lại Sub-Chain
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#ong-bo-trang-thai-cross-level" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4870,7 +4802,8 @@
 <h2 id="bien-moi-truong-va-mac-inh">Biến môi trường và mặc định</h2>
 <h3 id="moi-truong-chay">Môi trường chạy</h3>
 <ul>
-<li><code>HRC_ENV</code> chọn lớp cấu hình. Giá trị là <code>dev</code> (mặc định), <code>test</code> hoặc <code>product</code>.</li>
+<li><code>HRC_ENV</code> chọn lớp cấu hình; dùng <code>ENV</code> khi <code>HRC_ENV</code> không được đặt hoặc để trống. Nếu đặt cả hai, <code>HRC_ENV</code> được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu: <code>dev</code> / <code>development</code>, <code>test</code> / <code>testing</code> hoặc <code>production</code> / <code>prod</code> / <code>product</code> (mặc định development khi cả hai để trống). Giá trị khác sẽ gây lỗi thay vì chọn development.</li>
+<li><code>.env</code> được nạp trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt <code>HRC_ENV_FILE</code> để dùng tệp dotenv khác. Giá trị đã có trong môi trường tiến trình được ưu tiên hơn giá trị trong tệp.</li>
 </ul>
 <h3 id="api">API</h3>
 <ul>
@@ -4887,17 +4820,18 @@
 <li>Giới hạn block: <code>BLOCK_SIZE_LIMIT</code> (mặc định: <code>1000</code> events/block ở dev, <code>10</code> ở test)</li>
 <li><code>PROOF_SUBMISSION_INTERVAL</code> (mặc định: <code>300</code> giây ở dev, <code>10</code> ở test)</li>
 <li><code>HRC_VALIDATOR_IDENTITY</code>: đường dẫn file identity của validator (mặc định: <code>validator_key.json</code>)</li>
+<li><code>HRC_BLOCK_TRUSTED_KEYS_FILE</code>: file JSON bắt buộc ánh xạ <code>creator_id</code> tới public key Ed25519 dạng hex. Khóa node trong <code>HRC_VALIDATOR_IDENTITY</code> phải khớp mục tương ứng. Thiếu file hoặc khóa không khớp sẽ chặn chain/API khởi động. Mọi block, kể cả genesis, đều cần chữ ký tin cậy. Chain cũ có block không ký cần được di chuyển dữ liệu trước khi khởi động.</li>
 </ul>
 <h3 id="luu-tru-va-cache">Lưu trữ và cache</h3>
 <ul>
-<li><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code> / <code>HRC_DATABASE_URL</code> (tự phát hiện <code>postgres</code> từ URL; mặc định: <code>sqlite</code> dev, <code>memory</code> test, <code>redis</code> prod; giá trị: <code>sqlite</code>, <code>postgres</code>, <code>redis</code>, <code>memory</code>, <code>parquet_only</code>)</li>
-<li><code>WORLD_STATE_CACHE_SIZE</code> (mặc định: <code>1000</code>)</li>
-<li>Cache nâng cao: <code>ADVANCED_CACHING_ENABLED</code> (mặc định: <code>True</code>)</li>
-<li><code>BLOCK_CACHE_SIZE</code> (mặc định: <code>5000</code>), <code>EVENT_CACHE_SIZE</code> (<code>20000</code>), <code>ENTITY_CACHE_SIZE</code> (<code>10000</code>)</li>
-<li>Chính sách cache: <code>BLOCK_CACHE_POLICY</code> (<code>lru</code>), <code>EVENT_CACHE_POLICY</code> (<code>ttl</code>), <code>ENTITY_CACHE_POLICY</code> (<code>lfu</code>)</li>
-<li><code>ENTITY_TTL</code> (mặc định: <code>3600</code> giây)</li>
-<li>DB: <code>DATABASE_URL</code> (mặc định: <code>sqlite:///hierachain.db</code>)</li>
-<li>Redis: <code>REDIS_HOST</code> (<code>localhost</code>), <code>REDIS_PORT</code> (<code>6379</code>), <code>REDIS_DB</code> (<code>0</code>)</li>
+<li><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code> / <code>HRC_DATABASE_URL</code> (mặc định: <code>postgres</code> ở development và production, <code>memory</code> ở test; giá trị được nhận diện: <code>sqlite</code>, <code>postgres</code> / <code>postgresql</code>, <code>redis</code>, <code>memory</code>). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage. <code>HierarchyManager</code> cũng từ chối <code>redis</code> khi khởi động vì chưa lưu bền vững block đã ký; dùng <code>sqlite</code> hoặc <code>postgres</code> cho ledger bền vững. Redis vẫn dùng được trong các adapter riêng cho indexing, trạng thái xác thực và rate limit.</li>
+<li>Trong production, khi backend được chọn là PostgreSQL, cần đặt rõ <code>DATABASE_URL</code> hoặc <code>HRC_DATABASE_URL</code>. API từ chối URL fallback local có sẵn khi khởi động; bước này không kiểm tra kết nối tới database.</li>
+<li><code>DATABASE_URL</code> được ưu tiên khi có giá trị. Nếu rỗng hoặc chỉ có khoảng trắng, hệ thống dùng <code>HRC_DATABASE_URL</code>.</li>
+<li>Nếu PostgreSQL không khả dụng, khởi tạo storage của chain sẽ thất bại. Đặt <code>HRC_STORAGE_BACKEND=sqlite</code> để chọn SQLite tường minh.</li>
+<li>Cache theo instance: <code>AdvancedCache(max_size=10000, eviction_policy="lru")</code> nhận cấu hình riêng; <code>set(key, value, ttl=...)</code> đặt TTL cho entry. <code>KeyManager</code> dùng cache khóa/quyền riêng và <code>cache_ttl</code> (mặc định: <code>300</code> giây). <code>block_cache_size</code> của Ordering vẫn là key cấu hình service (mặc định: <code>100</code>), không phải thuộc tính <code>Settings</code>.</li>
+<li>Cấu hình không dùng đã bỏ: <code>ADVANCED_CACHING_ENABLED</code>, <code>BLOCK_CACHE_SIZE</code>, <code>EVENT_CACHE_SIZE</code>, <code>ENTITY_CACHE_SIZE</code>, <code>BLOCK_CACHE_POLICY</code>, <code>EVENT_CACHE_POLICY</code>, <code>ENTITY_CACHE_POLICY</code>, <code>ENTITY_TTL</code> và <code>hierachain.core.cache.DEFAULT_CACHE_CONFIG</code>. Các tên này chưa từng điều khiển cache runtime; bỏ import/truy cập trực tiếp và cấu hình instance cache hoặc service thực sự sử dụng chúng.</li>
+<li>DB: <code>DATABASE_URL</code> (fallback khi development: <code>postgresql://hiera:hiera@localhost:5432/hierachain</code>; không dựa vào fallback này trong production)</li>
+<li>Redis: <code>HRC_REDIS_HOST</code> hoặc <code>REDIS_HOST</code> (<code>localhost</code>), <code>HRC_REDIS_PORT</code> hoặc <code>REDIS_PORT</code> (<code>6379</code>), <code>REDIS_DB</code> (<code>0</code>). Tên có tiền tố HRC được ưu tiên.</li>
 </ul>
 <h3 id="ipfs-luu-tru-off-chain">IPFS (lưu trữ off-chain)</h3>
 <ul>
@@ -4909,25 +4843,30 @@
 </ul>
 <h3 id="xu-ly-song-song-va-tai-nguyen">Xử lý song song và tài nguyên</h3>
 <ul>
-<li><code>PARALLEL_PROCESSING_ENABLED</code> (<code>True</code>), <code>MAX_WORKERS</code> (<code>None</code> nghĩa là tự động 50% số core CPU), <code>PROCESSING_CHUNK_SIZE</code> (<code>100</code>)</li>
 <li>Bảo vệ DoS: <code>HRC_EVENT_POOL_MAX_SIZE</code> (mặc định: <code>10000</code>), <code>HRC_RAM_CRITICAL_THRESHOLD</code> (<code>95.0</code> %)</li>
 </ul>
 <h3 id="bao-mat-va-authentication">Bảo mật và authentication</h3>
 <ul>
-<li>Authentication: <code>HRC_AUTH_ENABLED</code> (<code>false</code> ở dev/test; <code>True</code> cưỡng bức ở production)</li>
+<li>Authentication: <code>HRC_AUTH_ENABLED</code> (mặc định <code>false</code> ở dev/test và bắt buộc <code>true</code> ở production; đặt tường minh thành <code>false</code> sẽ chặn production khởi động)</li>
+<li><code>HRC_API_KEYS_FILE</code>: bắt buộc trong production. Đường dẫn tới file JSON chứa key không rỗng, đọc được; mỗi key dài ít nhất 32 ký tự và có <code>user_id</code> cùng danh sách <code>permissions</code> không rỗng. File được đọc khi tạo API app; thay đổi map key vẫn cần tạo lại từng node hoặc khởi động lại từng tiến trình chạy trực tiếp.</li>
+<li><code>HRC_API_KEY_REVOCATIONS_DB</code> (mặc định: <code>data/api_key_revocations.sqlite3</code>): lưu bền vững API key đã thu hồi và brute-force lockout cục bộ cho API production. Mọi worker trên một host phải dùng chung file ghi được và bền vững này.</li>
+<li><code>HRC_AUTH_STATE_REDIS_URL</code> (tùy chọn): khi đặt, API key revocation và brute-force lockout dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu revocation phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối xác thực thay vì dùng trạng thái cục bộ.</li>
 <li><code>HRC_API_KEY_LOCATION</code> (<code>header</code>), <code>HRC_API_KEY_NAME</code> (<code>X-API-Key</code>)</li>
-<li>Secret backend: <code>HRC_SECRET_BACKEND</code> (giá trị: <code>env</code>, <code>vault</code>, <code>aws</code>). Mặc định là <code>env</code>.</li>
-<li>Master key: <code>HRC_MASTER_KEY_SOURCE</code> (<code>auto</code> ở dev/test, <code>env</code> ở production), <code>HRC_MASTER_KEY_FILE</code> (mặc định: <code>config/master_backup_key.key</code>)</li>
+<li>Secret backend: <code>HRC_SECRET_BACKEND</code> (giá trị: <code>env</code>, <code>vault</code>, <code>aws</code>). Mặc định là <code>env</code>; giá trị khác gây <code>ValueError</code>.</li>
+<li>AWS Secret Manager: <code>HRC_AWS_SECRET_NAME</code> (bắt buộc, tên secret hoặc ARN chứa JSON object), <code>HRC_AWS_REGION</code> (mặc định: <code>us-east-1</code>). <code>SecretManager.get_secret(key)</code> chọn trường chuỗi, không trả toàn bộ <code>SecretString</code>; xem <a href="../../modules/config/">Secret Manager</a> về giá trị mặc định và chuyển đổi dữ liệu.</li>
+<li><code>HRC_MASTER_KEY_SOURCE=env</code> vẫn được chấp nhận như alias tương thích cho hành vi secret qua biến môi trường hiện có. Giá trị khác của <code>HRC_MASTER_KEY_SOURCE</code> và mọi <code>HRC_MASTER_KEY_FILE</code> không rỗng sẽ khiến cấu hình dừng với lỗi vì chưa có master-key provider thay thế. Điều này không thay đổi API <code>FileVaultProvider</code> riêng biệt.</li>
 <li>Bảo vệ brute-force:<ul>
 <li><code>HRC_BF_MAX_FAILURES</code> (mặc định: <code>5</code>)</li>
 <li><code>HRC_BF_LOCKOUT_SECONDS</code> (mặc định: <code>900</code> = 15 phút)</li>
 <li><code>HRC_BF_WINDOW_SECONDS</code> (mặc định: <code>300</code> = 5 phút)</li>
+<li>TTL Redis của lockout theo <code>HRC_BF_LOCKOUT_SECONDS</code>; mỗi request đọc lại key lockout dùng chung. Bộ đếm lần thất bại vẫn nằm trong từng process.</li>
 </ul>
 </li>
 <li>Identity và organization: <code>IDENTITY_MANAGER_ENABLED</code> (<code>True</code>), <code>REQUIRE_ORGANIZATION_VALIDATION</code> (<code>True</code>), <code>MSP_ENABLED</code> (<code>True</code>)</li>
 </ul>
 <h3 id="bao-mat-mang-p2p">Bảo mật mạng P2P</h3>
 <ul>
+<li>Định danh node và P2P transport: <code>HRC_NODE_ID</code> (mặc định: <code>default-node</code>; <code>NODE_ID</code> là alias dự phòng), <code>HRC_P2P_PORT</code> (mặc định: <code>5555</code>; <code>NODE_PORT</code> là alias dự phòng), và <code>HRC_PEERS</code> (mặc định: danh sách rỗng; danh sách seed node phân tách bằng dấu phẩy; <code>PEERS</code> là alias dự phòng). Dùng <code>peer-id@host:port</code> khi định danh transport từ xa khác hostname; dạng <code>host:port</code> lấy hostname làm peer ID. Tên có tiền tố HRC được ưu tiên.</li>
 <li><code>HRC_P2P_TRUST_POLICY</code> (mặc định: <code>open</code> ở dev, <code>strict</code> ở production; giá trị: <code>open|strict</code>)</li>
 <li><code>HRC_P2P_PEER_ALLOWLIST</code> (danh sách peer ID phân tách bằng dấu phẩy cho chế độ strict)</li>
 <li><code>HRC_P2P_REQUIRE_SIGNATURES</code> (<code>false</code> ở dev, <code>true</code> ở production)</li>
@@ -4949,6 +4888,7 @@
 <li><code>HRC_RATE_LIMIT</code> (<code>false</code> ở dev/test; <code>true</code> ở production)</li>
 <li><code>HRC_RATE_LIMIT_RPM</code> (mặc định: <code>100</code> requests/phút)</li>
 <li><code>HRC_RATE_LIMIT_BACKEND</code>: <code>memory</code> (đơn node) hoặc <code>redis</code> (đa node hoặc cluster).</li>
+<li>Với backend <code>redis</code>, lỗi và timeout Redis từ chối request không thuộc diện miễn trừ bằng HTTP 503 (fail-closed). Kiểm tra Redis chạy ngoài event loop của API.</li>
 </ul>
 <h3 id="monitoring-va-metrics">Monitoring và metrics</h3>
 <ul>
@@ -4969,36 +4909,6 @@
 <li><code>HRC_ZK_VERIFICATION_KEY</code>, <code>HRC_ZK_PROVING_KEY</code>, <code>HRC_ZK_CIRCUIT</code> (đường dẫn file)</li>
 <li><code>HRC_ZK_REQUIRED_MAINCHAIN</code> (mặc định: <code>false</code>)</li>
 </ul>
-<h3 id="kubernetes-co-lap-namespace-cho-sub-chain">Kubernetes (cô lập namespace cho Sub-Chain)</h3>
-<ul>
-<li><code>HRC_K8S_ENABLED</code> (mặc định: <code>false</code>)</li>
-<li><code>HRC_K8S_NAMESPACE_PREFIX</code> (mặc định: <code>hrc-subchain-</code>)</li>
-<li><code>HRC_K8S_CONFIG</code> (đường dẫn kubeconfig, rỗng nếu chạy in-cluster)</li>
-<li>
-<p>Giới hạn tài nguyên:</p>
-<ul>
-<li><code>HRC_K8S_CPU_LIMIT</code> (mặc định: <code>1000m</code>)</li>
-<li><code>HRC_K8S_MEMORY_LIMIT</code> (mặc định: <code>1Gi</code>)</li>
-<li><code>HRC_K8S_CPU_REQUEST</code> (mặc định: <code>250m</code>)</li>
-<li><code>HRC_K8S_MEMORY_REQUEST</code> (mặc định: <code>256Mi</code>)</li>
-</ul>
-</li>
-</ul>
-<h3 id="proof-aggregation">Proof aggregation</h3>
-<ul>
-<li><code>HRC_PROOF_AGGREGATION</code> (mặc định: <code>true</code>)</li>
-<li><code>HRC_PROOF_BATCH_SIZE</code> (mặc định: <code>10</code>)</li>
-<li><code>HRC_PROOF_BATCH_TIMEOUT</code> (mặc định: <code>30.0</code> giây)</li>
-<li><code>HRC_PROOF_COMPRESSION</code> (mặc định: <code>true</code>)</li>
-</ul>
-<h3 id="can-bang-lai-sub-chain">Cân bằng lại Sub-Chain</h3>
-<ul>
-<li><code>HRC_REBALANCE_ENABLED</code> (mặc định: <code>true</code>)</li>
-<li><code>HRC_REBALANCE_THRESHOLD_EPS</code> (mặc định: <code>1000</code> events/giây)</li>
-<li><code>HRC_REBALANCE_CHECK_INTERVAL</code> (mặc định: <code>60.0</code> giây)</li>
-<li><code>HRC_REBALANCE_MIN_EVENTS</code> (mặc định: <code>5000</code> events trước khi tách)</li>
-<li><code>HRC_REBALANCE_COOLDOWN</code> (mặc định: <code>300.0</code> giây = 5 phút)</li>
-</ul>
 <h3 id="ong-bo-trang-thai-cross-level">Đồng bộ trạng thái cross-level</h3>
 <ul>
 <li><code>HRC_CROSS_LEVEL_SYNC</code> (mặc định: <code>true</code>)</li>
@@ -5012,14 +4922,14 @@
 </ul>
 <h3 id="logging">Logging</h3>
 <ul>
-<li><code>LOG_LEVEL</code> (mặc định: <code>INFO</code> ở dev, <code>DEBUG</code> ở test, <code>WARNING</code> ở production)</li>
+<li><code>LOG_LEVEL</code> (mặc định: <code>DEBUG</code> ở dev/test, <code>WARNING</code> ở production)</li>
 <li><code>LOG_FORMAT</code> (chuỗi định dạng logging Python chuẩn).</li>
 <li><code>HRC_LOG_FORMAT</code>: <code>text</code> (mặc định) hoặc <code>json</code> (cho log tập trung như ELK/Loki).</li>
-<li><code>HRC_LOG_SQL_DETAIL</code> (mặc định: <code>true</code> ở dev, <code>false</code> ở production)</li>
+<li><code>HRC_LOG_SQL_DETAIL</code> (mặc định: <code>false</code>; bật tường minh qua biến môi trường nếu cần)</li>
 </ul>
 <h3 id="cli">CLI</h3>
 <ul>
-<li><code>CLI_CONFIG_FILE</code> (mặc định: <code>chains.json</code>)</li>
+<li><code>CLI_CONFIG_FILE</code> (mặc định: <code>data/config.yaml</code>; cấu hình node mặc định cho <code>hrc --config</code>)</li>
 <li><code>CLI_LOG_LEVEL</code> (mặc định: <code>INFO</code>)</li>
 </ul>
 <h2 id="vi-du-env-development">Ví dụ .env (development)</h2>
@@ -5029,23 +4939,21 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>HRC_CONSENSUS_TYPE=proof_of_authority
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>HRC_AUTH_ENABLED=false
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>HRC_CORS_ALLOW_ALL=true
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>DATABASE_URL=sqlite:///hierachain.db
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>LOG_LEVEL=DEBUG
 </code></pre></div>
 <h2 id="cau-hinh-production-khuyen-nghi-toi-thieu">Cấu hình production khuyến nghị (tối thiểu)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>HRC_ENV=product
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>HRC_ENV=production
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>HRC_API_HOST=0.0.0.0
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>HRC_AUTH_ENABLED=true
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HRC_CORS_ALLOW_ALL=false
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>HRC_CORS_ORIGINS=https://portal.example.com
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>HRC_RATE_LIMIT=true
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>DEFAULT_STORAGE_BACKEND=redis
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>REDIS_HOST=redis
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>REDIS_PORT=6379
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENABLED=true
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>DATABASE_URL=postgresql://user:pass@db:5432/hierachain
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>HRC_STORAGE_BACKEND=postgres
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>HRC_IPFS_ENABLED=true
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 </code></pre></div>
 
 

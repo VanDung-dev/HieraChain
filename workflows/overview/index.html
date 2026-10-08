@@ -1580,11 +1580,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../cluster-lockdown/" class="md-nav__link">
+      <a href="../cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4483,8 +4481,8 @@
 <tr>
 <td style="text-align: left;"><a href=".././event-submission/">Event Submission</a></td>
 <td style="text-align: left;">A</td>
-<td style="text-align: left;"><code>POST /api/ledger/chains/{name}/events</code></td>
-<td style="text-align: left;">Block appended to Sub-Chain</td>
+<td style="text-align: left;"><code>POST /api/ledger/chains/{chain_name}/events</code></td>
+<td style="text-align: left;">API returns <code>event_id</code>; block is created and finalized asynchronously</td>
 <td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code> (<code>SubChain.add_event</code>)</td>
 </tr>
 <tr>
@@ -4498,29 +4496,22 @@
 <td style="text-align: left;"><a href=".././cross-chain-2pc/">Cross-Chain 2PC</a></td>
 <td style="text-align: left;">A</td>
 <td style="text-align: left;"><code>HierarchyManager.transaction_manager</code></td>
-<td style="text-align: left;"><code>COMMITTED</code> or <code>ROLLED_BACK</code></td>
+<td style="text-align: left;"><code>COMMITTED</code>, <code>ROLLED_BACK</code>, or recoverable <code>IN_DOUBT</code></td>
 <td style="text-align: left;"><code>hierarchical/hierarchy_manager/base.py</code> + <code>hierarchical/transaction_manager.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././bft-consensus/">BFT Consensus</a></td>
 <td style="text-align: left;">B</td>
-<td style="text-align: left;"><code>HRC_MAINCHAIN_CONSENSUS</code> / <code>HRC_CONSENSUS_TYPE</code></td>
-<td style="text-align: left;">Block committed by 2f+1 validators</td>
+<td style="text-align: left;">BFT component used explicitly; not selected through MainChain/SubChain configuration</td>
+<td style="text-align: left;">Separate BFT consensus workflow</td>
 <td style="text-align: left;"><code>consensus/bft/consensus.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href=".././cluster-lockdown/">Cluster Lockdown</a></td>
-<td style="text-align: left;">C</td>
-<td style="text-align: left;">Anomaly exceeds risk threshold</td>
-<td style="text-align: left;">All nodes frozen / resumed</td>
-<td style="text-align: left;"><code>cluster/lockdown_types.py</code> + <code>cluster/lockdown_protocol.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././error-recovery/">Error Mitigation</a></td>
 <td style="text-align: left;">C</td>
-<td style="text-align: left;">Network fail / leader timeout / integrity error</td>
-<td style="text-align: left;">State restored from snapshot</td>
-<td style="text-align: left;"><code>error_mitigation/rollback_manager.py</code> + <code>consensus_recovery.py</code></td>
+<td style="text-align: left;">Validation error / leader timeout / interrupted event</td>
+<td style="text-align: left;">Classified error, journal replay, or BFT view change</td>
+<td style="text-align: left;"><code>error_mitigation/error_classifier.py</code> + <code>journal.py</code> + <code>consensus/bft/view_change.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././entity-tracing/">Entity Tracing</a></td>
@@ -4553,7 +4544,7 @@
 <tr>
 <td style="text-align: left;"><a href=".././websocket-streaming/">WebSocket Streaming</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Client connects to <code>/ws/{chain_name}</code></td>
+<td style="text-align: left;">Client connects to <code>/ws</code>, optionally passing <code>chain_name</code> as a query parameter</td>
 <td style="text-align: left;">Real-time block/event push</td>
 <td style="text-align: left;"><code>api/websocket/manager.py</code></td>
 </tr>
@@ -4622,7 +4613,6 @@
 <hr />
 <p>Governance, lockdown triggers and recovery.</p>
 <ul>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown &amp; Recovery</a></li>
 <li><a href=".././error-recovery/">Error Mitigation &amp; Recovery</a></li>
 </ul>
 </li>
@@ -4681,12 +4671,10 @@
     WF1 --&gt;|BFT mode| WF4["👑 BFT Consensus"]
 
     WF9["🔍 Integrity Scan"] --&gt;|DEGRADED| WF13["🚨 Risk &amp; Alerts"]
-    WF13 --&gt;|critical threshold| WF5["🔒 Cluster Lockdown"]
-    WF5 -.-&gt;|after lockdown| WF6["🔧 Error Recovery"]
+    WF13 --&gt;|critical alert| WF6["🔧 Error Recovery"]
     WF6 -.-&gt;|snapshot fail| WF8["♻️ Rehydration"]
     WF8 -.-&gt;|restore state| WF1
 
-    WF5 -.-&gt;|key rotation| WF16["🔑 Key Backup"]
     WF15 -.-&gt;|cert issued| WF16
 
     WF7["🗂️ Entity Tracing"] -.-&gt;|reads| WF1
@@ -4710,16 +4698,12 @@
 <td style="text-align: left;">Security validation path: verify internal cert (<code>msp.py:verify_certificate</code>) → check ABAC policies → accept/reject event.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Integrity Scan → Risk &amp; Alerts → Cluster Lockdown → Error Recovery</strong></td>
-<td style="text-align: left;">Anomaly detection path: <code>block_verifier</code>/<code>risk_analyzer</code> → alert dispatch → lockdown → <code>rollback_manager</code> restore.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Cluster Lockdown → Key Backup</strong></td>
-<td style="text-align: left;">No automatic coupling in code: key rotation/backup is manual via <code>cli/key.py</code> (not triggered by lockdown).</td>
+<td style="text-align: left;"><strong>Integrity Scan → Risk &amp; Alerts → Error Recovery</strong></td>
+<td style="text-align: left;">Anomaly detection path: <code>block_verifier</code> → alert dispatch → operational recovery.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Error Recovery → Rehydration</strong></td>
-<td style="text-align: left;">State sync fallback: local snapshot validation fail triggers in-memory chain rebuild from DB journal.</td>
+<td style="text-align: left;">State sync fallback: journal replay and chain reload rebuild in-memory state from durable storage.</td>
 </tr>
 </tbody>
 </table>

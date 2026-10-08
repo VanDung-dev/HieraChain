@@ -1426,11 +1426,9 @@
   
   
     <li class="md-nav__item">
-      <a href="../../workflows/cluster-lockdown/" class="md-nav__link">
+      <a href="../../workflows/cluster-lockdown.md" class="md-nav__link">
         
   
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4458,7 +4456,8 @@
 
 <h1 id="monitoring-module-hierachainmonitoring">Monitoring Module (<code>hierachain/monitoring/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The <strong>Monitoring</strong> module provides 360-degree observability for the HieraChain system. It not only tracks traditional infrastructure metrics (CPU, RAM, Disk) but also deeply monitors blockchain-specific indicators such as event throughput, block closing time, and BFT consensus success rate.</p>
+<p>The <strong>Monitoring</strong> module tracks infrastructure metrics such as CPU, RAM, and disk use. It also records HieraChain metrics, including event throughput, block closing time, and BFT consensus success rate.</p>
+<p>The module is opt-in. Importing <code>PerformanceMonitor</code> loads metric collection independently of alerting; importing <code>AlertManager</code> loads the alert engine independently of metric collection. The host application starts and stops monitoring explicitly, records ledger activity through the <code>record_*</code> methods, and can register <code>add_alert_handler()</code> callbacks for its existing observability system. Collection, threshold checks and reports belong to <code>PerformanceMonitor</code>; rules, alert state and delivery belong to <code>AlertManager</code>.</p>
 <hr />
 <h2 id="main-components">Main Components</h2>
 <div class="grid cards">
@@ -4490,24 +4489,14 @@
 <ul>
 <li>Detects abnormal behavior based on <strong>Z-Score</strong> algorithm.</li>
 <li>Analyzes historical data in sliding windows to determine standard deviation.</li>
-<li>Helps early detection of DDoS attacks or bottleneck congestion.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 21H2V3h2v16h2v-9h4v9h2V6h4v13h2v-5h4z"/></svg></span> <strong>Blockchain Metrics</strong></p>
-<hr />
-<p><strong>File</strong>: <code>performance_metrics.py</code></p>
-<ul>
-<li><strong>Throughput</strong>: Number of events processed per second (EPS).</li>
-<li><strong>Latency</strong>: Average time for an event to be validated and block-closed.</li>
-<li><strong>Consensus Health</strong>: Ratio of successful consensus rounds and convergence time.</li>
+<li>Identifies statistical outliers in metric values.</li>
 </ul>
 </li>
 </ul>
 </div>
 <hr />
 <h2 id="monitoring-and-alert-workflow">Monitoring and Alert Workflow</h2>
-<p>The system operates in a continuous loop to ensure high availability:</p>
+<p>Calling <code>start_monitoring()</code> starts the collection loop. Alert callbacks run only when registered and <code>enable_alerts</code> is enabled. The host application feeds the optional alert engine through <code>check_metric()</code>, <code>create_alert()</code> or <code>send_alert()</code>.</p>
 <pre class="mermaid"><code>graph LR
     subgraph "Data Collection"
         A[System Metrics]
@@ -4526,13 +4515,15 @@
     end
 
     A &amp; B &amp; C --&gt; D
-    D --&gt; E
-    E --&gt; G
     D --&gt; F
+    D --&gt; K[Registered Application Callback]
+    K --&gt; J[Existing Observability System]
+    K --&gt; G
+    G --&gt; E
     G --&gt; H[Email/Webhook Notification]</code></pre>
 <hr />
 <h2 id="system-health-score">System Health Score</h2>
-<p>HieraChain computes an overall health score (0-100) based on weighted alert thresholds:</p>
+<p>The monitor averages scores for metrics with data: normal = 100, warning = 50, critical = 0. Metrics without data are excluded:</p>
 <table>
 <thead>
 <tr>
@@ -4543,24 +4534,24 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Excellent</strong></td>
-<td style="text-align: left;">90 - 100</td>
-<td style="text-align: left;">System operating perfectly, no alerts.</td>
+<td style="text-align: left;"><code>excellent</code></td>
+<td style="text-align: left;">100</td>
+<td style="text-align: left;">All metrics with data are normal.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Good</strong></td>
-<td style="text-align: left;">70 - 89</td>
-<td style="text-align: left;">Stable operation, possibly a few minor alerts.</td>
+<td style="text-align: left;"><code>warning</code></td>
+<td style="text-align: left;">50 to below 100</td>
+<td style="text-align: left;">At least one warning; no critical metrics.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Poor</strong></td>
-<td style="text-align: left;">&lt; 70</td>
-<td style="text-align: left;">Performance noticeably affected, needs review.</td>
+<td style="text-align: left;"><code>critical</code></td>
+<td style="text-align: left;">0 to below 100</td>
+<td style="text-align: left;">At least one critical metric.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Critical</strong></td>
-<td style="text-align: left;">N/A</td>
-<td style="text-align: left;">At least one metric at <strong>Critical Alert</strong> level.</td>
+<td style="text-align: left;"><code>no_data</code></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">No metrics have data.</td>
 </tr>
 </tbody>
 </table>
@@ -4570,35 +4561,39 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceMonitor</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">monitor</span> <span class="o">=</span> <span class="n">PerformanceMonitor</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"collection_interval"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">})</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">monitor</span><span class="o">.</span><span class="n">start_monitoring</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Get instant health report</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">health_score</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">get_health_score</span><span class="p">()</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"System Health: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">health_score</span><span class="si">}</span><span class="s2">/100)"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">monitor</span><span class="o">.</span><span class="n">start_monitoring</span><span class="p">()</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">health_score</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">get_health_score</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"System Health: </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">health_score</span><span class="si">}</span><span class="s2">/100)"</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">monitor</span><span class="o">.</span><span class="n">stop_monitoring</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="2-define-alert-rules">2. Define Alert Rules</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring.alert_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertRule</span><span class="p">,</span> <span class="n">AlertSeverity</span><span class="p">,</span> <span class="n">AlertCategory</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">rule</span> <span class="o">=</span> <span class="n">AlertRule</span><span class="p">(</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">rule_id</span><span class="o">=</span><span class="s2">"TPS_DROP"</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"Sharp throughput drop"</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">"Event throughput dropped below minimum threshold"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">category</span><span class="o">=</span><span class="n">AlertCategory</span><span class="o">.</span><span class="n">PERFORMANCE</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">metric_name</span><span class="o">=</span><span class="s2">"event_throughput"</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">condition</span><span class="o">=</span><span class="s2">"less_than"</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">severity</span><span class="o">=</span><span class="n">AlertSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">escalation_time</span><span class="o">=</span><span class="mi">600</span>  <span class="c1"># Escalate after 10 minutes if not handled</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">)</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">alert_manager</span><span class="o">.</span><span class="n">add_alert_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertManager</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.monitoring.alert_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlertRule</span><span class="p">,</span> <span class="n">AlertSeverity</span><span class="p">,</span> <span class="n">AlertCategory</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">alert_manager</span> <span class="o">=</span> <span class="n">AlertManager</span><span class="p">()</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">rule</span> <span class="o">=</span> <span class="n">AlertRule</span><span class="p">(</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">rule_id</span><span class="o">=</span><span class="s2">"TPS_DROP"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"Sharp throughput drop"</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">"Event throughput dropped below minimum threshold"</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">category</span><span class="o">=</span><span class="n">AlertCategory</span><span class="o">.</span><span class="n">PERFORMANCE</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">metric_name</span><span class="o">=</span><span class="s2">"event_throughput"</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">condition</span><span class="o">=</span><span class="s2">"less_than"</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">severity</span><span class="o">=</span><span class="n">AlertSeverity</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">escalation_time</span><span class="o">=</span><span class="mi">600</span>  <span class="c1"># Escalate after 10 minutes if not handled</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">alert_manager</span><span class="o">.</span><span class="n">add_alert_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 </code></pre></div>
+<p>The host application supplies metric values to <code>alert_manager.check_metric("event_throughput", value)</code>. The two components are not connected automatically. With <code>enable_alerts=False</code>, the monitor continues collecting metrics and generating reports without invoking alert callbacks.</p>
 <hr />
 <h2 id="notifications-and-escalation">Notifications and Escalation</h2>
 <p>When an alert is created but not <strong>Acknowledged</strong> within the specified time:</p>
 <ol>
-<li>The system automatically increases the severity level (e.g., from WARNING to CRITICAL).</li>
-<li>Sends additional notifications to emergency recipient lists via Email/Webhook.</li>
-<li>Records detailed logs in the Audit system for post-incident investigation.</li>
+<li>The escalation counter increases and a critical notification is created.</li>
+<li>Configured Email/Webhook notifiers receive that notification.</li>
+<li>The escalation is logged. Acknowledging or resolving the original alert cancels its pending escalation timer.</li>
 </ol>
 <hr />
 <h2 id="related">Related</h2>
@@ -4607,6 +4602,7 @@
 <li><a href=".././security/">Security and Resource Guard</a></li>
 <li><a href=".././config/">System Configuration</a></li>
 </ul>
+<p>For the default PerformanceMonitor metric, consensus success rate is healthy above 95%, warning at or below 95%, and critical at or below 90%. Critical metric alerts replace active lower-severity alerts. Notification delivery uses one worker and a queue of at most 128 alerts; a full queue records a failed notification while preserving alert history. SMTP and webhook requests use a 10-second timeout. Call <code>AlertManager.close()</code> to stop accepting notifications and wait for queued delivery up to its timeout; abrupt process exit can lose queued notifications.</p>
 
 
 
