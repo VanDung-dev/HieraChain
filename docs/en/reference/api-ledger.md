@@ -23,9 +23,9 @@ curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "X-API-Key: your_api_key" \
      -d '{
        "entity_id": "CONTRACT-2024-001",
-       "event": "contract_signed",
+       "event_type": "contract_signed",
        "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-       "details_nonce": "98765"
+       "details_nonce": "a1b2c3d4e5f6789012345678"
      }'
 ```
 
@@ -40,16 +40,17 @@ sequenceDiagram
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client->>API: POST /chains/create
+    Client->>API: POST /api/ledger/chains/{chain_name}/create
     API->>Sub: Initialize Sub-Chain
     API-->>Client: 201 Created
 
-    Client->>API: POST /chains/events
-    API->>Sub: Add Event
-    Sub->>Sub: Close Block
-    API-->>Client: 200 OK (Event ID)
+    Client->>API: POST /api/ledger/chains/{chain_name}/events
+    API->>Sub: Add event to ordering service
+    Sub->>Sub: Journal and enqueue event
+    API-->>Client: 200 OK (Event ID accepted for ordering)
+    Note over Sub: Background batching, block finalization, and persistence happen later
 
-    Client->>API: POST /chains/submit-proof
+    Client->>API: POST /api/ledger/chains/{chain_name}/submit-proof
     API->>Sub: Get Proof
     Sub->>Main: Submit Proof (Data Anchoring)
     Main-->>Sub: Confirm
@@ -60,11 +61,29 @@ sequenceDiagram
 * GET `/api/ledger/chains`: List Main Chain and all Sub-Chains.
 * POST `/api/ledger/chains/{chain_name}/create`: Create a new Sub-Chain (auto-creates Main Chain if not exists).
 * POST `/api/ledger/chains/{chain_name}/events`: Add an event to a Sub-Chain.
+* POST `/api/ledger/channels/{channel_id}/organizations/{org_id}/events`: Add an event to a channel using the authenticated API-key user and the organization's registered write role.
 * POST `/api/ledger/chains/{chain_name}/submit-proof`: Submit proof from Sub-Chain to Main Chain.
 * GET `/api/ledger/chains/{chain_name}/stats`: Get chain statistics.
 * GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false`: Get block list (paginated). If `resolve_cid=true`, automatically load detailed data from IPFS.
 * GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}`: Get details of a specific block.
 * GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]`: Trace events. If `resolve_cid=true`, decrypt event details from IPFS.
+
+## Channel Event Submission
+
+Submit an event to a channel and organization already provisioned in the active `HierarchyManager`. The API key must have `events` permission. The server uses the verified API-key `user_id` as the submitter and checks that user's registered organization role against the channel write policy; caller-provided `sender` does not determine membership or role.
+
+```bash
+curl -X POST "http://localhost:2661/api/ledger/channels/supply_chain/organizations/acme/events" \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: your_api_key" \
+     -d '{
+       "entity_id": "PRODUCT-2024-001",
+       "event_type": "production_start",
+       "details": {"batch": "BATCH-001"}
+     }'
+```
+
+Unknown channels return `404`; an absent authenticated user or a user outside the organization's allowed write role returns `403`. API-key authentication must be enabled and the key must have `events` permission. The active `HierarchyManager` must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Channel event ledger data remains in memory across manager restarts.
 
 ## Main Schemas (from `hierachain/api/ledger/schemas.py`)
 
@@ -158,6 +177,8 @@ Response:
 }
 ```
 
+The response acknowledges that the event was journaled and queued for ordering; block creation and persistence happen asynchronously.
+
 ### 4. Submit proof to Main Chain
 
 ```bash
@@ -222,15 +243,17 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * 404 Not Found: Chain or sub-chain not found.
 * 500 Internal Server Error: Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).
 
-## Implementation Notes (abbreviated from `endpoints.py`)
+## Implementation Notes (abbreviated from `hierachain/api/ledger/events.py`)
 
 * Lazy DI: uses lightweight singletons `get_hierarchy_manager()` and `get_entity_tracer()` for request lifecycle.
-* `POST /chains/{chain_name}/events`: server sets `timestamp = time.time()`; missing `details` defaults to `{}`.
-* `POST /chains/{chain_name}/submit-proof`: if `SubChain` has no `submit_proof_to_main`, the endpoint falls back to a mock branch to avoid crash.
-* `GET /chains/{chain_name}/blocks`: when `Block` has no `to_event_list`, there is a fallback conversion from Arrow Table (`to_pylist`) for safety.
+* `POST /api/ledger/chains/{chain_name}/events`: server sets `timestamp = time.time()`; missing `details` defaults to `{}`.
+* `POST /api/ledger/chains/{chain_name}/submit-proof`: delegates to `HierarchyManager.submit_proof_to_main_chain()`; success means the signed MainChain proof block was finalized and verified after durable SQL readback. Missing or unsupported storage returns an error.
+* `GET /api/ledger/chains/{chain_name}/blocks`: when `Block` has no `to_event_list`, there is a fallback conversion from Arrow Table (`to_pylist`) for safety.
 
 ## Related
 
 * Overall architecture: [Overview](../architecture/overview.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Core module: [Core](../modules/core.md)
+
+Block listing accepts `limit` from 1 to 100 (default 10) and `offset >= 0`; invalid values return HTTP 422. This bounds the number of blocks, not the total bytes of their events. A concurrent sub-chain registration conflict returns HTTP 409.

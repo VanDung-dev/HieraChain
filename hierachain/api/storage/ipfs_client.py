@@ -8,7 +8,7 @@ The client is designed to work with local IPFS daemons running in a private netw
 ensuring that all data stored remains within the enterprise boundary.
 """
 
-import orjson
+import json
 import os
 from typing import Any
 
@@ -16,6 +16,7 @@ import httpx
 
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.serialization import dumps_canonical_json, loads_json
 
 logger = SecureLogger("hierachain.storage.ipfs_client")
 
@@ -23,7 +24,6 @@ logger = SecureLogger("hierachain.storage.ipfs_client")
 class IPFSError(Exception):
     """Base exception for IPFS-related errors."""
 
-    pass
 
 
 def _parse_multiaddr(addr: str) -> tuple[str, int]:
@@ -115,7 +115,7 @@ class IPFSClient:
                 logger.info("Connected to IPFS daemon", host=self._host)
             except httpx.HTTPError as e:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
-                raise IPFSError(f"Failed to connect to IPFS daemon: {str(e)}")
+                raise IPFSError(f"Failed to connect to IPFS daemon: {e!s}")
         
         # Explicit type check for linters
         if self._client is None:
@@ -154,7 +154,7 @@ class IPFSClient:
             if encrypt:
                 # Serialize metadata for AAD
                 aad = (
-                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
+                    dumps_canonical_json(metadata)
                     if metadata
                     else None
                 )
@@ -177,16 +177,13 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post(
                 "/api/v0/add",
+                params={"pin": str(self._auto_pin).lower()},
                 files={"file": ("data", upload_data)},
             )
             resp.raise_for_status()
             # Kubo returns NDJSON; first line has the Hash
-            result = resp.json()
+            result = loads_json(resp.content)
             cid = result["Hash"]
-
-            # Auto-pin if enabled
-            if self._auto_pin:
-                self.pin(cid)
 
             response = {
                 "cid": cid,
@@ -213,7 +210,7 @@ class IPFSClient:
             raise
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to upload data to IPFS", error=str(e))
-            raise IPFSError(f"Failed to upload data: {str(e)}")
+            raise IPFSError(f"Failed to upload data: {e!s}")
 
     def download_bytes(
         self,
@@ -266,7 +263,7 @@ class IPFSClient:
 
                 # Deserialize metadata for AAD
                 aad = (
-                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
+                    dumps_canonical_json(metadata)
                     if metadata
                     else None
                 )
@@ -285,7 +282,7 @@ class IPFSClient:
             raise
         except (httpx.HTTPError, ValueError) as e:
             logger.error("Failed to download data from IPFS", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to download data from CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to download data from CID {cid}: {e!s}")
 
     def upload_json(
         self, data: dict, encrypt: bool = True, metadata: dict[str, Any] | None = None
@@ -302,10 +299,10 @@ class IPFSClient:
             Upload result dict with CID, nonce, etc.
         """
         try:
-            json_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+            json_bytes = dumps_canonical_json(data)
             return self.upload_bytes(json_bytes, encrypt=encrypt, metadata=metadata)
         except (TypeError, ValueError) as e:
-            raise IPFSError(f"JSON serialization failed: {str(e)}")
+            raise IPFSError(f"JSON serialization failed: {e!s}")
 
     def download_json(
         self,
@@ -330,9 +327,9 @@ class IPFSClient:
             json_bytes = self.download_bytes(
                 cid, encrypted=encrypted, nonce=nonce, metadata=metadata
             )
-            return orjson.loads(json_bytes)
-        except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
-            raise IPFSError(f"JSON deserialization failed: {str(e)}")
+            return loads_json(json_bytes)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise IPFSError(f"JSON deserialization failed: {e!s}")
 
     # ---- Pin Management ----
 
@@ -359,7 +356,7 @@ class IPFSClient:
 
         except httpx.HTTPError as e:
             logger.error("Failed to pin content", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to pin CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to pin CID {cid}: {e!s}")
 
     def unpin(self, cid: str) -> bool:
         """
@@ -384,7 +381,7 @@ class IPFSClient:
 
         except httpx.HTTPError as e:
             logger.error("Failed to unpin content", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to unpin CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to unpin CID {cid}: {e!s}")
 
     def list_pins(self) -> list[str]:
         """
@@ -400,7 +397,7 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post("/api/v0/pin/ls")
             resp.raise_for_status()
-            pins = resp.json()
+            pins = loads_json(resp.content)
 
             # Extract CIDs from pins dict
             cids = list(pins["Keys"].keys()) if "Keys" in pins else []
@@ -410,7 +407,7 @@ class IPFSClient:
 
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to list pins", error=str(e))
-            raise IPFSError(f"Failed to list pins: {str(e)}")
+            raise IPFSError(f"Failed to list pins: {e!s}")
 
     # ---- Misc ----
 
@@ -433,11 +430,11 @@ class IPFSClient:
             resp.raise_for_status()
 
             logger.debug("Retrieved IPFS stats", cid=cid)
-            return resp.json()
+            return loads_json(resp.content)
 
         except httpx.HTTPError as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to get stats for CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to get stats for CID {cid}: {e!s}")
 
     def is_available(self, cid: str) -> bool:
         """
@@ -451,7 +448,7 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self.client.post(f"/api/v0/object/stat?arg={cid}")
+            resp = self.client.post("/api/v0/files/stat", params={"arg": f"/ipfs/{cid}"})
             return resp.is_success
         except (IPFSError, httpx.HTTPError):
             logger.debug("Content not available", cid=cid)
@@ -471,7 +468,7 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post("/api/v0/version")
             resp.raise_for_status()
-            version = resp.json()
+            version = loads_json(resp.content)
 
             # Safe access to Version key with default value
             logger.debug(
@@ -482,7 +479,7 @@ class IPFSClient:
 
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to get daemon version", error=str(e))
-            raise IPFSError(f"Failed to get daemon version: {str(e)}")
+            raise IPFSError(f"Failed to get daemon version: {e!s}")
 
     def close(self):
         """Close the IPFS client connection."""
@@ -524,22 +521,18 @@ def create_ipfs_client_from_env() -> IPFSClient:
     auto_pin = os.getenv("HRC_IPFS_AUTO_PIN", "true").lower() == "true"
     timeout = int(os.getenv("HRC_IPFS_TIMEOUT", "120"))
 
-    # Get or generate encryption key
+    # Require a stable key so existing IPFS payloads remain decryptable.
     key_hex = os.getenv("HRC_IPFS_ENCRYPTION_KEY")
-    if key_hex:
-        try:
-            encryption_key = bytes.fromhex(key_hex)
-            logger.info("Using encryption key from environment variable")
-        except ValueError:
-            logger.warning("Invalid encryption key in environment, generating new key")
-            encryption_key = None
-    else:
-        logger.warning(
-            "No encryption key in environment (HRC_IPFS_ENCRYPTION_KEY), "
-            "generating new key. This key should be securely stored and shared "
-            "across nodes in the same channel/organization."
+    if key_hex is None or len(key_hex) != 64 or any(
+        char not in "0123456789abcdefABCDEF" for char in key_hex
+    ):
+        raise IPFSError(
+            "HRC_IPFS_ENCRYPTION_KEY is required and must contain exactly "
+            "64 hexadecimal characters (32 bytes)"
         )
-        encryption_key = None
+
+    encryption_key = bytes.fromhex(key_hex)
+    logger.info("Using encryption key from environment variable")
 
     return IPFSClient(
         ipfs_host=ipfs_host,

@@ -33,17 +33,16 @@ This table lists all workflows for quick lookup:
 
 | Workflow | Group | Trigger | Output | Key Module |
 |:---------|:------|:--------|:-------|:-----------|
-| [Event Submission](./event-submission.md) | A | `POST /api/ledger/chains/{name}/events` | Block appended to Sub-Chain | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
+| [Event Submission](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API returns `event_id`; block is created and finalized asynchronously | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Proof Anchoring](./proof-anchoring.md) | A | Block finalized on Sub-Chain | Proof hash on Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
-| [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED` or `ROLLED_BACK` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
-| [BFT Consensus](./bft-consensus.md) | B | `HRC_MAINCHAIN_CONSENSUS` / `HRC_CONSENSUS_TYPE` | Block committed by 2f+1 validators | `consensus/bft/consensus.py` |
-| [Cluster Lockdown](./cluster-lockdown.md) | C | Anomaly exceeds risk threshold | All nodes frozen / resumed | `cluster/lockdown_types.py` + `cluster/lockdown_protocol.py` |
-| [Error Mitigation](./error-recovery.md) | C | Network fail / leader timeout / integrity error | State restored from snapshot | `error_mitigation/rollback_manager.py` + `consensus_recovery.py` |
+| [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK`, or recoverable `IN_DOUBT` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
+| [BFT Consensus](./bft-consensus.md) | B | BFT component used explicitly; not selected through MainChain/SubChain configuration | Separate BFT consensus workflow | `consensus/bft/consensus.py` |
+| [Error Mitigation](./error-recovery.md) | C | Validation error / leader timeout / interrupted event | Classified error, journal replay, or BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Integrity Validation](./integrity-validation.md) | D | Periodic / manual / Risk Alerts anomaly | `IntegrityReport` (HEALTHY / DEGRADED) | `security/verify/block_verifier.py` |
 | [Policy Enforcement](./policy-enforcement.md) | E | Any access-sensitive operation | `allow` or `deny` with decision path | `security/policy_engine.py` |
-| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws/{chain_name}` | Real-time block/event push | `api/websocket/manager.py` |
+| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws`, optionally passing `chain_name` as a query parameter | Real-time block/event push | `api/websocket/manager.py` |
 | [IPFS Encrypted Storage](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | CID returned; ciphertext on IPFS | `api/storage/ipfs_client.py` |
 | [Risk Analysis & Alerts](./risk-alerts.md) | E | `PerformanceMonitor` schedule | Alerts dispatched; escalation on no-ack | `monitoring/alert_system.py` |
 | [ERP Integration Sync](./erp-integration.md) | E | `SyncScheduler` timer | ERP events submitted to Sub-Chain | `integration/erp_ledger.py` |
@@ -82,7 +81,6 @@ Workflows are grouped into six areas. Use the dashboard to find the group that m
 
     Governance, lockdown triggers and recovery.
 
-    * [Cluster Lockdown & Recovery](./cluster-lockdown.md)
     * [Error Mitigation & Recovery](./error-recovery.md)
 
 * :material-shield-check:{ .lg .middle } __Group D: Integrity and traceability__
@@ -144,12 +142,10 @@ flowchart TD
     WF1 -->|BFT mode| WF4["👑 BFT Consensus"]
 
     WF9["🔍 Integrity Scan"] -->|DEGRADED| WF13["🚨 Risk & Alerts"]
-    WF13 -->|critical threshold| WF5["🔒 Cluster Lockdown"]
-    WF5 -.->|after lockdown| WF6["🔧 Error Recovery"]
+    WF13 -->|critical alert| WF6["🔧 Error Recovery"]
     WF6 -.->|snapshot fail| WF8["♻️ Rehydration"]
     WF8 -.->|restore state| WF1
 
-    WF5 -.->|key rotation| WF16["🔑 Key Backup"]
     WF15 -.->|cert issued| WF16
 
     WF7["🗂️ Entity Tracing"] -.->|reads| WF1
@@ -163,9 +159,8 @@ flowchart TD
 |:---|:---|
 | **ERP → ERP Sync → Event Submission → Proof Anchoring** | Ingestion pipeline: business change → local event → Sub-Chain block → proof hash anchored to root chain. |
 | **MSP Identity → Policy Enforcement → Event Submission** | Security validation path: verify internal cert (`msp.py:verify_certificate`) → check ABAC policies → accept/reject event. |
-| **Integrity Scan → Risk & Alerts → Cluster Lockdown → Error Recovery** | Anomaly detection path: `block_verifier`/`risk_analyzer` → alert dispatch → lockdown → `rollback_manager` restore. |
-| **Cluster Lockdown → Key Backup** | No automatic coupling in code: key rotation/backup is manual via `cli/key.py` (not triggered by lockdown). |
-| **Error Recovery → Rehydration** | State sync fallback: local snapshot validation fail triggers in-memory chain rebuild from DB journal. |
+| **Integrity Scan → Risk & Alerts → Error Recovery** | Anomaly detection path: `block_verifier` → alert dispatch → operational recovery. |
+| **Error Recovery → Rehydration** | State sync fallback: journal replay and chain reload rebuild in-memory state from durable storage. |
 
 ---
 

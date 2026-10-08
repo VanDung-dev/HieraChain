@@ -6,8 +6,25 @@ picklable hash functions for multiprocessing support.
 """
 
 import hashlib
-import orjson
+from collections.abc import Sequence
 from typing import Any
+
+from hierachain.serialization import dumps_canonical_json
+
+
+def serialize_event_payload(event: dict[str, Any]) -> bytes:
+    """Serialize the semantic event fields used in both storage and Merkle leaves."""
+    payload = {}
+    for key, value in event.items():
+        if isinstance(value, (bytes, bytearray)):
+            continue
+        if key == "details" and isinstance(value, list):
+            try:
+                value = dict(value)
+            except (TypeError, ValueError):
+                pass
+        payload[key] = value
+    return dumps_canonical_json(payload)
 
 
 def compute_hash_standalone(data_string: str) -> str:
@@ -17,14 +34,14 @@ def compute_hash_standalone(data_string: str) -> str:
 def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
     leaves = []
     for event in events:
-        data_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
+        data_bytes = serialize_event_payload(event)
         leaves.append(hashlib.sha256(data_bytes).hexdigest())
     return leaves
 
 
 def generate_hash(data: str | dict[str, Any]) -> str:
     if isinstance(data, dict):
-        data_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+        data_bytes = dumps_canonical_json(data)
         return hashlib.sha256(data_bytes).hexdigest()
     else:
         return compute_hash_standalone(str(data))
@@ -35,9 +52,9 @@ class MerkleTree:
 
     def __init__(
         self,
-        data_list: list[str | dict[str, Any]] | None = None,
+        data_list: Sequence[str | dict[str, Any]] | None = None,
         leaves: list[str] | None = None
-    ):
+    ) -> None:
         if leaves is not None:
             self.leaves = leaves
         elif data_list is not None:

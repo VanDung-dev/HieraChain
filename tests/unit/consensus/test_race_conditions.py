@@ -2,7 +2,6 @@
 Unit tests for race condition prevention.
 """
 
-import pytest
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -105,11 +104,11 @@ def test_lock_prevents_race_condition():
 
 def test_block_index_lock_protection():
     """Test that block index lock properly protects access."""
-    from hierachain.core.block import Block
     from hierachain.consensus.ordering.block_manager import OrderingBlockManager
     
     class MockService:
         def __init__(self):
+            self._commit_lock = threading.RLock()
             self.blocks_created = 0
             self.status = "ACTIVE"
             
@@ -147,6 +146,7 @@ def test_block_index_lock_protection():
     
     service = MockService()
     manager = OrderingBlockManager(service)
+    assert manager._block_index_lock is service._commit_lock
     
     indices = []
     errors = []

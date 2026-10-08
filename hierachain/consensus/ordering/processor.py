@@ -2,18 +2,23 @@
 Ordering processor for the HieraChain ordering service.
 """
 
-import time
-import logging
 import asyncio
-from typing import Any
+import logging
+import time
 from queue import Empty
+from typing import TYPE_CHECKING, Any
 
-from hierachain.security.security_utils import verify_batch_signatures
-from hierachain.consensus.ordering.types import (
-    PendingEvent, EventStatus, OrderingStatus
-)
 from hierachain.consensus.ordering.block_manager import OrderingBlockManager
 from hierachain.consensus.ordering.recovery import OrderingRecovery
+from hierachain.consensus.ordering.types import (
+    EventStatus,
+    OrderingStatus,
+    PendingEvent,
+)
+from hierachain.security.security_utils import verify_batch_signatures
+
+if TYPE_CHECKING:
+    from hierachain.consensus.ordering.service import OrderingService
 
 logger = logging.getLogger(__name__)
 
@@ -94,23 +99,14 @@ def _handle_rejected_event(pending_event: PendingEvent, metrics) -> None:
 
 
 class OrderingProcessor:
-    """Handles background event processing and loop coordination"""
+    """Collects, certifies and processes events using service-owned dependencies."""
 
-    def __init__(self, service) -> None:
+    def __init__(self, service: "OrderingService") -> None:
         self.service = service
-        self.should_stop = service.should_stop
-        self.event_pool = service.event_pool
-        self.pending_events = service.pending_events
-        self.metrics = service.metrics
-        self.storage_handler = service.storage_handler
-        self.block_builder = service.block_builder
-        self.certifier = service.certifier
-        self.config = service.config
         
         # Internal components
         self.block_manager = OrderingBlockManager(service)
         self.recovery = OrderingRecovery(service, self)
-        self.executor = OrderingExecutor(self)
         
         # Batch management
         self.current_batch: list[PendingEvent] = []
@@ -118,38 +114,52 @@ class OrderingProcessor:
         self.force_process = asyncio.Event()
 
         self.batch_size = (
-            self.config.get("batch_size") or self.config.get("block_size") or 100
+            service.config.get("batch_size") or service.config.get("block_size") or 100
         )
-        self.batch_timeout = self.config.get("batch_timeout", 0.1)
+        self.batch_timeout = service.config.get("batch_timeout", 0.1)
 
-    async def run_async(self):
+    async def run_async(self) -> None:
         """Main async processing loop"""
         await self._initialize_service()
         
-        while not self.should_stop.is_set():
+        while not self.service.should_stop.is_set():
             try:
+                if self.service.status == OrderingStatus.LOCKDOWN:
+                    await asyncio.sleep(0.05)
+                    continue
                 await self._collect_next_event(self.current_batch)
+                if self.service.status == OrderingStatus.LOCKDOWN:
+                    continue
                 self.last_batch_time = await self._handle_batch_logic(
                     self.current_batch,
                     self.last_batch_time,
                     self.batch_size,
                 )
             except Exception as e:
-                logger.error(f"Error in processor loop: {e}")
-                await asyncio.sleep(0.1)
+                logger.error("Error in processor loop; stopping in MAINTENANCE: %s", e)
+                if self.service.status not in (OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN):
+                    self.service.status = OrderingStatus.MAINTENANCE
+                raise
 
-    async def _initialize_service(self):
+    async def _initialize_service(self) -> None:
         """Perform service initialization and state recovery"""
+        with self.service._commit_lock:
+            if self.service.should_stop.is_set() or self.service.status in (OrderingStatus.SHUTDOWN, OrderingStatus.ERROR):
+                return
+            if self.service.status != OrderingStatus.LOCKDOWN:
+                self.service.status = OrderingStatus.MAINTENANCE
         await self.recovery.recover_state_async()
-        self.service.status = OrderingStatus.ACTIVE
-        logger.info("Ordering Service is now ACTIVE")
+        with self.service._commit_lock:
+            if self.service.status == OrderingStatus.MAINTENANCE:
+                self.service.status = OrderingStatus.ACTIVE
+                logger.info("Ordering Service is now ACTIVE")
 
     def _drain_event_pool(self, batch: list[PendingEvent]) -> None:
         """Drain ready events from the queue synchronously up to batch_size."""
         batch_size = self.batch_size
         while len(batch) < batch_size:
             try:
-                pending_event = self.event_pool.get_nowait()
+                pending_event = self.service.event_pool.get_nowait()
                 batch.append(pending_event)
             except Empty:
                 break
@@ -157,7 +167,7 @@ class OrderingProcessor:
     async def _wait_and_drain_event(self, batch: list[PendingEvent]) -> None:
         """Wait for the next event in thread and drain any others that arrive."""
         try:
-            pending_event = await asyncio.to_thread(self.event_pool.get, timeout=self.batch_timeout)
+            pending_event = await asyncio.to_thread(self.service.event_pool.get, timeout=self.batch_timeout)
             batch.append(pending_event)
             self._drain_event_pool(batch)
         except Empty:
@@ -170,7 +180,7 @@ class OrderingProcessor:
 
     async def _collect_next_event(self, batch: list[PendingEvent]) -> None:
         """Try to collect events from the pool. Sleeps if batch has items, blocks if empty."""
-        if self.should_stop.is_set():
+        if self.service.should_stop.is_set():
             return
 
         self._drain_event_pool(batch)
@@ -205,7 +215,7 @@ class OrderingProcessor:
             return last_batch_time
 
         if batch:
-            await self.executor.process_batch(list(batch))
+            await self.process_batch(list(batch))
             batch.clear()
 
         await self.block_manager.check_timeout_block_creation(force=is_forced)
@@ -215,28 +225,19 @@ class OrderingProcessor:
 
         return time.time()
 
-    async def process_single_event(self, pending_event: PendingEvent) -> None:
-        """Delegate to the executor's process_single_event."""
-        await self.executor.process_single_event(pending_event)
+    async def process_replayed_event(self, pending_event: PendingEvent) -> None:
+        """Process a journal event while retaining non-freshness certification."""
+        await self.process_single_event(
+            pending_event, allow_stale_timestamp=True
+        )
+        if pending_event.status is EventStatus.REJECTED:
+            raise ValueError(f"Replay rejected event {pending_event.event_id}")
 
     async def force_process_batch_async(self) -> None:
         """Force immediate processing of current batch and block creation"""
         self.force_process.set()
         # Give the loop a chance to pick it up
         await asyncio.sleep(0.05)
-
-
-class OrderingExecutor:
-    """Handles execution/verification of event batches for the ordering processor"""
-
-    def __init__(self, processor: OrderingProcessor) -> None:
-        self.processor = processor
-        self.certifier = processor.certifier
-        self.block_builder = processor.block_builder
-        self.storage_handler = processor.storage_handler
-        self.pending_events = processor.pending_events
-        self.metrics = processor.metrics
-        self.block_manager = processor.block_manager
 
     async def process_batch(self, batch: list[PendingEvent]) -> None:
         """Process a batch of events with parallel signature verification"""
@@ -265,7 +266,7 @@ class OrderingExecutor:
             for event, is_valid in zip(events_to_verify, results):
                 if not is_valid:
                     event.status = EventStatus.REJECTED
-                    self.metrics.record_rejected()
+                    self.service.metrics.record_rejected()
                     logger.warning(
                         "Event %s rejected (invalid signature)", event.event_id
                     )
@@ -282,32 +283,43 @@ class OrderingExecutor:
         tasks = []
         for event in batch:
             if event.status == EventStatus.REJECTED:
-                _remove_pending(self.pending_events, event.event_id)
+                _remove_pending(self.service.pending_events, event.event_id)
                 continue
             tasks.append(self.process_single_event(event))
         
         if tasks:
             await asyncio.gather(*tasks)
 
-    async def process_single_event(self, pending_event: PendingEvent) -> None:
+    async def process_single_event(
+        self,
+        pending_event: PendingEvent,
+        *,
+        allow_stale_timestamp: bool = False,
+    ) -> None:
         """Process a single event through certification and ordering"""
         try:
             pending_event.status = EventStatus.PROCESSING
-            certification_result = self.certifier.validate(pending_event)
+            certification_result = self.service.certifier.validate(
+                pending_event,
+                allow_stale_timestamp=allow_stale_timestamp,
+            )
             pending_event.certification_result = certification_result
 
             if certification_result["valid"]:
                 raw_block_data = _handle_certified_event(
                     pending_event,
-                    self.block_builder,
-                    self.storage_handler,
-                    self.pending_events,
-                    self.metrics,
+                    self.service.block_builder,
+                    self.service.storage_handler,
+                    self.service.pending_events,
+                    self.service.metrics,
                 )
                 if raw_block_data:
                     await self.block_manager.create_block_async(raw_block_data)
             else:
-                _handle_rejected_event(pending_event, self.metrics)
+                _handle_rejected_event(pending_event, self.service.metrics)
+                _remove_pending(self.service.pending_events, pending_event.event_id)
 
         except Exception as e:
             logger.error("Error processing event %s: %s", pending_event.event_id, e)
+            self.service.status = OrderingStatus.MAINTENANCE
+            raise

@@ -4,26 +4,28 @@ Shared helper functions for HieraChain validators.
 
 from __future__ import annotations
 
-import orjson
 import logging
-from typing import Any, Union
+from typing import Any
 
 import pyarrow as pa
 import pyarrow.compute as pc
 
 from hierachain.error_mitigation.validator_exceptions import ValidationError
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
 
-def _log_scaling_event(event: dict[str, Any]) -> None:
+def _log_capacity_recommendation(event: dict[str, Any]) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
-        log_entry = orjson.dumps(event, option=orjson.OPT_INDENT_2).decode()
-        logger.info("Scaling event logged: %s", log_entry)
-        write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {"event": "consensus_scaling", "payload": event, "log_entry": log_entry})
-    except (IOError, OSError, ValueError) as ex:
-        logger.error("Failed to log scaling event: %s", ex)
+        log_entry = dumps_json(event, indent=2)
+        logger.info("Consensus capacity recommendation for the host application: %s", log_entry)
+        write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {
+            "event": "consensus_capacity_recommendation", "payload": event, "log_entry": log_entry,
+        })
+    except (OSError, ValueError) as ex:
+        logger.error("Failed to log capacity recommendation: %s", ex)
 
 
 def _is_string_type(type_: pa.DataType) -> bool:
@@ -34,7 +36,7 @@ def _is_list_type(type_: pa.DataType) -> bool:
     return pa.types.is_list(type_) or pa.types.is_large_list(type_)
 
 
-def _validate_arrow_structure(data: Union[pa.Table, pa.RecordBatch]) -> None:
+def _validate_arrow_structure(data: pa.Table | pa.RecordBatch) -> None:
     if "event" not in data.schema.names:
         return
     required_fields = ["entity_id", "event", "timestamp"]
@@ -54,11 +56,11 @@ def _check_legacy_structure(data: Any) -> None:
 
 def _serialize_data_content(data: Any) -> str:
     if hasattr(data, "to_pylist"):
-        return orjson.dumps(data.to_pylist(), option=orjson.OPT_SORT_KEYS).decode()
+        return dumps_json(data.to_pylist(), sort_keys=True)
     if hasattr(data, "ToString"):
         return str(data)
     try:
-        return orjson.dumps(data, option=orjson.OPT_SORT_KEYS).decode()
+        return dumps_json(data, sort_keys=True)
     except TypeError:
         return str(data)
 
@@ -66,9 +68,9 @@ def _serialize_data_content(data: Any) -> str:
 def _check_forbidden_terms_in_array(
     array: pa.Array, field_name: str, forbidden_terms: list[str],
 ) -> None:
-    utf8_lower = getattr(pc, "utf8_lower")
-    match_substring = getattr(pc, "match_substring")
-    any_op = getattr(pc, "any")
+    utf8_lower = pc.utf8_lower
+    match_substring = pc.match_substring
+    any_op = pc.any
 
     lower_data = utf8_lower(array)
     for term in forbidden_terms:
@@ -83,5 +85,5 @@ def _write_audit_log(audit_entry: dict[str, Any]) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
         write_parquet_log("log/error_mitigation/api_audit.parquet", {"event": "api_audit", "payload": audit_entry})
-    except (IOError, OSError) as ex:
+    except OSError as ex:
         logger.error("Failed to write audit log: %s", ex)

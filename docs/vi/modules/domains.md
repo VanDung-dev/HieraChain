@@ -23,7 +23,7 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 ### 2.2 Sự kiện doanh nghiệp (`events/base_event.py`, `events/event_creators.py`)
 
 * `BaseEvent`: Lớp cơ sở cho các sự kiện nghiệp vụ có cấu trúc kèm kiểm tra lược đồ.
-* `event_creators.py`: Các hàm tiện ích tạo dữ liệu hợp lệ cho các thao tác: `create_quality_check`, `create_approval`, `create_resource_allocation` và `create_status_update`.
+* `event_creators.py`: Các hàm tiện ích tạo đối tượng sự kiện cho các thao tác: `create_quality_check`, `create_approval`, `create_resource_allocation` và `create_status_update`.
 
 ### 2.3 Tiện ích toàn vẹn (`utils/cross_chain_validator.py`, `utils/entity_tracer.py`)
 
@@ -37,8 +37,16 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 
 1. Đăng ký: Gắn định danh `entity_id` duy nhất với loại thực thể và thuộc tính metadata.
 2. Cập nhật trạng thái: Theo dõi các trạng thái tuần tự (`in_progress`, `quality_approved`, `completed`).
-3. Phân bổ tài nguyên: Ghi nhận thiết bị, nhân sự hoặc vị trí kho được phân công.
+3. Phân bổ tài nguyên: Theo dõi tài nguyên đã phân công và đã giữ chỗ. `assigned` thêm vào `allocated_resources` (và bỏ giữ chỗ); `reserved` thêm vào `reserved_resources`; `released` xóa khỏi một trong hai danh sách; `transferred` chuyển tài nguyên đã phân công sang thực thể đã đăng ký khác theo `details.target_entity_id`. Chuyển trạng thái không hợp lệ bị từ chối trước khi gửi event.
 4. Chỉ số vận hành: `OperationMetricsTracker` tính toán các chỉ số thực thi theo từng loại thao tác.
+
+Sự kiện nghiệp vụ yêu cầu thực thể đã đăng ký. `register_entity` lưu dữ liệu ban đầu được cung cấp trong event đăng ký của Sub-Chain để có thể dựng lại registry sau khi khởi động lại; dữ liệu này trở thành nội dung sổ cái nên không được chứa bí mật. Event đăng ký cũ không có `initial_data` chỉ khôi phục metadata đăng ký mà hệ thống hỗ trợ.
+
+Dữ liệu ban đầu của thực thể dùng JSON chuẩn với số hữu hạn. Giá trị số nguyên Python, kể cả lớn hơn 64 bit, được khôi phục chính xác trong giới hạn chuyển đổi số nguyên đã cấu hình của Python. Định danh số cần đi qua client có khoảng số nguyên nhỏ hơn nên dùng chuỗi. Giá trị không được hỗ trợ khiến `register_entity` trả về `False` trước khi ghi event đăng ký.
+
+Event bắt đầu và hoàn tất thao tác được thêm vào sổ cái, đồng thời cập nhật projection trong bộ nhớ dưới khóa của chain. Khi event bắt đầu được chấp nhận, `current_operation` được đặt nên thao tác bắt đầu khác của cùng thực thể bị từ chối cho đến khi hoàn tất. Event nghiệp vụ trả `False` đã bị từ chối trước khi thêm. Trả `True` có nghĩa ordering service đã chấp nhận event; điều đó không có nghĩa signed block đã finalize hoặc lưu bền vững. Nếu handler chạy sau khi thêm event bị lỗi, event vẫn được chấp nhận, lỗi được ghi log và `domain_projection_healthy` chuyển thành `false`. Sau đó các lần ghi domain bị từ chối cho tới khi `rebuild_domain_state()` thành công. Rebuild chỉ chạy lại projection built-in có tính xác định; nếu lịch sử có custom handler thì hệ thống báo không thể tự phục hồi handler đó, vì chạy lại có thể lặp side effect bên ngoài.
+
+Bộ đếm thao tác hoàn tất được dựng lại từ các event thao tác đã chấp nhận. Các bộ đếm chi tiết của `OperationMetricsTracker` chỉ tồn tại trong tiến trình và trở về zero sau khi khởi động lại. Participant 2PC giữ snapshot sâu của payload đã xác thực khi prepare. `pending_transactions` trả snapshot tách rời; prepare lặp chỉ thành công khi payload và vai trò participant đều khớp. Kiểm tra proof đánh dấu event thiếu `sub_chain_name`, `proof_hash` hoặc `timestamp` là không nhất quán. Event có `details` sai cấu trúc được báo lỗi cấu trúc và bỏ qua trong lượt phân tích logic thay vì gây exception.
 
 ## 4. Điều phối Two-Phase Commit (2PC)
 

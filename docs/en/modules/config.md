@@ -8,7 +8,7 @@ icon: material/cog
 
 ## Overview
 
-The **Config** module is the control center of HieraChain, responsible for managing hundreds of operational parameters, ensuring the security of secret keys, and providing a standardized logging mechanism for both development and production environments.
+The **Config** module manages HieraChain's operational settings, secret keys, and logging configuration for development and production.
 
 ---
 
@@ -34,7 +34,7 @@ The **Config** module is the control center of HieraChain, responsible for manag
 
     * Retrieves secrets independently of infrastructure.
     * Supports backends: Environment, HashiCorp Vault, AWS Secrets Manager.
-    * Automatic flexible fallback.
+    * Explicit default value handling for missing or unavailable secrets.
 
 *   :material-format-list-bulleted-type:{ .lg .middle } __Structured Logging__
 
@@ -52,13 +52,17 @@ The **Config** module is the control center of HieraChain, responsible for manag
 
 ## Environment-based Configuration
 
-HieraChain uses the `HRC_ENV` environment variable to automatically switch between optimized configurations:
+HieraChain uses `HRC_ENV` to switch configurations and falls back to `ENV` when `HRC_ENV` is unset or blank. `HRC_ENV` takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace:
 
-| Environment | `HRC_ENV` Value | Key Characteristics |
+| Environment | Accepted values | Key Characteristics |
 | :--- | :--- | :--- |
-| **Development** | `dev` (Default) | DEBUG log level, SQLite/Memory storage, CORS allowed from everywhere. |
-| **Production** | `product` | Enforces Auth, HSTS, P2P Strict Trust, JSON log format. |
-| **Testing** | `test` | Fast configuration, small block size, Memory storage by default. |
+| **Development** | `dev`, `development` (default) | DEBUG log level, PostgreSQL storage by default, CORS allowed from everywhere. |
+| **Production** | `production`, `prod`, `product` | Authentication enabled by default, HSTS, P2P Strict Trust. |
+| **Testing** | `test`, `testing` | Fast configuration, small block size, Memory storage by default. |
+
+An unknown nonblank environment value raises an error instead of selecting development.
+
+The settings module loads `.env` before it defines environment-backed settings. Set `HRC_ENV_FILE` to load another dotenv file; values already present in the process environment take precedence.
 
 ---
 
@@ -71,14 +75,22 @@ This is a critical component for protecting sensitive keys such as `HRC_CLUSTER_
 from hierachain.config.secret_manager import SecretManager
 
 sm = SecretManager()
-# Automatically retrieves from Vault, AWS, or Env depending on configuration
+# Retrieve the configured field
 cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
 ```
 
 ### Supported Backends:
 1.  **Environment (`env`)**: Default, reads directly from environment variables.
 2.  **Vault (`vault`)**: Connects to HashiCorp Vault KV v2.
-3.  **AWS (`aws`)**: Connects to AWS Secrets Manager.
+3.  **AWS (`aws`)**: Reads a string field from a JSON object in AWS Secrets Manager.
+
+`get_secret(key, default=None)` takes an environment variable name for `env`, or a field name for Vault/AWS. For AWS, `key` is never a SecretId: set `HRC_AWS_SECRET_NAME` to the secret name or ARN and optionally `HRC_AWS_REGION` (default `us-east-1`). The `SecretString` must be a JSON object whose requested field is a string; each call returns only that field, including an empty string when stored.
+
+Missing configuration, missing fields, non-string fields, malformed JSON, `SecretBinary`, and backend errors return `default` (or `None`). AWS does not fall back to environment variables or return the whole JSON object. Logs omit secret contents and exception messages. Existing AWS secrets stored as plain strings must be migrated to JSON objects with named string fields.
+
+Vault returns `default` (or `None`) when its URL or credential is missing; it never reads the same key from environment variables in that case. An unsupported backend raises `ValueError`. Callers must invoke `SecretManager` explicitly: configuring its backend does not replace every `os.getenv()` call in the application.
+
+`SecretManager` is independent of master-key handling. `HRC_MASTER_KEY_SOURCE=env` remains accepted for compatibility with the existing environment-secret behavior. Other source values and any nonempty `HRC_MASTER_KEY_FILE` raise a configuration error because the runtime has no alternate master-key provider. Remove those unsupported settings before startup.
 
 ---
 

@@ -15,17 +15,17 @@ This script demonstrates the key features of the HieraChain Ledger:
 This serves as both a demonstration and a basic test of the Ledger.
 """
 
-import sys
-import datetime
 import atexit
+import datetime
 import os
+import sys
 
 # Override block interval to 0 for immediate block creation/finalization in demo
 os.environ["HRC_BLOCK_INTERVAL"] = "0.0"
 
 # Import Ledger components
+from hierachain.domains.utils import CrossChainValidator, EntityTracer
 from hierachain.hierarchical import HierarchyManager
-from hierachain.domains.utils import EntityTracer, CrossChainValidator
 
 
 # Custom logger to capture all output
@@ -137,7 +137,7 @@ def create_sub_chains(hierarchy_manager):
     print()
 
 
-def demonstrate_msp(hierarchy_manager):
+def demonstrate_msp(hierarchy_manager: HierarchyManager) -> bool:
     print("3. Demonstrating Membership Service Provider (MSP) functionality...")
     try:
         _org1 = hierarchy_manager.create_organization(
@@ -156,14 +156,14 @@ def demonstrate_msp(hierarchy_manager):
         print(f"   Error creating organizations: {e}")
         return False
 
-    hierarchy_manager.assign_organization_to_chain(
-        "ManufacturerOrg", "ManufacturingChain"
-    )
-    hierarchy_manager.assign_organization_to_chain("QualityOrg", "QualityChain")
-    hierarchy_manager.assign_organization_to_chain(
-        "LogisticsOrg", "LogisticsChain"
-    )
-    print("   Assigned organizations to respective chains")
+    for org_id, chain_name in (
+        ("ManufacturerOrg", "ManufacturingChain"),
+        ("QualityOrg", "QualityChain"),
+        ("LogisticsOrg", "LogisticsChain"),
+    ):
+        assigned = hierarchy_manager.assign_organization_to_chain(org_id, chain_name)
+        print(f"   Organization-to-chain assignment {org_id} -> {chain_name}: {assigned}")
+    print("   Configure channel membership and policies for supported organization access")
     print()
     return True
 
@@ -876,8 +876,9 @@ def demonstrate_hierachain():
 
     print("\n18. Exporting Explorer Data to JSON...")
     try:
-        from hierachain.api.blockchain_explorer import BlockchainExplorer
         import json
+
+        from hierachain.api.blockchain_explorer import BlockchainExplorer
         
         # Create an explorer and collect all the structural data into 1 file
         explorer = BlockchainExplorer(chain=hierarchy_manager)
@@ -942,7 +943,7 @@ def demonstrate_hierachain():
 def main():
     """Main entry point for the demonstration."""
     try:
-        from hierachain.config.version import get_version, VERSION
+        from hierachain.config.version import VERSION, get_version
 
 
         # Add Ledger version information

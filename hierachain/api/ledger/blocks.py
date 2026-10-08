@@ -4,18 +4,19 @@ Pagination and detail lookup for blocks across chains,
 with optional IPFS CID resolution.
 """
 
-from typing import Any
-from fastapi import APIRouter, HTTPException, status, Depends
+from typing import Annotated, Any
 
-from hierachain.api.ledger.depds import get_hierarchy_manager
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
 from hierachain.api.ledger.chains import get_chain_by_name
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.security.verify.api_key_verifier import require_chain_access
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.storage.endpoint_helpers import (
     is_ipfs_enabled,
     resolve_multiple_events,
 )
 from hierachain.core.utils import get_block_events as _get_block_events_data
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain"])
 
@@ -73,8 +74,8 @@ async def _resolve_blocks_cids(
 )
 async def get_chain_blocks(
     chain_name: str,
-    limit: int = 10,
-    offset: int = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    offset: Annotated[int, Query(ge=0)] = 0,
     resolve_cid: bool = False,
     manager: HierarchyManager = Depends(get_hierarchy_manager)
 ):

@@ -1,6 +1,6 @@
 ---
 title: "Proof of Authority (PoA)"
-description: "Authority-based consensus protocol: Maximum performance, Node identity, and Round-Robin rotation."
+description: "Authority-based consensus protocol with node identities, block signatures, and round-robin rotation."
 icon: material/account-check-outline
 ---
 
@@ -8,7 +8,7 @@ icon: material/account-check-outline
 
 ## Overview
 
-**Proof of Authority (PoA)** is an identity-based consensus protocol optimized for **Intra-Organization enterprise networks** (single MainChain managing internal domain Sub-Chains). In HieraChain's two-tiered consensus architecture, `SubChain` instances **always default to PoA** for processing internal domain events at ultra-fast speeds (~0ms base latency) without requiring cross-organizational roundtrips.
+**Proof of Authority (PoA)** is an identity-based consensus protocol for **intra-organization enterprise networks**, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, `SubChain` instances default to PoA for internal events without requiring consensus between organizations.
 
 For cross-organizational inter-MainChain consensus between independent enterprises, see [Proof of Federation (PoF)](./pof.md).
 
@@ -27,23 +27,23 @@ The protocol operates based on trust in the identity of participating nodes:
 
 <div class="grid cards" markdown>
 
-*   :material-lightning-bolt:{ .lg .middle } __Breakthrough Performance__
+*   :material-lightning-bolt:{ .lg .middle } __Timing Validation__
 
     ---
 
-    Blocks are created instantly according to the configured cycle (`block_interval`), suitable for real-time response applications.
+    By default, PoA adds no minimum spacing delay. Consecutive block timestamps must still be nondecreasing. A positive `block_interval` requires timestamps to be at least half that value apart.
 
 *   :material-account-multiple-check:{ .lg .middle } __Identity Management__
 
     ---
 
-    Supports flexible addition/removal of Authorities through the API, allowing network configuration changes without system downtime.
+    The `ProofOfAuthority` class provides `add_authority()` and `remove_authority()` methods.
 
-*   :material-shield-sync:{ .lg .middle } __Absolute Integrity__
+*   :material-shield-sync:{ .lg .middle } __Block Signatures__
 
     ---
 
-    Every block carries the digital signature of a verified organization, completely eliminating risks from anonymous or spoofed nodes.
+    Each block is signed by its designated Authority. Other nodes verify the signature before accepting the block.
 
 </div>
 
@@ -53,9 +53,15 @@ The protocol operates based on trust in the identity of participating nodes:
 
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
-| `block_interval` | Minimum time between two blocks. | `10.0` seconds |
+| `block_interval` | Optional spacing setting; `0` adds no delay, while a positive value retains a validator threshold of half this value. | `0.0` seconds |
 | `max_authorities` | Maximum number of Authority nodes in the network. | `100` |
-| `require_signature` | Mandatory valid signature to accept a block. | `True` |
+| `require_authority_signature` | Mandatory valid signature to accept a block. | `True` |
+
+MainChain and SubChain instances using PoA read this value from `HRC_BLOCK_INTERVAL`, which defaults to `0.0`. Direct `ProofOfAuthority()` construction also defaults to `0.0`. Negative or nonfinite values are rejected when constructing PoA.
+
+The SubChain orderer still batches events according to `block_size` and `batch_timeout` (defaults: 50 events and 1.0 second). Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.
+
+For an existing deployment, an explicit `HRC_BLOCK_INTERVAL=10` retains the previous 5-second minimum spacing. Use `HRC_BLOCK_INTERVAL=0` to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.
 
 ---
 

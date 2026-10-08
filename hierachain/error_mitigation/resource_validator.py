@@ -6,10 +6,11 @@ Validates system resource usage and thresholds.
 
 from __future__ import annotations
 
-import orjson
-import time
 import logging
-from typing import Any, cast
+import time
+from typing import Any
+
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class ResourceValidator:
         logger.info("Initialized ResourceValidator")
 
     def validate_resources(self) -> dict[str, Any]:
+        """Report resource violations; legacy auto_scale enables logged advice only."""
         try:
             import psutil
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -36,9 +38,17 @@ class ResourceValidator:
                 "timestamp": time.time(),
                 "violations": [],
             }
-            self._check_cpu_usage(cpu_percent, resource_status)
-            self._check_memory_usage(memory.percent, resource_status)
-            self._check_disk_usage(cast(float, resource_status["disk_percent"]), resource_status)
+            for resource_type, label, percent, threshold in (
+                ("cpu", "CPU", cpu_percent, self.cpu_threshold),
+                ("memory", "Memory", memory.percent, self.memory_threshold),
+                ("disk", "Disk", resource_status["disk_percent"], self.disk_threshold),
+            ):
+                if percent > threshold:
+                    violation = f"{label} usage {percent:.1f}% > {threshold}%"
+                    resource_status["violations"].append(violation)
+                    logger.warning(violation)
+                    if self.auto_scale and resource_type != "disk":
+                        self._log_capacity_recommendation(resource_type)
             if not resource_status["violations"]:
                 logger.info("All resource thresholds within limits")
             return resource_status
@@ -49,35 +59,13 @@ class ResourceValidator:
             logger.error("Resource validation failed: %s", ex)
             return {"error": str(ex), "violations": []}
 
-    def _check_cpu_usage(self, cpu_percent: float, status: dict[str, Any]) -> None:
-        if cpu_percent > self.cpu_threshold:
-            violation = f"CPU usage {cpu_percent:.1f}% > {self.cpu_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
-            if self.auto_scale:
-                self._trigger_scaling("cpu")
-
-    def _check_memory_usage(self, memory_percent: float, status: dict[str, Any]) -> None:
-        if memory_percent > self.memory_threshold:
-            violation = f"Memory usage {memory_percent:.1f}% > {self.memory_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
-            if self.auto_scale:
-                self._trigger_scaling("memory")
-
-    def _check_disk_usage(self, disk_percent: float, status: dict[str, Any]) -> None:
-        if disk_percent > self.disk_threshold:
-            violation = f"Disk usage {disk_percent:.1f}% > {self.disk_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
-
-    def _trigger_scaling(self, resource_type: str) -> None:
-        scaling_event = {
-            "event": "resource_scaling_triggered",
+    def _log_capacity_recommendation(self, resource_type: str) -> None:
+        recommendation = {
+            "event": "resource_capacity_recommendation",
             "resource_type": resource_type,
             "timestamp": time.time(),
             "auto_scale_enabled": self.auto_scale,
         }
-        logger.info("Resource scaling triggered: %s", orjson.dumps(scaling_event).decode())
+        logger.info("Resource capacity recommendation for the host application: %s", dumps_json(recommendation))
         from hierachain.core.parquet_log import write_parquet_log
-        write_parquet_log("log/error_mitigation/resource_scaling.parquet", scaling_event)
+        write_parquet_log("log/error_mitigation/resource_scaling.parquet", recommendation)

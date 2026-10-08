@@ -12,7 +12,6 @@ import logging
 
 from hierachain.security.identity import IdentityManager
 
-
 logger = logging.getLogger(__name__)
 
 

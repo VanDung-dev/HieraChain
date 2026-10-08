@@ -3,20 +3,21 @@
 List chains, get chain stats, and create sub-chains.
 """
 
-import re
 import os
-from fastapi import APIRouter, HTTPException, status, Depends
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from hierachain.api.ledger.schemas import ChainInfoResponse, ChainStatsResponse
 from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.api.ledger.schemas import ChainInfoResponse, ChainStatsResponse
 from hierachain.core.blockchain import Blockchain
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.sanitization import sanitize_string
-from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain"])
 api_logger = SecureLogger("hierachain.api.ledger")
@@ -152,11 +153,16 @@ def _register_new_sub_chain(
     manager: HierarchyManager, safe_chain_name: str, safe_chain_type: str
 ) -> JSONResponse | None:
     """Attempts to add a new sub-chain to the manager. Returns conflict response if it exists."""
-    sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
+    sub_chain = SubChain(
+        name=safe_chain_name,
+        domain_type=safe_chain_type,
+        node_identity=manager.node_identity,
+    )
     try:
         manager.add_sub_chain(safe_chain_name, sub_chain)
         return None
     except ValueError as ve:
+        sub_chain.shutdown()
         api_logger.info(
             "Sub-chain already exists", chain_name=safe_chain_name, error=str(ve)
         )
@@ -168,6 +174,9 @@ def _register_new_sub_chain(
                 "chain_name": safe_chain_name,
             },
         )
+    except Exception:
+        sub_chain.shutdown()
+        raise
 
 
 @router.post(
@@ -210,7 +219,9 @@ async def create_sub_chain(
                 }
             )
 
-        _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
+        conflict = _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
+        if conflict is not None:
+            return conflict
 
         api_logger.audit(
             action="create",

@@ -12,12 +12,10 @@ from enum import Enum
 
 class IntegrationError(Exception):
     """Exception raised for integration-related errors"""
-    pass
 
 
 class MappingError(Exception):
     """Exception raised for mapping-related errors"""
-    pass
 
 
 class SyncStatus(Enum):

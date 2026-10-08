@@ -2,17 +2,17 @@
 Key management commands.
 """
 
-import click
-import orjson
 import os
 
+import click
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from hierachain.serialization import dumps_json, loads_json
 
 
 @click.group()
 def key_group():
     """Key management commands."""
-    pass
 
 
 @key_group.command()
@@ -34,18 +34,40 @@ def generate(output: str, key_format: str) -> None:
     private_key = key.private_bytes_raw().hex()
     public_key = key.public_key().public_bytes_raw().hex()
 
-    if key_format == 'json':
-        data = {
-            "private_key": private_key,
-            "public_key": public_key
-        }
-        with open(output, "wb") as f:
-            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
-        click.echo(f"Key pair generated and saved to: {output}")
-        click.echo(f"Public Key: {public_key}")
-    else:
-        click.echo(f"Private Key (hex): {private_key}")
-        click.echo(f"Public Key (hex): {public_key}")
+    data = {"private_key": private_key, "public_key": public_key}
+    payload = (
+        dumps_json(data, indent=2).encode("utf-8")
+        if key_format == 'json'
+        else f"{private_key}\n{public_key}\n".encode('ascii')
+    )
+    try:
+        descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, 'wb') as file:
+            file.write(payload)
+    except OSError as exc:
+        raise click.ClickException(f"Could not create key file {output}: {exc.strerror}") from exc
+
+    click.echo(f"Key pair generated and saved to: {output}")
+    click.echo(f"Public Key: {public_key}")
+
+
+def _read_key_file(input_file: str) -> dict[str, str]:
+    """Read a JSON key file or a two-line hex key file."""
+    try:
+        with open(input_file, 'rb') as file:
+            payload = file.read()
+        if payload.lstrip().startswith(b'{'):
+            data = loads_json(payload)
+            if not isinstance(data, dict):
+                raise ValueError("Expected a key object")
+        else:
+            private_key, public_key = payload.decode('ascii').splitlines()
+            data = {"private_key": private_key, "public_key": public_key}
+        if not isinstance(data.get('private_key'), str) or not isinstance(data.get('public_key'), str):
+            raise ValueError("Expected private_key and public_key strings")
+        return data
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise click.ClickException(f"Could not read key file {input_file}: {exc}") from exc
 
 
 @key_group.command()
@@ -57,19 +79,12 @@ def generate(output: str, key_format: str) -> None:
 )
 def show(input_file: str) -> None:
     """Show key pair information from a key file."""
-    if not os.path.exists(input_file):
-        click.echo(f"Error: Key file not found: {input_file}", err=True)
-        raise click.Abort()
-
-    with open(input_file, "rb") as f:
-        data = orjson.loads(f.read())
+    data = _read_key_file(input_file)
 
     public_key = data.get("public_key", "N/A")
-    private_key = data.get("private_key", "N/A")
-
     click.echo(f"Key file: {input_file}")
     click.echo(f"Public Key:  {public_key}")
-    click.echo(f"Private Key: {private_key[:16]}...{private_key[-8:]} (masked)")
+    click.echo("Private Key: (masked)")
 
 
 @key_group.command()
@@ -81,12 +96,7 @@ def show(input_file: str) -> None:
 )
 def verify(input_file: str) -> None:
     """Verify a key pair is valid."""
-    if not os.path.exists(input_file):
-        click.echo(f"Error: Key file not found: {input_file}", err=True)
-        raise click.Abort()
-
-    with open(input_file, "rb") as f:
-        data = orjson.loads(f.read())
+    data = _read_key_file(input_file)
 
     try:
         private_key_hex = data["private_key"]

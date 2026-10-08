@@ -12,6 +12,8 @@ Module API xử lý giao tiếp giữa client bên ngoài và lõi HieraChain. N
 
 ### Thành phần cốt lõi
 
+Import helper của API client, như `hierachain.api.storage.ipfs_client`, không tạo ứng dụng server. Các export `app` và `create_app` nạp server khi được yêu cầu; yêu cầu xác thực production vẫn được kiểm tra. Khi lifespan API kết thúc, hierarchy manager được đóng và provider manager/tracer được reset, kể cả khi startup P2P thất bại.
+
 * FastAPI server (`server.py`) là điểm khởi chạy. Nó thiết lập middleware, xác thực và router.
 * REST API có ba nhóm (ledger, business, admin) cho thao tác lõi, tính năng nghiệp vụ và quản trị hệ thống.
 * GraphQL endpoint cho phép chọn field linh hoạt với giới hạn depth và complexity.
@@ -41,7 +43,7 @@ Mặc định là 100 request mỗi phút, được cấu hình qua `HRC_RATE_LI
 
 ### Xác thực
 
-`APIKeyVerifier` kiểm tra header `X-API-Key`. Bật hoặc tắt qua `HRC_AUTH_ENABLED`.
+`APIKeyVerifier` kiểm tra header `X-API-Key` cho HTTP và WebSocket. Production bắt buộc `HRC_AUTH_ENABLED=true` và file key `HRC_API_KEYS_FILE` đã được cấp; dev/test có thể tắt xác thực. Khi bật xác thực, GraphQL kiểm tra scope cho từng operation: query chain và block cần `chains`, query event và `addEvent` cần `events`, còn query block chọn event lồng bên trong cần cả hai scope. WebSocket truyền cả message block và event, nên kết nối và đăng ký cần `chains` và `events` (hoặc `all`). Trong production, GraphQL và WebSocket từ chối yêu cầu nếu app không có verifier đang bật hoặc verifier không trả auth context.
 
 ---
 
@@ -67,8 +69,8 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 Các endpoint này hỗ trợ quy trình nghiệp vụ:
 
 * Channel tạo kênh giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`).
-* Private data collection lưu dữ liệu không chia sẻ trên sổ cái chung.
-* Domain contract triển khai và chạy hợp đồng thông minh theo nghiệp vụ riêng.
+* Có thể quản lý metadata của private collection, nhưng `POST /api/business/private-data` hiện trả HTTP 501 vì API chưa có kho lưu private data. Endpoint này không nhận giá trị inline hoặc tham chiếu IPFS như dữ liệu đã lưu.
+* Domain contract đăng ký metadata; `POST /api/business/contracts/execute` trả HTTP 501 vì engine thực thi chưa được triển khai.
 * Organization đăng ký và quản lý danh tính qua MSP.
 
 ### admin: system và admin
@@ -93,17 +95,16 @@ Dùng GraphQL khi client cần chọn field cụ thể hoặc giảm kích thư�
 * Complexity giới hạn ở 1000 điểm mỗi query, tính theo số field và phép toán.
 * Introspection (`__schema`) bị tắt ở production.
 
-### Ví dụ query (lazy-loading IPFS)
+### Ví dụ query
 
-Bạn có thể chọn có fetch và giải mã dữ liệu IPFS hay không qua `resolveCid`.
+Query event cần quyền `events`. Query block và chain cần `chains`; chọn event lồng trong block cần cả hai quyền.
 
 ```graphql
 query {
-  events(chainName: "supply_chain", entityId: "PROD-001", resolveCid: true) {
+  events(chainName: "supply_chain", entityId: "PROD-001", limit: 20) {
     eventType
-    details  # Sẽ được tự động fetch từ IPFS và giải mã nếu cần
+    details
     timestamp
-    isOffchain
   }
 }
 ```
@@ -112,9 +113,9 @@ query {
 
 ## WebSocket (real-time streaming)
 
-Endpoint: `/ws`
+Kết nối tới `/ws`. Để chọn chuỗi ngay khi kết nối, truyền `chain_name`, ví dụ `/ws?chain_name=supply_chain`.
 
-Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.
+Khi bật xác thực, hãy gửi header `X-API-Key` trong quá trình bắt tay WebSocket. Kết nối và mỗi lần đăng ký cần cả quyền `chains` và `events` vì luồng hiện tại gửi cả message block lẫn event tới subscriber của chuỗi. Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.
 
 ### Các loại message chính
 
@@ -176,3 +177,9 @@ curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 * [Hierarchical Structure](./hierarchical.md)
 * [Storage & IPFS Integration](./storage.md)
 * [Security & Identity](../security/encryption-keys.md)
+
+GraphQL đọc sự kiện Arrow theo hàng và chờ resolver bất đồng bộ, gồm trường details. Đọc sự kiện bên trong block cần cả quyền `chains` và `events`. Tên chain không tồn tại trả kết quả truy vấn rỗng và từ chối mutation; không tự chuyển sang main chain.
+
+### Mã hóa JSON
+
+Response JSON được tạo trực tiếp và các handler lỗi HTTP dùng `JSONResponse` của FastAPI/Starlette. Response mặc định và response model tiếp tục dùng validation, serialization và schema OpenAPI của FastAPI/Pydantic. Lỗi validation request giữ status `422` và danh sách `detail`. Thông điệp WebSocket dùng JSON chuẩn, mã hóa thành text frame UTF-8.

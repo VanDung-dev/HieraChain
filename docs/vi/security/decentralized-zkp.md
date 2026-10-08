@@ -1,65 +1,36 @@
 ---
 title: "Decentralized Zero-Knowledge Proofs"
-description: "Bảo mật dữ liệu riêng tư bằng công nghệ ZK: Chứng minh tính đúng đắn mà không tiết lộ dữ liệu gốc."
+description: "Phạm vi ZK hiện tại: fixture mock cho luồng proof và placeholder production chưa hỗ trợ."
 icon: material/brain
 ---
 
 # Decentralized Zero-Knowledge Proofs
 
-Lớp bảo mật tiên tiến nhất của HieraChain, cho phép chia sẻ bằng chứng về dữ liệu giữa các chuỗi con và chuỗi chính mà không làm lộ nội dung kinh doanh nhạy cảm.
+HieraChain cung cấp interface prover và verifier cho luồng proof liên chuỗi. Chế độ đã triển khai là mock phát triển, dùng commitment SHA-256 của public inputs. Nó không chứng minh quy tắc nghiệp vụ, tính đúng đắn của bước chuyển trạng thái hay tính riêng tư zero-knowledge. Tạo và xác minh proof production chưa được triển khai.
 
 ## 1. ZK Prover
 
 **File**: `hierachain/security/zk_prover.py`
 
-Thành phần tạo bằng chứng tại các Sub-Chains:
-
-*   **Proof Generation**: Tạo ra các bằng chứng toán học khẳng định rằng một sự kiện hoặc trạng thái là hợp lệ.
-*   **Data Hiding**: Nội dung chi tiết của sự kiện được thay thế bằng một chuỗi định danh (Hash) duy nhất.
-*   **Privacy Preservation**: Đảm bảo Main Chain không bao giờ nhìn thấy dữ liệu thô của Sub-Chains.
+* `ZKProver(mode="mock")` tạo fixture chứa hash của public inputs và phần đệm ngẫu nhiên. Bất kỳ ai có inputs đều có thể tạo commitment khớp.
+* `ZKProver(mode="production").generate_proof(...)` trả `ZKProofResult(success=False, proof=b"", error=...)` vì backend production chưa triển khai.
+* `generate_proof_bytes(...)` phát sinh `ZKProvingError` khi tạo thất bại. Nạp proving key hay cấu hình circuit path không triển khai backend.
 
 ## 2. ZK Verifier
 
 **File**: `hierachain/security/verify/zk_verifier.py`
 
-Thành phần xác minh tại Main Chain:
+* Xác minh mock so sánh commitment với hash của public inputs. Hash khớp không tạo bằng chứng toán học về bước chuyển trạng thái hợp lệ.
+* Với inputs hợp lệ, xác minh production phát sinh `ZKVerificationError` bọc lỗi backend chưa triển khai; inputs sai trả `False` trước bước gọi backend.
+* Nạp verification key không làm cho xác minh production khả dụng.
 
-*   **Efficient Verification**: Xác minh tính đúng đắn của bằng chứng ZK với chi phí tính toán thấp.
-*   **Trustless Validation**: Cho phép Main Chain tin tưởng vào dữ liệu của Sub-Chain mà không cần quyền truy cập vào dữ liệu đó.
-*   **Cross-chain Integrity**: Đảm bảo tính toàn vẹn của dữ liệu khi di chuyển giữa các tầng trong kiến trúc phân cấp.
+## 3. Cấu hình và ranh giới runtime
 
----
+`HRC_ENABLE_ZK_PROOFS` mặc định là `false`; `HRC_ZK_MODE` mặc định là `mock`. Bật xác minh không cài backend production. Chỉ dùng mock cho luồng proof phát triển và kiểm thử. Chỉ đặt `HRC_ZK_MODE=production` không tạo được triển khai ZK hoạt động.
 
-## Luồng Hoạt động của ZK
-
-```mermaid
-sequenceDiagram
-    participant SC as Sub-Chain (Prover)
-    participant MC as Main Chain (Verifier)
-    
-    SC->>SC: Process Private Business Event
-    SC->>SC: Generate ZK Proof (f(x) = y)
-    SC->>MC: Submit Hash + ZK Proof
-    MC->>MC: Verify ZK Proof (Fast Check)
-    alt Proof is Valid
-        MC-->>MC: Commit Proof to Ledger
-        MC-->>SC: Acknowledge Success
-    else Proof is Invalid
-        MC-->>SC: Reject & Flag Security Alert
-    end
-```
-
----
-
-## Ứng dụng Thực tế
-
-*   **Báo cáo tài chính**: Chứng minh tổng doanh thu đạt ngưỡng nhất định mà không tiết lộ chi tiết từng hóa đơn.
-*   **Quản lý chuỗi cung ứng**: Xác nhận một lô hàng đã qua kiểm định chất lượng mà không làm lộ công thức sản xuất bí mật.
-*   **Xác thực quyền hạn**: Chứng minh một người dùng có đủ quyền thực hiện hành động mà không cần biết danh tính cụ thể của họ trên chuỗi chính.
-
----
+Xác minh chữ ký block, Merkle root và điểm neo MainChain bền vững là các cơ chế toàn vẹn riêng đã triển khai. Không được mô tả chúng là zero-knowledge proof về tính đúng đắn nghiệp vụ. Ứng dụng cần xác thực ZK thật phải có backend tạo/xác minh và hợp đồng circuit được triển khai, kiểm chứng riêng.
 
 ## Liên quan
 
-*   [Kiến trúc phân cấp](../modules/hierarchical.md)
-*   [Authorization & Access Control](./authorization-access-control.md)
+* [Kiến trúc phân cấp và phạm vi hỗ trợ tính năng](../modules/hierarchical.md)
+* [Authorization & Access Control](./authorization-access-control.md)

@@ -10,21 +10,18 @@ Requires running HieraChain nodes with IPFS enabled.
 """
 
 import os
-import time
 import random
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 from typing import Any
 
 import pytest
 
-from hierachain.api.storage.ipfs_client import IPFSClient, IPFSError
-
 from docker.stress.real_stress_client import (
-    RealStressClient,
-    REAL_REQUESTS,
     DEFAULT_CHAIN_NAME,
+    REAL_REQUESTS,
+    RealStressClient,
 )
+from hierachain.api.storage.ipfs_client import IPFSClient
 
 IPFS_HOST = os.getenv("HRC_IPFS_HOST", "/ip4/127.0.0.1/tcp/5001")
 IPFS_ENABLED = os.getenv("HRC_IPFS_ENABLED", "false").lower() == "true"
@@ -43,17 +40,29 @@ def _check_ipfs() -> bool:
     if not IPFS_ENABLED:
         return False
     try:
-        client = IPFSClient(ipfs_host=IPFS_HOST)
-        client.get_daemon_version()
-        client.close()
+        with IPFSClient(ipfs_host=IPFS_HOST) as client:
+            client.get_daemon_version()
         return True
-    except (IPFSError, Exception):
+    except Exception:
         return False
 
 
 def _preload_ipfs_data(count: int) -> list[dict[str, Any]]:
     """Pre-load data to IPFS and return list of {cid, nonce, metadata} dicts."""
-    client = IPFSClient(ipfs_host=IPFS_HOST, auto_pin=True)
+    key_hex = os.getenv("HRC_IPFS_ENCRYPTION_KEY")
+    if key_hex is None or len(key_hex) != 64 or any(
+        char not in "0123456789abcdefABCDEF" for char in key_hex
+    ):
+        raise RuntimeError(
+            "IPFS stress payload resolution requires HRC_IPFS_ENCRYPTION_KEY to be "
+            "set to the stable 64-character hex key shared with the HieraChain nodes"
+        )
+
+    client = IPFSClient(
+        ipfs_host=IPFS_HOST,
+        encryption_key=bytes.fromhex(key_hex),
+        auto_pin=True,
+    )
     results = []
     try:
         for i in range(count):
@@ -68,6 +77,7 @@ def _preload_ipfs_data(count: int) -> list[dict[str, Any]]:
                 "cid": result["cid"],
                 "nonce": result["nonce"],
                 "metadata": metadata,
+                "expected_data": data,
             })
     finally:
         client.close()
@@ -90,28 +100,8 @@ class TestIPFSStress:
     """Stress tests for IPFS-backed event workflow."""
 
     def _ensure_chain(self, client: RealStressClient) -> bool:
-        healthy = [nid for nid, s in client.node_status.items() if s.is_healthy]
-        if not healthy:
-            return False
-        node_id = healthy[0]
-        resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/ledger/admin/chains/{CHAIN_NAME}/sub-chain",
-            json={"domain": "stress_test"},
-            timeout=10,
-        )
-        return resp.status_code in (200, 201, 409)
-
-    def _register_entity(self, client: RealStressClient, entity_id: str) -> bool:
-        healthy = [nid for nid, s in client.node_status.items() if s.is_healthy]
-        if not healthy:
-            return False
-        node_id = healthy[0]
-        resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/ledger/chains/{CHAIN_NAME}/entities/{entity_id}",
-            json={"type": "stress_test"},
-            timeout=10,
-        )
-        return resp.status_code in (200, 201, 409)
+        """Prepare the generic chain through the current ledger creation API."""
+        return client.create_chains_on_nodes(CHAIN_NAME)
 
     def _submit_ipfs_event(
         self, node_url: str, entity_id: str, ipfs_ref: dict[str, Any], client: RealStressClient
@@ -131,9 +121,8 @@ class TestIPFSStress:
     )
     def test_ipfs_connectivity(self):
         """Verify IPFS daemon is reachable before stress tests."""
-        client = IPFSClient(ipfs_host=IPFS_HOST)
-        version = client.get_daemon_version()
-        client.close()
+        with IPFSClient(ipfs_host=IPFS_HOST) as client:
+            version = client.get_daemon_version()
         print(f"\nIPFS daemon: v{version['version']}")
 
     @pytest.mark.stress
@@ -144,24 +133,20 @@ class TestIPFSStress:
     def test_ipfs_upload_stress(self):
         """Stress test IPFS upload throughput."""
         COUNT = 50
-        client = IPFSClient(ipfs_host=IPFS_HOST, auto_pin=True)
+        with IPFSClient(ipfs_host=IPFS_HOST, auto_pin=True) as client:
+            start = time.time()
+            results = []
+            for i in range(COUNT):
+                data = {"index": i, "data": "y" * 1000}
+                t0 = time.time()
+                client.upload_json(data, encrypt=True)
+                results.append(time.time() - t0)
 
-        start = time.time()
-        results = []
-        for i in range(COUNT):
-            data = {"index": i, "data": "y" * 1000}
-            t0 = time.time()
-            result = client.upload_json(data, encrypt=True)
-            elapsed = time.time() - t0
-            results.append(elapsed)
-
-        total = time.time() - start
-        avg = sum(results) / len(results)
-        print(f"\nUploaded {COUNT} IPFS entries in {total:.2f}s")
-        print(f"Avg upload time: {avg*1000:.2f}ms")
-        print(f"Throughput: {COUNT/total:.1f} entries/sec")
-
-        client.close()
+            total = time.time() - start
+            avg = sum(results) / len(results)
+            print(f"\nUploaded {COUNT} IPFS entries in {total:.2f}s")
+            print(f"Avg upload time: {avg*1000:.2f}ms")
+            print(f"Throughput: {COUNT/total:.1f} entries/sec")
 
     @pytest.mark.stress
     @pytest.mark.skipif(
@@ -182,7 +167,7 @@ class TestIPFSStress:
         if not stress_client.wait_for_nodes(timeout=10):
             pytest.skip("No HieraChain nodes available")
 
-        self._ensure_chain(stress_client)
+        assert self._ensure_chain(stress_client), "Could not prepare IPFS stress chain on all target nodes"
 
         healthy = [nid for nid, s in stress_client.node_status.items() if s.is_healthy]
         if not healthy:
@@ -195,7 +180,6 @@ class TestIPFSStress:
         fail = 0
         times = []
         entity_id = f"ipfs_stress_run_{int(time.time())}"
-        self._register_entity(stress_client, entity_id)
 
         for i, ref in enumerate(ipfs_refs):
             t0 = time.time()
@@ -208,7 +192,7 @@ class TestIPFSStress:
                 fail += 1
 
         avg = sum(times) / len(times) if times else 0
-        print(f"\n=== IPFS Event Stress Results ===")
+        print("\n=== IPFS Event Stress Results ===")
         print(f"Submitted: {len(ipfs_refs)}")
         print(f"Success: {success}")
         print(f"Failed: {fail}")
@@ -236,7 +220,7 @@ class TestIPFSStress:
         if not stress_client.wait_for_nodes(timeout=10):
             pytest.skip("No HieraChain nodes available")
 
-        self._ensure_chain(stress_client)
+        assert self._ensure_chain(stress_client), "Could not prepare IPFS stress chain on all target nodes"
 
         healthy = [nid for nid, s in stress_client.node_status.items() if s.is_healthy]
         if not healthy:
@@ -246,27 +230,48 @@ class TestIPFSStress:
 
         # Submit events
         entity_id = f"ipfs_resolve_run_{int(time.time())}"
-        self._register_entity(stress_client, entity_id)
 
         for ref in ipfs_refs:
-            self._submit_ipfs_event(node_url, entity_id, ref, stress_client)
+            result = self._submit_ipfs_event(node_url, entity_id, ref, stress_client)
+            assert result["status"] in (200, 201), result["body"]
 
         time.sleep(3)
 
-        # Query with resolution
+        blocks_url = f"{node_url}/api/ledger/chains/{CHAIN_NAME}/blocks"
+        latest = stress_client.session.get(f"{blocks_url}?limit=1", timeout=30)
+        assert latest.status_code == 200
+        total_blocks = latest.json()["total_blocks"]
+        resolve_limit = len(ipfs_refs) * 2
+        offset = max(0, total_blocks - resolve_limit)
+
+        # Query the newest blocks with resolution
         resolve_start = time.time()
         resp = stress_client.session.get(
-            f"{node_url}/api/ledger/chains/{CHAIN_NAME}/blocks?limit=10&resolve_cid=true",
+            f"{blocks_url}?offset={offset}&limit={resolve_limit}&resolve_cid=true",
             timeout=30,
         )
         resolve_time = time.time() - resolve_start
 
         assert resp.status_code == 200
         data = resp.json()
-        blocks = data.get("blocks", []) if isinstance(data, dict) else data
+        assert data.get("resolved") is True
+        blocks = data["blocks"]
         event_count = sum(len(b.get("events", [])) for b in blocks)
+        events_by_cid = {
+            event["details_cid"]: event
+            for block in blocks
+            for event in block.get("events", [])
+            if "details_cid" in event
+        }
 
-        print(f"\n=== IPFS Resolve Stress Results ===")
+        for ref in ipfs_refs:
+            event = events_by_cid.get(ref["cid"])
+            assert event is not None, f"Event with CID {ref['cid']} was not returned"
+            assert event.get("details") == ref["expected_data"], (
+                f"CID {ref['cid']} did not resolve to its uploaded payload"
+            )
+
+        print("\n=== IPFS Resolve Stress Results ===")
         print(f"Blocks retrieved: {len(blocks)}")
         print(f"Events found: {event_count}")
         print(f"Resolve query time: {resolve_time*1000:.2f}ms")

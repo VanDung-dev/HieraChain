@@ -1,65 +1,62 @@
 ---
 title: Thao tác Liên chuỗi (Cross-Chain Operations)
-description: Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối hoạt động phân tán.
+description: Cách khởi tạo và phục hồi giao dịch Two-Phase Commit (2PC) bền vững.
 icon: material/swap-horizontal
 ---
 
-# Thao tác Liên chuỗi (Cross-Chain Operations)
+# Thao tác Liên chuỗi (2PC)
 
-## Mục đính
+## Mục đích
 
-Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi trạng thái ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là **Two-Phase Commit (2PC)**.
+`CrossChainTransactionManager` điều phối giao dịch giữa hai participant `DomainChain`. Journal thuộc coordinator lưu metadata giao dịch và quyết định commit bền vững, tách biệt với ordering event journal của từng chain.
 
-Cơ chế này được quản lý chủ đạo bởi module `CrossChainTransactionManager` tại `hierachain/hierarchical/transaction_manager.py`.
+## Trạng thái giao dịch
 
-### 1. Vòng đời Trạng thái Thao tác (TransactionState)
+- **`PENDING`**: Coordinator đã tạo giao dịch.
+- **`PREPARED`**: Cả hai participant đã chấp nhận yêu cầu prepare; chưa có quyết định commit.
+- **`IN_DOUBT`**: Coordinator chưa thể xác nhận giao dịch đã hoàn tất. Trước quyết định COMMIT bền vững, coordinator retry abort; sau quyết định đó, coordinator retry commit.
+- **`COMMITTED`**: Cả hai participant xác nhận operation event đã được fsync vào ordering journal. Block có thể vẫn đang được hoàn thiện bất đồng bộ.
+- **`ROLLED_BACK`**: Cả hai participant xác nhận abort trước khi có quyết định COMMIT bền vững.
+- **`FAILED`**: Giao dịch không thể bắt đầu, ví dụ chain được chỉ định không tồn tại hoặc không hỗ trợ 2PC.
 
-Mỗi thao tác liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:
+## Luồng giao dịch
 
-* **`PENDING`**: Thao tác đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.
-* **`PREPARED`**: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện thao tác, thực tế đã khóa (lock) trước tài nguyên thành công.
-* **`COMMITTED`**: Thao tác hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.
-* **`ROLLED_BACK`**: Thao tác bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.
-* **`FAILED`**: Thao tác thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).
+1. Coordinator fsync bản ghi `begin` trước khi prepare participant nào.
+2. Coordinator prepare source và destination, sau đó fsync bản ghi `prepared`.
+3. Coordinator fsync quyết định COMMIT trước khi gọi `commit_transaction()` ở participant nào.
+4. Mỗi participant chỉ xác nhận sau khi event bắt đầu và hoàn tất có gắn mã giao dịch đã được ordering journal chấp nhận.
+5. Sau khi có cả hai xác nhận, coordinator fsync `committed` và đặt trạng thái `COMMITTED`.
 
-### 2. Mô hình Two-Phase Commit (2PC)
+Nếu prepare lỗi, coordinator thử abort cả hai participant. Chỉ đặt trạng thái `ROLLED_BACK` khi cả hai trả về `True`; nếu không, giao dịch ở `IN_DOUBT` và sẽ retry abort. Sau quyết định COMMIT bền vững, coordinator không gọi rollback. Commit lỗi giữ trạng thái `IN_DOUBT` và được retry theo hướng commit.
 
-Trong `CrossChainTransactionManager`, chức năng `_execute_2pc(transaction)` phân bổ rõ ràng quá trình chạy quy trình chính để xử lý thao tác liên chuỗi. Logic hoạt động cốt lõi gồm có hai pha:
+## Khởi tạo thao tác
 
-#### Pha 1: Chuẩn bị (Prepare Phase)
-
-* Người quản lý lấy ra đối tượng từ hàm cấp `get_sub_chain()` của HierarchyManager.
-* Lần lượt gọi phương thức `prepare_transaction(tx_id, payload, is_source=True)` của chuỗi **Nguồn** để khóa các tài khoản nguồn lại.
-* Tiếp tục gọi `prepare_transaction` lên chuỗi **Đích** để yêu cầu đánh dấu nhận giao dịch.
-* Mục tiêu của Phase 1: Buộc mọi chuỗi tham gia giao dịch đưa ra lời cam kết có khả năng thực hiện thay đổi.
-* Nếu chuỗi Nguồn hoặc Đích không thể Prepare thành công (ví dụ do lỗi số dư khóa), hệ thống đi ngay vào khâu `_rollback()`.
-
-#### Pha 2: Chốt xác nhận (Commit Phase)
-
-* Được thực hiện nếu và chỉ nếu Phase 1 trả về thành công ở tất cả các bên tham gia giao dịch.
-* Module gọi tới API `commit_transaction(tx_id)` của chuỗi Nguồn.
-* Đồng thời chạy tương tự tới cấu trúc của chuỗi Đích định danh là Commit hoàn tất.
-* Ở bước này, block thực thụ sẽ được tạo trên hai Sub-chain để dứt điểm quá trình hoán đổi dữ liệu.
-* Nếu lỗi trong quy trình Commit (mặc dù hãn hữu), trạng thái giao dịch sẽ bị gắn cờ `FAILED` để đợi công cụ sửa chữa thủ công (Recovery) kiểm tra qua ID đó.
-
-### 3. Hướng dẫn Khởi tạo Lệnh
-
-Khi cần phát sinh lệnh qua DApp hoặc Module ngoài, lập trình viên truy xuất API/Function sau:
+Dùng coordinator của `HierarchyManager` để journal bền vững và trạng thái phục hồi được chia sẻ:
 
 ```python
-# Gọi instance từ HierarchyManager đã sẵn có
-manager = CrossChainTransactionManager(hierarchy_manager=hierarchy_manager_instance)
-
-# Thực hiện lệnh initiate giao dịch
-tx_id = manager.initiate_transaction(
+tx_id = hierarchy_manager.initiate_cross_chain_transaction(
     source_chain_name="sub_chain_finance",
     dest_chain_name="sub_chain_logistics",
     payload={
-        "event_name": "asset_transfer",
-        "asset_id": "PKG-099238",
-        "quantity": 500
-    }
+        "entity_id": "PKG-099238",
+        "operation_type": "transfer",
+        "details": {"quantity": 500},
+    },
 )
+
+transaction = hierarchy_manager.transaction_manager.get_transaction(tx_id)
 ```
 
-Điều này sẽ kích hoạt `_execute_2pc` tự động và đồng bộ trực tiếp trong logic quản lý mà không cần thêm thao tác phụ từ phía client.
+Entity phải được đăng ký trên cả hai chain và payload thao tác phải vượt qua bước xác thực của cả hai participant.
+
+## Phục hồi giao dịch chưa hoàn tất
+
+Coordinator retry quyết định bền vững khi khởi động lại và khi participant được đăng ký. Để retry sau lỗi trong lúc chạy:
+
+```python
+hierarchy_manager.transaction_manager.retry_pending()
+```
+
+Các chain đã lưu có tên trong bản ghi 2PC chưa hoàn tất được khôi phục thành participant `DomainChain`. Các chain đã lưu khác vẫn là `SubChain` chung. Nếu cần nâng cấp tường minh placeholder chung, gọi `create_sub_chain()` với tên và domain type hiện có; chain mới kết nối trước khi placeholder được dừng.
+
+Sau COMMIT bền vững, bản ghi `prepared` của coordinator xác nhận cả hai participant đã xác thực payload trước quyết định. Quá trình phục hồi khôi phục dữ liệu participant từ payload và bỏ qua operation event đã có marker trong ordering journal, nên không phụ thuộc vào entity registry chỉ lưu trong bộ nhớ.

@@ -6,16 +6,16 @@ Enums and dataclasses used across alert and performance monitoring subsystems.
 
 from __future__ import annotations
 
-import time
-import orjson
 import statistics
-from typing import Any
-from dataclasses import dataclass, field, asdict
-from enum import Enum
+import time
 from collections import deque
-
+from dataclasses import asdict, dataclass, field
+from enum import Enum
+from typing import Any
 
 # --- Alert System Types ---
+from hierachain.serialization import dumps_json
+
 
 class AlertSeverity(Enum):
     INFO = "info"
@@ -67,7 +67,7 @@ class Alert:
         return data
 
     def to_json(self) -> str:
-        return orjson.dumps(self.to_dict(), default=str).decode()
+        return dumps_json(self.to_dict(), default=str)
 
 
 @dataclass
@@ -126,6 +126,7 @@ class PerformanceMetric:
     threshold_critical: float | None = None
     history_size: int = 1000
     values: deque[MetricValue] = field(default_factory=deque)
+    low_is_bad: bool = False
 
     def __post_init__(self):
         self.values = deque(self.values, maxlen=self.history_size)
@@ -166,10 +167,13 @@ class PerformanceMetric:
         current_value = self.get_current_value()
         if current_value is None:
             return False, "no_data"
-        if self.threshold_critical and current_value >= self.threshold_critical:
-            return True, "critical"
-        elif self.threshold_warning and current_value >= self.threshold_warning:
-            return True, "warning"
+        for threshold, severity in (
+            (self.threshold_critical, "critical"), (self.threshold_warning, "warning"),
+        ):
+            if threshold is not None and (
+                current_value <= threshold if self.low_is_bad else current_value >= threshold
+            ):
+                return True, severity
         return False, "normal"
 
 

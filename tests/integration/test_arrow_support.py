@@ -5,18 +5,16 @@ This test suite includes:
 - Testing PolicyEngine's ability to evaluate conditions against Arrow objects.
 - Testing AuditLogger's serialization of Arrow objects in AuditEvent details.
 - Testing PolicyEngine's hashing of Arrow objects in context.
-- Testing APIValidator's ability to handle Arrow objects in data validation.
 - Testing ErrorClassifier's ability to sanitize Arrow metadata.
 """
 
-import pytest
 import pyarrow as pa
 from unittest.mock import patch
 
 from hierachain.security import PolicyCondition, ComparisonOperator
 from hierachain.security.policy_engine import _hash_context
 from hierachain.risk_management import AuditEvent, AuditEventType, AuditSeverity
-from hierachain.error_mitigation import APIValidator, ErrorClassifier
+from hierachain.error_mitigation import ErrorClassifier
 
 
 def test_policy_engine_arrow_evaluation():
@@ -96,22 +94,6 @@ def test_policy_engine_hashing():
     hash_val = _hash_context(context)
     assert isinstance(hash_val, str)
     assert len(hash_val) > 0
-
-
-def test_validator_sanitization():
-    """Test APIValidator handles Arrow objects."""
-    table = pa.Table.from_pydict({"a": [1]})
-    
-    validator = APIValidator({})
-    # validate_endpoint_data works on Arrow objects according to file snippet
-    result = validator.validate_endpoint_data(table)
-    assert result is True
-    
-    # Test forbidden term in schema
-    table_forbidden = pa.Table.from_pydict({"mining": [1]})
-    from hierachain.error_mitigation.validator import ValidationError
-    with pytest.raises(ValidationError):
-        validator.validate_endpoint_data(table_forbidden)
 
 
 def test_error_classifier_sanitization():

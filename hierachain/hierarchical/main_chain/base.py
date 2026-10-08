@@ -2,32 +2,33 @@
 Main Chain class implementation for HieraChain Ledger.
 """
 
-import time
 import logging
+import time
 from typing import Any
 
-from hierachain.core.blockchain import Blockchain
+from hierachain.config.settings import settings
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
-from hierachain.core.utils import (
-    sanitize_metadata_for_main_chain, validate_proof_metadata,
-)
 from hierachain.core.block import Block
-from hierachain.config.settings import settings
-from hierachain.security.verify.zk_verifier import ZKVerifier
-
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.utils import (
+    sanitize_metadata_for_main_chain,
+    validate_proof_metadata,
+)
 from hierachain.hierarchical.main_chain.proofs import (
+    _get_proofs_by_sub_chain_from_main_chain,
     _is_valid_hash_format,
     _record_proof_on_main_chain,
     _verify_proof_in_main_chain,
-    _get_proofs_by_sub_chain_from_main_chain,
     _verify_zk_proof_helper,
 )
 from hierachain.hierarchical.main_chain.registry import (
-    _get_sub_chain_summary_from_main_chain,
-    _get_main_chain_stats_for_chain,
     _get_hierarchical_integrity_report_for_chain,
+    _get_main_chain_stats_for_chain,
+    _get_sub_chain_summary_from_main_chain,
 )
+from hierachain.security.identity_loader import NodeIdentity
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +44,25 @@ class MainChain(Blockchain):
     - Uses Proof of Authority consensus suitable for business applications
     """
     __slots__ = (
-        'consensus', 'registered_sub_chains', 'sub_chain_metadata',
-        'proof_count', 'latest_proofs', 'recent_proofs',
-        'proof_index', 'zk_verifier',
+        'consensus',
+        'latest_proofs',
+        'proof_count',
+        'proof_index',
+        'proof_sequence',
+        'proof_storage',
+        'recent_proofs',
+        'registered_sub_chains',
+        'sub_chain_metadata',
+        'zk_verifier',
     )
 
-    def __init__(self, name: str = "MainChain", consensus_type: str | None = None):
+    def __init__(
+        self,
+        name: str = "MainChain",
+        consensus_type: str | None = None,
+        node_identity: NodeIdentity | None = None,
+        trusted_public_keys: dict[str, bytes] | None = None,
+    ):
         """
         Initialize the Main Chain.
 
@@ -56,12 +70,15 @@ class MainChain(Blockchain):
             name: Name identifier for the Main Chain
             consensus_type: Optional consensus type override ("proof_of_authority" or "proof_of_federation")
         """
-        super().__init__(name)
+        super().__init__(name, node_identity, trusted_public_keys)
 
         # Dynamic Consensus Loading
         target_consensus = consensus_type or settings.MAINCHAIN_CONSENSUS
         if target_consensus == "proof_of_federation":
-            self.consensus = ProofOfFederation("MainChain_PoF")
+            self.consensus = ProofOfFederation(
+                "MainChain_PoF",
+                signing_key_hex=self.node_identity.signing_keypair.private_key,
+            )
         else:
             # Default back to PoA
             self.consensus = ProofOfAuthority("MainChain_PoA", block_interval=settings.BLOCK_INTERVAL)
@@ -69,9 +86,11 @@ class MainChain(Blockchain):
         self.registered_sub_chains: set[str] = set()
         self.sub_chain_metadata: dict[str, dict[str, Any]] = {}
         self.proof_count: int = 0
+        self.proof_sequence: int = 0
         self.latest_proofs: dict[str, dict[str, Any]] = {}
         self.recent_proofs: list[dict[str, Any]] = []
         self.proof_index: dict[str, list[int]] = {}  # sub_chain_name -> block_indices
+        self.proof_storage: Any = None
 
         # ZK Proof Verifier (initialized if ZK proofs are enabled)
         self.zk_verifier: ZKVerifier | None = None
@@ -90,21 +109,25 @@ class MainChain(Blockchain):
                     "role": "root_authority",
                     "permissions": ["proof_validation", "sub_chain_registration"],
                     "created_at": time.time(),
+                    "public_key": self.node_identity.signing_public_key,
                 },
             )
 
-    def is_valid_new_block(self, block) -> bool:
+    def is_valid_new_block(
+        self, block: Block, public_key: bytes | None = None
+    ) -> bool:
         """
         Validate a new block including consensus rules.
 
         Args:
             block: Block to validate
+            public_key: Trusted PEM public key for block.creator_id, if signed.
 
         Returns:
             True if block is valid, False otherwise
         """
         # 1. Base structural validation
-        if not super().is_valid_new_block(block):
+        if not super().is_valid_new_block(block, public_key=public_key):
             return False
 
         # 2. Consensus validation
@@ -131,15 +154,16 @@ class MainChain(Blockchain):
         if sub_chain_name in self.registered_sub_chains:
             return False
 
+        safe_metadata = sanitize_metadata_for_main_chain(metadata or {})
         self.registered_sub_chains.add(sub_chain_name)
-        self.sub_chain_metadata[sub_chain_name] = metadata or {}
+        self.sub_chain_metadata[sub_chain_name] = safe_metadata
 
         # Add Sub-Chain as an authority for proof submission
         self.consensus.add_authority(sub_chain_name, {
             "role": "sub_chain",
             "permissions": ["proof_submission"],
             "registered_at": time.time(),
-            "metadata": metadata
+            "metadata": safe_metadata
         })
 
         # Create registration event
@@ -150,7 +174,7 @@ class MainChain(Blockchain):
             "details": {
                 "sub_chain_name": sub_chain_name,
                 "registered_by": "main_chain",
-                "metadata": sanitize_metadata_for_main_chain(metadata or {})
+                "metadata": safe_metadata
             }
         }
 
@@ -214,6 +238,8 @@ class MainChain(Blockchain):
         zk_verified = self._verify_zk_proof(
             sub_chain_name, proof_hash, metadata, zk_proof
         )
+        if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN and not zk_verified:
+            return False
         if settings.ENABLE_ZK_PROOFS and zk_proof is not None and not zk_verified:
             return False
 
@@ -222,7 +248,7 @@ class MainChain(Blockchain):
 
         # Record proof and update state
         return _record_proof_on_main_chain(
-            self, sub_chain_name, proof_hash, sanitized_metadata, zk_verified
+            self, sub_chain_name, proof_hash, sanitized_metadata, zk_verified, zk_proof
         )
 
     def _verify_zk_proof(
@@ -291,7 +317,7 @@ class MainChain(Blockchain):
             new_block = self.create_block(events)
 
             # Finalize block using PoA consensus
-            finalized_block = self.consensus.finalize_block(new_block, "main_chain")
+            finalized_block = self._finalize_with_consensus(new_block)
 
             # Add finalized block to chain
             if finalized_block and self.add_block(finalized_block):
@@ -325,7 +351,7 @@ class MainChain(Blockchain):
             new_block = self.create_block(events)
 
             # Finalize block using PoA consensus
-            finalized_block = self.consensus.finalize_block(new_block, "main_chain")
+            finalized_block = self._finalize_with_consensus(new_block)
 
             # Add finalized block to chain
             if finalized_block and self.add_block(finalized_block):
@@ -338,6 +364,18 @@ class MainChain(Blockchain):
                 }
 
             return None
+
+    def _finalize_with_consensus(self, block: Block) -> Block:
+        """Finalize and sign the immutable block after consensus adds its event."""
+        if isinstance(self.consensus, ProofOfAuthority):
+            finalized = self.consensus.finalize_block(
+                block, "main_chain",
+                private_key=self.node_identity.signing_keypair.private_key,
+            )
+        else:
+            finalized = self.consensus.finalize_block(block, "main_chain")
+        self._sign_block(finalized)
+        return finalized
 
     def validate_sub_chain_proof_format(self, proof_data: dict[str, Any]) -> bool:
         """

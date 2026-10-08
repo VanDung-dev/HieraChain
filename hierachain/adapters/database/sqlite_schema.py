@@ -7,6 +7,8 @@ used by the SQLite adapter.
 
 import sqlite3
 
+from hierachain.adapters.database.channel_ledger_sql import create_channel_ledger_tables
+
 
 def create_chains_table(cursor: sqlite3.Cursor) -> None:
     """Create chains table."""
@@ -127,4 +129,5 @@ def init_database_schema(cursor: sqlite3.Cursor) -> None:
     create_events_table(cursor)
     create_proofs_table(cursor)
     create_chain_state_table(cursor)
+    create_channel_ledger_tables(cursor)
     create_indexes(cursor)

@@ -49,13 +49,11 @@ class TestDDoSAttack:
         
         # In a real attack, we expect some nodes to struggle or block
         # We want to see how many got through
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            print(f"  System Resilience:   {success_rate*100:.1f}%")
-            
-            # If the rate limiter is working, success rate should drop as attack continues
-            # (Note: default rate limit is 100 rpm per IP in server.py)
-            assert results.total_requests > 0
+        assert results.total_requests > 0
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        assert results.successful_requests > 0, "The live service accepted no attack requests"
+        success_rate = results.successful_requests / results.total_requests
+        print(f"  System Resilience:   {success_rate*100:.1f}%")
 
     @pytest.mark.stress
     def test_multi_node_targeted_attack(self):
@@ -63,7 +61,7 @@ class TestDDoSAttack:
         Simulate a targeted attack on specific nodes.
         """
         client = RealStressClient()
-        client.wait_for_nodes(timeout=30, min_healthy=2)
+        assert client.wait_for_nodes(timeout=30, min_healthy=2), "Need at least 2 healthy Docker nodes"
             
         healthy_nodes = [nid for nid, s in client.node_status.items() if s.is_healthy]
         print(f"\n🔍 CLUSTER STATUS: {len(healthy_nodes)}/{len(client.node_status)} nodes healthy")
@@ -72,7 +70,7 @@ class TestDDoSAttack:
             print(f"  - {nid}: {status_str} ({s.url})")
 
         if len(healthy_nodes) < 1:
-            pytest.skip("No healthy nodes available — skipping targeted attack test")
+            pytest.fail("No healthy Docker node available for targeted attack")
             
         target = healthy_nodes[0]
         print(f"\n🎯 TARGETED ATTACK ON NODE: {target}")

@@ -108,6 +108,16 @@ blockchain_event = {
 
 ---
 
+## Transformer registry and task snapshots
+
+`ERPIntegrationLedger` shares its `MappingEngine` with `EventTranslator`. A transformer registered through `integration.mapping_engine.register_transformer(name, function)` is called with `(value, params)` from the mapping rule. Standalone callers can use `EventTranslator(mapping_engine)` with their own registry; simple path mappings also work with `EventTranslator()`.
+
+The template returned by `create_sap_integration_profile()` maps `created` to `creation`, converts a quantity such as `"12.50"` to `12.5`, and converts `"20260930123045"` with format `%Y%m%d%H%M%S` to `"2026-09-30T12:30:45"`.
+
+`SyncScheduler.get_all_tasks()` returns detached status dictionaries while acquiring its lock once. Editing a returned dictionary does not change the scheduled task.
+
+---
+
 ## Supported ERP systems
 
 | ERP | Adapter Class | Config Key |
@@ -140,8 +150,11 @@ blockchain_event = {
 |:----------|:---------|
 | ERP adapter connection fails | Retry with exponential backoff (30s, 60s, 120s, 240s, 300s max) |
 | Field mapping key missing | Logged as warning; event submitted with partial data |
+| Transformer missing or raises an exception | Warning logged; the affected field is omitted from the translated event |
 | `add_event()` validation fails (forbidden term) | Event discarded; logged with raw ERP data |
 | Max retries exceeded | Risk Alerts alert triggered: `erp_sync_failure` |
+
+`_execute_sync()` currently ignores the return value of `chain.add_event()` and can return `SyncStatus.COMPLETED` even when individual events have errors. This status does not prove ledger acceptance or durable storage; callers must inspect `SyncResult.errors`. Production ERP delivery has not been verified by the transformer and scheduler tests.
 
 ---
 

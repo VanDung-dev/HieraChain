@@ -10,32 +10,84 @@ provides validation mechanisms to ensure system integrity.
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
-from hierachain.config.version import get_version, VERSION
+from dotenv import load_dotenv
+
+from hierachain.config.version import VERSION, get_version
+
+# Environment-backed class attributes below are captured during import. Load
+# the configured dotenv file first, before any Settings subclass is defined.
+load_dotenv(Path(os.getenv("HRC_ENV_FILE", ".env")))
+
+
+def _configured_database_url() -> str:
+    """Return the first nonblank database URL explicitly set by the operator."""
+    return (
+        (os.getenv("DATABASE_URL") or "").strip()
+        or (os.getenv("HRC_DATABASE_URL") or "").strip()
+    )
+
+
+def _first_nonblank_environment_value(*names: str, default: str = "") -> str:
+    """Return the first nonblank configured environment value."""
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value.strip():
+            return value.strip()
+    return default
+
+
+def _environment_csv(*names: str) -> list[str]:
+    """Read the first configured comma-separated environment value."""
+    value = _first_nonblank_environment_value(*names)
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 class Settings:
     """Ledger configuration settings"""
+
+    def __init__(self) -> None:
+        """Reject unsupported key-source configuration instead of ignoring it."""
+        source = os.getenv("HRC_MASTER_KEY_SOURCE", "").strip().lower()
+        unsupported: list[str] = []
+        if source and source != "env":
+            unsupported.append("HRC_MASTER_KEY_SOURCE")
+        if os.getenv("HRC_MASTER_KEY_FILE", "").strip():
+            unsupported.append("HRC_MASTER_KEY_FILE")
+        if unsupported:
+            names = ", ".join(unsupported)
+            raise ValueError(
+                f"Unsupported master-key configuration ({names}); "
+                "the runtime does not provide a master-key source"
+            )
     
     # Environment - use property ENV below
     
     @property
     def env(self) -> str:
         """Auto-detect environment from environment variable."""
-        env = os.getenv("HRC_ENV") or os.getenv("ENV")
-        if env in ("production", "prod"):
+        env = (
+            (os.getenv("HRC_ENV") or "").strip()
+            or (os.getenv("ENV") or "").strip()
+        ).lower()
+        if env in ("production", "prod", "product"):
             return "production"
         if env in ("development", "dev"):
             return "development"
         if env in ("test", "testing"):
             return "test"
-        return env or "development"
+        if not env:
+            return "development"
+        raise ValueError(f"Unsupported HRC_ENV/ENV value: {env!r}")
     
     # Ledger version
     VERSION = get_version(VERSION)
     Ledger_NAME = "HieraChain"
-    NODE_ID = os.getenv("HRC_NODE_ID", "default-node")
+    NODE_ID = _first_nonblank_environment_value(
+        "HRC_NODE_ID", "NODE_ID", default="default-node"
+    )
 
     # Blockchain settings
     BLOCK_SIZE_LIMIT = 1000  # Maximum events per block
@@ -50,7 +102,8 @@ class Settings:
     )
     # Backward compatibility alias
     CONSENSUS_TYPE = MAINCHAIN_CONSENSUS
-    BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "10.0"))
+    # PoA has no additional spacing delay unless explicitly configured.
+    BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "0.0"))
     CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
@@ -73,35 +126,25 @@ class Settings:
     # SQL hot data retention days (0 = infinite)
     SQL_RETENTION_DAYS = int(os.getenv("HRC_SQL_RETENTION_DAYS", "90"))
 
-    # Storage settings - memory, redis, sqlite, postgres, parquet_only
+    # Storage settings - memory, redis, sqlite, postgres (postgresql alias)
     @property
     def STORAGE_BACKEND(self) -> str:
-        backend = os.getenv("HRC_STORAGE_BACKEND")
+        backend = (os.getenv("HRC_STORAGE_BACKEND") or "").strip().lower()
         if backend:
-            return backend.lower()
-        db_url = os.getenv("DATABASE_URL", "")
+            if backend not in {"memory", "redis", "sqlite", "postgres", "postgresql"}:
+                raise ValueError(f"Unsupported HRC_STORAGE_BACKEND value: {backend!r}")
+            return backend
+        db_url = _configured_database_url()
+        if db_url.startswith(("sqlite://", "sqlite3://")):
+            return "sqlite"
         if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
             return "postgres"
-        return "sqlite"
+        return self.DEFAULT_STORAGE_BACKEND
 
-    DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")
-    
-    # Advanced Caching settings
-    ADVANCED_CACHING_ENABLED = True
-    BLOCK_CACHE_SIZE = 5000
-    EVENT_CACHE_SIZE = 20000
-    ENTITY_CACHE_SIZE = 10000
-    BLOCK_CACHE_POLICY = "lru"  # lru, lfu, fifo, ttl
-    EVENT_CACHE_POLICY = "ttl"
-    ENTITY_CACHE_POLICY = "lfu"
-    ENTITY_TTL = 3600  # 1 hour in seconds
+    DEFAULT_STORAGE_BACKEND = "postgres"
     
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
-
-    # Whether to synchronously sync journal to disk (fsync)
-    # Recommended True for production, False for heavy stress testing on slow disks
-    JOURNAL_FSYNC = os.getenv("HRC_JOURNAL_FSYNC", "true").lower() == "true"
 
     # % RAM usage for emergency flush (e.g., 95.0 for 95%)
     RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))
@@ -115,33 +158,27 @@ class Settings:
     # Secret backend: "env" (default), "vault" (HashiCorp), "aws" (AWS Secrets Manager)
     SECRET_BACKEND = os.getenv("HRC_SECRET_BACKEND", "env")
     
-    # Master key management
-    # Source: "auto" (env → file → generate), "env" (env var only), "file" (file only)
-    MASTER_KEY_SOURCE = os.getenv("HRC_MASTER_KEY_SOURCE", "auto")
-    MASTER_KEY_FILE = os.getenv(
-        "HRC_MASTER_KEY_FILE", os.path.join("config", "master_backup_key.key")
-    )
-    
     # Brute-force protection for API key verification
     AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
     AUTH_BRUTE_FORCE_LOCKOUT_SECONDS = int(os.getenv("HRC_BF_LOCKOUT_SECONDS", "900"))
     AUTH_BRUTE_FORCE_WINDOW_SECONDS = int(os.getenv("HRC_BF_WINDOW_SECONDS", "300"))
+    AUTH_STATE_REDIS_URL = os.getenv("HRC_AUTH_STATE_REDIS_URL", "").strip()
+    API_KEY_REVOCATIONS_DB = os.getenv("HRC_API_KEY_REVOCATIONS_DB", "data/api_key_revocations.sqlite3")
     
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
+    BLOCK_TRUSTED_KEYS_FILE = os.getenv("HRC_BLOCK_TRUSTED_KEYS_FILE", "")
 
     # P2P Network settings
     # Enable P2P network layer
     P2P_ENABLED = os.getenv("HRC_P2P_ENABLED", "true").lower() == "true"
     # Container networking requires binding 0.0.0.0
     P2P_HOST = os.getenv("HRC_P2P_HOST", "0.0.0.0")  # nosec B104
-    P2P_PORT = int(os.getenv("HRC_P2P_PORT", "5555"))
-    # Comma-separated list of seed nodes: node_id@ip:port
-    P2P_PEERS: list[str] = (
-        os.getenv("HRC_PEERS", "").split(",")
-        if os.getenv("HRC_PEERS")
-        else []
+    P2P_PORT = int(
+        _first_nonblank_environment_value("HRC_P2P_PORT", "NODE_PORT", default="5555")
     )
+    # Comma-separated list of seed nodes: node_id@ip:port
+    P2P_PEERS: list[str] = _environment_csv("HRC_PEERS", "PEERS")
     # Trust policy: "open" (any peer unless blocked), "strict" (allowlist only)
     P2P_TRUST_POLICY = os.getenv("HRC_P2P_TRUST_POLICY", "open")
     # Comma-separated list of trusted peer IDs for strict mode
@@ -194,17 +231,19 @@ class Settings:
     TRUSTED_PROXIES = os.getenv("HRC_TRUSTED_PROXIES", "127.0.0.1")
     
     # CLI settings
-    CLI_CONFIG_FILE = "chains.json"
+    CLI_CONFIG_FILE = "data/config.yaml"
     CLI_LOG_LEVEL = "INFO"
     
     # Database settings (if using database storage)
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL", os.getenv("HRC_DATABASE_URL", "sqlite:///hierachain.db")
-    )
+    DATABASE_URL = _configured_database_url() or "postgresql://hiera:hiera@localhost:5432/hierachain"
     
     # Redis settings (if using Redis storage)
-    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_HOST = _first_nonblank_environment_value(
+        "HRC_REDIS_HOST", "REDIS_HOST", default="localhost"
+    )
+    REDIS_PORT = int(
+        _first_nonblank_environment_value("HRC_REDIS_PORT", "REDIS_PORT", default="6379")
+    )
     REDIS_DB = int(os.getenv("REDIS_DB", "0"))
     
     # Logging settings
@@ -236,41 +275,6 @@ class Settings:
     ZK_PROOF_REQUIRED_FOR_MAINCHAIN = (
         os.getenv("HRC_ZK_REQUIRED_MAINCHAIN", "false").lower() == "true"
     )
-
-    # K8s Namespace Isolation settings (for Sub-chain isolation)
-    K8S_ENABLED = os.getenv("HRC_K8S_ENABLED", "false").lower() == "true"
-    K8S_NAMESPACE_PREFIX = os.getenv("HRC_K8S_NAMESPACE_PREFIX", "hrc-subchain-")
-
-    # Path to kubeconfig, empty for in-cluster
-    K8S_CONFIG_PATH = os.getenv("HRC_K8S_CONFIG", "")
-
-    K8S_RESOURCE_LIMITS_CPU = os.getenv("HRC_K8S_CPU_LIMIT", "1000m")
-    K8S_RESOURCE_LIMITS_MEMORY = os.getenv("HRC_K8S_MEMORY_LIMIT", "1Gi")
-    K8S_RESOURCE_REQUESTS_CPU = os.getenv("HRC_K8S_CPU_REQUEST", "250m")
-    K8S_RESOURCE_REQUESTS_MEMORY = os.getenv("HRC_K8S_MEMORY_REQUEST", "256Mi")
-
-    # Proof Aggregation Engine settings
-    PROOF_AGGREGATION_ENABLED = (
-        os.getenv("HRC_PROOF_AGGREGATION", "true").lower() == "true"
-    )
-    PROOF_BATCH_SIZE = int(os.getenv("HRC_PROOF_BATCH_SIZE", "10"))
-    PROOF_BATCH_TIMEOUT = float(os.getenv("HRC_PROOF_BATCH_TIMEOUT", "30.0"))  # seconds
-    PROOF_COMPRESSION_ENABLED = (
-        os.getenv("HRC_PROOF_COMPRESSION", "true").lower() == "true"
-    )
-
-    # Sub-chain Rebalancing settings (Auto-splitting)
-    REBALANCE_ENABLED = os.getenv("HRC_REBALANCE_ENABLED", "true").lower() == "true"
-
-    # events/sec
-    REBALANCE_THRESHOLD_EPS = int(os.getenv("HRC_REBALANCE_THRESHOLD_EPS", "1000"))
-
-    # seconds
-    REBALANCE_CHECK_INTERVAL = float(os.getenv("HRC_REBALANCE_CHECK_INTERVAL", "60.0"))
-    REBALANCE_MIN_EVENTS_FOR_SPLIT = int(os.getenv("HRC_REBALANCE_MIN_EVENTS", "5000"))
-
-    # 5 min cooldown
-    REBALANCE_COOLDOWN = float(os.getenv("HRC_REBALANCE_COOLDOWN", "300.0"))
 
     # Cross-level State Sync settings
     CROSS_LEVEL_SYNC_ENABLED = (
@@ -308,6 +312,10 @@ class Settings:
     @classmethod
     def get_auth_config(cls) -> dict[str, Any]:
         """Get authentication configuration"""
+        lockout_backend = (
+            "redis" if cls.AUTH_STATE_REDIS_URL else
+            "sqlite" if cls().env == "production" else "file"
+        )
         return {
             "enabled": cls.AUTH_ENABLED,
             "key_location": cls.API_KEY_LOCATION,
@@ -316,12 +324,12 @@ class Settings:
                 "max_failures": cls.AUTH_BRUTE_FORCE_MAX_FAILURES,
                 "lockout_duration": cls.AUTH_BRUTE_FORCE_LOCKOUT_SECONDS,
                 "tracking_window": cls.AUTH_BRUTE_FORCE_WINDOW_SECONDS,
+                "storage_backend": lockout_backend,
+                "storage_path": (
+                    cls.API_KEY_REVOCATIONS_DB if lockout_backend == "sqlite" else "data/brute_force"
+                ),
+                "redis_url": cls.AUTH_STATE_REDIS_URL or None,
             },
-            "master_key": {
-                "source": cls.MASTER_KEY_SOURCE,
-                "key_file": cls.MASTER_KEY_FILE,
-                "environment": cls.env,
-            }
         }
 
     @classmethod
@@ -385,9 +393,9 @@ class Settings:
         if cls.VALIDATOR_TIMEOUT <= 0:
             errors.append("VALIDATOR_TIMEOUT must be positive")
 
-        if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite"]:
+        if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite", "postgres"]:
             errors.append(
-                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite"
+                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite, postgres"
             )
 
         if cls.API_PORT <= 0 or cls.API_PORT > 65535:
@@ -412,12 +420,11 @@ class ProductionSettings(Settings):
     # API - default to explicit localhost, but allow 0.0.0.0 via env for containers
     API_HOST = os.getenv("HRC_API_HOST", "127.0.0.1")  # nosec
     
-    # Storage - use persistent storage
-    DEFAULT_STORAGE_BACKEND = "redis"
+    # Storage - use persistent PostgreSQL storage
+    DEFAULT_STORAGE_BACKEND = "postgres"
     
-    # === SECURITY: Auto-enabled in production ===
-    # Authentication is MANDATORY in production
-    AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "true").lower() == "true"
+    # === SECURITY: Authentication is mandatory in production ===
+    AUTH_ENABLED = True
     
     # Organization validation is required
     REQUIRE_ORGANIZATION_VALIDATION = True
@@ -452,9 +459,6 @@ class ProductionSettings(Settings):
     P2P_TRUST_POLICY = "strict"
     P2P_REQUIRE_SIGNATURES = True
 
-    # === Crypto: Secure key management in production ===
-    MASTER_KEY_SOURCE = "env"  # Prefer env var in production
-
     # === Logging: Restrict SQL detail in production ===
     LOG_SQL_DETAIL = False
 
@@ -470,9 +474,11 @@ class TestingSettings(Settings):
 # Get settings based on environment
 def get_settings() -> Settings:
     """Get settings based on environment variable"""
-    env = os.getenv("HRC_ENV", "dev").lower()
+    env = Settings().env
     
-    if env in ("product", "production"):
+    if env == "production":
+        if os.getenv("HRC_AUTH_ENABLED", "true").strip().lower() != "true":
+            raise ValueError("Production requires HRC_AUTH_ENABLED=true")
         return ProductionSettings()
     elif env == "test":
         return TestingSettings()

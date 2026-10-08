@@ -6,13 +6,16 @@ sensitive data within a channel while keeping it hidden from other channel parti
 This significantly enhances data privacy in enterprise collaborations.
 """
 
-import time
 import hashlib
-import orjson
-from typing import Any, cast
+import json
+import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, cast
+
 from cryptography.fernet import Fernet, InvalidToken
+
+from hierachain.serialization import dumps_canonical_json, loads_json
 
 
 def _check_submitter(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
@@ -164,7 +167,7 @@ class PrivateCollection:
         # Statistics
         self.statistics: dict[str, Any] = {
             "total_entries": 0,
-            "entries_by_org": {org_id: 0 for org_id in organizations.keys()},
+            "entries_by_org": {org_id: 0 for org_id in organizations},
             "purged_entries": 0,
             "failed_endorsements": 0
         }
@@ -200,7 +203,7 @@ class PrivateCollection:
                 return False
 
             # Encrypt the data
-            value_bytes = orjson.dumps(value, option=orjson.OPT_SORT_KEYS)
+            value_bytes = dumps_canonical_json(value)
             encrypted_value = self.cipher_suite.encrypt(value_bytes)
 
             # Calculate hash for integrity
@@ -233,7 +236,7 @@ class PrivateCollection:
 
         except Exception as e:
             # Log error but don't expose details
-            print(f"Failed to add private data: {str(e)}")
+            print(f"Failed to add private data: {e!s}")
             return False
 
     def get_data(self, key: str, requester_org_id: str) -> Any | None:
@@ -265,9 +268,9 @@ class PrivateCollection:
         try:
             # Decrypt and return data
             decrypted_bytes = self.cipher_suite.decrypt(entry.encrypted_value)
-            return orjson.loads(decrypted_bytes)
+            return loads_json(decrypted_bytes)
 
-        except (InvalidToken, UnicodeDecodeError, orjson.JSONDecodeError):
+        except (InvalidToken, UnicodeDecodeError, json.JSONDecodeError):
             return None
 
     def get_data_hash(self, key: str, _requester_org_id: str) -> str | None:
@@ -430,10 +433,12 @@ class PrivateCollection:
         Returns:
             True if endorsements are sufficient
         """
-        # Filter to only valid member endorsements
-        valid_endorsements = [
-            org_id for org_id in endorsements if org_id in self.organizations
-        ]
+        if any(
+            not isinstance(org_id, str) or org_id not in self.organizations
+            for org_id in endorsements
+        ):
+            return False
+        valid_endorsements = set(endorsements)
 
         policy = self.metadata["endorsement_policy"]
         total_members = len(self.organizations)

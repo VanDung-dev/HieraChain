@@ -11,12 +11,16 @@ Measures:
 These tests run independently, no REAL_REQUESTS needed.
 """
 
-import time
+import hashlib
 import logging
 import os
 import random
-import hashlib
+import time
+from typing import Any
+
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +39,8 @@ def _make_event_dict(entity_id: str, payload: str) -> dict:
 class TestSignatureVerificationScale:
     """Measure signature verification throughput."""
 
-    @pytest.fixture(scope="class")
-    def crypto_utils(self):
+    @pytest.fixture
+    def crypto_utils(self) -> dict[str, Any]:
         try:
             from hierachain.security.security_utils import KeyPair
             from hierachain.security.verify.signature_verifier import SignatureVerifier
@@ -45,22 +49,22 @@ class TestSignatureVerificationScale:
         except ImportError as e:
             pytest.skip(f"Crypto modules not available: {e}")
 
-    def test_single_signature_verify_throughput(self, crypto_utils):
+    def test_single_signature_verify_throughput(self, crypto_utils: dict[str, Any]) -> None:
         """Measure time to verify 1 signature via verify_event_signature."""
         KeyPair = crypto_utils["keypair_cls"]
         sv = crypto_utils["verifier"]
 
         kp = KeyPair.generate()
         event = _make_event_dict("bench", os.urandom(32).hex())
+        event["sender"] = kp.public_key
         canonical = sv.get_canonical_bytes(event)
         sig = kp.sign(canonical)
-        event["sender"] = kp.public_key
         event["signature"] = sig
 
         iterations = BENCHMARK_MEDIUM
         start = time.time()
         for _ in range(iterations):
-            sv.verify_event_signature(event, kp.public_key)
+            assert sv.verify_event_signature(event, kp.public_key)
         elapsed = time.time() - start
 
         ops_per_sec = iterations / elapsed if elapsed else 0
@@ -68,7 +72,7 @@ class TestSignatureVerificationScale:
                      iterations, elapsed, ops_per_sec)
         assert elapsed > 0
 
-    def test_batch_verify_speedup(self, crypto_utils):
+    def test_batch_verify_speedup(self, crypto_utils: dict[str, Any]) -> None:
         """Compare batch verify vs sequential verify."""
         KeyPair = crypto_utils["keypair_cls"]
         sv = crypto_utils["verifier"]
@@ -78,30 +82,26 @@ class TestSignatureVerificationScale:
         for _ in range(batch_size):
             kp = KeyPair.generate()
             event = _make_event_dict(f"e_{_}", os.urandom(16).hex())
+            event["sender"] = kp.public_key
             canonical = sv.get_canonical_bytes(event)
             sig = kp.sign(canonical)
-            event["sender"] = kp.public_key
             event["signature"] = sig
             items.append(event)
 
         # Sequential
         start = time.time()
         for ev in items:
-            sv.verify_event_signature(ev, ev["sender"])
+            assert sv.verify_event_signature(ev, ev["sender"])
         seq_time = time.time() - start
 
-        # Batch — items is list[dict] with 'signature' field
-        try:
-            start = time.time()
-            sv.batch_verify(items)
-            batch_time = time.time() - start
-            speedup = seq_time / batch_time if batch_time else 0
-            logger.info("Sequential: %.4fs, Batch: %.4fs, Speedup: %.1fx",
-                         seq_time, batch_time, speedup)
-        except Exception as e:
-            logger.warning("batch_verify not available: %s", e)
+        start = time.time()
+        results = sv.batch_verify([{"item": ev, "public_key": ev["sender"]} for ev in items])
+        batch_time = time.time() - start
+        assert len(results) == len(items) and all(results)
+        speedup = seq_time / batch_time if batch_time else 0
+        logger.info("Sequential: %.4fs, Batch: %.4fs, Speedup: %.1fx", seq_time, batch_time, speedup)
 
-    def test_many_keys_no_degradation(self, crypto_utils):
+    def test_many_keys_no_degradation(self, crypto_utils: dict[str, Any]) -> None:
         """Verify with many public keys — no degradation."""
         KeyPair = crypto_utils["keypair_cls"]
         sv = crypto_utils["verifier"]
@@ -110,15 +110,15 @@ class TestSignatureVerificationScale:
         events = []
         for kp in keys:
             ev = _make_event_dict("bench", os.urandom(16).hex())
+            ev["sender"] = kp.public_key
             canonical = sv.get_canonical_bytes(ev)
             sig = kp.sign(canonical)
-            ev["sender"] = kp.public_key
             ev["signature"] = sig
             events.append((ev, kp.public_key))
 
         start = time.time()
         for ev, pk in events:
-            sv.verify_event_signature(ev, pk)
+            assert sv.verify_event_signature(ev, pk)
         elapsed = time.time() - start
 
         logger.info("Verified %d unique keys in %.2fs", len(keys), elapsed)
@@ -127,16 +127,16 @@ class TestSignatureVerificationScale:
 class TestZKProofScale:
     """Measure ZK proof generation and verification throughput."""
 
-    @pytest.fixture(scope="class")
-    def zk_modules(self):
+    @pytest.fixture
+    def zk_modules(self) -> dict[str, Any]:
         try:
-            from hierachain.security.zk_prover import ZKProver
             from hierachain.security.verify.zk_verifier import ZKVerifier
+            from hierachain.security.zk_prover import ZKProver
             return {"prover": ZKProver, "verifier": ZKVerifier}
         except ImportError as e:
             pytest.skip(f"ZK modules not available: {e}")
 
-    def test_mock_proof_generation_throughput(self, zk_modules):
+    def test_mock_proof_generation_throughput(self, zk_modules: dict[str, Any]) -> None:
         """Measure ZK proof generation throughput (mock mode)."""
         ZKProver = zk_modules["prover"]
         prover = ZKProver()
@@ -161,7 +161,7 @@ class TestZKProofScale:
         assert len(proofs) == num_proofs
         assert elapsed < 30, "Generation too slow"
 
-    def test_mock_proof_verify_throughput(self, zk_modules):
+    def test_mock_proof_verify_throughput(self, zk_modules: dict[str, Any]) -> None:
         """Measure ZK proof verification throughput (mock mode)."""
         ZKProver = zk_modules["prover"]
         ZKVerifier = zk_modules["verifier"]
@@ -181,7 +181,7 @@ class TestZKProofScale:
 
         start = time.time()
         for pr in proofs:
-            verifier.verify(pr.proof, pr.public_inputs)
+            assert verifier.verify(pr.proof, pr.public_inputs)
         elapsed = time.time() - start
 
         logger.info("Verified %d mock proofs in %.2fs (%.0f proofs/sec)",
@@ -191,17 +191,25 @@ class TestZKProofScale:
 class TestBlockVerificationScale:
     """Measure block chain verification throughput — using real Block objects."""
 
-    @pytest.fixture(scope="class")
-    def block_module(self):
+    @pytest.fixture
+    def block_module(self) -> dict[str, Any]:
         try:
             from hierachain.core.block import Block
             from hierachain.security.verify.block_verifier import BlockVerifier
-            return {"block_cls": Block, "verifier": BlockVerifier()}
+            private_key = Ed25519PrivateKey.generate()
+            return {
+                "block_cls": Block, "verifier": BlockVerifier(), "private_key": private_key,
+                "public_key": private_key.public_key().public_bytes(
+                    serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo,
+                ),
+            }
         except ImportError as e:
             pytest.skip(f"Block modules not available: {e}")
 
-    def _generate_chain(self, length: int, block_cls) -> list:
+    def _generate_chain(self, length: int, block_cls: type, private_key: Ed25519PrivateKey) -> list:
         """Create chain with real Block objects."""
+        from hierachain.security.verify.block_verifier import BlockVerifier
+
         chain = []
         prev_hash = ""
         for i in range(length):
@@ -221,42 +229,44 @@ class TestBlockVerificationScale:
                 previous_hash=prev_hash,
                 creator_id="benchmark_node",
             )
+            block.signature = private_key.sign(BlockVerifier._get_signable_content(block)).hex()
             block_hash = block.calculate_hash()
             chain.append((block, block_hash))
             prev_hash = block_hash
         return chain
 
-    def test_chain_verify_throughput(self, block_module):
+    def test_chain_verify_throughput(self, block_module: dict[str, Any]) -> None:
         """Measure time to verify chain with different lengths."""
         Block = block_module["block_cls"]
         bv = block_module["verifier"]
 
         for length in [100, 500]:
-            chain_data = self._generate_chain(length, Block)
+            chain_data = self._generate_chain(length, Block, block_module["private_key"])
             chain = [b for b, _ in chain_data]
 
             start = time.time()
             for i, block in enumerate(chain):
                 prev = chain[i - 1] if i > 0 else None
-                bv.verify_block(block, prev)
+                result = bv.verify_block(block, prev, public_key=block_module["public_key"])
+                assert result.is_valid, result.details
             elapsed = time.time() - start
 
             logger.info("Verified chain of %d blocks in %.2fs (%.0f blocks/sec)",
                          length, elapsed, length / elapsed if elapsed else 0)
 
-    def test_merkle_root_integrity(self, block_module):
+    def test_merkle_root_integrity(self, block_module: dict[str, Any]) -> None:
         """Generate chain and verify Merkle root + chain link consistency."""
         Block = block_module["block_cls"]
         bv = block_module["verifier"]
 
-        chain_data = self._generate_chain(50, Block)
+        chain_data = self._generate_chain(50, Block, block_module["private_key"])
         chain = [b for b, _ in chain_data]
 
         verified = 0
         for i, block in enumerate(chain):
             prev = chain[i - 1] if i > 0 else None
             try:
-                result = bv.verify_block(block, prev)
+                result = bv.verify_block(block, prev, public_key=block_module["public_key"])
                 if result.is_valid:
                     verified += 1
             except Exception as e:

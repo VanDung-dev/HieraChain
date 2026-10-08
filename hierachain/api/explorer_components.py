@@ -5,10 +5,10 @@ Each class provides a distinct visualization / analysis component
 for the Blockchain Explorer dashboard.
 """
 
-import time
 import logging
-from typing import Any
+import time
 from dataclasses import dataclass, field
+from typing import Any
 
 from hierachain.api.storage.explorer_helpers import (
     format_event_for_display,

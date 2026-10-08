@@ -2,28 +2,33 @@
 Byzantine Fault Tolerance Consensus Implementation
 """
 
-import time
-import threading
 import logging
-from typing import Any, Callable, cast
+import threading
+import time
+from collections.abc import Callable
+from copy import deepcopy
+from typing import Any, cast
 
-from hierachain.security.security_utils import KeyPair
-from hierachain.security.key_provider import LocalKeyProvider
-from hierachain.network.zmq_transport import ZmqNode
-from hierachain.consensus.bft.types import (
-    ConsensusState, MessageType, BFTMessage, ConsensusError
-)
-from hierachain.consensus.bft.helpers import (
-    hash_request,
-    forward_to_primary,
-    _log_behavior,
-    _validate_consensus_message,
-    _create_signed_bft_message,
-    _init_bft_mitigation_data,
-)
-from hierachain.consensus.bft.view_change import BFTViewChangeManager
 from hierachain.consensus.bft.dispatcher import BFTMessageDispatcher
 from hierachain.consensus.bft.engine import BFTConsensusEngine
+from hierachain.consensus.bft.helpers import (
+    _create_signed_bft_message,
+    _init_bft_mitigation_data,
+    _log_behavior,
+    _validate_consensus_message,
+    forward_to_primary,
+    hash_request,
+)
+from hierachain.consensus.bft.types import (
+    BFTMessage,
+    ConsensusError,
+    ConsensusState,
+    MessageType,
+)
+from hierachain.consensus.bft.view_change import BFTViewChangeManager
+from hierachain.network.zmq_transport import ZmqNode
+from hierachain.security.key_provider import LocalKeyProvider
+from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +90,7 @@ class BFTConsensus:
         self.commit_messages: dict[int, list[BFTMessage]] = {}
         self.view_change_votes: dict[int, list[BFTMessage]] = {}
         self.committed_sequence = -1
+        self.pending_apply_events: dict[int, dict[str, Any]] = {}
         self.pending_requests: list[dict[str, Any]] = []
         self.message_log: list[BFTMessage] = []
         self.MAX_MESSAGE_LOG = 10000
@@ -153,27 +159,37 @@ class BFTConsensus:
                     self.node_id, operation
                 )
                 return False
+
+            if self.pending_apply_events:
+                return False
             
             self.sequence_number += 1
             self.current_request = {
-                "operation": operation,
+                "operation": deepcopy(operation),
                 "client_id": operation.get("client_id", "unknown"),
                 "timestamp": time.time()
             }
             digest = hash_request(cast(dict[str, Any], self.current_request))
-            data = {"request": self.current_request, "digest": digest}
+            data = {"request": deepcopy(self.current_request), "digest": digest}
             
             msg = _create_signed_bft_message(
                 MessageType.PRE_PREPARE, self.view, self.sequence_number,
                 self.node_id, self.key_provider, data
             )
             
-            self.pre_prepare_messages[self.sequence_number] = msg
-            self.dispatcher.broadcast_msg(msg)
+            self.pre_prepare_messages[self.sequence_number] = deepcopy(msg)
             self.state = ConsensusState.PRE_PREPARED
+            prepare_msg = self.engine.record_local_prepare_vote(msg)
+            if prepare_msg is None:
+                return False
+            self.dispatcher.broadcast_msg(msg)
             self.message_log.append(msg)
             if len(self.message_log) > self.MAX_MESSAGE_LOG:
                 self.message_log = self.message_log[-self.MAX_MESSAGE_LOG:]
+            self.dispatcher.broadcast_msg(prepare_msg)
+            self.engine.check_prepare_quorum(
+                self.sequence_number, msg.data.get("digest")
+            )
             return True
     
     def handle_message(self, message: dict[str, Any]) -> bool:
@@ -265,8 +281,7 @@ class BFTConsensus:
         self.verification_strictness = mitigation["strictness"]
         self.auto_recovery_enabled = mitigation["recovery"]
 
-    def _validate_bft_requirements(self):
+    def _validate_bft_requirements(self) -> None:
         """Validate BFT network requirements."""
         if self.consensus_validator:
-            nodes = [type('MockNode', (), {"node_id": n})() for n in self.all_nodes]
-            self.consensus_validator.validate_node_count(nodes)
+            self.consensus_validator.validate_node_count(self.all_nodes)

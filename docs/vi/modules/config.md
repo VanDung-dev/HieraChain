@@ -8,7 +8,7 @@ icon: material/cog
 
 ## Tổng quan
 
-Module **Config** là trung tâm điều khiển của HieraChain, chịu trách nhiệm quản lý hàng trăm tham số vận hành, đảm bảo tính bảo mật của các khóa bí mật và cung cấp cơ chế ghi log chuẩn hóa cho cả môi trường phát triển và vận hành thực tế.
+Module **Config** quản lý các tham số vận hành, khóa bí mật và cấu hình ghi log của HieraChain.
 
 ---
 
@@ -34,7 +34,7 @@ Module **Config** là trung tâm điều khiển của HieraChain, chịu trách
 
     * Truy xuất bí mật (secrets) độc lập với hạ tầng.
     * Hỗ trợ backends: Environment, HashiCorp Vault, AWS Secrets Manager.
-    * Tự động fallback linh hoạt.
+    * Trả giá trị mặc định khi bí mật thiếu hoặc không truy xuất được.
 
 *   :material-format-list-bulleted-type:{ .lg .middle } __Structured Logging__
 
@@ -52,13 +52,17 @@ Module **Config** là trung tâm điều khiển của HieraChain, chịu trách
 
 ## Quản lý cấu hình theo môi trường
 
-HieraChain sử dụng biến môi trường `HRC_ENV` để tự động chuyển đổi giữa các cấu hình tối ưu:
+HieraChain dùng `HRC_ENV` để chọn cấu hình và dùng `ENV` khi `HRC_ENV` không được đặt hoặc để trống. Nếu đặt cả hai, `HRC_ENV` được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu:
 
-| Môi trường | Giá trị `HRC_ENV` | Đặc điểm chính |
+| Môi trường | Giá trị được chấp nhận | Đặc điểm chính |
 | :--- | :--- | :--- |
-| **Development** | `dev` (Mặc định) | Log level DEBUG, lưu trữ SQLite/Memory, cho phép CORS từ mọi nơi. |
-| **Production** | `product` | Ép buộc xác thực (Auth), HSTS, P2P Strict Trust, log định dạng JSON. |
-| **Testing** | `test` | Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory. |
+| **Development** | `dev`, `development` (mặc định) | Log level DEBUG, mặc định lưu trữ PostgreSQL, cho phép CORS từ mọi nơi. |
+| **Production** | `production`, `prod`, `product` | Bật xác thực theo mặc định, HSTS, P2P Strict Trust. |
+| **Testing** | `test`, `testing` | Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory. |
+
+Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn development.
+
+Module settings nạp `.env` trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt `HRC_ENV_FILE` để nạp tệp dotenv khác; giá trị đã có trong môi trường tiến trình được ưu tiên.
 
 ---
 
@@ -71,14 +75,22 @@ HieraChain sử dụng biến môi trường `HRC_ENV` để tự động chuy�
 from hierachain.config.secret_manager import SecretManager
 
 sm = SecretManager()
-# Tự động lấy từ Vault, AWS hoặc Env tùy theo cấu hình
+# Retrieve the configured field
 cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
 ```
 
 ### Backends hỗ trợ:
 1.  **Environment (`env`)**: Mặc định, đọc trực tiếp từ biến môi trường.
 2.  **Vault (`vault`)**: Kết nối tới HashiCorp Vault KV v2.
-3.  **AWS (`aws`)**: Kết nối tới AWS Secrets Manager.
+3.  **AWS (`aws`)**: Đọc trường chuỗi từ JSON object trong AWS Secrets Manager.
+
+`get_secret(key, default=None)` nhận tên biến môi trường cho `env`, hoặc tên trường cho Vault/AWS. Với AWS, `key` không phải SecretId: đặt `HRC_AWS_SECRET_NAME` thành tên secret hoặc ARN và tùy chọn `HRC_AWS_REGION` (mặc định `us-east-1`). `SecretString` phải là JSON object với trường được yêu cầu có kiểu chuỗi; mỗi lần gọi chỉ trả trường đó, kể cả chuỗi rỗng đã lưu.
+
+Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, `SecretBinary` và lỗi backend đều trả `default` (hoặc `None`). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.
+
+Vault trả `default` (hoặc `None`) khi thiếu URL hoặc thông tin xác thực; trong trường hợp đó, nó không đọc biến môi trường cùng tên. Backend không được hỗ trợ sẽ gây `ValueError`. Caller phải gọi `SecretManager` trực tiếp: cấu hình backend không tự thay mọi lời gọi `os.getenv()` trong ứng dụng.
+
+`SecretManager` độc lập với xử lý master key. `HRC_MASTER_KEY_SOURCE=env` vẫn được chấp nhận để tương thích với hành vi secret qua biến môi trường hiện có. Giá trị nguồn khác và mọi `HRC_MASTER_KEY_FILE` không rỗng đều gây lỗi cấu hình vì runtime chưa có master-key provider thay thế. Hãy xóa các thiết lập không được hỗ trợ trước khi khởi động.
 
 ---
 

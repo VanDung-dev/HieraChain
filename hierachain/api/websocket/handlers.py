@@ -7,10 +7,10 @@ including ping/pong handling and dead connection detection.
 
 import asyncio
 import logging
-import orjson
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,10 @@ class ConnectionHealthHandler:
         """
         try:
             await asyncio.wait_for(
-                websocket.send_text(orjson.dumps({
+                websocket.send_text(dumps_json({
                     "type": "ping",
                     "timestamp": datetime.now().isoformat()
-                }).decode()),
+                })),
                 timeout=self.ping_timeout
             )
             return True

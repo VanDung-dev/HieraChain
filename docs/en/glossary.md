@@ -16,8 +16,8 @@ icon: material/alphabetical
 | Policy | Access/resource control; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. No `resource_guard.py` (fabricated). |
 | World State | Current data state; `hierachain/state/world_state.py`. |
 | Journal | Transaction log; `hierachain/error_mitigation/journal.py`. |
-| Rollback | State restoration; `hierachain/error_mitigation/rollback_manager.py`. |
-| Recovery | Error recovery via `hierachain/error_mitigation/rollback_manager.py`, `consensus_recovery.py`, `network_recovery.py` (no `recovery_engine.py`). |
+| Rollback | Transaction rollback owned by `hierachain/hierarchical/transaction_manager.py`; no global state rollback manager is provided. |
+| Recovery | Runtime recovery through journal replay, validation, BFT view change, and deployment procedures. |
 | Ordering | Event ordering; `hierachain/consensus/ordering/*`. |
 | Transport | Network communication; `hierachain/network/zmq_transport.py`. |
 | Byzantine Fault Tolerance | BFT; `hierachain/consensus/bft/*`. |
@@ -27,8 +27,6 @@ icon: material/alphabetical
 | Resource Guard | Resource protection middleware; `hierachain/security/brute_force_protector.py`. |
 | Entity Tracer | Event tracing by entity; `hierachain/domains/utils/entity_tracer.py`. |
 | Zero-Knowledge Proof | ZK Proof; `hierachain/security/zk_prover.py`, `hierachain/security/verify/zk_verifier.py`. |
-| Proof Aggregation | Multiple proof aggregation; `hierachain/hierarchical/proof_aggregation/aggregator.py`. |
-| Rebalancer | Automatic Sub-Chain splitting/balancing; `hierachain/hierarchical/rebalancer/rebalancer.py`. |
 | Channel | Inter-organization private channel; `hierachain/hierarchical/channel/channel.py`. |
 | Multi-Organization | Multi-org network; `hierachain/hierarchical/multi_org.py`. |
 | Private Data | Private data collections; `hierachain/hierarchical/private_data.py`. |
@@ -40,7 +38,6 @@ icon: material/alphabetical
 | API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
 | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | REST API Admin; `hierachain/api/admin/*`. |
-| Cross-level State Sync | Cross-tier sync via `hierachain/cluster/state_sync_manager.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
-| Kubernetes Namespace | Sub-Chain namespace isolation; `hierachain/hierarchical/k8s_namespace_manager/operations.py`. |
+| Cross-level State Sync | Cross-tier sync via `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
 | Identity Manager | Organization/user/role management; `hierachain/security/identity.py`. |
 | Certificate | Internal `Certificate` dataclass in `hierachain/security/msp.py` (not X.509, no `certificate.py`). |

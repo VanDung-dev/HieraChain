@@ -72,7 +72,7 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 * Nếu tích hợp `ResourceGuardMiddleware`, 503 có thể do CPU/RAM vượt ngưỡng.
 * Kiểm tra cấu hình rate limit/HSTS/CORS trong `settings.py`.
-* Giảm kích thước lô sự kiện, bật cache nâng cao nếu phù hợp (`ADVANCED_CACHING_ENABLED`).
+* Giảm kích thước lô sự kiện; chỉ điều chỉnh instance cache hiện có sau khi đo việc sử dụng chúng.
 
 ## Redis/SQLite không kết nối
 

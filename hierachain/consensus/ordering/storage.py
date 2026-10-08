@@ -2,14 +2,17 @@
 Ordering storage handler for the HieraChain ordering service.
 """
 
-import time
 import logging
+import time
 from collections import deque
 from typing import Any
-from hierachain.core.block import Block, convert_events_to_arrow
-from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
-from hierachain.consensus.ordering.types import PendingEvent
 
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.config.settings import settings
+from hierachain.consensus.ordering.types import PendingEvent
+from hierachain.core.block import Block, convert_events_to_arrow
+from hierachain.security.identity_loader import load_trusted_block_keys
+from hierachain.security.verify.block_verifier import get_block_verifier
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,9 @@ def _verify_chain_links(blocks: list[Block]) -> None:
             )
 
 
-def _block_from_dict(data: dict[str, Any]) -> Block:
+def _block_from_dict(
+    data: dict[str, Any], trusted_public_keys: dict[str, bytes]
+) -> Block:
     """Create a Block from dictionary data with hash verification."""
     block = object.__new__(Block)
     block.index = data["index"]
@@ -49,10 +54,17 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
     block.signature = data.get("signature")
     block.merkle_root = data.get("merkle_root") or ""
     block._events = convert_events_to_arrow(data["events"])
-    block._cached_events = None
+
+    calculated_merkle_root = block.calculate_merkle_root()
+    if block.merkle_root != calculated_merkle_root:
+        raise ValueError(
+            f"Block Merkle root MISMATCH! block={block.index} "
+            f"stored={block.merkle_root[:16]} "
+            f"computed={calculated_merkle_root[:16]}"
+        )
 
     # Recompute hash and compare with stored hash.
-    # Hash includes merkle_root, so verifying hash also protects event integrity.
+    # Verify the header only after checking the events against their Merkle root.
     stored_hash = data["hash"]
     computed_hash = block.calculate_hash()
     if stored_hash != computed_hash:
@@ -61,6 +73,9 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
             f"stored={stored_hash[:16]} computed={computed_hash[:16]}"
         )
     block.hash = stored_hash
+    public_key = trusted_public_keys.get(block.creator_id)
+    if not get_block_verifier().verify_block(block, public_key=public_key).is_valid:
+        raise ValueError(f"Block signature invalid or untrusted: index={block.index}")
     return block
 
 
@@ -68,6 +83,12 @@ class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
         self.config = config
+        trusted_public_keys = config.get("trusted_public_keys")
+        self.trusted_public_keys: dict[str, bytes] = (
+            trusted_public_keys
+            if trusted_public_keys is not None
+            else load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
+        )
         db_url = config.get("db_url", "")
         if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
             from hierachain.adapters.database.postgres_adapter import PostgresAdapter
@@ -82,52 +103,65 @@ class OrderingStorageHandler:
         self.processed_events: dict[str, PendingEvent] = {}
         self.chain_name = config.get("chain_name")
 
-    def save_block(self, block: Block, chain_name: str | None):
+    def save_block(self, block: Block, chain_name: str | None) -> tuple[int, float]:
+        public_key = self.trusted_public_keys.get(block.creator_id)
+        if not get_block_verifier().verify_block(block, public_key=public_key).is_valid:
+            raise ValueError(f"Refusing to persist unsigned or untrusted block {block.index}")
         block_data = {
             "index": block.index,
             "hash": block.hash,
             "previous_hash": block.previous_hash,
             "timestamp": block.timestamp,
+            "nonce": block.nonce,
             "events": block.to_event_list(),
-            "metadata": {"merkle_root": block.merkle_root},
+            "metadata": {
+                "merkle_root": block.merkle_root,
+                "creator_id": block.creator_id,
+                "signature": block.signature,
+            },
             "merkle_root": block.merkle_root,
             "chain_name": chain_name
         }
-        self.storage.save_block(block_data)
-        self.block_history.append(block)
-        self.last_block = block
+        if not self.storage.save_block(block_data):
+            raise RuntimeError(
+                f"Storage adapter rejected block {block.index} for chain {chain_name}"
+            )
+
+        for cached_index, cached_block in enumerate(self.block_history):
+            if cached_block.index == block.index:
+                self.block_history[cached_index] = block
+                break
+        else:
+            if not self.block_history or block.index > self.block_history[-1].index:
+                self.block_history.append(block)
+        if self.last_block is None or block.index >= self.last_block.index:
+            self.last_block = block
         
-        # Calculate block latency for metrics before clearing
+        # Consume timing state only for events in the persisted block.
         current_time = time.time()
-        block_latency = sum(
-            current_time - e.received_at for e in self.processed_events.values()
-        )
-        event_count = len(self.processed_events)
-        self.processed_events.clear()
-        return event_count, block_latency
+        block_latency = 0.0
+        for event in block_data["events"]:
+            event_id = event.get("event_id")
+            if isinstance(event_id, str):
+                pending = self.processed_events.pop(event_id, None)
+                if pending is not None:
+                    block_latency += current_time - pending.received_at
+        return len(block_data["events"]), block_latency
 
     def get_blocks(self, start_index: int) -> list[Block]:
-        if start_index < 0:
-            start_index = 0
+        start_index = max(start_index, 0)
         if self.block_history and start_index >= self.block_history[0].index:
             offset = start_index - self.block_history[0].index
             return list(self.block_history)[offset:]
         return self._load_from_db(start_index)
 
     def _load_from_db(self, start_index: int) -> list[Block]:
+        rows = self.storage.get_blocks_from_index(start_index, chain_name=self.chain_name)
         blocks = []
-        current_index = start_index
-        
-        while True:
-            # We need to know which chain we are loading blocks for
-            data = self.storage.get_block_by_index(
-                current_index, chain_name=self.chain_name
-            )
-            if not data:
-                break
-            # Create block directly to avoid recalculating hash
-            blocks.append(_block_from_dict(data))
-            current_index += 1
+        for expected_index, data in enumerate(rows, start=start_index):
+            if data["index"] != expected_index:
+                raise ValueError(f"Persisted chain has a gap at block {expected_index}")
+            blocks.append(_block_from_dict(data, self.trusted_public_keys))
 
         # Verify chain integrity: every block's previous_hash must match
         # the preceding block's hash
@@ -142,8 +176,7 @@ class OrderingStorageHandler:
         Used during rehydration to ensure we get the persisted state
         rather than any in-memory blocks that may have diverged.
         """
-        if start_index < 0:
-            start_index = 0
+        start_index = max(start_index, 0)
         return self._load_from_db(start_index)
 
     def get_latest_block_from_db(self) -> Block | None:
@@ -151,7 +184,7 @@ class OrderingStorageHandler:
         data = self.storage.get_latest_block(chain_name=self.chain_name)
         if not data:
             return None
-        return _block_from_dict(data)
+        return _block_from_dict(data, self.trusted_public_keys)
 
     def close(self) -> None:
         self.storage.close()

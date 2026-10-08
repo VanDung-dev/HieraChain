@@ -4,9 +4,9 @@ Error classification types for HieraChain Ledger.
 Defines enums and data structures for error classification.
 """
 
-from typing import Any
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 
 class PriorityLevel(Enum):

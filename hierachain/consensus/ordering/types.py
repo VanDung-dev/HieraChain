@@ -17,6 +17,19 @@ class OrderingStatus(Enum):
     ERROR = "error"
 
 
+class OrderingPausedError(RuntimeError):
+    """A durable pending block must wait until ordering leaves lockdown."""
+
+
+class OrderingBackpressureError(RuntimeError):
+    """Enqueue failed; callers can distinguish new submissions from durable retries."""
+
+    def __init__(self, event_id: str, *, journaled: bool) -> None:
+        self.event_id = event_id
+        self.journaled = journaled
+        super().__init__(f"Ordering queue is full or unavailable for event {event_id}; journaled={journaled}")
+
+
 class EventStatus(Enum):
     """Event processing status"""
     PENDING = "pending"
@@ -63,4 +76,3 @@ class OrderingNode:
     def is_healthy(self, timeout: float = 30.0) -> bool:
         """Check if node is healthy based on heartbeat"""
         return (time.time() - self.last_heartbeat) < timeout
-

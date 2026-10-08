@@ -3,19 +3,29 @@ GraphQL types for Hierachain API
 """
 
 
-import orjson
+from typing import Any
+
 from graphene import (
-    ObjectType, String, Int, Float, List, Boolean, Field,
-    InputObjectType
+    Boolean,
+    Field,
+    Float,
+    InputObjectType,
+    Int,
+    List,
+    ObjectType,
+    String,
 )
 
 from hierachain.api.storage.endpoint_helpers import (
-    is_ipfs_enabled, resolve_event_details
+    is_ipfs_enabled,
+    resolve_event_details,
 )
 from hierachain.api.storage.utils import is_cid_string
+from hierachain.serialization import dumps_json
 
 
 class EventType(ObjectType):
+    cursor = String()
     entity_id = String()
     event_type = String()
     details = String()
@@ -53,15 +63,15 @@ class EventType(ObjectType):
 
     async def _resolve_offchain_details(self):
         if not is_ipfs_enabled():
-            return orjson.dumps({"error": "IPFS not enabled", "cid": self.details_cid}).decode()
+            return dumps_json({"error": "IPFS not enabled", "cid": self.details_cid})
 
         try:
             event_dict = self._build_event_dict()
             resolved = await resolve_event_details(event_dict, resolve=True)
             if 'details' in resolved:
-                return orjson.dumps(resolved['details']).decode()
+                return dumps_json(resolved['details'])
         except Exception as e:
-            return orjson.dumps({"error": f"Failed to resolve CID: {str(e)}", "cid": self.details_cid}).decode()
+            return dumps_json({"error": f"Failed to resolve CID: {e!s}", "cid": self.details_cid})
 
         return None
 
@@ -75,11 +85,11 @@ class EventType(ObjectType):
         }
 
     def _get_cid_reference(self):
-        return orjson.dumps({
+        return dumps_json({
             "cid": self.details_cid,
             "nonce": getattr(self, 'details_nonce', None),
             "note": "Set resolve_cid=true to fetch actual data"
-        }).decode()
+        })
 
     def resolve_is_offchain(self, _info):
         return hasattr(self, 'details_cid') and bool(self.details_cid)
@@ -100,12 +110,12 @@ class BlockType(ObjectType):
     events = List(EventType)
     metadata = Field(BlockMetadataType)
 
-    def resolve_events(self):
+    def resolve_events(self, _info: Any) -> list[EventType]:
         if hasattr(self, 'events'):
             return self.events
         return []
 
-    def resolve_metadata(self):
+    def resolve_metadata(self, _info: Any) -> Any:
         if hasattr(self, 'metadata'):
             return self.metadata
         return None

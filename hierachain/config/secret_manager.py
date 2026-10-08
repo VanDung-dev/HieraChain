@@ -18,10 +18,13 @@ Usage::
 
 import logging
 import os
-import hvac
-import boto3
-from botocore.exceptions import ClientError
 from typing import Any
+
+import boto3
+import hvac
+from botocore.exceptions import ClientError
+
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -62,23 +65,33 @@ def _get_from_vault(key: str, vault_url: str, vault_token: str, vault_path: str)
         return None
 
 
-def _get_from_aws(secret_name: str, region: str) -> str | None:
+def _get_from_aws(key: str, secret_name: str, region: str) -> str | None:
     """
-    Read a secret from AWS Secrets Manager.
+    Read a string field from a JSON object in AWS Secrets Manager.
 
     Args:
+        key:         The field name within the secret JSON object.
         secret_name: The full SecretId (e.g. 'prod/HieraChain/cluster_secret').
         region:      AWS region, e.g. 'ap-southeast-1'.
 
     Returns:
-        The ``SecretString`` value, or None on error.
+        The requested string field, or None if missing, invalid or on error.
     """
 
     try:
         client = boto3.client("secretsmanager", region_name=region)
         response = client.get_secret_value(SecretId=secret_name)
-        return response.get("SecretString")
-    except ClientError as exc:  # noqa: BLE001
+        secret_string = response.get("SecretString")
+        if not isinstance(secret_string, str):
+            logger.warning("AWS secret must contain a JSON SecretString")
+            return None
+        data = loads_json(secret_string)
+        value = data.get(key) if isinstance(data, dict) else None
+        if not isinstance(value, str):
+            logger.warning("AWS secret field is missing or is not a string")
+            return None
+        return value
+    except ClientError as exc:
         logger.error("AWS KMS/SM service error: %s", type(exc).__name__)  # nosemgrep: python-logger-credential-disclosure
         return None
     except Exception as exc:  # noqa: BLE001
@@ -97,7 +110,7 @@ class SecretManager:
     * ``HRC_VAULT_TOKEN``      — Vault token       (vault backend)
     * ``HRC_VAULT_PATH``       — KV-v2 secret path (vault backend, default: ``hiera/secrets``)
     * ``HRC_AWS_REGION``       — AWS region        (aws backend, default: ``us-east-1``)
-    * ``HRC_AWS_SECRET_NAME``  — AWS secret name   (aws backend)
+    * ``HRC_AWS_SECRET_NAME``  — required SecretId of a JSON object (aws backend)
 
     Example::
 
@@ -107,6 +120,8 @@ class SecretManager:
 
     def __init__(self) -> None:
         self._backend: str = os.environ.get("HRC_SECRET_BACKEND", "env").lower().strip()
+        if self._backend not in {"env", "vault", "aws"}:
+            raise ValueError(f"Unsupported HRC_SECRET_BACKEND value: {self._backend!r}")
 
         # Vault config
         self._vault_url: str = os.environ.get("HRC_VAULT_URL", "")
@@ -125,8 +140,10 @@ class SecretManager:
 
         Args:
             key: The environment variable name (used as-is for ``env`` backend,
-                 and as the data field name for Vault/AWS backends).
-            default: Value to return if the secret is not found.
+                 and as the data field name for Vault/AWS backends). For AWS,
+                 this is never a SecretId; HRC_AWS_SECRET_NAME supplies that ID
+                 and the selected JSON field must contain a string.
+            default: Value to return if the secret is missing, invalid or unavailable.
 
         Returns:
             Secret string value, or *default* if not found.
@@ -138,8 +155,6 @@ class SecretManager:
         elif self._backend == "aws":
             value = self._get_aws(key)
         else:
-            if self._backend != "env":
-                logger.warning("Unknown HRC_SECRET_BACKEND, falling back to 'env'")
             value = _get_from_env(key)
 
         if value is None:
@@ -156,13 +171,12 @@ class SecretManager:
 
     def _get_vault(self, key: str) -> str | None:
         if not self._vault_url or not self._vault_token:
-            logger.error(
-                "Vault backend selected but HRC_VAULT_URL or HRC_VAULT_TOKEN is not set. "
-                "Falling back to env."
-            )
-            return _get_from_env(key)
+            logger.error("Vault backend selected but HRC_VAULT_URL or HRC_VAULT_TOKEN is not set")
+            return None
         return _get_from_vault(key, self._vault_url, self._vault_token, self._vault_path)
 
     def _get_aws(self, key: str) -> str | None:
-        secret_name = self._aws_secret_name or key
-        return _get_from_aws(secret_name, self._aws_region)
+        if not self._aws_secret_name:
+            logger.error("AWS backend selected but HRC_AWS_SECRET_NAME is not set")
+            return None
+        return _get_from_aws(key, self._aws_secret_name, self._aws_region)

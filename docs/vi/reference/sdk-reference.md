@@ -6,7 +6,7 @@ icon: material/language-python
 
 # Python SDK Reference
 
-Thư viện Python SDK của HieraChain thiết kế mô-đun mạnh mẽ giúp các Developer đẩy giao dịch cũng như thực hiện đọc dữ liệu vô cùng nhanh gọn trong môi trường Python. Mã nguồn đặt tại: `hierachain/sdk/client.py`.
+Python SDK của HieraChain cung cấp client đồng bộ và bất đồng bộ để gửi event và đọc dữ liệu. Mã nguồn: `hierachain/sdk/client.py`.
 
 ### 1. Khởi tạo Client
 
@@ -46,6 +46,8 @@ Lấy trạng thái hệ thống từ API Admin. Trả về đối tượng ch�
 
 Truy vết lịch sử của một thực thể qua các chuỗi.
 
+Entity ID được percent-encode thành một path segment. `health_check()` dùng route API `/api/ledger/health`. Khi cấu hình `api_key`, client đồng bộ và bất đồng bộ không đi theo redirect của request đọc; phản hồi 3xx phát sinh `HieraChainAPIError` và `X-API-Key` không được gửi sang origin khác.
+
 ---
 
 ### Ví dụ: Lưu trữ Off-chain (IPFS)
@@ -73,8 +75,9 @@ SDK định nghĩa các ngoại lệ chuyên biệt để ứng dụng có thể
 ```python
 from hierachain.sdk.exceptions import (
     CircuitOpenError,     # Khi Circuit Breaker được kích hoạt
+    HieraChainAPIError,   # Lỗi HTTP, có status_code
     LockdownError,        # Khi hệ thống đang trong chế độ phong tỏa bảo mật
-    ServiceUnavailableError # Khi lỗi kết nối hoặc server quá tải
+    ServiceUnavailableError # Khi server trả HTTP 503
 )
 
 try:
@@ -84,13 +87,15 @@ except LockdownError:
     pass
 ```
 
-# Chạy dạng context manager
+Với đoạn xử lý đồng bộ, mở client bằng context manager:
+
+```python
 with HieraChainClient(config) as client:
     health = client.health_check()
     print("Healthy:", health)
 ```
 
-**Sử dụng Async (Phù hợp Web Server/FastAPI):**
+Với web server hoặc ứng dụng FastAPI, dùng client bất đồng bộ:
 ```python
 from hierachain.sdk.client import HieraChainAsyncClient
 
@@ -101,19 +106,19 @@ async with HieraChainAsyncClient(config) as async_client:
 
 ### 2. Các tính năng Mạng lưới cốt lõi (Resilience)
 
-SDK được trang bị tận răng các cơ chế phục hồi và đảm bảo thông lượng để chống spam / quá tải máy chủ Node:
+SDK thử lại khi gặp lỗi mạng và dùng circuit breaker để giới hạn request khi API không khả dụng:
 
 #### a. Tự động phục hồi (Exponential Backoff Retry)
-Nếu xảy ra rớt mạng, SDK tự tính toán khoảng dừng nghỉ `initial_delay * (backoff_multiplier ^ attempt)`. Thay vì sập toàn hệ thống, truy vấn sẽ liên tục được lặp lại (theo mặc định cấu hình `max_retries = 5`).
+Request đọc (`GET`) thử lại khi lỗi truyền tải hoặc HTTP 5xx, với thời gian chờ `initial_delay * (backoff_multiplier ^ attempt)` và tối đa `max_retries = 5` lần theo mặc định. HTTP 3xx/4xx lập tức phát sinh `HieraChainAPIError`; `status_code` chứa mã phản hồi. Request ghi (`POST`) chỉ gửi một lần, kể cả khi timeout hoặc nhận 503, vì server chưa có hợp đồng idempotency. SDK không đi theo redirect của POST.
 
 #### b. Chốt kiểm tra mạch (Circuit Breaker)
 Hoạt động fail-fast (ưu tiên báo lỗi sớm):
 - **CLOSED**: Trạng thái mạng ổn định, toàn bộ request cho pass qua API.
-- **OPEN**: Nếu phát hiện 5 lỗi truyền tải liên tục (`circuit_failure_threshold`), rơ-le ngắt, ngay lập tức báo `CircuitOpenError` cho đến lúc hết khoảng timeout 30s (`circuit_recovery_timeout`).
-- **HALF_OPEN**: Khi đủ thời gian làm mát, nó tự test một packet. Nếu lỗi sẽ Open lại, nếu tốt sẽ phục hồi đóng mạch về Closed.
+- **OPEN**: Nếu phát hiện 5 lỗi truyền tải hoặc HTTP 5xx liên tiếp (`circuit_failure_threshold`), circuit mở và báo `CircuitOpenError` cho đến khi hết thời gian chờ 30 giây (`circuit_recovery_timeout`).
+- **HALF_OPEN**: Sau thời gian chờ, chỉ một request được nhận làm probe. Probe không được thử lại; thất bại sẽ mở circuit, thành công sẽ đóng circuit.
 
 #### c. Quản lý trạng thái kẹt (Lockdown & 503)
-Nếu Node server báo trả về Header `X-Lockdown-Mode: true` (Hệ thống đang bị tấn công DDoD / bảo trì thủ công) hoặc nhận HTTP `503 Service Unavailable`, SDK sẽ không loay hoay Spam Retries (gây quá tải). Mã lỗi sẽ tự phơi bày qua Class Exception định danh riêng biệt `LockdownError` và `ServiceUnavailableError`. 
+Nếu Node server trả header `X-Lockdown-Mode: true` hoặc HTTP `503 Service Unavailable`, SDK phát sinh `LockdownError` hoặc `ServiceUnavailableError`. Request đọc có thể thử lại trước; POST thì không.
 
 ### 3. Tương tác Dữ liệu
 
@@ -123,8 +128,12 @@ result = client.submit_event("main_chain", {
     "entity_id": "user_sysadmin",
     "event": "update_config"
 })
-print("Đẩy thành công vào block, Message ID:", result.event_id)
+print("Đã tiếp nhận sự kiện, event_id:", result.event_id)
 
 # Lấy Block bằng hash
 block = client.get_block(block_id="8f2a9d...")
 ```
+
+### Truyền JSON
+
+Cả hai SDK client mã hóa body request và đọc JSON response qua helper dùng `json` chuẩn, với UTF-8 và `Content-Type: application/json` mặc định, đồng thời tôn trọng header đã cấu hình. Số không hữu hạn bị từ chối trước khi gửi; response chứa `NaN`, `Infinity` hoặc số vượt khoảng biểu diễn float bị từ chối. Số nguyên Python lớn hơn 64 bit được giữ nguyên mà không chuyển thành float, trong giới hạn chuyển đổi số nguyên của Python. JSON response không hợp lệ đi qua xử lý lỗi và retry hiện có. Request thay đổi dữ liệu vẫn không tự retry.

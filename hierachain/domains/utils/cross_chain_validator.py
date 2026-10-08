@@ -7,11 +7,12 @@ and Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.domains.utils.compliance_checker import ComplianceChecker
+from hierachain.domains.utils.entity_tracer import EntityTracer
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
 
 def _check_operation_consistency(
@@ -91,26 +92,30 @@ def _check_logical_consistency(
 
     all_events.sort(key=lambda x: x.get("timestamp", 0))
 
-    entity_status = None
-    current_operation = None
+    entity_statuses: dict[str, str | None] = {}
+    current_operations: dict[str, str | None] = {}
 
     for event in all_events:
         event_type = str(event.get("event", ""))
         details = event.get("details", {})
+        if not isinstance(details, dict):
+            # Structure validation records this event as invalid; malformed
+            # payloads must not abort the independent logical consistency pass.
+            continue
         chain_name = str(event.get("_chain_name", "Unknown"))
 
-        current_operation = _check_operation_consistency(
+        current_operations[chain_name] = _check_operation_consistency(
             event_type,
             details,
-            current_operation,
+            current_operations.get(chain_name),
             chain_name,
             event,
             inconsistencies,
         )
-        entity_status = _check_status_consistency(
+        entity_statuses[chain_name] = _check_status_consistency(
             event_type,
             details,
-            entity_status,
+            entity_statuses.get(chain_name),
             chain_name,
             event,
             inconsistencies,
@@ -284,11 +289,28 @@ class ProofValidator:
         self, proof_event: dict[str, Any], results: dict[str, Any],
     ) -> None:
         """Validate one proof event."""
-        details = proof_event.get("details", {})
+        details = proof_event.get("details")
+        details = details if isinstance(details, dict) else {}
         sub_chain_name = details.get("sub_chain_name")
         proof_hash = details.get("proof_hash")
-
-        if not sub_chain_name or not proof_hash:
+        timestamp = proof_event.get("timestamp")
+        missing_fields = []
+        if not isinstance(sub_chain_name, str) or not sub_chain_name:
+            missing_fields.append("sub_chain_name")
+        if not isinstance(proof_hash, str) or not proof_hash:
+            missing_fields.append("proof_hash")
+        if (
+            isinstance(timestamp, bool)
+            or not isinstance(timestamp, (int, float))
+            or timestamp <= 0
+        ):
+            missing_fields.append("timestamp")
+        if missing_fields:
+            results["inconsistent_proofs"] += 1
+            results["inconsistencies"].append({
+                "type": "missing_proof_fields",
+                "fields": missing_fields,
+            })
             return
 
         sub_chain = self._hm.get_sub_chain(sub_chain_name)

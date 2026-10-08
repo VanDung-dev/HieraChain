@@ -6,12 +6,21 @@ including proof consistency checks and hierarchical integrity verification.
 """
 
 import time
-from typing import cast
+from pathlib import Path
 
 import pytest
 
-from hierachain.hierarchical import HierarchyManager
+from hierachain.config.settings import settings
 from hierachain.domains.utils import CrossChainValidator
+from hierachain.hierarchical import HierarchyManager
+
+
+@pytest.fixture(autouse=True)
+def isolated_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep persisted chains and background orderers separate for each case."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HRC_STORAGE_BACKEND", "sqlite")
+    monkeypatch.setattr(settings, "DATABASE_URL", f"sqlite:///{tmp_path / 'main.db'}")
 
 
 def _iter_block_events(chain):
@@ -20,7 +29,7 @@ def _iter_block_events(chain):
         if isinstance(events, list):
             yield block, events, False
         elif hasattr(events, "to_pylist"):
-            yield block, events.to_pylist(), True
+            yield block, block.to_event_list(), True
 
 
 def _set_proof_submission_timestamp(main_chain, timestamp):
@@ -247,6 +256,8 @@ def test_cross_chain_validation_with_entity_consistency():
 
     # Simulate an entity being processed across multiple chains
     entity_id = "ORDER-12345"
+    assert order_chain.register_entity(entity_id, {})
+    assert inventory_chain.register_entity(entity_id, {})
 
     # Process order in OrderChain
     order_chain.start_operation(entity_id, "process_order", {"customer": "CUST-001"})
@@ -370,7 +381,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
 
     _finalize_sub_chain_and_submit(sub_chain, main_chain)
 
-    found_proof = _set_proof_submission_timestamp(main_chain, 0)
+    found_proof = _set_proof_submission_timestamp(main_chain, 1.0)
     assert found_proof, "Proof submission event not found in main chain"
 
     # Create validator and run validation
@@ -456,7 +467,8 @@ def test_cross_chain_validation_with_logic_inconsistency():
     test_chain.proof_submission_interval = float('inf')
 
     # Create logically inconsistent events - complete operation without starting it
-    test_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
+    assert test_chain.register_entity("ENTITY-001", {})
+    assert test_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
 
     # Wait for ordering service to batch the event
     time.sleep(1.0)
@@ -473,7 +485,7 @@ def test_cross_chain_validation_with_logic_inconsistency():
             break
 
     assert found_event, (
-        f"Event for ENTITY-001 not found in chain."
+        "Event for ENTITY-001 not found in chain."
     )
 
     test_chain.submit_proof_to_main(main_chain)
@@ -488,6 +500,11 @@ def test_cross_chain_validation_with_logic_inconsistency():
     assert entity_validation_results["entity_found"] is True
     assert entity_validation_results["chains_checked"] >= 1
     assert entity_validation_results["total_events"] >= 1
+    assert entity_validation_results["overall_consistent"] is False
+    assert any(
+        issue["type"] == "operation_complete_without_start"
+        for issue in entity_validation_results["inconsistencies"]
+    )
 
 
 def test_cross_chain_validation_with_large_number_of_sub_chains():
@@ -541,68 +558,3 @@ def test_cross_chain_validation_with_large_number_of_sub_chains():
     assert validation_results["missing_blocks"] == 0
     assert validation_results["inconsistent_proofs"] == 0
     assert validation_results["overall_consistent"] is True
-
-
-def test_cross_chain_validation_with_invalid_input_data():
-    """Test cross-chain validation behavior with invalid input data"""
-    # Create Hierarchy Manager with Main Chain
-    hierarchy_manager = HierarchyManager("InvalidInputValidationMain")
-    main_chain = hierarchy_manager.main_chain
-    main_chain.consensus.config["block_interval"] = 0
-
-    # Create Sub-Chain
-    hierarchy_manager.create_sub_chain("InvalidDataSubChain", "testing")
-    sub_chain = hierarchy_manager.get_sub_chain("InvalidDataSubChain")
-    assert sub_chain is not None
-    sub_chain.consensus.config["block_interval"] = 0
-    sub_chain.proof_submission_interval = float('inf')
-
-
-    # Test with various invalid inputs
-    # Empty entity ID
-    try:
-        sub_chain.start_operation("", "test_operation", {"param": "value1"})
-    except (ValueError, TypeError, AttributeError):
-        # Handle exception if implementation raises one for empty entity ID
-        pass
-
-    # None operation name
-    try:
-        sub_chain.start_operation(
-            "ENTITY-001",
-            cast(str, cast(object, None)),
-            {"param": "value1"},
-        )
-    except (ValueError, TypeError, AttributeError):
-        # Handle exception if implementation raises one for None operation
-        pass
-
-    # Add at least one valid operation to continue test
-    _add_simple_test_operation(sub_chain, "ENTITY-001")
-    _finalize_sub_chain_and_submit(sub_chain, main_chain)
-
-    # Create validator and run validation
-    validator = CrossChainValidator(hierarchy_manager)
-    validation_results = validator.validate_proof_consistency()
-
-    # Validation should still work with whatever valid data exists
-    assert validation_results["total_proofs_checked"] >= 0
-    assert validation_results["overall_consistent"] in [True, False]  # Should not crash
-
-    # Simulate a failure by corrupting one sub-chain's data
-    corrupted_chain_name = "InvalidDataSubChain"
-    if corrupted_chain_name in hierarchy_manager.sub_chains:
-        # Corrupt the sub-chain data in some way
-        corrupted_sub_chain = hierarchy_manager.sub_chains[corrupted_chain_name]
-        # Clear the block data to simulate corruption
-        corrupted_sub_chain.chain = []
-
-    # Create validator and run validation - should handle faults gracefully
-    validator = CrossChainValidator(hierarchy_manager)
-
-    # Validation should not crash even with corrupted data
-    validation_results = validator.validate_proof_consistency()
-
-    # Results will depend on implementation, but should not cause exceptions
-    assert isinstance(validation_results, dict)
-    assert "overall_consistent" in validation_results

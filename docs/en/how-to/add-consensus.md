@@ -6,11 +6,11 @@ icon: material/cog-sync
 
 # Add/Customize Consensus
 
-This page covers two paths: (A) just configure to select existing PoA/PoF/BFT; (B) extend by adding a new consensus mechanism based on `BaseConsensus`.
+Use this guide to configure PoA or PoF for MainChain and SubChain, or to integrate another consensus mechanism through `BaseConsensus`.
 
 ## Configuration Only (No Coding Required)
 
-1. Set environment variables (e.g. using `.env` or shell):
+1. Choose PoA or PoF for MainChain. The example uses `HRC_CONSENSUS_TYPE`; `HRC_MAINCHAIN_CONSENSUS` is also supported:
 
     ```dotenv
     # .env (example)
@@ -18,20 +18,15 @@ This page covers two paths: (A) just configure to select existing PoA/PoF/BFT; (
     HRC_ZK_REQUIRED_MAINCHAIN=false         # if using ZK, set true
     ```
 
-2. Enable/disable BFT (if applying ordering/Byzantine flow):
+MainChain and SubChain use PoA or PoF in the current runtime flow. BFT has a separate implementation under `hierachain/consensus/bft/`; the API Ledger does not select it, and there is no `HRC_BFT_ENABLED` environment variable. SubChain uses PoA by default; pass `consensus_type="proof_of_federation"` when initializing it to use PoF.
 
-    ```dotenv
-    # .env
-    HRC_BFT_ENABLED=true
-    ```
-
-3. Start API server and verify basic flow works:
+2. Start API server and verify basic flow works:
 
     ```bash
     python -m hierachain.api.server
     ```
 
-4. Quick test using API Ledger:
+3. Send a test request through API Ledger:
 
     ```bash
     curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
@@ -48,7 +43,7 @@ This page covers two paths: (A) just configure to select existing PoA/PoF/BFT; (
     * Base: `hierachain/consensus/base_consensus.py`
     * PoA: `hierachain/consensus/proof_of_authority.py`
     * PoF: `hierachain/consensus/proof_of_federation.py`
-    * BFT (hierarchical): `hierachain/consensus/bft/`
+    * BFT (separate implementation, not selected by current MainChain/SubChain configuration): `hierachain/consensus/bft/`
 
 2. Create new class extending `BaseConsensus` (example):
 

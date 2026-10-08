@@ -5,16 +5,16 @@ This module contains unit tests for the APIKeyVerifier class, including API key
 verification, permission checking, and security event logging.
 """
 
-import pytest
 import asyncio
-import inspect
-from unittest.mock import Mock, patch, ANY
+from unittest.mock import ANY, Mock, patch
+
+import pytest
 from fastapi import HTTPException, Request
 
 from hierachain.security.verify import (
     APIKeyVerifier,
     ResourcePermissionChecker,
-    create_verify_api_key
+    create_verify_api_key,
 )
 
 
@@ -130,8 +130,8 @@ async def test_verify_api_key_revoked_key(mock_key_manager, default_config, mock
     assert exc_info.value.status_code == 401
     assert "API key revoked" in str(exc_info.value.detail)
     
-    mock_key_manager.is_valid.assert_called_once_with("revoked_api_key")
     mock_key_manager.is_revoked.assert_called_once_with("revoked_api_key")
+    mock_key_manager.is_valid.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -219,7 +219,7 @@ async def test_create_verify_api_key_factory(default_config):
     verify_key = create_verify_api_key(default_config)
     
     assert isinstance(verify_key, APIKeyVerifier)
-    assert verify_key.enabled == True
+    assert verify_key.enabled
     assert verify_key.key_location == "header"
     assert verify_key.key_name == "x-api-key"
 
@@ -402,34 +402,3 @@ def test_verify_api_key_unsupported_key_location(default_config):
     # Should fall back to default header dependency
     assert verify_key.key_location == "cookie"
     # Note: The actual fallback behavior depends on implementation
-
-
-# Test cases for private methods using inspect
-def test_private_method_log_security_event_exists():
-    """Test that _log_security_event private method exists"""
-    # Check that the private method exists
-    assert hasattr(APIKeyVerifier, '_log_security_event')
-    
-    # Get the method using inspect
-    method = getattr(APIKeyVerifier, '_log_security_event')
-    assert callable(method)
-    
-    # Check method signature
-    signature = inspect.signature(method)
-    assert 'event_type' in signature.parameters
-    assert 'details' in signature.parameters
-
-
-def test_private_method_has_permission_exists():
-    """Test that _has_permission private method exists in ResourcePermissionChecker"""
-    # Check that the private method exists
-    assert hasattr(ResourcePermissionChecker, '_has_permission')
-    
-    # Get the method using inspect
-    method = getattr(ResourcePermissionChecker, '_has_permission')
-    assert callable(method)
-    
-    # Check method signature
-    signature = inspect.signature(method)
-    assert 'context' in signature.parameters
-    assert 'permission_type' in signature.parameters

@@ -7,17 +7,17 @@ priority matrix and predefined error patterns.
 
 from __future__ import annotations
 
-import time
-import logging
 import hashlib
+import logging
+import time
 from typing import Any
 
 from hierachain.error_mitigation.classifier_types import (
-    PriorityLevel,
     ErrorCategory,
+    ErrorInfo,
     ImpactLevel,
     LikelihoodLevel,
-    ErrorInfo,
+    PriorityLevel,
 )
 from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 
@@ -59,11 +59,13 @@ class ErrorClassifier:
         _log_classification(error_info)
         self.classification_history.append(error_info)
         if (
-            priority == PriorityLevel.CRITICAL
+            (priority == PriorityLevel.CRITICAL or (
+                category == ErrorCategory.SECURITY and priority == PriorityLevel.HIGH
+            ))
             and category in self.lockdown_trigger_categories
             and self.lockdown_callback is not None
         ):
-            logger.warning("CRITICAL %s error detected. Triggering lockdown: %s", category.value, error_id)
+            logger.warning("%s %s error detected. Triggering lockdown: %s", priority.name, category.value, error_id)
             try:
                 self.lockdown_callback(error_info)
             except Exception as e:
@@ -211,7 +213,7 @@ def _log_classification(error_info: ErrorInfo) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
         write_parquet_log("log/error_mitigation/error_classifications.parquet", log_entry)
-    except (IOError, OSError) as e:
+    except OSError as e:
         logger.error("Failed to log error classification: %s", e)
 
 
@@ -246,24 +248,24 @@ def _load_error_patterns() -> dict[str, str]:
 
 def _load_mitigation_strategies() -> dict[str, str]:
     return {
-        "consensus_critical": "immediate_scaling_and_recovery",
-        "consensus_high": "auto_scale_nodes",
+        "consensus_critical": "lockdown_and_manual_recovery",
+        "consensus_high": "validate_nodes_and_view_change",
         "consensus_medium": "monitor_and_view_change",
         "consensus_low": "log_and_monitor",
         "security_critical": "immediate_lockdown_and_investigation",
         "security_high": "rotate_keys_and_audit",
         "security_medium": "schedule_security_review",
         "security_low": "monitor_and_log",
-        "performance_critical": "immediate_resource_scaling",
-        "performance_high": "auto_scale_resources",
+        "performance_critical": "throttle_and_alert",
+        "performance_high": "monitor_and_alert",
         "performance_medium": "optimize_and_monitor",
         "performance_low": "monitor_and_log",
-        "storage_critical": "immediate_backup_recovery",
-        "storage_high": "verify_and_restore_backup",
+        "storage_critical": "journal_replay_or_manual_restore",
+        "storage_high": "verify_storage_and_alert",
         "storage_medium": "integrity_check_and_repair",
         "storage_low": "monitor_and_log",
-        "network_critical": "activate_redundant_paths",
-        "network_high": "network_recovery_procedures",
+        "network_critical": "halt_and_alert",
+        "network_high": "adjust_timeouts_and_monitor",
         "network_medium": "adjust_timeouts_and_monitor",
         "network_low": "monitor_and_log",
         "api_critical": "api_circuit_breaker",
@@ -271,7 +273,7 @@ def _load_mitigation_strategies() -> dict[str, str]:
         "api_medium": "api_monitoring_increase",
         "api_low": "monitor_and_log",
         "operational_critical": "immediate_manual_intervention",
-        "operational_high": "automated_recovery_procedures",
+        "operational_high": "manual_recovery_review",
         "operational_medium": "schedule_maintenance",
         "operational_low": "monitor_and_log",
     }

@@ -1,17 +1,17 @@
 """
 Core caching primitives for HieraChain Ledger.
 
-Provides AdvancedCache with multiple eviction policies (LRU, LFU, FIFO, TTL)
-and the default cache configuration constant.
+Provides AdvancedCache with multiple eviction policies (LRU, LFU, FIFO, TTL).
 """
 
-import time
-import threading
 import logging
-from typing import Any
+import threading
+import time
+from collections import OrderedDict
+from collections.abc import Iterator, MutableMapping
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import OrderedDict
+from typing import Any
 
 
 class EvictionPolicy(Enum):
@@ -37,7 +37,7 @@ class CacheEntry:
         return time.time() >= self.creation_time + self.ttl
 
 
-class AdvancedCache(dict):
+class AdvancedCache(MutableMapping[str, Any]):
     def __init__(self, max_size: int = 10000, eviction_policy: str = "lru") -> None:
         super().__init__()
         self.max_size = max_size
@@ -49,10 +49,9 @@ class AdvancedCache(dict):
         self.hits = 0
         self.misses = 0
         self.evictions = 0
-        self._cleanup_stop = threading.Event()
-        self._start_ttl_cleanup_thread()
 
     def get(self, key: str, default: Any = None) -> Any:
+        key = str(key)
         with self.lock:
             if key not in self.cache:
                 self.misses += 1
@@ -67,9 +66,12 @@ class AdvancedCache(dict):
             return entry.value
 
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
+        key = str(key)
         with self.lock:
             if key not in self.cache and len(self.cache) >= self.max_size:
-                self._evict()
+                self.cleanup_ttl()
+                if len(self.cache) >= self.max_size:
+                    self._evict()
             if key in self.cache:
                 entry = self.cache[key]
                 entry.value = value
@@ -83,13 +85,14 @@ class AdvancedCache(dict):
                 self._update_access(key)
 
     def delete(self, key: str) -> bool:
+        key = str(key)
         with self.lock:
             if key in self.cache:
                 self._remove_key(key)
                 return True
             return False
 
-    def clear(self):
+    def clear(self) -> None:
         with self.lock:
             self.cache.clear()
             self.access_order.clear()
@@ -115,7 +118,7 @@ class AdvancedCache(dict):
             EvictionPolicy.FIFO: self._evict_fifo,
             EvictionPolicy.TTL: self._evict_ttl,
         }.get(self.eviction_policy, self._evict_lru)()
-        if evict_key:
+        if evict_key is not None:
             self._remove_key(evict_key)
             self.evictions += 1
 
@@ -151,32 +154,14 @@ class AdvancedCache(dict):
             del self.cache[key]
         self.access_order.pop(key, None)
 
-    def _start_ttl_cleanup_thread(self) -> None:
-        def cleanup_loop():
-            while not self._cleanup_stop.is_set():
-                try:
-                    if self._cleanup_stop.wait(60):
-                        break
-                    self.cleanup_ttl()
-                except Exception as e:
-                    self.logger.error(f"TTL cleanup error: {e}")
-        cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
-        cleanup_thread.start()
-
-    def cleanup_ttl(self):
+    def cleanup_ttl(self) -> None:
         with self.lock:
-            keys = list(self.cache.keys())
-        expired_keys = []
-        for k in keys:
-            entry = self.cache.get(k)
-            if entry and entry.is_expired:
-                expired_keys.append(k)
-        with self.lock:
-            for k in expired_keys:
+            for k in [key for key, entry in self.cache.items() if entry.is_expired]:
                 self._remove_key(k)
 
     def get_stats(self) -> dict[str, Any]:
         with self.lock:
+            self.cleanup_ttl()
             total_requests = self.hits + self.misses
             hit_rate = (self.hits / total_requests * 100) if total_requests > 0 else 0
             return {
@@ -191,9 +176,11 @@ class AdvancedCache(dict):
 
     def get_keys(self) -> list[str]:
         with self.lock:
+            self.cleanup_ttl()
             return list(self.cache.keys())
 
     def contains(self, key: str) -> bool:
+        key = str(key)
         with self.lock:
             return key in self.cache and not self.cache[key].is_expired
 
@@ -202,8 +189,9 @@ class AdvancedCache(dict):
 
     def __getitem__(self, key: Any) -> Any:
         with self.lock:
-            val = self.get(str(key))
-            if val is None:
+            missing = object()
+            val = self.get(str(key), missing)
+            if val is missing:
                 raise KeyError(key)
             return val
 
@@ -217,19 +205,8 @@ class AdvancedCache(dict):
 
     def __len__(self) -> int:
         with self.lock:
+            self.cleanup_ttl()
             return len(self.cache)
 
-    def keys(self) -> list[str]:
-        return self.get_keys()
-
-
-DEFAULT_CACHE_CONFIG: dict[str, Any] = {
-    "block_cache_size": 5000,
-    "event_cache_size": 20000,
-    "entity_cache_size": 10000,
-    "block_cache_policy": "lru",
-    "event_cache_policy": "ttl",
-    "entity_cache_policy": "lfu",
-    "event_ttl": 300,
-    "entity_ttl": 3600,
-}
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.get_keys())

@@ -10,11 +10,13 @@ This module implements comprehensive block verification including:
 These checks ensure blockchain integrity and prevent tampering.
 """
 
-from typing import Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.security_utils import KeyPair
+from hierachain.serialization import dumps_canonical_json
 
 logger = get_security_logger()
 
@@ -50,27 +52,18 @@ class BlockVerificationError(Exception):
         self.block_index = block_index
 
 
-def _has_valid_signature_field(block: Any) -> bool:
-    """Check if block has a non-empty signature field."""
-    return hasattr(block, 'signature') and block.signature
-
-
-def _verify_signature_format(signature: str) -> bool:
-    """Basic check that signature has valid hex format and length."""
-    try:
-        sig_bytes = bytes.fromhex(signature)
-        # Typical ECDSA signature is 64-72 bytes, RSA is 256-512 bytes
-        return 64 <= len(sig_bytes) <= 512
-    except ValueError:
-        return False
-
-
 def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool:
     """Verify signature using cryptography library."""
     try:
-        from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa, ed25519, ed448
         from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import (
+            ec,
+            ed448,
+            ed25519,
+            padding,
+            rsa,
+        )
     except ImportError:
         logger.warning("cryptography library not available for signature verification")
         return False
@@ -87,9 +80,7 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
             pub_key.verify(sig_bytes, message, ec.ECDSA(hashes.SHA256()))
         elif isinstance(pub_key, rsa.RSAPublicKey):
             pub_key.verify(sig_bytes, message, padding.PKCS1v15(), hashes.SHA256())
-        elif isinstance(pub_key, ed25519.Ed25519PublicKey):
-            pub_key.verify(sig_bytes, message)
-        elif isinstance(pub_key, ed448.Ed448PublicKey):
+        elif isinstance(pub_key, ed25519.Ed25519PublicKey) or isinstance(pub_key, ed448.Ed448PublicKey):
             pub_key.verify(sig_bytes, message)
         else:
             logger.error("Unsupported public key type for block verification: %s", type(pub_key))
@@ -107,11 +98,10 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
 def _perform_crypto_verification(
     message: bytes, signature: str, public_key: bytes | None
 ) -> bool:
-    """Route to appropriate signature verification method."""
-    if public_key:
-        return _verify_signature(message, signature, public_key)
-    # For now, without key lookup, we can only check signature format
-    return _verify_signature_format(signature)
+    """Verify a signature only when its trusted public key is supplied."""
+    if not public_key:
+        return False
+    return _verify_signature(message, signature, public_key)
 
 
 class BlockVerifier:
@@ -122,7 +112,7 @@ class BlockVerifier:
     - Block hash matches computed hash
     - Merkle root matches events
     - Chain link (previous_hash) is valid
-    - Block creator signature (if present)
+    - Required block creator signature
 
     Example:
         verifier = BlockVerifier()
@@ -136,10 +126,11 @@ class BlockVerifier:
         Initialize BlockVerifier.
 
         Args:
-            strict_mode: If True, missing signatures are treated as errors.
-                         If False, missing signatures are warnings only.
+            strict_mode: Must be True; unsigned blocks are never valid.
         """
-        self.strict_mode = strict_mode
+        if not strict_mode:
+            raise ValueError("Unsigned block verification is not supported")
+        self.strict_mode = True
         self._stats = {
             "blocks_verified": 0,
             "valid_blocks": 0,
@@ -151,7 +142,10 @@ class BlockVerifier:
         }
 
     def verify_block(
-        self, block: Any, previous_block: Any | None = None
+        self,
+        block: Any,
+        previous_block: Any | None = None,
+        public_key: bytes | None = None,
     ) -> VerificationResult:
         """
         Perform full verification of a block.
@@ -159,6 +153,7 @@ class BlockVerifier:
         Args:
             block: The block to verify.
             previous_block: The previous block (optional, for chain link verification).
+            public_key: Trusted PEM public key for block.creator_id, resolved by caller.
 
         Returns:
             VerificationResult with status and details.
@@ -179,12 +174,11 @@ class BlockVerifier:
                 "chain_link_failures"
             ))
 
-        if _has_valid_signature_field(block):
-            steps.append((
-                "signature",
-                lambda: self.verify_block_signature(block),
-                "signature_failures"
-            ))
+        steps.append((
+            "signature",
+            lambda: self.verify_block_signature(block, public_key),
+            "signature_failures"
+        ))
 
         # Execute all steps and track statistics
         for name, verify_func, stat_key in steps:
@@ -351,16 +345,26 @@ class BlockVerifier:
 
         Args:
             block: Block to verify.
-            public_key: Optional public key for verification.
-                        If not provided, uses block.creator_id to lookup key.
+            public_key: Trusted PEM public key resolved by the caller for
+                        block.creator_id. Required for cryptographic verification.
 
         Returns:
             VerificationResult indicating if signature is valid.
         """
         try:
             # 1. Check for signature presence
-            if not _has_valid_signature_field(block):
+            if getattr(block, "signature", None) is None:
+                if public_key is not None:
+                    return VerificationResult(
+                        status=VerificationStatus.INVALID,
+                        message="Block signature missing for trusted creator"
+                    )
                 return self._handle_missing_signature()
+            if not isinstance(block.signature, str) or not block.signature:
+                return VerificationResult(
+                    status=VerificationStatus.INVALID,
+                    message="Block signature malformed"
+                )
 
             # 2. Check for creator identity
             if not hasattr(block, 'creator_id') or not block.creator_id:
@@ -394,21 +398,15 @@ class BlockVerifier:
             )
 
     def _handle_missing_signature(self) -> VerificationResult:
-        """Handle cases where block signature is missing based on strict mode."""
-        if self.strict_mode:
-            return VerificationResult(
-                status=VerificationStatus.INVALID,
-                message="Block signature missing (strict mode)"
-            )
+        """Reject an unsigned block."""
         return VerificationResult(
-            status=VerificationStatus.VALID,
-            message="Block signature not present (non-strict mode)"
+            status=VerificationStatus.INVALID,
+            message="Block signature missing"
         )
 
     @staticmethod
     def _get_signable_content(block: Any) -> bytes:
         """Get the content that was signed (block header without signature)."""
-        import orjson
         header = {
             "index": block.index,
             "timestamp": block.timestamp,
@@ -417,14 +415,19 @@ class BlockVerifier:
             "nonce": block.nonce,
             "creator_id": block.creator_id
         }
-        return orjson.dumps(header, option=orjson.OPT_SORT_KEYS)
+        return dumps_canonical_json(header)
 
-    def verify_chain(self, blocks: list[Any]) -> VerificationResult:
+    def verify_chain(
+        self,
+        blocks: list[Any],
+        trusted_public_keys: dict[str, bytes] | None = None,
+    ) -> VerificationResult:
         """
         Verify an entire chain of blocks.
 
         Args:
             blocks: List of blocks in order (index 0, 1, 2, ...).
+            trusted_public_keys: Trusted PEM public keys keyed by block creator_id.
 
         Returns:
             VerificationResult for the entire chain.
@@ -439,12 +442,28 @@ class BlockVerifier:
 
         for i, block in enumerate(blocks):
             previous = blocks[i - 1] if i > 0 else None
-            result = self.verify_block(block, previous)
+            creator_id = getattr(block, "creator_id", None)
+            public_key = (
+                trusted_public_keys.get(creator_id)
+                if trusted_public_keys is not None and creator_id
+                else None
+            )
+            result = self.verify_block(block, previous, public_key)
 
+            errors: list[str] = []
             if not result.is_valid:
+                errors.append(result.message)
+            if i == 0 and (
+                type(getattr(block, "index", None)) is not int
+                or getattr(block, "index", None) != 0
+                or getattr(block, "previous_hash", None) != "0"
+            ):
+                errors.append("Chain does not begin with the genesis block")
+
+            if errors:
                 invalid_blocks.append({
-                    "index": block.index,
-                    "errors": result.message
+                    "index": getattr(block, "index", None),
+                    "errors": "; ".join(errors),
                 })
 
         if invalid_blocks:
@@ -471,23 +490,35 @@ class BlockVerifier:
             self._stats[key] = 0
 
 
-# Singleton instance
 _default_verifier: BlockVerifier | None = None
 
 
 def get_block_verifier(strict_mode: bool = True) -> BlockVerifier:
-    """Get default BlockVerifier instance."""
+    """Get the verifier; unsigned-block verification is unsupported."""
     global _default_verifier
+    if not strict_mode:
+        raise ValueError("Unsigned block verification is not supported")
     if _default_verifier is None:
-        _default_verifier = BlockVerifier(strict_mode=strict_mode)
-    
-    verifier = _default_verifier
-    if verifier is None:
-        raise RuntimeError("BlockVerifier initialization failed")
-    return verifier
+        _default_verifier = BlockVerifier()
+    return _default_verifier
 
 
-def verify_block(block: Any, previous_block: Any | None = None) -> bool:
+def verify_block(
+    block: Any,
+    previous_block: Any | None = None,
+    public_key: bytes | None = None,
+) -> bool:
     """Convenience function to verify a single block."""
-    verifier = get_block_verifier(strict_mode=False)
-    return verifier.verify_block(block, previous_block).is_valid
+    verifier = get_block_verifier()
+    return verifier.verify_block(block, previous_block, public_key).is_valid
+
+
+def sign_block(block: Any, creator_id: str, signing_keypair: KeyPair) -> None:
+    """Sign a locally created block after all header and event changes."""
+    if not creator_id or not block.validate_structure():
+        raise ValueError("Block signer or structure missing")
+    if block.merkle_root != block.calculate_merkle_root():
+        raise ValueError("Cannot sign a block with an invalid Merkle root")
+    block.creator_id = creator_id
+    block.hash = block.calculate_hash()
+    block.signature = signing_keypair.sign(BlockVerifier._get_signable_content(block))

@@ -3,8 +3,10 @@ Pydantic schemas for API admin requests and responses (System Management)
 """
 
 from typing import Any
-import orjson
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from hierachain.serialization import dumps_json
 
 
 class VerifyIdentityRequest(BaseModel):
@@ -145,7 +147,7 @@ class SecureEventRequest(BaseModel):
     @classmethod
     def validate_details_integrity(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Verify payload integrity, size, and depth to prevent recursion attacks."""
-        if len(orjson.dumps(v)) > 1024 * 1024:
+        if len(dumps_json(v).encode("utf-8")) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
         cls._validate_payload_depth(v)

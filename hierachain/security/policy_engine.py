@@ -7,29 +7,29 @@ policies and access control decisions.
 
 from __future__ import annotations
 
-import time
-import orjson
 import hashlib
+import time
 from typing import Any
 
 from hierachain.security.policy_types import (
-    PolicyType,
-    PolicyEffect,
     ComparisonOperator,
     LogicalOperator,
     PolicyCondition,
+    PolicyEffect,
     PolicyRule,
+    PolicyType,
 )
+from hierachain.serialization import dumps_canonical_json
 
 __all__ = [
-    "PolicyType",
-    "PolicyEffect",
     "ComparisonOperator",
     "LogicalOperator",
-    "PolicyCondition",
-    "PolicyRule",
     "Policy",
+    "PolicyCondition",
+    "PolicyEffect",
     "PolicyEngine",
+    "PolicyRule",
+    "PolicyType",
     "_hash_context",
 ]
 
@@ -40,7 +40,7 @@ def _hash_context(context: dict[str, Any]) -> str:
             return str(obj)
         return str(obj)
 
-    context_bytes = orjson.dumps(context, option=orjson.OPT_SORT_KEYS, default=_default_serializer)
+    context_bytes = dumps_canonical_json(context, default=_default_serializer)
     return hashlib.sha256(context_bytes).hexdigest()[:8]
 
 
@@ -242,11 +242,12 @@ class PolicyEngine:
             self.statistics["deny_decisions"] += 1
 
     def evaluate_policy(self, policy_id: str, context: dict[str, Any]) -> dict[str, Any]:
-        cache_key = f"{policy_id}:{_hash_context(context)}"
+        policy = self.policies.get(policy_id)
+        policy_version = policy.version if policy else "missing"
+        cache_key = f"{policy_id}:{policy_version}:{_hash_context(context)}"
         cached = self._get_cached_result(cache_key)
         if cached:
             return cached
-        policy = self.policies.get(policy_id)
         result = policy.evaluate(context) if policy else _create_not_found_result(policy_id)
         self._update_statistics(result["effect"])
         if self.cache_enabled:

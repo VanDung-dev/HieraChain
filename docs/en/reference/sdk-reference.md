@@ -6,7 +6,7 @@ icon: material/language-python
 
 # Python SDK Reference
 
-The HieraChain Python SDK library is designed as a powerful module to help Developers push transactions and read data quickly and efficiently in Python environments. Source code located at: `hierachain/sdk/client.py`.
+The HieraChain Python SDK provides synchronous and asynchronous clients for submitting events and reading data. Source: `hierachain/sdk/client.py`.
 
 ### 1. Client Initialization
 
@@ -46,6 +46,8 @@ Get system status from API Admin. Returns an object containing `version`, `uptim
 
 Trace the history of an entity across chains.
 
+Entity IDs are percent-encoded as one URL path segment. `health_check()` uses the API route `/api/ledger/health`. If `api_key` is configured, the sync and async clients do not follow redirects for read requests; a 3xx response raises `HieraChainAPIError` and the `X-API-Key` is not sent to another origin.
+
 ---
 
 ### Example: Off-chain Storage (IPFS)
@@ -73,8 +75,9 @@ The SDK defines specialized exceptions so applications can handle business logic
 ```python
 from hierachain.sdk.exceptions import (
     CircuitOpenError,     # When Circuit Breaker is activated
+    HieraChainAPIError,   # HTTP errors, with status_code
     LockdownError,        # When system is in security lockdown mode
-    ServiceUnavailableError # When connection error or server overload
+    ServiceUnavailableError # When the server returns HTTP 503
 )
 
 try:
@@ -84,13 +87,15 @@ except LockdownError:
     pass
 ```
 
-# Run as context manager
+For synchronous code, open the client with a context manager:
+
+```python
 with HieraChainClient(config) as client:
     health = client.health_check()
     print("Healthy:", health)
 ```
 
-**Using Async (Suitable for Web Server/FastAPI):**
+For a web server or FastAPI application, use the async client:
 ```python
 from hierachain.sdk.client import HieraChainAsyncClient
 
@@ -101,19 +106,19 @@ async with HieraChainAsyncClient(config) as async_client:
 
 ### 2. Core Network Resilience Features
 
-The SDK is equipped with recovery and throughput assurance mechanisms to prevent spam / Node server overload:
+The SDK retries network failures and uses a circuit breaker to limit requests when the API is unavailable:
 
 #### a. Auto-retry (Exponential Backoff)
-If a network drop occurs, the SDK automatically calculates a pause interval `initial_delay * (backoff_multiplier ^ attempt)`. Instead of crashing the whole system, queries are continuously retried (default `max_retries = 5`).
+Read requests (`GET`) retry transport failures and HTTP 5xx with `initial_delay * (backoff_multiplier ^ attempt)`, up to `max_retries = 5` times by default. HTTP 3xx/4xx raises `HieraChainAPIError` immediately; its `status_code` contains the response status. Submission requests (`POST`) are sent once, including after a timeout or 503, because the server has no idempotency contract. The SDK does not follow POST redirects.
 
 #### b. Circuit Breaker
 Fail-fast operation (prioritizes early error reporting):
 - **CLOSED**: Network state stable, all requests pass through to API.
-- **OPEN**: If 5 consecutive transport failures are detected (`circuit_failure_threshold`), the relay trips, immediately raising `CircuitOpenError` until the 30s timeout (`circuit_recovery_timeout`) elapses.
-- **HALF_OPEN**: After the cooldown period, it self-tests one packet. If it fails, it re-opens; if successful, it recovers to Closed.
+- **OPEN**: If 5 consecutive transport or HTTP 5xx failures are detected (`circuit_failure_threshold`), the relay trips, immediately raising `CircuitOpenError` until the 30s timeout (`circuit_recovery_timeout`) elapses.
+- **HALF_OPEN**: After the cooldown period, only one request is admitted as a probe. It is not retried; failure re-opens the circuit, and success closes it.
 
 #### c. Lockdown & 503 Handling
-If the Node server returns a `X-Lockdown-Mode: true` header (System under DDoS attack / manual maintenance) or an HTTP `503 Service Unavailable`, the SDK will not spam retries (causing overload). Errors are exposed via dedicated Exception classes `LockdownError` and `ServiceUnavailableError`. 
+If the Node server returns the `X-Lockdown-Mode: true` header or HTTP `503 Service Unavailable`, the SDK raises `LockdownError` or `ServiceUnavailableError`. Read requests may retry first; POST requests do not.
 
 ### 3. Data Interaction
 
@@ -123,8 +128,12 @@ result = client.submit_event("main_chain", {
     "entity_id": "user_sysadmin",
     "event": "update_config"
 })
-print("Successfully pushed to block, Message ID:", result.event_id)
+print("Event accepted, event_id:", result.event_id)
 
 # Get Block by hash
 block = client.get_block(block_id="8f2a9d...")
 ```
+
+### JSON transport
+
+Both SDK clients encode request bodies and decode response JSON through standard-library `json` helpers, using UTF-8 and a default `Content-Type: application/json` while honoring configured headers. Non-finite numbers are rejected before sending; responses containing `NaN`, `Infinity` or overflowing float values are rejected. Python integers larger than 64 bits are preserved without conversion to floats, within Python's integer conversion limit. Invalid response JSON follows the existing failure and retry handling. Mutating requests are still not retried automatically.

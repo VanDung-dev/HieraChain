@@ -1,6 +1,6 @@
 ---
 title: "Giao dịch Liên chuỗi (2PC)"
-description: "Phối hợp giao thức Cam kết Hai pha (2PC - Two-Phase Commit) cho các hoạt động sự kiện liên chuỗi có tính nguyên tử."
+description: "Điều phối Two-Phase Commit bền vững với cơ chế phục hồi theo hướng commit."
 icon: material/swap-horizontal
 ---
 
@@ -8,137 +8,82 @@ icon: material/swap-horizontal
 
 ## Tổng quan
 
-Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain `logistics` sang Sub-Chain `finance`), HieraChain sử dụng giao thức **Cam kết Hai pha (Two-Phase Commit - 2PC)** để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback). Không cho phép trạng thái dở dở dang dang.
+Coordinator chuẩn bị cả hai participant `DomainChain`, sau đó fsync và đọc lại quyết định COMMIT từ journal riêng trước khi yêu cầu bất kỳ participant nào commit. Participant chỉ xác nhận khi cả hai event thao tác có gắn mã giao dịch đọc lại được từ ordering journal của chain đó; việc hoàn thiện block vẫn chạy bất đồng bộ. Bản ghi `committed` cuối cùng cũng phải đọc lại được trước khi báo `COMMITTED`. Sau khi COMMIT đã bền vững, quá trình phục hồi luôn retry theo hướng commit và không rollback participant.
 
-**Ví dụ thực tế**: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện `deduct` (trừ hàng); chuỗi đích ghi nhận sự kiện `receive` (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.
+Trước khi COMMIT bền vững, coordinator yêu cầu cả hai participant abort. Trạng thái chỉ là `ROLLED_BACK` khi cả hai xác nhận. Nếu không thể xác nhận một trong hai lệnh abort, giao dịch giữ trạng thái `IN_DOUBT`; coordinator retry abort khi cả hai participant khả dụng.
 
----
+Khi khởi động, các bản ghi coordinator chưa hoàn tất xác định những chain đã lưu cần participant `DomainChain`. Các chain đã lưu khác vẫn là `SubChain` chung. Có thể chủ động thay placeholder chung bằng cách gọi `create_sub_chain()` với cùng tên và domain type; chain cũ chỉ được dừng sau khi chain thay thế kết nối thành công.
 
-## Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
-
-    HM->>TM: initiate_cross_chain_operation(src, dst, payload)
-    TM->>TM: Tạo CrossChainOperation (UUID, state=PENDING)
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHA 1 — CHUẨN BỊ (PREPARE)
-        TM->>SRC: prepare_operation(op_id, payload, is_source=True)
-        SRC->>SRC: Khóa tài nguyên, xác thực payload
-        SRC-->>TM: True ✅
-
-        TM->>DST: prepare_operation(op_id, payload, is_source=False)
-        DST->>DST: Kiểm tra khả năng tiếp nhận
-        DST-->>TM: True ✅
-
-        TM->>TM: state = PREPARED
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHA 2 — CAM KẾT (COMMIT)
-        TM->>SRC: commit_operation(op_id)
-        SRC-->>TM: True ✅
-        TM->>DST: commit_operation(op_id)
-        DST-->>TM: True ✅
-        TM->>TM: state = COMMITTED
-    end
-
-    TM-->>HM: op_id (COMMITTED)
-```
-
----
-
-## Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
+## Luồng thành công
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainOperationManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
+    participant Client
+    participant TM as CrossChainTransactionManager
+    participant SRC as Source DomainChain
+    participant DST as Destination DomainChain
+    participant CJ as Coordinator journal
 
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: KỊCH BẢN A — Pha 1 Chuẩn bị Thất bại
-        TM->>SRC: prepare_operation(op_id, payload)
-        SRC-->>TM: True ✅
-        TM->>DST: prepare_operation(op_id, payload)
-        DST-->>TM: False ❌  (Lỗi dung lượng / xác thực)
-        TM->>TM: state = PENDING → Kích hoạt hoàn tác
-        TM->>SRC: rollback_operation(op_id)
-        TM->>DST: rollback_operation(op_id)
-        TM->>TM: state = ROLLED_BACK ⚠️
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: KỊCH BẢN B — Pha 2 Cam kết Một phần Thất bại
-        TM->>SRC: commit_operation(op_id)
-        SRC-->>TM: True ✅
-        TM->>DST: commit_operation(op_id)
-        DST-->>TM: Ngoại lệ (Exception) ❌
-        TM->>TM: state = FAILED ❌
-        Note over TM: Yêu cầu xử lý thủ công<br/>Kiểm tra nhật ký để tìm trạng thái một phần
-    end
+    Client->>TM: initiate_transaction(src, dst, payload)
+    TM->>CJ: fsync và đọc lại begin
+    TM->>SRC: prepare_transaction(tx_id, payload, true)
+    SRC-->>TM: prepared
+    TM->>DST: prepare_transaction(tx_id, payload, false)
+    DST-->>TM: prepared
+    TM->>CJ: fsync và đọc lại prepared
+    TM->>CJ: fsync và đọc lại COMMIT decision
+    TM->>SRC: commit_transaction(tx_id)
+    SRC-->>TM: đọc lại ordering events
+    TM->>DST: commit_transaction(tx_id)
+    DST-->>TM: đọc lại ordering events
+    TM->>CJ: fsync và đọc lại committed
+    TM-->>Client: tx_id
 ```
 
----
-
-## Máy trạng thái Giao dịch (Transaction State Machine)
+## Lỗi và phục hồi
 
 ```mermaid
-flowchart LR
-    P["PENDING"] --> PR["PREPARED"]
-    PR --> C["COMMITTED ✅"]
-    PR --> RB["ROLLED_BACK ⚠️"]
-    P --> F["FAILED ❌"]
-    PR --> F
+flowchart TD
+    PENDING --> PREPARED
+    PENDING --> ABORTING
+    PREPARED --> ABORTING
+    ABORTING -->|both abort acks| ROLLED_BACK
+    ABORTING -->|an abort is unconfirmed| IN_DOUBT
+    IN_DOUBT -->|no durable COMMIT| ABORTING
+    PREPARED -->|fsynced COMMIT decision| COMMITTING
+    COMMITTING -->|both participant acks| COMMITTED
+    COMMITTING -->|an ack is missing| IN_DOUBT
+    IN_DOUBT -->|durable COMMIT| COMMITTING
+    PENDING --> FAILED
 ```
 
----
+| Tình huống | Trạng thái | Phục hồi |
+|:-----------|:-----------|:--------|
+| Participant không prepare được | Chỉ `ROLLED_BACK` sau khi cả hai xác nhận abort; nếu không thì `IN_DOUBT` | Retry cả hai lệnh abort khi participant khả dụng. |
+| Thiếu chain hoặc chain không hỗ trợ 2PC trước prepare | `FAILED` | Đăng ký các participant `DomainChain` cần thiết rồi bắt đầu giao dịch mới. |
+| Kết quả ghi quyết định COMMIT chưa xác định | `IN_DOUBT` | Đọc coordinator journal trước khi hành động. COMMIT đã bền vững thì retry commit; nếu không có COMMIT thì retry abort. |
+| Commit participant lỗi sau COMMIT bền vững | `IN_DOUBT` | Không rollback. Bản ghi `prepared` bền vững xác nhận cả hai participant đã xác thực payload; khôi phục trạng thái còn thiếu từ payload và marker journal, rồi chỉ retry event còn thiếu. |
+| Tiến trình khởi động lại khi còn bản ghi chưa hoàn tất | `IN_DOUBT` cho tới khi participant khả dụng | Khôi phục các participant đã ghi tên thành `DomainChain` rồi retry. |
 
-## Các bước thực hiện chi tiết
+## Cam kết và giới hạn
 
-| Bước | Mô tả |
-|:-----|:------|
-| **1. Khởi tạo** | `HierarchyManager` tạo một thực thể `CrossChainTransaction` với UUID duy nhất và trạng thái `state=PENDING`. |
-| **2. Pha 1: Chuẩn bị nguồn** | Chuỗi nguồn khóa tài nguyên liên quan, xác thực lược đồ (schema) của payload. |
-| **3. Pha 1: Chuẩn bị đích** | Chuỗi đích kiểm tra dung lượng lưu trữ khả dụng và các ràng buộc nghiệp vụ. |
-| **4. Kết quả Pha 1** | Nếu cả hai trả về `True`: trạng thái → `PREPARED`. Nếu một bên thất bại: rollback ngay lập tức cả hai |
-| **5. Pha 2: Cam kết nguồn** | Chuỗi nguồn hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
-| **6. Pha 2: Cam kết đích** | Chuỗi đích hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
-| **7. Kết quả** | Trạng thái chuyển thành `COMMITTED`. Mã `tx_id` được trả về cho bên gọi. |
+- Coordinator journal được lưu riêng với OrderingService event journal, vì vậy các bản ghi của nó không bị replay như ledger event.
+- Giao dịch `COMMITTED` nghĩa là đã đọc lại được hai cặp event của participant và bản ghi cuối cùng của coordinator từ các journal bền vững. Điều đó không có nghĩa block đã được hoàn thiện.
+- Marker event của participant chứa transaction ID và bước thao tác. Khi retry, participant bỏ qua start hoặc completion event đã được chấp nhận, kể cả sau khi khởi động lại.
+- Sau COMMIT bền vững, phục hồi participant dùng payload đã được coordinator xác thực trước đó và marker event đã nhận; không chạy lại xác thực nghiệp vụ dựa trên entity registry chỉ tồn tại trong bộ nhớ.
+- `IN_DOUBT` là trạng thái có thể phục hồi, không phải thất bại cuối cùng. Gọi `transaction_manager.retry_pending()` để retry sau lỗi participant trong lúc chạy; khởi động lại và đăng ký participant cũng kích hoạt retry.
+- Recovery chiếm quyền xử lý từng giao dịch trong khi luồng coordinator đang hoạt động. Lần gọi `retry_pending()` đồng thời sẽ bỏ qua giao dịch đó và có thể retry sau khi luồng đang chạy nhả quyền. Coordinator cũng từ chối abort sau quyết định COMMIT bền vững hoặc chưa xác định.
 
----
+## Method chính
 
-## Xử lý lỗi
-
-| Tình huống | Trạng thái chuyển dịch | Cách thức phục hồi |
-|:-----------|:-----------------------|:-------------------|
-| Lỗi Pha 1 trên Chuỗi Nguồn | `ROLLED_BACK` | Tự động hoàn trả trạng thái (rollback) trên Chuỗi Đích |
-| Lỗi Pha 1 trên Chuỗi Đích | `ROLLED_BACK` | Tự động hoàn trả trạng thái (rollback) trên Chuỗi Nguồn |
-| Lỗi Pha 2 khi cam kết trên một trong hai chuỗi | `FAILED` | Phải đối soát thủ công thông qua nhật ký kiểm toán (audit log) |
-| Hết hạn kết nối mạng (Timeout) trong Pha 2 | `FAILED` | Người vận hành hệ thống phải kiểm tra trạng thái cam kết cuối cùng |
-
----
-
-## Các Class & Method quan trọng
-
-| Bước | Class / Method | File |
-|:-----|:--------------|:-----|
-| Khởi tạo | `HierarchyManager.initiate_cross_chain_transaction()` | `hierarchical/hierarchy_manager.py` |
-| Tạo giao dịch | `CrossChainTransactionManager.__init__()` | `domains/generic/chains/domain_chain.py` |
-| Chuẩn bị | `DomainChain.prepare_transaction()` | `domains/generic/chains/domain_chain.py` |
-| Cam kết | `DomainChain.commit_transaction()` | `domains/generic/chains/domain_chain.py` |
-| Khôi phục | `DomainChain.rollback_transaction()` | `domains/generic/chains/domain_chain.py` |
-
----
+| Hành động | Method | File |
+|:----------|:-------|:-----|
+| Khởi tạo | `HierarchyManager.initiate_cross_chain_transaction()` | `hierachain/hierarchical/hierarchy_manager/base.py` |
+| Điều phối và phục hồi | `CrossChainTransactionManager.initiate_transaction()` / `retry_pending()` | `hierachain/hierarchical/transaction_manager.py` |
+| Chuẩn bị, commit hoặc abort | `DomainChain.prepare_transaction()` / `commit_transaction()` / `rollback_transaction()` | `hierachain/domains/chains/domain_chain.py` |
 
 ## Liên quan
 
-- [Gửi Sự kiện](./event-submission.md): mỗi phương thức `commit_transaction()` bên trong sẽ gọi đến `add_event()`
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): quản lý khôi phục trạng thái ở cấp độ hệ thống
+- [Gửi Sự kiện](./event-submission.md): operation event được đưa vào ordering journal của từng chain trước khi block hoàn thiện bất đồng bộ.
+- [Giảm thiểu Lỗi](./error-recovery.md): xử lý lỗi cấp hệ thống và phục hồi journal.

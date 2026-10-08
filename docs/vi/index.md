@@ -46,7 +46,7 @@ Lưu ý quan trọng về phạm vi:
     * [Tổng quan](workflows/overview.md) · [Cơ chế đồng thuận](workflows/consensus_mechanisms.md)
     * [Gửi Sự kiện](workflows/event-submission.md) · [Neo giữ Bằng chứng](workflows/proof-anchoring.md)
     * [Sự kiện Liên chuỗi (2PC)](workflows/cross-chain-2pc.md) · [Đồng thuận BFT](workflows/bft-consensus.md)
-    * [Khóa băng Cụm](workflows/cluster-lockdown.md) · [Giảm thiểu Lỗi & Phục hồi](workflows/error-recovery.md)
+    * [Giảm thiểu Lỗi & Phục hồi](workflows/error-recovery.md)
     * [Truy vết Thực thể](workflows/entity-tracing.md) · [Khôi phục trạng thái chuỗi](workflows/chain-rehydration.md)
     * [Xác thực Tính toàn vẹn](workflows/integrity-validation.md) · [Thực thi Chính sách](workflows/policy-enforcement.md)
     * [Luồng dữ liệu WebSocket](workflows/websocket-streaming.md) · [Lưu trữ Mã hóa IPFS](workflows/ipfs-storage.md)
@@ -70,9 +70,9 @@ Lưu ý quan trọng về phạm vi:
     ---
 
     * [Authorization & Access Control](security/authorization-access-control.md)
-    * [Lockdown & Logging](security/lockdown-logging.md)
+    * [Ghi nhật ký an toàn](security/lockdown-logging.md)
     * [Fault-tolerance & Integrity](security/fault-tolerance-integrity.md)
-    * [Risk Analyzer](security/risk-analyzer.md)
+    * [Làm sạch Input](security/risk-analyzer.md)
     * [Encryption & Keys](security/encryption-keys.md)
     * [Decentralized ZKP (Bằng chứng không tri thức phân tán)](security/decentralized-zkp.md)
 

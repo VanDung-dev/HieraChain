@@ -2,40 +2,40 @@
 SubChain class — domain-specific blockchain for HieraChain.
 """
 
-import time
-import threading
+import copy
 import logging
-import re
 import os
-import hashlib
-import orjson
-from typing import Any, Callable
+import re
+import threading
+import time
+from collections.abc import Callable
+from typing import Any
 
-from hierachain.core.blockchain import Blockchain
+from hierachain.config.settings import settings
+from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
-from hierachain.config.settings import settings
-from hierachain.core.utils import create_event
-from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
-from hierachain.state.world_state import WorldState
-
-from hierachain.hierarchical.sub_chain.proof import (
-    _submit_proof_for_sub_chain,
-    _connect_sub_chain_to_main,
-)
+from hierachain.core.block import Block
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.utils import create_event, validate_event_structure
 from hierachain.hierarchical.sub_chain.block import (
-    _finalize_sub_chain_block_for_chain,
-    _process_and_finalize_single_block,
-    _flush_pending_and_finalize_for_sub_chain,
     _consumer_loop,
+    _finalize_sub_chain_block_for_chain,
+    _flush_pending_and_finalize_for_sub_chain,
     _force_block_creation,
+    _process_and_finalize_single_block,
 )
 from hierachain.hierarchical.sub_chain.ordering import (
     _sync_chain_for_sub_chain,
 )
+from hierachain.hierarchical.sub_chain.proof import (
+    _connect_sub_chain_to_main,
+    _submit_proof_for_sub_chain,
+)
 from hierachain.hierarchical.sub_chain.stats import (
     _get_domain_stats_summary,
 )
+from hierachain.state.world_state import WorldState
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +51,21 @@ class SubChain(Blockchain):
     - Use entity_id as metadata field within events (not as block identifier)
     """
     __slots__ = (
-        'domain_type', 'custom_config', 'node_identity',
-        'consensus', 'main_chain_connection',
-        'proof_submission_interval', 'last_proof_submission',
-        'completed_operations', 'ordering_service', 'world_state',
-        '_block_processing_lock', '_async_sync_lock', 'running',
-        '_shutdown_event', 'consumer_thread',
+        '_async_sync_lock',
+        '_block_processing_lock',
+        '_shutdown_event',
+        'completed_operations',
+        'consensus',
+        'consumer_thread',
+        'custom_config',
+        'domain_type',
+        'last_proof_block_index',
+        'last_proof_submission',
+        'main_chain_connection',
+        'ordering_service',
+        'proof_submission_interval',
+        'running',
+        'world_state',
     )
 
     def __init__(
@@ -73,15 +82,21 @@ class SubChain(Blockchain):
                 "Allowed: alphanumeric, underscore, hyphen."
             )
 
-        super().__init__(name)
+        super().__init__(
+            name,
+            node_identity=node_identity,
+            trusted_public_keys=(config or {}).get("trusted_public_keys"),
+        )
         self.domain_type = domain_type
         self.custom_config = config
-        self.node_identity = node_identity
 
         # Consensus Loading: SubChain defaults to PoA for intra-organization domain events
         consensus_type = (config or {}).get("consensus_type", "proof_of_authority")
         if consensus_type == "proof_of_federation":
-            new_consensus = ProofOfFederation(f"{name}_PoF")
+            new_consensus = ProofOfFederation(
+                f"{name}_PoF",
+                signing_key_hex=self.node_identity.signing_keypair.private_key,
+            )
         else:
             new_consensus = ProofOfAuthority(f"{name}_PoA", block_interval=settings.BLOCK_INTERVAL)
         self.consensus: Any = new_consensus
@@ -89,6 +104,7 @@ class SubChain(Blockchain):
         self.main_chain_connection: Any | None = None
         self.proof_submission_interval: float = 60.0
         self.last_proof_submission: float = time.time()
+        self.last_proof_block_index: int = 0
         self.completed_operations: int = 0
 
         if hasattr(self.consensus, "add_authority"):
@@ -99,33 +115,41 @@ class SubChain(Blockchain):
                     "domain_type": domain_type,
                     "permissions": ["domain_operations", "event_creation"],
                     "created_at": time.time(),
+                    "public_key": self.node_identity.signing_public_key,
                 },
             )
 
+        self._shutdown_event = threading.Event()
         self._init_ordering_service()
+        try:
+            self.world_state = WorldState()
+            # The local genesis may already match the orderer's bootstrap tip,
+            # so sync can legitimately skip rebuilding the projection.
+            for block in self.chain:
+                self.world_state.apply_block(block)
 
-        if not self.ordering_service.get_latest_block():
-            self.ordering_service.storage_handler.save_block(self.chain[0], self.name)
-            logger.info("SubChain %s: Persisted genesis block to storage.", self.name)
+            # A valid journal backlog must finish instead of restarting replay every ten seconds.
+            if not self.ordering_service.wait_for_active(timeout=None):
+                raise RuntimeError(f"Ordering recovery did not become active for {name}")
 
-        self.world_state = WorldState()
+            self.sync_chain()
+        except Exception:
+            self.ordering_service.shutdown()
+            raise
 
-        self.ordering_service.wait_for_active(timeout=10.0)
-
-        self.sync_chain()
-
-        self._block_processing_lock = threading.Lock()
+        self._block_processing_lock = threading.RLock()
         self._async_sync_lock = threading.Lock()
 
         self.running = True
-        self._shutdown_event = threading.Event()
         self.consumer_thread = threading.Thread(
             target=_consumer_loop, args=(self,), daemon=True
         )
         self.consumer_thread.start()
 
-    def is_valid_new_block(self, block) -> bool:
-        if not super().is_valid_new_block(block):
+    def is_valid_new_block(
+        self, block: Any, public_key: bytes | None = None
+    ) -> bool:
+        if not super().is_valid_new_block(block, public_key=public_key):
             return False
         previous_block = self.get_latest_block()
         if not self.consensus.validate_block(block, previous_block):
@@ -133,17 +157,38 @@ class SubChain(Blockchain):
             return False
         return True
 
-    def stop(self):
-        """Stop the background block consumer."""
+    def _finalize_ordered_block(self, block: Block, previous_block: Block | None) -> Block:
+        """Complete consensus before the orderer signs and persists the block."""
+        if previous_block is None:
+            raise ValueError("Sub-chain ordering requires a persisted genesis block")
+        timing_factor = 0.5 if isinstance(self.consensus, ProofOfAuthority) else 0.8
+        interval = self.consensus.config["block_interval"] * timing_factor
+        delay = previous_block.timestamp + interval - time.time()
+        if delay > 0 and self._shutdown_event.wait(delay):
+            raise RuntimeError("Sub-chain stopped during consensus finalization")
+        block.timestamp = time.time()
+        block.hash = block.calculate_hash()
+        if isinstance(self.consensus, ProofOfAuthority):
+            finalized_block = self.consensus.finalize_block(
+                block, self.name, private_key=self.node_identity.signing_keypair.private_key,
+            )
+        else:
+            finalized_block = self.consensus.finalize_block(block, self.name)
+        # Authority signatures cover the original header, including its creator.
+        finalized_block.creator_id = block.creator_id
+        finalized_block.hash = finalized_block.calculate_hash()
+        if not self.consensus.validate_block(finalized_block, previous_block):
+            raise ValueError(f"Consensus rejected ordered block {finalized_block.index}")
+        return finalized_block
+
+    def stop(self) -> None:
+        """Drain committed blocks and release background workers and writer leases."""
         try:
-            while not self.ordering_service.commit_queue.empty():
-                block = self.ordering_service.commit_queue.get_nowait()
-                _process_and_finalize_single_block(self, block)
+            self.finalize_sub_chain_block()
         except Exception as e:
             logger.warning("Error draining commit_queue during stop: %s", e)
 
-        if hasattr(self, '_shutdown_event'):
-            self._shutdown_event.set()
+        self.shutdown()
 
     @property
     def is_shutting_down(self) -> bool:
@@ -155,6 +200,7 @@ class SubChain(Blockchain):
 
     def shutdown(self) -> None:
         """Shutdown the sub-chain and cleanup resources."""
+        self._shutdown_event.set()
         self.running = False
         if self.consumer_thread:
             self.consumer_thread.join(timeout=2.0)
@@ -192,40 +238,59 @@ class SubChain(Blockchain):
             "worker_threads": 2,
             "db_url": db_url,
             "chain_name": self.name,
+            "trusted_public_keys": self.trusted_public_keys,
         }
 
         config = default_config.copy()
         if hasattr(self, "custom_config") and self.custom_config:
             config.update(self.custom_config)
 
-        self.ordering_service = OrderingService(nodes=[local_node], config=config, node_identity=self.node_identity)
+        self.ordering_service = OrderingService(
+            nodes=[local_node],
+            config=config,
+            node_identity=self.node_identity,
+            genesis_block=self.chain[0],
+            block_finalizer=self._finalize_ordered_block,
+            retain_bootstrap=True,
+        )
 
     def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""
-        if "timestamp" not in event:
-            event["timestamp"] = time.time()
+        if not isinstance(event, dict):
+            raise ValueError("Event must be a dictionary")
 
-        if "entity_id" not in event:
-            event["entity_id"] = event.get("sender", "system")
-        if "event" not in event:
-            event["event"] = event.get("type", "generic_event")
+        # Do not retain or normalize the caller's mutable event object.
+        event_snapshot = copy.deepcopy(event)
 
-        logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
+        if "timestamp" not in event_snapshot:
+            event_snapshot["timestamp"] = time.time()
 
-        self.ordering_service.receive_event(
-            event_data=event, channel_id=self.name, submitter_org=self.name
+        if "entity_id" not in event_snapshot:
+            event_snapshot["entity_id"] = event_snapshot.get("sender", "system")
+        if "event" not in event_snapshot:
+            event_snapshot["event"] = event_snapshot.get("type", "generic_event")
+
+        if not validate_event_structure(event_snapshot):
+            raise ValueError("Invalid event structure")
+
+        logger.debug(
+            "SubChain %s adding event: %s", self.name, event_snapshot.get("event")
         )
 
-        with self.lock:
-            if event not in self.pending_events:
-                self.pending_events.append(event)
+        event_id = self.ordering_service.receive_event(
+            event_data=event_snapshot, channel_id=self.name, submitter_org=self.name
+        )
+        event_snapshot["event_id"] = event_id
 
-        try:
-            event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
-        except (TypeError, ValueError, orjson.JSONEncodeError):
-            event_bytes = str(sorted(event.items())).encode()
-        event_digest = hashlib.sha256(event_bytes).hexdigest()[:16]
-        return f"evt-{event_digest}"
+        with self.lock:
+            if not any(
+                pending.get("event_id") == event_id
+                for pending in self.pending_events
+                if isinstance(pending, dict)
+            ):
+                self.pending_events.append(event_snapshot)
+
+        return event_id
 
     def connect_to_main_chain(self, main_chain: Any) -> bool:
         return _connect_sub_chain_to_main(self, main_chain)
@@ -235,6 +300,7 @@ class SubChain(Blockchain):
         entity_id: str,
         operation_type: str,
         details: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
     ) -> bool:
         event = create_event(
             entity_id=entity_id,
@@ -247,6 +313,9 @@ class SubChain(Blockchain):
                 "started_at": time.time()
             }
         )
+        if transaction_id is not None:
+            event["transaction_id"] = transaction_id
+            event["transaction_step"] = "start"
 
         self.add_event(event)
         return True
@@ -256,6 +325,7 @@ class SubChain(Blockchain):
         entity_id: str,
         operation_type: str,
         result: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
     ) -> bool:
         event = create_event(
             entity_id=entity_id,
@@ -268,6 +338,9 @@ class SubChain(Blockchain):
                 "completed_at": time.time()
             }
         )
+        if transaction_id is not None:
+            event["transaction_id"] = transaction_id
+            event["transaction_step"] = "complete"
 
         self.add_event(event)
         self.completed_operations += 1
@@ -292,19 +365,30 @@ class SubChain(Blockchain):
         return True
 
     def submit_proof_to_main(
-        self, main_chain: Any, metadata_filter: Callable | None = None
+        self,
+        main_chain: Any,
+        metadata_filter: Callable | None = None,
+        zk_proof: bytes | None = None,
     ) -> bool:
-        return _submit_proof_for_sub_chain(self, main_chain, metadata_filter)
+        # The tip check, duplicate check, MainChain append, and durable
+        # read-back form one per-SubChain operation. The inherited lock is an
+        # RLock because proof submission re-enters normal chain operations.
+        with self.lock:
+            return _submit_proof_for_sub_chain(
+                self, main_chain, metadata_filter, zk_proof
+            )
 
     def should_submit_proof(self) -> bool:
         current_time = time.time()
         time_since_last = current_time - self.last_proof_submission
 
-        has_pending = False
-        if hasattr(self, 'ordering_service'):
-            has_pending = len(self.ordering_service.pending_events) > 0
+        latest_block = self.get_latest_block()
+        has_unsubmitted_block = (
+            latest_block is not None
+            and latest_block.index > self.last_proof_block_index
+        )
 
-        return time_since_last >= self.proof_submission_interval and has_pending
+        return time_since_last >= self.proof_submission_interval and has_unsubmitted_block
 
     def auto_submit_proof_if_needed(self) -> bool:
         if self.should_submit_proof() and self.main_chain_connection:

@@ -8,32 +8,23 @@ for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 - Proper chain validation and integrity
 """
 
-import time
+import hashlib
 import logging
 import threading
-import hashlib
-import orjson
-from typing import Any, Callable, cast
+import time
+from collections.abc import Callable
+from copy import deepcopy
+from itertools import islice
+from typing import Any, cast
 
 from hierachain.core.block import Block
-from hierachain.security.verify.block_verifier import get_block_verifier
+from hierachain.core.event_query import select_event_page
+from hierachain.core.utils import validate_event_structure
+from hierachain.security.identity_loader import NodeIdentity, require_block_identity
+from hierachain.security.verify.block_verifier import get_block_verifier, sign_block
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
-
-
-def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
-    """Check if current block is correctly linked to the previous block."""
-    if not current.validate_structure():
-        return False
-    if current.calculate_merkle_root() != current.merkle_root:
-        return False
-    if current.hash != current.calculate_hash():
-        return False
-    if current.previous_hash != previous.hash:
-        return False
-    if current.index != previous.index + 1:
-        return False
-    return True
 
 
 class Blockchain:
@@ -46,13 +37,29 @@ class Blockchain:
     events per block.
     """
     __slots__ = (
-        'name', 'lock',
-        'chain', 'pending_events', 'total_events',
-        'event_type_counts', 'event_type_index',
-        'entity_event_index', 'query_engine',
+        'chain',
+        'entity_event_index',
+        'event_type_counts',
+        'event_type_index',
+        '_event_query_type_index',
+        'lock',
+        'name',
+        'node_identity',
+        'pending_events',
+        'query_engine',
+        'total_events',
+        'trusted_public_keys',
     )
 
-    def __init__(self, name: str = "Blockchain") -> None:
+    def __init__(
+        self,
+        name: str = "Blockchain",
+        node_identity: NodeIdentity | None = None,
+        trusted_public_keys: dict[str, bytes] | None = None,
+    ) -> None:
+        self.node_identity, self.trusted_public_keys = require_block_identity(
+            node_identity, trusted_public_keys
+        )
         self.name = name
         self.lock = threading.RLock()
         self.chain: list[Block] = []
@@ -61,6 +68,7 @@ class Blockchain:
         self.event_type_counts: dict[str, int] = {}
         self.event_type_index: dict[str, list[int]] = {}
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
+        self._event_query_type_index: dict[str, list[dict[str, Any]]] = {}
         self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
             self.create_genesis_block()
@@ -83,9 +91,16 @@ class Blockchain:
             timestamp=time.time(),
             previous_hash="0"
         )
+        self._sign_block(genesis_block)
         
         self._index_block_events(genesis_block)
         self.chain.append(genesis_block)
+
+    def _sign_block(self, block: Block) -> None:
+        """Sign a block created by this chain with its fixed node identity."""
+        sign_block(
+            block, self.node_identity.node_id, self.node_identity.signing_keypair
+        )
 
     def _index_block_events(self, block: Block) -> None:
         """Update counters and indexing for all events in the given block."""
@@ -97,7 +112,7 @@ class Blockchain:
             )
             self.total_events += len(events)
             seen_types: set[str] = set()
-            for event in events:
+            for event_index, event in enumerate(events):
                 etype = event.get("event", "unknown")
                 self.event_type_counts[etype] = self.event_type_counts.get(etype, 0) + 1
                 if etype not in seen_types:
@@ -106,17 +121,22 @@ class Blockchain:
                         self.event_type_index[etype] = []
                     self.event_type_index[etype].append(block.index)
 
-                # Update entity index
+                entry = {
+                    "block_index": block.index,
+                    "event_index": event_index,
+                    "event": event,
+                    "timestamp": event.get("timestamp", time.time()),
+                }
+                query_type = event.get("event_type") or event.get("event", "")
+                if isinstance(query_type, str):
+                    self._event_query_type_index.setdefault(query_type, []).append(entry)
+                # Share the cached payload between entity and query-type indexes.
                 entity_id = event.get("entity_id")
                 if entity_id:
                     safe_id = cast(str, entity_id)
                     if safe_id not in self.entity_event_index:
                         self.entity_event_index[safe_id] = []
-                    self.entity_event_index[safe_id].append({
-                        "block_index": block.index,
-                        "event": event,
-                        "timestamp": event.get("timestamp", time.time())
-                    })
+                    self.entity_event_index[safe_id].append(entry)
 
     def _rebuild_event_indexes(self) -> None:
         """Rebuild total_events, event_type_counts, and entity_event_index
@@ -126,6 +146,7 @@ class Blockchain:
             self.event_type_counts.clear()
             self.event_type_index.clear()
             self.entity_event_index.clear()
+            self._event_query_type_index = {}
             for block in self.chain:
                 self._index_block_events(block)
 
@@ -154,16 +175,21 @@ class Blockchain:
             if not isinstance(event, dict):
                 raise ValueError("Event must be a dictionary")
             
+            event = deepcopy(event)
+
             # Add timestamp if not present
             if "timestamp" not in event:
                 event["timestamp"] = time.time()
+
+            if not validate_event_structure(event):
+                raise ValueError("Invalid event structure")
             
             self.pending_events.append(event)
             event_id = event.get("event_id")
             if not event_id:
                 try:
-                    event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
-                except (TypeError, ValueError, orjson.JSONEncodeError):
+                    event_bytes = dumps_canonical_json(event)
+                except (TypeError, ValueError):
                     event_bytes = str(sorted(event.items())).encode()
                 event_id = f"evt-{hashlib.sha256(event_bytes).hexdigest()[:16]}"
             return event_id
@@ -193,21 +219,25 @@ class Blockchain:
                 timestamp=time.time(),
                 previous_hash=latest_block.hash
             )
+            self._sign_block(new_block)
             
             return new_block
     
-    def add_block(self, block: Block) -> bool:
+    def add_block(
+        self, block: Block, public_key: bytes | None = None
+    ) -> bool:
         """
         Add a block to the blockchain after validation.
         
         Args:
             block: Block to add to the chain
+            public_key: Optional PEM key; must match the configured trusted key.
             
         Returns:
             True if block was added successfully, False otherwise
         """
         with self.lock:
-            if self.is_valid_new_block(block):
+            if self.is_valid_new_block(block, public_key=public_key):
                 self._index_block_events(block)
                 self.chain.append(block)
                 return True
@@ -231,7 +261,9 @@ class Blockchain:
                 return new_block
             return None
     
-    def is_valid_new_block(self, block: Block) -> bool:
+    def is_valid_new_block(
+        self, block: Block, public_key: bytes | None = None
+    ) -> bool:
         """
         Validate a new block before adding it to the chain.
         
@@ -239,10 +271,11 @@ class Blockchain:
         - Block hash verification
         - Merkle root verification
         - Chain link verification
-        - Block signature verification (if present)
+        - Required block signature verification
         
         Args:
             block: Block to validate
+            public_key: Optional PEM key; must match the configured trusted key.
             
         Returns:
             True if block is valid, False otherwise
@@ -250,8 +283,14 @@ class Blockchain:
         latest_block = self.get_latest_block()
         
         # Use BlockVerifier for comprehensive validation
-        verifier = get_block_verifier(strict_mode=False)
-        result = verifier.verify_block(block, latest_block)
+        verifier = get_block_verifier()
+        trusted_key = self.trusted_public_keys.get(block.creator_id)
+        if public_key is not None and public_key != trusted_key:
+            logger.warning("Block %s supplied an untrusted creator key", block.index)
+            return False
+        result = verifier.verify_block(
+            block, latest_block, public_key=trusted_key
+        )
         
         if not result.is_valid:
             logger.warning(
@@ -269,17 +308,28 @@ class Blockchain:
         logger.debug("Block %d validated successfully", block.index)
         return True
     
-    def is_chain_valid(self) -> bool:
+    def is_chain_valid(
+        self, trusted_public_keys: dict[str, bytes] | None = None
+    ) -> bool:
         """
         Validate the entire blockchain.
+
+        Args:
+            trusted_public_keys: Trusted PEM keys by creator_id for signed blocks.
 
         Returns:
             True if the entire chain is valid, False otherwise
         """
         with self.lock:
-            return all(
-                _is_block_linked_correctly(self.chain[i], self.chain[i - 1])
-                for i in range(1, len(self.chain))
+            return (
+                all(block.validate_structure() for block in self.chain[1:])
+                and get_block_verifier().verify_chain(
+                    self.chain,
+                    trusted_public_keys=(
+                        trusted_public_keys if trusted_public_keys is not None
+                        else self.trusted_public_keys
+                    ),
+                ).is_valid
             )
     
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
@@ -299,6 +349,26 @@ class Blockchain:
     ) -> list[dict[str, Any]]:
         """Get all events that match a custom filter function."""
         return self.query_engine.get_events_by_filter(filter_func)
+
+    def get_event_page(
+        self, *, entity_id: str | None = None, event_type: str | None = None,
+        from_timestamp: float | None = None, to_timestamp: float | None = None,
+        limit: int = 100, after: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read finalized events with ledger positions, using the narrowest available index."""
+        with self.lock:
+            candidates = None
+            if entity_id:
+                candidates = self.entity_event_index.get(entity_id, [])
+            if event_type:
+                typed = self._event_query_type_index.get(event_type, [])
+                if candidates is None or len(typed) < len(candidates):
+                    candidates = typed
+            start = max(0, after[0]) if after is not None else 0
+            return select_event_page(
+                islice(self.chain, start, None), candidates=candidates, entity_id=entity_id, event_type=event_type,
+                from_timestamp=from_timestamp, to_timestamp=to_timestamp, limit=limit, after=after,
+            )
     
     def get_chain_stats(self) -> dict[str, Any]:
         """
@@ -331,17 +401,28 @@ class Blockchain:
         }
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'Blockchain':
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        trusted_public_keys: dict[str, bytes] | None = None,
+        node_identity: NodeIdentity | None = None,
+    ) -> 'Blockchain':
         """
         Create a Blockchain instance from dictionary data.
         
         Args:
             data: Dictionary containing blockchain data
+            trusted_public_keys: Trusted PEM keys by creator_id for signed blocks.
+            node_identity: Fixed local identity used for subsequent blocks.
             
         Returns:
             Blockchain instance
         """
-        blockchain = cls(name=data["name"])
+        blockchain = cls(
+            name=data["name"],
+            node_identity=node_identity,
+            trusted_public_keys=trusted_public_keys,
+        )
         
         # Clear genesis block and rebuild from data
         blockchain.chain.clear()
@@ -350,16 +431,13 @@ class Blockchain:
             block = Block.from_dict(block_data)
             blockchain.chain.append(block)
         
-        blockchain.pending_events = data.get("pending_events", [])
-        blockchain._rebuild_event_indexes()
-
-        # Validate chain integrity after loading
-        if not blockchain.is_chain_valid():
-            logger.error(
-                "Chain integrity check FAILED after loading '%s' from dictionary!",
-                data["name"]
+        if not blockchain.is_chain_valid(trusted_public_keys):
+            raise ValueError(
+                f"Chain integrity check failed after loading '{data['name']}'"
             )
 
+        blockchain.pending_events = data.get("pending_events", [])
+        blockchain._rebuild_event_indexes()
         return blockchain
     
     def __str__(self) -> str:
@@ -392,7 +470,7 @@ class BlockchainQueryEngine:
                 and entity_id in self.blockchain.entity_event_index
             ):
                 indexed_events = self.blockchain.entity_event_index[entity_id]
-                return [e['event'] for e in indexed_events]
+                return deepcopy([e['event'] for e in indexed_events])
 
             events = []
             for block in self.blockchain.chain:
@@ -403,7 +481,7 @@ class BlockchainQueryEngine:
         """Get indexed events with block metadata for a specific entity."""
         with self.blockchain.lock:
             if hasattr(self.blockchain, 'entity_event_index'):
-                return self.blockchain.entity_event_index.get(entity_id, [])
+                return deepcopy(self.blockchain.entity_event_index.get(entity_id, []))
             return []
 
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:

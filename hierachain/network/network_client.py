@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 logger = logging.getLogger(__name__)
+PEER_TIMEOUT = 60.0
 
 
 @dataclass
@@ -24,6 +25,8 @@ class PeerInfo:
     address: str
     last_seen: float = 0.0
     is_healthy: bool = True
+    public_key: bytes | None = None
+    _last_activity: float = field(default_factory=time.monotonic, repr=False, compare=False)
 
 
 @dataclass
@@ -123,7 +126,13 @@ class NetworkClient:
                 server_secret_key=self.config.transport_secret_key,
                 server_public_key=self.config.transport_public_key,
             )
-            await self._zmq_node.start()
+            self._zmq_node.set_handler(self._on_message_received)
+
+            for peer in self._peers.values():
+                peer.last_seen = time.time()
+                peer._last_activity = time.monotonic()
+                peer.is_healthy = True
+                self._zmq_node.register_peer(peer.peer_id, peer.address, public_key=peer.public_key)
 
             # Register seed nodes
             for seed in self.config.seed_nodes:
@@ -133,12 +142,11 @@ class NetworkClient:
                 peer_id, address, pub_key = self._parse_seed_node(seed)
 
                 if peer_id and address:
-                    self._zmq_node.register_peer(peer_id, address, public_key=pub_key)
+                    self.register_peer(peer_id, address, public_key=pub_key)
                     key_info = " (with public key)" if pub_key else ""
                     logger.info("Registered seed peer: %s at %s%s", peer_id, address, key_info)
 
-            # Register message handler
-            self._zmq_node.set_handler(self._on_message_received)
+            await self._zmq_node.start()
             
             self._is_running = True
             logger.info(
@@ -175,6 +183,7 @@ class NetworkClient:
         Returns:
             NetworkStatus object with current state information.
         """
+        self._refresh_peer_health()
         return NetworkStatus(
             node_id=self.config.node_id,
             address=f"tcp://{self.config.host}:{self.config.port}",
@@ -191,6 +200,7 @@ class NetworkClient:
         Returns:
             List of PeerInfo objects.
         """
+        self._refresh_peer_health()
         return list(self._peers.values())
 
     def get_healthy_peers(self) -> list[PeerInfo]:
@@ -200,12 +210,20 @@ class NetworkClient:
         Returns:
             List of healthy PeerInfo objects.
         """
+        self._refresh_peer_health()
         return [p for p in self._peers.values() if p.is_healthy]
+
+    def _refresh_peer_health(self) -> None:
+        """Expire peers without recent inbound activity."""
+        now = time.monotonic()
+        for peer in self._peers.values():
+            peer.is_healthy = now - peer._last_activity < PEER_TIMEOUT
 
     def register_peer(
         self,
         peer_id: str,
         address: str,
+        public_key: bytes | None = None,
     ) -> None:
         """
         Register a new peer.
@@ -213,15 +231,20 @@ class NetworkClient:
         Args:
             peer_id: Unique identifier for the peer.
             address: Network address (e.g., "tcp://127.0.0.1:5556").
+            public_key: Optional CurveZMQ public key.
         """
+        if public_key is None and peer_id in self._peers:
+            public_key = self._peers[peer_id].public_key
         self._peers[peer_id] = PeerInfo(
             peer_id=peer_id,
             address=address,
+            last_seen=time.time(),
             is_healthy=True,
+            public_key=public_key,
         )
 
-        if self._zmq_node and self._is_running:
-            self._zmq_node.register_peer(peer_id, address)
+        if self._zmq_node:
+            self._zmq_node.register_peer(peer_id, address, public_key=public_key)
 
         logger.debug("Registered peer: %s at %s", peer_id, address)
 
@@ -232,8 +255,9 @@ class NetworkClient:
         Args:
             peer_id: ID of the peer to remove.
         """
-        if peer_id in self._peers:
-            del self._peers[peer_id]
+        if self._zmq_node:
+            self._zmq_node.unregister_peer(peer_id)
+        if self._peers.pop(peer_id, None) is not None:
             logger.debug("Unregistered peer: %s", peer_id)
 
     async def send_direct(self, target_peer_id: str, message: dict[str, Any]) -> bool:
@@ -251,6 +275,11 @@ class NetworkClient:
     async def _on_message_received(self, message: dict[str, Any], sender_id: str) -> None:
         """Handle incoming messages."""
         logger.debug("Received message from %s: %s", sender_id, message.get("type"))
+        peer = self._peers.get(sender_id)
+        if peer is not None:
+            peer.last_seen = time.time()
+            peer._last_activity = time.monotonic()
+            peer.is_healthy = True
         
         # Internal ping-pong for testing
         if message.get("type") == "ping":

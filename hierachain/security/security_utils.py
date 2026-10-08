@@ -5,15 +5,16 @@ This module provides cryptographic primitives for the HieraChain Ledger,
 focusing on Ed25519 for digital signatures as required for enterprise-grade security.
 """
 
-import logging
 import binascii
-from functools import lru_cache
-from typing import Tuple, Any
-from nacl.signing import SigningKey, VerifyKey
-from nacl.encoding import HexEncoder
-from nacl.exceptions import BadSignatureError
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
+from typing import Any
+
+from nacl.encoding import HexEncoder
+from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
 
 _verify_thread_pool = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
 
@@ -22,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 class CryptoError(Exception):
     """Base exception for cryptographic errors."""
-    pass
 
 
 class KeyPair:
@@ -59,7 +59,7 @@ class KeyPair:
             signing_key = SigningKey(private_key_bytes)
             return cls(signing_key)
         except Exception as e:
-            raise CryptoError(f"Invalid private key format: {str(e)}")
+            raise CryptoError(f"Invalid private key format: {e!s}")
 
     def sign(self, message: bytes) -> str:
         """
@@ -75,7 +75,7 @@ class KeyPair:
             signed = self._signing_key.sign(message)
             return signed.signature.hex()
         except Exception as e:
-            raise CryptoError(f"Signing failed: {str(e)}")
+            raise CryptoError(f"Signing failed: {e!s}")
 
 
 @lru_cache(maxsize=1024)
@@ -129,7 +129,7 @@ def verify_signature(public_key_hex: str, message: bytes, signature_hex: str) ->
     return verify_signature_standalone(public_key_hex, message, signature_hex)
 
 
-def generate_key_pair_hex() -> Tuple[str, str]:
+def generate_key_pair_hex() -> tuple[str, str]:
     """
     Helper to generate a raw public/private key pair in hex.
     

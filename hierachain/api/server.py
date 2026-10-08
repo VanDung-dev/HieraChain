@@ -9,33 +9,45 @@ The server uses FastAPI for high performance and includes proper
 error handling, CORS support, and comprehensive logging.
 """
 
-import os
+import asyncio
+import json
 import logging
+import os
+import time
 import traceback
-from typing import Any, cast
-from fastapi import (
-    FastAPI, HTTPException, Depends, Request
-)
-from fastapi.middleware.cors import CORSMiddleware
 import warnings
 from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any, cast
 
-from hierachain.config.logging import LOGGING_CONFIG
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.requests import HTTPConnection
 
-from hierachain.api.ledger.router import ledger_router
-from hierachain.api.business.router import business_router
-from hierachain.api.admin.endpoints import router as admin_router
-from hierachain.api.websocket.manager import ws_manager
-from hierachain.api.middleware import (
-    add_security_headers, add_payload_limit, add_rate_limit,
-    add_request_logging,
+from hierachain.adapters.database.auth_state import (
+    RedisRevocationStore,
+    SQLiteRevocationStore,
 )
+from hierachain.api.admin.endpoints import router as admin_router
+from hierachain.api.business.router import business_router
+from hierachain.api.context import get_p2p_client, set_p2p_client
 from hierachain.api.graphql_handler import _register_graphql_router
-from hierachain.config.settings import get_settings
-from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.api.ledger.depds import close_hierarchy_manager
+from hierachain.api.ledger.router import ledger_router
+from hierachain.api.middleware import (
+    add_payload_limit,
+    add_rate_limit,
+    add_request_logging,
+    add_security_headers,
+)
+from hierachain.api.websocket.manager import ws_manager
+from hierachain.config.logging import LOGGING_CONFIG
+from hierachain.config.settings import _configured_database_url, get_settings
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
-
-from hierachain.api.context import set_p2p_client, get_p2p_client
+from hierachain.security.key_manager import KeyManager
+from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +56,7 @@ p2p_client: NetworkClient | None = None
 EXEMPT_PATHS = {
     "/",
     "/api/ledger/health",
+    "/api/ledger/ready",
     "/api/business/health",
     "/api/admin/status",
     "/api/admin/verify-identity",
@@ -51,9 +64,46 @@ EXEMPT_PATHS = {
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/ws",
-    "/ws/status",
 }
+
+
+def _load_production_key_manager() -> KeyManager:
+    path = os.getenv("HRC_API_KEYS_FILE", "").strip()
+    if not path:
+        raise RuntimeError("Production authentication requires HRC_API_KEYS_FILE")
+    try:
+        records = loads_json(Path(path).read_bytes())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Cannot load HRC_API_KEYS_FILE") from exc
+    if not isinstance(records, dict) or not records:
+        raise RuntimeError("HRC_API_KEYS_FILE must contain a nonempty key map")
+    for api_key, details in records.items():
+        if (
+            not isinstance(api_key, str)
+            or len(api_key) < 32
+            or not isinstance(details, dict)
+            or set(details) - {"user_id", "permissions", "app_details", "created_at", "expires_at"}
+            or not isinstance(details.get("user_id"), str)
+            or not details["user_id"].strip()
+            or not isinstance(details.get("permissions"), list)
+            or not details["permissions"]
+            or not all(isinstance(scope, str) and scope for scope in details["permissions"])
+            or not isinstance(details.get("app_details", {}), dict)
+            or (details.get("expires_at") is not None and not isinstance(details["expires_at"], (int, float)))
+        ):
+            raise RuntimeError("HRC_API_KEYS_FILE contains an invalid key record")
+    if not any(
+        details.get("expires_at") is None or details["expires_at"] > time.time()
+        for details in records.values()
+    ):
+        raise RuntimeError("HRC_API_KEYS_FILE contains no active API key")
+    settings = get_settings()
+    revocation_store = (
+        RedisRevocationStore(settings.AUTH_STATE_REDIS_URL)
+        if settings.AUTH_STATE_REDIS_URL
+        else SQLiteRevocationStore(settings.API_KEY_REVOCATIONS_DB)
+    )
+    return KeyManager(storage_backend=records, revocation_store=revocation_store)
 
 
 async def _start_p2p_network_layer(settings) -> None:
@@ -100,36 +150,53 @@ async def _start_p2p_network_layer(settings) -> None:
 async def lifespan(_app: FastAPI):
     logger.info("Starting HieraChain API server...")
 
+    settings = get_settings()
+    from hierachain.security.identity_loader import require_block_identity
+
+    require_block_identity()
+    backend = settings.STORAGE_BACKEND
+    if (
+        settings.env == "production"
+        and backend in {"postgres", "postgresql"}
+        and not _configured_database_url()
+    ):
+        raise RuntimeError(
+            "Production PostgreSQL storage requires DATABASE_URL or HRC_DATABASE_URL"
+        )
+
     await ws_manager.start()
     logger.info("WebSocket manager started")
 
-    settings = get_settings()
-    await _start_p2p_network_layer(settings)
+    try:
+        await _start_p2p_network_layer(settings)
 
-    if settings.AUTH_ENABLED:
-        logger.info("Global API Authentication ENFORCED")
-    else:
-        logger.warning("Global API Authentication DISABLED")
+        if settings.AUTH_ENABLED:
+            logger.info("Global API Authentication ENFORCED")
+        else:
+            logger.warning("Global API Authentication DISABLED")
 
-    _check_cors_config(settings)
-
-    yield
-
-    logger.info("Shutting down HieraChain API server...")
-
-    await ws_manager.stop()
-    logger.info("WebSocket manager stopped")
-
-    current_p2p = get_p2p_client()
-    if current_p2p:
-        await current_p2p.stop()
-        set_p2p_client(None)
-        logger.info("P2P network layer stopped")
+        _check_cors_config(settings)
+        yield
+    finally:
+        logger.info("Shutting down HieraChain API server...")
+        try:
+            await ws_manager.stop()
+            logger.info("WebSocket manager stopped")
+        finally:
+            try:
+                current_p2p = get_p2p_client()
+                if current_p2p:
+                    try:
+                        await current_p2p.stop()
+                    finally:
+                        set_p2p_client(None)
+                    logger.info("P2P network layer stopped")
+            finally:
+                await asyncio.to_thread(close_hierarchy_manager)
 
 
 def _check_cors_config(settings) -> None:
-    env = getattr(settings, "ENV", "dev")
-    if env != "product":
+    if settings.env != "production":
         return
 
     if settings.CORS_ALLOW_ALL:
@@ -152,12 +219,11 @@ def _check_cors_config(settings) -> None:
 def register_exception_handlers(fast_app: FastAPI, settings) -> None:
     @fast_app.exception_handler(Exception)
     async def global_exception_handler(_request, exc):
-        logger.error(f"Unhandled exception: {str(exc)}")
+        logger.error(f"Unhandled exception: {exc!s}")
         is_debug = (
             settings.LOG_LEVEL == "DEBUG" and
-            getattr(settings, "ENV", "dev") != "product"
+            settings.env != "production"
         )
-        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={
@@ -169,7 +235,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
 
     @fast_app.exception_handler(HTTPException)
     async def http_exception_handler(_request, exc):
-        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -181,7 +246,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
 
     @fast_app.exception_handler(RecursionError)
     async def recursion_error_handler(_request, _exc):
-        from starlette.responses import JSONResponse
         logger.warning("RecursionError detected - possible JSON bomb attempt")
         return JSONResponse(
             status_code=422,
@@ -206,7 +270,7 @@ def _register_websocket_router(fast_app: FastAPI):
         from hierachain.api.websocket.endpoints import router as ws_router
         fast_app.include_router(ws_router)
         logger.info("WebSocket router registered at /ws")
-    except Exception as exc:
+    except ImportError as exc:
         logger.error("WebSocket router registration FAILED: %s\n%s", exc, traceback.format_exc())
 
 
@@ -222,9 +286,8 @@ def _register_root_endpoint(fast_app: FastAPI):
 
 def _register_metrics_endpoint(fast_app: FastAPI) -> None:
     try:
-        import prometheus_client
-        from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
         from fastapi import Response
+        from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
         @fast_app.get("/metrics", include_in_schema=False)
         async def metrics_endpoint() -> Response:
@@ -263,16 +326,24 @@ def _add_cors_middleware(fast_app: Any, cors_config: dict[str, Any]) -> None:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if settings.env == "production" and not settings.AUTH_ENABLED:
+        raise RuntimeError("Production API authentication cannot be disabled")
     api_config = settings.get_api_config()
 
-    verifier = APIKeyVerifier(settings.get_auth_config()) if settings.AUTH_ENABLED else None
+    key_manager = _load_production_key_manager() if settings.env == "production" else None
+    verifier = (
+        APIKeyVerifier(settings.get_auth_config(), key_manager=key_manager)
+        if settings.AUTH_ENABLED else None
+    )
 
-    async def auth_dependency(request: Request):
+    async def auth_dependency(connection: HTTPConnection):
         if not settings.AUTH_ENABLED:
             return None
-        if request.url.path in EXEMPT_PATHS:
+        if connection.url.path in EXEMPT_PATHS:
             return {"user_id": "system", "app_details": {"name": "Exempt"}}
-        return await verifier(request)  # type: ignore
+        if verifier is None:
+            return None
+        return await verifier(connection)
 
     dependencies = [Depends(auth_dependency)] if settings.AUTH_ENABLED else []
 
@@ -289,6 +360,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         dependencies=dependencies,
     )
+    fast_app.state.auth_verifier = verifier
 
     cors_config = settings.get_cors_config()
     _add_cors_middleware(fast_app, cors_config)

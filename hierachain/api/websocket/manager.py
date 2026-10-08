@@ -6,17 +6,22 @@ bidirectional communication with HieraChain clients.
 """
 
 import asyncio
-import orjson
 import logging
-from typing import Any, cast
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, cast
 
-from .registry import ConnectionRegistry, WebSocketConnection, WebSocketSubscription, create_connection
-from .subscriptions import SubscriptionManager, reset_subscription
-from .builders import build_block_added, build_event_message
+from hierachain.serialization import dumps_json
+
+from .builders import WebSocketMessageType, build_block_added, build_event_message
 from .handlers import ConnectionHealthHandler, PingLoopRunner
-from .builders import WebSocketMessageType
+from .registry import (
+    ConnectionRegistry,
+    WebSocketConnection,
+    WebSocketSubscription,
+    create_connection,
+)
+from .subscriptions import SubscriptionManager, reset_subscription
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +237,7 @@ class WebSocketManager:
             
     async def _send_to_subscribers(self, subscribers: list, message: dict):
         """Send message to list of subscriber connections"""
-        message_json = orjson.dumps(message).decode()
+        message_json = dumps_json(message)
         
         for connection_id in subscribers:
             conn = self._registry.get(connection_id)
@@ -288,7 +293,7 @@ class WebSocketManager:
             return False
             
         try:
-            await conn.websocket.send_text(orjson.dumps(message).decode())
+            await conn.websocket.send_text(dumps_json(message))
             return True
         except Exception as e:
             logger.error(f"Send error to {connection_id}: {e}")
@@ -327,10 +332,10 @@ ws_manager = WebSocketManager()
 
 # Backward compatibility exports
 __all__ = [
-    'WebSocketManager',
     'WebSocketConnection',
-    'WebSocketSubscription',
+    'WebSocketManager',
     'WebSocketMessage',
     'WebSocketMessageType',
+    'WebSocketSubscription',
     'ws_manager',
 ]

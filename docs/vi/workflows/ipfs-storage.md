@@ -71,6 +71,8 @@ sequenceDiagram
 
 ## Xử lý lỗi: IPFS ngoại tuyến
 
+`IPFSClient.is_available(cid)` kiểm tra `/api/v0/files/stat` với `arg=/ipfs/<cid>`. Hàm trả về `False` khi phản hồi không thành công hoặc kết nối lỗi; không dùng endpoint `/api/v0/object/stat` đã bị loại bỏ.
+
 ```mermaid
 flowchart LR
     CALL["upload_json(data)"]

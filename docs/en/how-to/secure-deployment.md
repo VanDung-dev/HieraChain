@@ -15,14 +15,46 @@ Configure HieraChain in production environment with basic protection measures (A
 
 ## Enable API Key Authentication
 
-In production, API key authentication must be enabled (per `ProductionSettings`). For dev/test environments, it can be enabled manually:
+In production, API key authentication is mandatory. `HRC_AUTH_ENABLED=false`, a missing key file, or an invalid key file prevents startup. Configure:
 
 ```dotenv
 # .env
 HRC_AUTH_ENABLED=true
 HRC_API_KEY_LOCATION=header
 HRC_API_KEY_NAME=X-API-Key
+HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
+HRC_API_KEY_REVOCATIONS_DB=/absolute/path/to/persistent/auth-state.sqlite3
 ```
+
+Generate an initial key and save its metadata outside the repository:
+
+```bash
+export HRC_API_KEYS_SOURCE_FILE="$HOME/.config/hierachain/api-keys.json"
+python - <<'PY'
+import json
+import os
+from pathlib import Path
+from hierachain.security.key_manager import KeyManager
+
+path = Path(os.environ["HRC_API_KEYS_SOURCE_FILE"])
+path.parent.mkdir(parents=True, exist_ok=True)
+manager = KeyManager()
+api_key = manager.create_key(
+    user_id="operator",
+    permissions=["chains", "events", "proofs", "organizations:manage", "channels:manage"],
+)
+old_umask = os.umask(0o077)
+try:
+    path.write_text(json.dumps(manager.storage), encoding="utf-8")
+finally:
+    os.umask(old_umask)
+path.chmod(0o600)
+print(api_key)
+PY
+```
+
+Store the printed key in the client's secret manager. For Docker Compose, set `HRC_API_KEYS_SOURCE_FILE` to this host file; Compose mounts it read-only at `/run/secrets/hrc_api_keys` on every node. For a direct process, set `HRC_API_KEYS_FILE` to the same absolute path. Keep `HRC_API_KEY_REVOCATIONS_DB` on persistent writable storage shared by workers on each host. To share revocations and lockouts across hosts, set the same `HRC_AUTH_STATE_REDIS_URL` on every node and enable Redis persistence. `KeyManager.revoke_key()` updates that shared state immediately; there is no administrative revocation endpoint. To change the key map, update the file and recreate every Compose node (or restart each direct process); the app does not reload the file while running.
+The optional Compose `stress-test` profile also needs `HRC_API_KEY` set to one of the provisioned keys.
 
 Client needs to send the header:
 
@@ -30,7 +62,7 @@ Client needs to send the header:
 X-API-Key: <your-secret-key>
 ```
 
-API key verification code: `hierachain/security/verify/api_key_verifier.py`.
+API key verification code: `hierachain/security/verify/api_key_verifier.py`. WebSocket clients must send the same header.
 
 ## CORS Configuration
 
@@ -78,23 +110,23 @@ Default serves at `http://localhost:2661`. Set `HRC_API_HOST`/`HRC_API_PORT` if 
 
 ## Quick Verification
 
-1. Missing API key (when `HRC_AUTH_ENABLED=true`) → expect 401/403:
+1. Missing API key → expect 401:
 
     ```bash
-    curl -i http://localhost:2661/api/ledger/health
+    curl -i http://localhost:2661/api/ledger/chains
     ```
 
 2. With API key:
 
     ```bash
-    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/health
+    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/chains
     ```
 
 3. Heavy load → ResourceGuard may return 503 (if thresholds exceeded).
 
 ## Secrets & Secure Configuration
 
-* Do not print secrets to log/console.
+* Do not log secrets from the running service or CI. The provisioning command prints the initial key once to the operator terminal; store it in a client secret manager.
 * Use `python-dotenv` only in dev; production uses secrets systems (K8s Secret, Vault…).
 * Check `hierachain/security/secure_logging.py` and `security/sanitization.py` to avoid sensitive data leakage.
 
@@ -108,8 +140,14 @@ Below is a quick checklist for deploying HieraChain in production:
 # Set production environment
 export HRC_ENV=production
 
+# Configure PostgreSQL explicitly when using the PostgreSQL storage backend
+export HRC_STORAGE_BACKEND=postgres
+export DATABASE_URL=postgresql+psycopg://user:password@db:5432/hierachain
+# HRC_DATABASE_URL may be used instead of DATABASE_URL
+
 # Enable authentication
 export HRC_AUTH_ENABLED=true
+export HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
 
 # Strict P2P trust policy
 export HRC_P2P_TRUST_POLICY=strict

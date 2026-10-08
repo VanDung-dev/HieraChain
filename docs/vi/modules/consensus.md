@@ -8,13 +8,13 @@ icon: material/handshake
 
 ## Tổng quan
 
-Module **Consensus** chịu trách nhiệm đảm bảo tính nhất quán (Consistency) và thứ tự xác định (Deterministic Ordering) của dữ liệu trên toàn bộ mạng lưới HieraChain. Hệ thống cung cấp các cơ chế đồng thuận linh hoạt, cho phép doanh nghiệp lựa chọn giữa hiệu năng cực cao trong môi trường tin cậy hoặc bảo mật tuyệt đối trong môi trường có rủi ro tấn công.
+Module **Consensus** cung cấp các thành phần sắp xếp event và finalize block cho HieraChain.
 
 ---
 
 ## Các giao thức đồng thuận hỗ trợ
 
-HieraChain tích hợp sẵn 3 loại giao thức chính, có thể cấu hình qua `HRC_CONSENSUS_TYPE`:
+Ordering Service gom event thành batch; PoA và PoF finalize block của Sub-Chain. Repository cũng có thành phần BFT riêng. `HRC_CONSENSUS_TYPE` chọn `proof_of_authority` hoặc `proof_of_federation`, không chọn BFT:
 
 <div class="grid cards" markdown>
 
@@ -52,15 +52,12 @@ HieraChain tích hợp sẵn 3 loại giao thức chính, có thể cấu hình 
 
 ```mermaid
 graph TD
-    A[Event Submission] --> B{Consensus Engine}
-    B -- Config: ordering --> C[Ordering Service]
-    B -- Config: bft --> D[BFT Consensus]
-    
-    C --> E[Block Building]
-    D --> E
-    
-    E --> F[Storage Commitment]
-    F --> G[(Ledger Persistence)]
+    A[Event Submission] --> B[Ordering Service]
+    B --> C[Block Building]
+    C --> D[Sub-Chain finalization: PoA or PoF]
+    D --> E[Storage Commitment]
+    E --> F[(Ledger Persistence)]
+    G[BFT Consensus component] -. separate component .-> H[Consensus workflows]
 ```
 
 ---
@@ -69,8 +66,8 @@ graph TD
 
 Trong mô hình phân cấp của HieraChain:
 
-1.  **Main Chain**: Thường sử dụng **BFT Consensus** để đảm bảo tính an toàn cao nhất cho toàn bộ hệ thống.
-2.  **Sub-Chains**: Có thể sử dụng **Ordering Service** hoặc **PoA** để đạt tốc độ xử lý giao dịch cao, sau đó định kỳ gửi bằng chứng (Proofs) lên Main Chain.
+1.  **Main Chain**: Mặc định dùng **PoA**, có thể cấu hình **PoF** qua `HRC_MAINCHAIN_CONSENSUS`. BFT là thành phần riêng; `MainChain` không chọn BFT làm mặc định.
+2.  **Sub-Chains**: Dùng **Ordering Service** để gom batch và có thể finalize block bằng consensus đã cấu hình (mặc định PoA). Sau đó có thể gửi proof lên Main Chain.
 
 ---
 

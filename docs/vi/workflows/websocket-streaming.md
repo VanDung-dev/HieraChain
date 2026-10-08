@@ -24,7 +24,7 @@ sequenceDiagram
     participant WSM as 📡 WebSocketManager
     participant SC as 📦 SubChain
 
-    Client->>WS: Nâng cấp giao thức WebSocket (GET /ws/{chain_name})
+    Client->>WS: Nâng cấp WebSocket (GET /ws?chain_name={chain_name})
     WS->>WSM: connect(connection_id, websocket, chain_name)
     WSM->>WSM: Kiểm tra max_connections (mặc định 1000)
     WSM->>WSM: Registry.add(connection_id, conn)
@@ -32,7 +32,7 @@ sequenceDiagram
     WS-->>Client: Kết nối thành công ✅
 
     opt Client lọc theo loại sự kiện cụ thể
-        Client->>WS: { "action": "subscribe", "event_types": ["quality_check", ...] }
+        Client->>WS: { "type": "subscribe", "chain_name": "supply_chain", "event_types": ["quality_check", ...] }
         WS->>WSM: subscribe(connection_id, chain_name, event_types)
         WSM->>WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
@@ -42,7 +42,7 @@ sequenceDiagram
     SC->>WSM: broadcast_new_block(chain_name, block_data)
     WSM->>WSM: get_chain_subscribers(chain_name)
     loop Với từng người đăng ký
-        WSM->>Client: send_text(JSON { type: "block_added", data: block_data })
+        WSM->>Client: send_text(JSON { type: "block_added", chain_name: "supply_chain", data: block_data })
     end
 ```
 
@@ -79,7 +79,7 @@ sequenceDiagram
 // Thông báo khi có khối mới
 {
     "type": "block_added",
-    "chain": "supply_chain",
+    "chain_name": "supply_chain",
     "data": {
         "index": 42,
         "hash": "a3f8b2c1...",
@@ -92,8 +92,7 @@ sequenceDiagram
 // Thông báo sự kiện (nếu đăng ký lọc theo event_types)
 {
     "type": "event",
-    "chain": "supply_chain",
-    "event_type": "quality_check",
+    "chain_name": "supply_chain",
     "data": {
         "entity_id": "product-SKU-001",
         "event": "quality_check",
@@ -108,7 +107,7 @@ sequenceDiagram
 
 | Bước | Mô tả |
 |:-----|:------|
-| **1. Nâng cấp giao thức** | Gửi HTTP GET kèm header `Upgrade: websocket`. |
+| **1. Nâng cấp giao thức** | Kết nối `/ws` và truyền `chain_name` qua query string, ví dụ `/ws?chain_name=supply_chain`. |
 | **2. Kiểm tra giới hạn** | Từ chối nếu `active_connections >= max_connections` (mặc định 1000). |
 | **3. Đăng ký** | `ConnectionRegistry.add()` lưu kết nối theo `connection_id`. |
 | **4. Đăng ký chuỗi** | `SubscriptionManager.subscribe_to_chain()` liên kết kết nối với chuỗi. |

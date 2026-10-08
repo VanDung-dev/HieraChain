@@ -8,7 +8,7 @@ icon: material/shield-lock
 
 ## Overview
 
-The security module provides the main protections for HieraChain. It does not rely on one layer. Instead it combines identity, access control, resource protection, and zero-knowledge proofs so that a failure in one area does not expose the whole system.
+The security module provides the main protections for HieraChain. It does not rely on one layer. It combines identity, access control, resource protection and signed ledger integrity. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
 
 ---
 
@@ -25,11 +25,11 @@ The design groups protections into six areas that work together:
     Identity management (MSP), API key authentication, and attribute-based access control (ABAC).
     [:octicons-arrow-right-24: Details](../security/authorization-access-control.md)
 
-*   :material-lock-alert:{ .lg .middle } __Lockdown and logging__
+*   :material-lock-alert:{ .lg .middle } __Secure logging__
 
     ---
 
-    Emergency cluster lockdown and tamper-evident logging.
+    Tamper-evident logging for security-sensitive operations.
     [:octicons-arrow-right-24: Details](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Integrity and guard__
@@ -39,11 +39,11 @@ The design groups protections into six areas that work together:
     Resource protection against DoS and integrity checks for code and configuration at startup.
     [:octicons-arrow-right-24: Details](../security/fault-tolerance-integrity.md)
 
-*   :material-security-network:{ .lg .middle } __Risk and sanitization__
+*   :material-security-network:{ .lg .middle } __Input sanitization__
 
     ---
 
-    Anomaly detection and input sanitization against injection attacks.
+    Input validation and sanitization against injection attacks.
     [:octicons-arrow-right-24: Details](../security/risk-analyzer.md)
 
 *   :material-key-chain:{ .lg .middle } __Encryption and keys__
@@ -57,7 +57,7 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Cross-chain privacy using zero-knowledge proofs (ZKP) so verifiers learn nothing beyond validity.
+    Development mocks for testing ZK proof flows; production proving and verification are unimplemented.
     [:octicons-arrow-right-24: Details](../security/decentralized-zkp.md)
 
 </div>
@@ -79,8 +79,7 @@ Each part of HieraChain uses the same layers:
 Main settings live in `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` turns API authentication on or off.
-* `HRC_CLUSTER_SECRET` is the secret for cluster control commands.
-* `HRC_ENABLE_ZK_PROOFS` enables ZK proof verification.
+* `HRC_ENABLE_ZK_PROOFS` enables the ZK verification path; it does not provide a production backend. See [ZK scope](../security/decentralized-zkp.md).
 
 ---
 
@@ -89,3 +88,7 @@ Main settings live in `hierachain/config/settings.py`:
 *   [Security Architecture](../architecture/security.md)
 *   [P2P Network Security](./network.md)
 *   [Monitoring and Alerts](./monitoring.md)
+
+## Structured log field redaction
+
+`sanitize_for_log()`, every `SecureLogger` level, security-event context, audit details and `log_user_action()` redact complete values identified by sensitive field names before traversing dictionaries and lists. Supported names include API keys, passwords, private keys, credentials, tokens, session IDs, authorization and prefixed secret fields, in snake_case, kebab-case or camelCase. Nested containers under a sensitive field become `***`; ordinary public keys remain visible. Existing string injection sanitization and text-pattern redaction still apply. Applications should supply secrets in named structured fields; arbitrary unnamed strings cannot reliably reveal their sensitivity.

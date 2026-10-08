@@ -23,9 +23,9 @@ curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "X-API-Key: your_api_key" \
      -d '{
        "entity_id": "CONTRACT-2024-001",
-       "event": "contract_signed",
+       "event_type": "contract_signed",
        "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-       "details_nonce": "98765"
+       "details_nonce": "a1b2c3d4e5f6789012345678"
      }'
 ```
 
@@ -40,16 +40,22 @@ sequenceDiagram
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client->>API: POST /chains/create
+    Client->>API: POST /api/ledger/chains/{chain_name}/create
     API->>Sub: Khởi tạo Sub-Chain
     API-->>Client: 201 Created
 
-    Client->>API: POST /chains/events
-    API->>Sub: Ghi sự kiện (Add Event)
-    Sub->>Sub: Đóng Block
-    API-->>Client: 200 OK (Event ID)
+    Client->>API: POST /api/ledger/chains/{chain_name}/events
+    API->>Sub: add_event(event)
+    Sub->>Sub: OrderingService.receive_event()
+    Sub->>Sub: Ghi Journal và đưa sự kiện vào hàng đợi
+    API-->>Client: 200 OK (event_id; đã tiếp nhận, chưa phải block finality)
 
-    Client->>API: POST /chains/submit-proof
+    Note over Sub: Xử lý nền sau phản hồi API
+    Sub->>Sub: Gom batch và tạo block
+    Sub->>Sub: Finalize bằng consensus PoA hoặc PoF đã cấu hình
+    Sub->>Sub: Lưu block đã finalize
+
+    Client->>API: POST /api/ledger/chains/{chain_name}/submit-proof
     API->>Sub: Lấy Proof
     Sub->>Main: Gửi Proof (Neo dữ liệu)
     Main-->>Sub: Xác nhận
@@ -60,11 +66,29 @@ sequenceDiagram
 * GET `/api/ledger/chains`: Liệt kê Main Chain và tất cả Sub-Chain.
 * POST `/api/ledger/chains/{chain_name}/create`: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
 * POST `/api/ledger/chains/{chain_name}/events`: Thêm sự kiện vào Sub-Chain.
+* POST `/api/ledger/channels/{channel_id}/organizations/{org_id}/events`: Thêm sự kiện vào channel bằng user của API key đã xác thực và role ghi đã đăng ký trong organization.
 * POST `/api/ledger/chains/{chain_name}/submit-proof`: Gửi proof từ Sub-Chain lên Main Chain.
 * GET `/api/ledger/chains/{chain_name}/stats`: Lấy thống kê chuỗi.
 * GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false`: Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
 * GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}`: Lấy chi tiết một block cụ thể.
 * GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]`: Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
+
+## Gửi Sự kiện vào Channel
+
+Gửi sự kiện vào channel và organization đã được provision trong `HierarchyManager` đang hoạt động. API key cần có quyền `events`. Server dùng `user_id` đã xác thực từ API key làm người gửi và kiểm tra role đã đăng ký của user trong organization theo write policy của channel; trường `sender` do caller gửi không quyết định membership hoặc role.
+
+```bash
+curl -X POST "http://localhost:2661/api/ledger/channels/supply_chain/organizations/acme/events" \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: your_api_key" \
+     -d '{
+       "entity_id": "PRODUCT-2024-001",
+       "event_type": "production_start",
+       "details": {"batch": "BATCH-001"}
+     }'
+```
+
+Channel không tồn tại trả về `404`; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về `403`. Phải bật xác thực API key và key cần có quyền `events`. `HierarchyManager` đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Ledger event của channel vẫn ở trong bộ nhớ khi manager restart.
 
 ## Schema chính (trích từ `hierachain/api/ledger/schemas.py`)
 
@@ -158,6 +182,8 @@ Phản hồi:
 }
 ```
 
+Phản hồi xác nhận sự kiện đã được ghi journal và đưa vào hàng đợi Ordering; tạo block và lưu block diễn ra bất đồng bộ sau đó.
+
 ### 4. Gửi proof lên Main Chain
 
 ```bash
@@ -226,7 +252,7 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 
 * DI lười (lazy DI): dùng các singleton nhẹ `get_hierarchy_manager()` và `get_entity_tracer()` cho request lifecycle.
 * `POST /chains/{chain_name}/events`: server sẽ đặt `timestamp = time.time()`; `details` vắng mặt sẽ thành `{}`.
-* `POST /chains/{chain_name}/submit-proof`: nếu `SubChain` không có `submit_proof_to_main`, endpoint rơi vào nhánh dự phòng (mock) để tránh crash.
+* `POST /api/ledger/chains/{chain_name}/submit-proof`: gọi `HierarchyManager.submit_proof_to_main_chain()`; thành công nghĩa là block proof MainChain đã ký được hoàn tất và kiểm tra lại sau khi đọc từ SQL bền vững. Thiếu storage hoặc backend chưa hỗ trợ sẽ trả lỗi.
 * `GET /chains/{chain_name}/blocks`: khi `Block` không có `to_event_list`, có fallback chuyển đổi từ Arrow Table (`to_pylist`) để an toàn.
 
 ## Liên quan
@@ -234,3 +260,5 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * Kiến trúc tổng quan: [Tổng quan](../architecture/overview.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Core module: [Core](../modules/core.md)
+
+Danh sách block nhận `limit` từ 1 đến 100 (mặc định 10) và `offset >= 0`; giá trị không hợp lệ trả HTTP 422. Giới hạn này áp dụng cho số block, không phải tổng byte của các sự kiện. Xung đột đăng ký sub-chain đồng thời trả HTTP 409.

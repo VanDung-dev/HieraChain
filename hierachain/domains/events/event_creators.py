@@ -3,11 +3,11 @@ Event creation helper functions for domain-specific events.
 """
 
 from hierachain.domains.events.custom_events import (
-    ResourceAllocationEvent,
-    QualityCheckEvent,
-    StatusUpdateEvent,
     ApprovalEvent,
     ComplianceEvent,
+    QualityCheckEvent,
+    ResourceAllocationEvent,
+    StatusUpdateEvent,
 )
 
 

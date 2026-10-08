@@ -34,16 +34,18 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && NODE_NUM=$(($POD_INDEX + 1)) && export NODE_ID=\"node$NODE_NUM\" && export HRC_IPFS_HOST=\"/dns4/ipfs-$POD_INDEX.ipfs-headless.hierachain.svc.cluster.local/tcp/5001\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && NODE_NUM=$(($POD_INDEX + 1)) && export HRC_NODE_ID=\"node$NODE_NUM\" && export HRC_P2P_PORT=5001 && export HRC_IPFS_HOST=\"/dns4/ipfs-$POD_INDEX.ipfs-headless.hierachain.svc.cluster.local/tcp/5001\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5001"
             - name: HRC_VALIDATOR_IDENTITY
               value: "/app/config/identity/identity.json"
+            - name: HRC_BLOCK_TRUSTED_KEYS_FILE
+              value: "/app/config/identity/trusted_block_keys.json"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
@@ -57,11 +59,6 @@ spec:
                 secretKeyRef:
                   name: hierachain-secrets
                   key: IPFS_ENCRYPTION_KEY
-            - name: HRC_JOURNAL_FSYNC
-              valueFrom:
-                configMapKeyRef:
-                  name: hierachain-config
-                  key: HRC_JOURNAL_FSYNC
             - name: HRC_BLOCK_INTERVAL
               valueFrom:
                 configMapKeyRef:
@@ -82,11 +79,6 @@ spec:
                 configMapKeyRef:
                   name: hierachain-config
                   key: LOG_LEVEL
-            - name: DATABASE_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: hierachain-config
-                  key: DATABASE_PATH
             - name: HRC_API_HOST
               valueFrom:
                 configMapKeyRef:
@@ -107,6 +99,11 @@ spec:
                 configMapKeyRef:
                   name: hierachain-config
                   key: HRC_STORAGE_BACKEND
+            - name: HRC_DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_DATABASE_URL
             - name: HRC_REDIS_HOST
               valueFrom:
                 configMapKeyRef:
@@ -141,7 +138,7 @@ spec:
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 10

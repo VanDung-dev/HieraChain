@@ -11,10 +11,9 @@ IPFS Integration:
 - Backward compatible with existing on-chain data
 """
 
-from typing import Any
-from pydantic import (
-    BaseModel, Field, ConfigDict, field_validator
-)
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ChannelCreateRequest(BaseModel):
@@ -85,14 +84,11 @@ class PrivateCollectionCreateRequest(BaseModel):
 
 class PrivateDataRequest(BaseModel):
     """
-    Request schema for adding private data.
+    Reserved request shape for private-data writes.
 
-    Supports both on-chain and off-chain storage:
-    - On-chain: Provide 'value' as a dict (traditional approach)
-    - Off-chain: Provide 'value_cid' as IPFS CID and 'value_nonce' for decryption
-
-    Note: Off-chain storage is recommended for sensitive/large private data.
-    If both 'value' and 'value_cid' are provided, 'value_cid' takes precedence.
+    Fields accept inline values or CID references for compatibility, but the
+    REST endpoint has no storage implementation and returns HTTP 501 for a
+    known collection. No payload is stored and no CID precedence is applied.
     """
     model_config = ConfigDict(
         json_schema_extra={
@@ -411,3 +407,24 @@ class OrganizationResponse(BaseModel):
     success: bool = Field(..., description="Whether the operation was successful")
     message: str = Field(..., description="Response message")
     org_id: str | None = Field(None, description="Organization identifier")
+
+
+class OrganizationMemberRequest(BaseModel):
+    """Request schema for an organization administrator to register a member."""
+
+    member_id: str = Field(
+        ..., min_length=1, description="User ID from the member's API key"
+    )
+    role: Literal["admin", "member"] = Field(
+        "member", description="Role granted by an existing organization administrator"
+    )
+
+
+class OrganizationMemberResponse(BaseModel):
+    """Response schema for organization member registration."""
+
+    success: bool
+    message: str
+    org_id: str
+    member_id: str
+    role: str

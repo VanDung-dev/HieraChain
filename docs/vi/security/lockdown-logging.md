@@ -1,24 +1,14 @@
 ---
-title: "Lockdown & Secure Logging"
-description: "Cơ chế phong tỏa khẩn cấp và hệ thống ghi nhật ký an toàn chống giả mạo."
+title: "Ghi nhật ký an toàn"
+description: "Hệ thống ghi nhật ký an toàn có khả năng phát hiện giả mạo."
 icon: material/lock-alert
 ---
 
-# Lockdown & Logging
+# Ghi nhật ký an toàn
 
-Lớp bảo mật này tập trung vào việc phản ứng nhanh khi hệ thống bị xâm nhập thông qua cơ chế phong tỏa và hệ thống ghi nhật ký an toàn chống giả mạo.
+Lớp bảo mật này cung cấp log có cấu trúc và khả năng phát hiện giả mạo cho các thao tác nhạy cảm.
 
-## 1. Lockdown Protocol
-
-**File**: `hierachain/cluster/lockdown_protocol.py`
-
-Cơ chế "ngắt mạch" khẩn cấp cho toàn bộ cụm (Cluster):
-
-*   **Kích hoạt Quorum**: Chế độ phong tỏa chỉ được kích hoạt hoặc gỡ bỏ khi có đủ số lượng nút (Quorum) đồng thuận.
-*   **Trạng thái Read-only**: Khi ở chế độ Lockdown, hệ thống từ chối mọi yêu cầu thay đổi dữ liệu (Write) để bảo vệ tính toàn vẹn.
-*   **HMAC Lockdown**: Sử dụng mã bí mật `HRC_CLUSTER_SECRET` để xác thực các lệnh phong tỏa giữa các nút.
-
-## 2. Secure Logging
+## Ghi nhật ký an toàn
 
 **File**: `hierachain/security/secure_logging.py`
 
@@ -28,27 +18,7 @@ Hệ thống ghi nhật ký được thiết kế chuyên biệt cho an ninh:
 *   **Structured Logs**: Log được ghi dưới dạng JSON để dễ dàng tích hợp với các hệ thống giám sát tập trung (SIEM).
 *   **Phân quyền Log**: Các module nhạy cảm (như `security`, `consensus`) sử dụng `SecureLogger` riêng biệt với mức độ bảo vệ cao hơn.
 
----
-
-## Cơ chế Phản ứng Lockdown
-
-```mermaid
-stateDiagram-v2
-    [*] --> Operational
-    Operational --> LockdownInitiated: Anomaly Detected
-    LockdownInitiated --> Lockdown: Quorum Consensus Reached
-    state Lockdown {
-        direction TB
-        ReadOnly: Only GET requests allowed
-        RejectWrites: Block all POST/PUT/DELETE
-        AlertAdmin: Notify via all channels
-    }
-    Lockdown --> Operational: Admin Reset + Quorum Vote
-```
-
----
-
 ## Liên quan
 
-*   [Phân tích rủi ro](./risk-analyzer.md)
-*   [Quản trị Cluster](../modules/cluster.md)
+*   [Làm sạch input](./risk-analyzer.md)
+*   [Security module](../modules/security.md)

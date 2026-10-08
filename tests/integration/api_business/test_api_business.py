@@ -1,17 +1,9 @@
-"""
-Integration tests for API business
-
-This module contains integration tests for the API business endpoints,
-including testing the complete flow of channel creation, private collection management,
-private data handling, contract operations, and organization registration.
-"""
+"""Business API health and authentication boundary tests."""
 
 import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from hierachain.api import app
-from hierachain.config import Settings
+from hierachain.api import app, server
 
 
 @pytest.fixture
@@ -35,104 +27,24 @@ def test_api_business_health_check(client, auth_headers):
     assert data["version"] == "business"
 
 
-def test_create_channel(client, auth_headers):
-    """Test creating a channel via API business"""
+def test_create_channel_requires_management_scope(client, auth_headers):
+    """A regular API key cannot provision channels."""
     channel_data = {
         "channel_id": "integration_test_channel",
         "organizations": ["org1", "org2", "org3"],
         "policy": {
-            "read": "ADMIN || MEMBER",
+            "read": "MEMBER",
             "write": "ADMIN",
             "endorsement": "MAJORITY"
         }
     }
     
     response = client.post("/api/business/channels", json=channel_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 error
-    assert response.status_code == 501 or response.status_code == 200
+    assert response.status_code in (401, 403)
 
 
-def test_create_private_collection(client, auth_headers):
-    """Test creating a private collection via API business"""
-    collection_data = {
-        "name": "integration_test_collection",
-        "members": ["org1", "org2"],
-        "config": {
-            "block_to_purge": 1000,
-            "endorsement_policy": "MAJORITY"
-        }
-    }
-    
-    response = client.post("/api/business/channels/test_channel/private-collections", json=collection_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 or 404 error
-    assert response.status_code in [501, 404, 200]
-
-
-def test_add_private_data(client, auth_headers):
-    """Test adding private data via API business"""
-    data = {
-        "collection": "test_collection",
-        "key": "contract_terms_001",
-        "value": {
-            "price": 10000,
-            "discount": 0.1,
-            "payment_terms": "NET30"
-        },
-        "event_metadata": {
-            "entity_id": "CONTRACT-2024-001",
-            "event": "contract_negotiation",
-            "timestamp": 1717987200.0
-        }
-    }
-    
-    response = client.post("/api/business/private-data", json=data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 or 404 error
-    assert response.status_code in [501, 404, 200]
-
-
-def test_create_contract(client, auth_headers):
-    """Test creating a contract via API business"""
-    contract_data = {
-        "contract_id": "quality_control_contract",
-        "version": "1.0.0",
-        "implementation": "def quality_control_logic(event, state, context): return {'status': 'approved'}",
-        "metadata": {
-            "domain": "manufacturing",
-            "owner": "org1",
-            "endorsement_policy": "MAJORITY"
-        }
-    }
-    
-    response = client.post("/api/business/contracts", json=contract_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 error
-    assert response.status_code == 501 or response.status_code == 200
-
-
-def test_execute_contract(client, auth_headers):
-    """Test executing a contract via API business"""
-    execution_data = {
-        "contract_id": "quality_control_contract",
-        "event": {
-            "entity_id": "PRODUCT-2024-001",
-            "event": "quality_check",
-            "timestamp": 1717987200.0,
-            "details": {
-                "result": "pass",
-                "inspector_id": "INSPECTOR-03"
-            }
-        },
-        "context": {
-            "chain": "quality_chain"
-        }
-    }
-    
-    response = client.post("/api/business/contracts/execute", json=execution_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 or 404 error
-    assert response.status_code in [501, 404, 200]
-
-
-def test_register_organization(client, auth_headers):
-    """Test registering an organization via API business"""
+def test_register_organization_requires_management_scope(client, auth_headers):
+    """A regular API key cannot provision organizations."""
     org_data = {
         "org_id": "manufacturer_org",
         "ca_config": {
@@ -149,14 +61,26 @@ def test_register_organization(client, auth_headers):
     }
     
     response = client.post("/api/business/organizations", json=org_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 error
-    assert response.status_code == 501 or response.status_code == 200
+    assert response.status_code in (401, 403)
 
-def test_rbac_forbidden_without_auth(client):
+def test_rbac_forbidden_without_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that requests fail with 401 when missing auth"""
-    with patch.object(Settings, 'AUTH_ENABLED', True):
-        response = client.post("/api/business/channels", json={"channel_id": "test", "organizations": [], "policy": {}})
+    settings = server.get_settings()
+    monkeypatch.setattr(settings, "AUTH_ENABLED", True)
+    monkeypatch.setattr(settings, "get_auth_config", lambda: {"enabled": True})
+    monkeypatch.setattr(server, "get_settings", lambda: settings)
+    auth_client = TestClient(server.create_app())
+    try:
+        response = auth_client.post(
+            "/api/business/channels",
+            json={"channel_id": "test", "organizations": [], "policy": {}},
+        )
         assert response.status_code == 401
         
-        response = client.post("/api/business/contracts", json={"contract_id": "test", "version": "1", "implementation": ""})
+        response = auth_client.post(
+            "/api/business/contracts",
+            json={"contract_id": "test", "version": "1", "implementation": ""},
+        )
         assert response.status_code == 401
+    finally:
+        auth_client.close()

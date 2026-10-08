@@ -4,20 +4,26 @@ Package root — re-exports chains, events, and utils for backward compatibility
 
 from hierachain.domains.chains import BaseChain, DomainChain
 from hierachain.domains.events import (
-    BaseEvent, DomainEvent,
-    ResourceAllocationEvent, QualityCheckEvent,
-    StatusUpdateEvent, ApprovalEvent, ComplianceEvent,
-    create_resource_allocation, create_quality_check,
-    create_status_update, create_approval, create_compliance_check,
+    ApprovalEvent,
+    BaseEvent,
+    ComplianceEvent,
+    DomainEvent,
+    QualityCheckEvent,
+    ResourceAllocationEvent,
+    StatusUpdateEvent,
+    create_approval,
+    create_compliance_check,
+    create_quality_check,
+    create_resource_allocation,
+    create_status_update,
 )
-from hierachain.domains.utils import EntityTracer, CrossChainValidator
-
+from hierachain.domains.utils import CrossChainValidator, EntityTracer
 
 __all__ = [
     "BaseChain",
-    "DomainChain",
     "BaseEvent",
+    "CrossChainValidator",
+    "DomainChain",
     "DomainEvent",
     "EntityTracer",
-    "CrossChainValidator",
 ]

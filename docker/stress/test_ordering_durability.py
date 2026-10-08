@@ -13,21 +13,22 @@ Scenarios:
   3. Batch size impact on throughput
 """
 
-import time
+import http.client
 import json
 import logging
 import os
-import socket
-import http.client
 import shutil
+import socket
 import subprocess
-import requests
+import time
+import uuid
+
 import pytest
+import requests
 
 from docker.stress.real_stress_client import (
-    RealStressClient,
     REAL_REQUESTS,
-    DEFAULT_CHAIN_NAME,
+    RealStressClient,
     generate_event,
 )
 
@@ -50,14 +51,14 @@ def _docker_api(method: str, path: str, body: dict | None = None) -> tuple[int, 
         return 0, str(e)
 
 
-def _container_stop(name: str) -> bool:
-    status, _ = _docker_api("POST", f"/v1.41/containers/{name}/stop")
-    return status in (204, 304)
+def _container_kill(name: str) -> bool:
+    status, _ = _docker_api("POST", f"/v1.41/containers/{name}/kill?signal=KILL")
+    return status == 204
 
 
 def _container_start(name: str) -> bool:
     status, _ = _docker_api("POST", f"/v1.41/containers/{name}/start")
-    return status == 204
+    return status in (204, 304)
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,11 @@ def _first_healthy_request(
     return None
 
 
-def get_event_count(client: RealStressClient, node_id: str) -> int:
+def get_event_count(
+    client: RealStressClient,
+    node_id: str,
+    chain_name: str | None = None,
+) -> int:
     """Get total event count of chain.
 
     Retries on non-200 to handle load-balanced K8s gateways
@@ -90,10 +95,11 @@ def get_event_count(client: RealStressClient, node_id: str) -> int:
     status = client.node_status.get(node_id)
     if not status:
         return 0
+    chain_name = chain_name or DURABLE_CHAIN
     for attempt in range(5):
         try:
             resp = client.session.get(
-                f"{status.url}/api/ledger/chains/{DURABLE_CHAIN}/stats",
+                f"{status.url}/api/ledger/chains/{chain_name}/stats",
                 timeout=10,
             )
             if resp.status_code == 200:
@@ -298,18 +304,17 @@ class TestJournalDurability:
             except subprocess.CalledProcessError as e:
                 logger.warning("kubectl delete failed for %s: %s", pod, e.stderr.decode() if e.stderr else e)
         else:
-            ok = _container_stop(container_name)
-            if not ok and _HAS_DOCKER_SOCKET:
-                logger.warning("docker stop may have failed on %s", container_name)
-            elif not _HAS_DOCKER_SOCKET:
-                logger.warning("Docker socket not available — cannot actually kill %s. Test will verify connectivity only.", container_name)
+            if not _HAS_DOCKER_SOCKET:
+                pytest.fail("Docker recovery test requires the mounted Docker Engine socket")
+            assert _container_kill(container_name), f"Could not SIGKILL {container_name} through Docker API"
 
     def _restart_node(self, node_id: str) -> None:
         container_name = f"hierachain-{node_id}"
         if not os.environ.get("K8S_NAMESPACE"):
+            if not _HAS_DOCKER_SOCKET:
+                pytest.fail("Docker recovery test requires the mounted Docker Engine socket")
             ok = _container_start(container_name)
-            if not ok and _HAS_DOCKER_SOCKET:
-                logger.warning("docker start may have failed on %s", container_name)
+            assert ok, f"Could not start {container_name} through Docker API"
 
     def _log_chains_after_recovery(self, node_id: str) -> None:
         status = self.client.node_status.get(node_id)
@@ -323,24 +328,59 @@ class TestJournalDurability:
             logger.warning("Could not fetch chains: %s", e)
 
     def test_kill_recovery_no_data_loss(self):
-        """Kill container mid-way, restart, verify journal replay."""
+        """SIGKILL a node with a journaled event and verify replay exactly once."""
+        if os.environ.get("K8S_NAMESPACE"):
+            pytest.skip("This recovery proof checks the Docker Compose PostgreSQL volume")
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
             pytest.skip("No healthy nodes")
 
         node_id = healthy[0]
+        chain_name = f"recovery_crash_{uuid.uuid4().hex[:12]}"
+        assert self.client.create_chain(node_id, chain_name), f"Could not create {chain_name}"
 
-        for _ in range(100):
-            self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
+        status = self.client.node_status[node_id]
+        import psycopg
 
-        time.sleep(2)
-        self._kill_node(node_id)
-        time.sleep(10)
-        self._restart_node(node_id)
-        self.client.wait_for_nodes(timeout=60)
+        database_url = f"postgresql://hiera:hiera_password@postgres-{node_id}:5432/hierachain"
+        with psycopg.connect(database_url, connect_timeout=5) as database:
+            response = self.client.session.post(
+                f"{status.url}/api/ledger/chains/{chain_name}/events",
+                json=generate_event(),
+                timeout=10,
+            )
+            assert response.status_code == 200, (
+                f"Event submission failed: {response.status_code} {response.text}"
+            )
+            event_id = response.json().get("event_id")
+            assert event_id, "Event submission did not return an event_id"
 
-        self._log_chains_after_recovery(node_id)
-        assert self.client.check_health(node_id), f"Node {node_id} should be healthy after recovery"
+            query = "SELECT count(*) FROM events WHERE chain_name = %s AND event_id = %s"
+
+            self._kill_node(node_id)
+            try:
+                stored_count = database.execute(query, (chain_name, event_id)).fetchone()[0]
+            finally:
+                self._restart_node(node_id)
+
+            assert stored_count == 0, (
+                "Event was already in PostgreSQL before restart; crash did not exercise journal replay"
+            )
+            assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after SIGKILL"
+            self._log_chains_after_recovery(node_id)
+            assert self.client.verify_chain_exists(node_id, chain_name), (
+                f"Recovered node did not expose chain {chain_name}"
+            )
+
+            deadline = time.time() + 60
+            recovered_count = 0
+            while time.time() < deadline:
+                recovered_count = database.execute(query, (chain_name, event_id)).fetchone()[0]
+                if recovered_count:
+                    break
+                time.sleep(1)
+
+            assert recovered_count == 1, f"Expected one replayed event in PostgreSQL, got {recovered_count}"
 
 
 @pytest.mark.stress

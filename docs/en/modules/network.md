@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Overview
 
-The **Network** module is the backbone that allows nodes in the HieraChain network to communicate with each other. Designed with a "Defense-in-Depth" philosophy, this module combines the transmission power of **ZeroMQ** with modern cryptographic algorithms to ensure every message is encrypted, authenticated, and tamper-proof.
+The **Network** module handles communication between HieraChain nodes over **ZeroMQ**. It uses cryptographic checks to encrypt and authenticate network messages.
 
 ---
 
 ## Layered Security Architecture
 
-HieraChain does not rely on a single security layer but combines three independent protection layers:
+HieraChain uses three independent security layers for network communication:
 
 <div class="grid cards" markdown>
 
@@ -37,6 +37,8 @@ HieraChain does not rely on a single security layer but combines three independe
     * Authenticates node identity through MSP (Membership Service Provider) certificates.
     * Only allows nodes from valid organizations to join the network.
     * 2-step Handshake process: `INIT` and `ACK`.
+    * Binds the active certificate subject and signing key to the ZeroMQ routing ID
+      and registered organization identity.
 
 *   :material-shield-sync:{ .lg .middle } __Layer 3: Integrity & Replay Protection__
 
@@ -46,6 +48,7 @@ HieraChain does not rely on a single security layer but combines three independe
 
     * Every P2P message is digitally signed.
     * Prevents replay attacks by checking unique Nonce and Timestamp within the allowed window (60s).
+    * Both handshake messages carry signed `timestamp` and `nonce` fields accepted by the transport replay gate.
 
 </div>
 
@@ -56,8 +59,11 @@ HieraChain does not rely on a single security layer but combines three independe
 ### 1. ZMQ Transport (`zmq_transport.py`)
 Implements the asynchronous P2P model using **ROUTER** (for receiving) and **DEALER** (for sending) sockets.
 
-*   **Performance**: Processes thousands of messages per second with extremely low latency.
+*   **Transport**: Uses asynchronous sockets; broadcasts send to registered peers sequentially.
 *   **Identity Management**: Manages node identities at the socket level for accurate routing.
+*   **Replay buffer**: Retains at most 1,000 timestamp/nonce pairs with nonce strings of at most 128 characters. When all entries are still within the 60-second window, new messages are rejected until an entry expires.
+
+`NetworkClient` tracks seed and manually registered peers in the same registry. Removing a peer also closes its outbound DEALER socket. A peer is initially healthy for 60 seconds after registration; each accepted inbound message from its registered socket identity renews that period. An idle peer becomes unhealthy when status or peers are read. This health indicator does not authenticate the peer or confirm delivery of outbound messages.
 
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Orchestrates the secure connection establishment process:
@@ -93,6 +99,12 @@ sequenceDiagram
     
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
+
+The responder echoes the `HANDSHAKE_INIT` nonce in the signed ACK. The initiator
+accepts an ACK only while a matching outbound handshake is pending, the peer
+passes the configured trust policy, and the ACK certificate is active and bound
+to that peer's routing ID and signing key. A missing or mismatched CA
+certificate, identity record, organization, or key is rejected.
 
 ---
 
@@ -137,3 +149,5 @@ await secure_node.send_secure("peer_002", payload)
 *   [Security and MSP](./security.md)
 *   [BFT Consensus](../consensus/bft_consensus.md)
 *   [Network Monitoring](./monitoring.md)
+
+ZeroMQ accepts frames up to 1 MiB and exactly two application frames (sender identity and body); excess frames are drained without accumulating a Python multipart list. Secure connections validate identities and signatures before retaining replay entries, with a separate 1,000-entry cache per verified peer. Plain transport requires configured peer IDs and isolates their caches; it provides no cryptographic identity guarantee. These limits do not replace upstream connection and bandwidth controls.

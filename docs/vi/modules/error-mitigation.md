@@ -1,6 +1,6 @@
 ---
 title: "Error Mitigation Module"
-description: "Hệ thống giảm thiểu rủi ro và phục hồi sau sự cố: Validation, Journaling, Rollback và Automated Recovery."
+description: "Xác thực runtime, ghi nhật ký bền vững và phân loại lỗi."
 icon: material/bug
 ---
 
@@ -8,7 +8,7 @@ icon: material/bug
 
 ## 1. Tổng quan
 
-Module `error_mitigation` xử lý khả năng chịu lỗi, xác thực trạng thái và phục hồi hệ thống. Module này cung cấp nhật ký sự kiện ghi tiếp (append-only), phân loại lỗi tự động, snapshot hoàn tác và các bộ máy phục hồi chuyên biệt cho các lỗi mạng, đồng thuận và trạng thái.
+Module `error_mitigation` cung cấp các primitive runtime để xác thực trạng thái, ghi nhật ký bền vững và phân loại lỗi. View change của đồng thuận và khôi phục vận hành thuộc về các tầng runtime hoặc deployment tương ứng.
 
 ## 2. Các thành phần lõi
 
@@ -16,8 +16,10 @@ Các thành phần nằm trong thư mục `hierachain/error_mitigation/`.
 
 ### 2.1 Lớp xác thực (`validator.py`, `data_validator.py`)
 
-* `Validator`: Xác thực cấu trúc block và sự kiện theo các quy tắc sổ cái.
+* `validate_certificate()`: Từ chối chứng chỉ đã hết hạn.
 * `DataValidator`: Kiểm tra tính nhất quán của payload sự kiện, sự tương thích với schema Arrow và các ràng buộc đầu vào.
+
+Custom field validator trả về `(is_valid, message)`. Nếu callback ném exception hoặc trả kết quả sai hợp đồng, `DataValidator` ghi lỗi và trả `ValidationResult.is_valid=False`, kể cả khi xác thực batch. Mức validation và tính năng tự sửa không ghi đè thất bại này.
 
 ### 2.2 Nhật ký bền vững (`journal.py`)
 
@@ -25,18 +27,43 @@ Các thành phần nằm trong thư mục `hierachain/error_mitigation/`.
 * Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.
 * Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.
 
-### 2.3 Quản lý hoàn tác (`rollback_manager.py`)
+`read_since(cursor=None)` flush và fsync writer đang hoạt động, đọc frame bền vững và trả `(records, (inode, byte_offset))`. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.
 
-* Tạo và xác minh snapshot trạng thái theo thời điểm (`FULL_SYSTEM`, `CHAIN_STATE`, `CONSENSUS_STATE`, `CONFIGURATION`).
-* Xác thực mã băm SHA-256 của snapshot trước khi áp dụng hoàn tác.
-* Tích hợp cơ chế cách ly cho các block trạng thái bị hỏng.
+Mỗi lần ghi lưu offset bắt đầu. Nếu ghi hoặc fsync frame thất bại, journal cắt file về offset đó và fsync phần cắt trước khi cho phép lần ghi tiếp theo. Nếu thao tác cắt hoặc fsync phần cắt thất bại, writer bị vô hiệu hóa và từ chối ghi cho đến khi được đóng rồi mở lại thành instance mới; khi khởi động, journal sửa phần cuối chưa hoàn chỉnh của file đang hoạt động.
 
-### 2.4 Các hệ thống con phục hồi
+### 2.3 Mã hóa có thể khôi phục (`encryption_validator.py`)
 
-* `backup_recovery.py`: Quản lý lưu trữ sao lưu, khôi phục snapshot và chính sách lưu giữ.
-* `consensus_recovery.py`: Xử lý đồng bộ hóa khi chuyển view, phục hồi khi leader gặp sự cố và khởi động lại vòng BFT.
-* `network_recovery.py`: Phát hiện sự kiện phân đoạn mạng, kích hoạt giãn cách thời gian kết nối lại và quản lý cảnh báo nút mạng.
-* `auto_scaler.py`: Theo dõi mức sử dụng bộ nhớ và CPU để điều chỉnh ngưỡng validator một cách linh hoạt.
+`EncryptionValidator(config, key_resolver)` dùng AES-256-GCM. Mã hóa yêu cầu `config["key_id"]` và `key_resolver(key_id)` do caller cung cấp, trả đúng 32 byte cho khóa đã được cho phép và giữ lại. ID thiếu, khóa không khả dụng hoặc dữ liệu khóa không hợp lệ gây `SecurityError`; validator không tạo khóa mã hóa dùng xong rồi bỏ.
+
+`encrypt_data(text)` trả `ciphertext`, `tag` và `iv` dạng bytes, cùng `algorithm`, `key_id` và `timestamp`. GCM tag xác thực ciphertext, thuật toán, ID khóa và timestamp. `decrypt_data(envelope)` tìm khóa theo ID trong envelope, nên dữ liệu cũ vẫn đọc được sau khi đổi ID khóa đang dùng để mã hóa, miễn là khóa gốc được giữ lại. Envelope thiếu trường hoặc bị sửa gây `SecurityError`.
+
+```python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from hierachain.error_mitigation import EncryptionValidator
+
+keys = {"data-v1": AESGCM.generate_key(bit_length=256)}
+validator = EncryptionValidator(
+    {"algorithm": "AES-256-GCM", "key_id": "data-v1"},
+    key_resolver=keys.__getitem__,
+)
+envelope = validator.encrypt_data("business event")
+reader = EncryptionValidator({"algorithm": "AES-256-GCM"}, key_resolver=keys.__getitem__)
+assert reader.decrypt_data(envelope) == "business event"
+```
+
+Ví dụ này giữ khóa trong bộ nhớ. Caller production phải giữ khóa trong kho khóa an toàn sẵn có và khôi phục resolver khi khởi động lại; khóa không được nhúng vào envelope. Khi lưu JSON, mã hóa các trường bytes thành Base64 và đổi lại thành bytes trước khi giải mã. Thông báo xoay khóa của module không tự cấp phát hoặc giữ lại khóa. Ciphertext cũ có khóa ngẫu nhiên đã bị triển khai trước bỏ đi không thể được khôi phục bằng thay đổi này.
+
+### 2.4 Khuyến nghị về tài nguyên và xoay khóa
+
+`ConsensusValidator.validate_node_count()` vẫn từ chối số node dưới `3f+1`. Phương thức legacy `monitor_and_scale()` chỉ trả các node khỏe và ghi khuyến nghị bổ sung tài nguyên khi tỷ lệ này dưới `auto_scale_threshold`; nó không thay đổi thành viên hay khôi phục quorum. Runtime BFT gọi validator số node nhưng không tự gọi bộ kiểm tra sức khỏe này.
+
+`ResourceValidator.validate_resources()` báo các vi phạm ngưỡng CPU, memory và disk. Cờ legacy `auto_scale=True` ghi thêm khuyến nghị tài nguyên CPU/memory; vi phạm disk chỉ tạo cảnh báo. Caller phải tự gọi các kiểm tra này và thực hiện cấp phát qua hạ tầng của host.
+
+Ngưỡng mặc định là CPU 70%, memory 80% và disk 85%, cấu hình qua `cpu_threshold`, `memory_threshold` và `disk_threshold`. Kiểm tra theo thứ tự CPU, memory, disk; chỉ mức sử dụng cao hơn ngưỡng mới là vi phạm, nên bằng ngưỡng vẫn được chấp nhận.
+
+`EncryptionValidator.validate_config()` cảnh báo khi `key_rotation_interval` dưới `min_key_rotation_interval` hiện có (2.592.000 giây). Đây là so sánh cấu hình để tham khảo, không đánh giá tuổi khóa hay áp dụng chính sách hết hạn. Nó không tạo lịch, deadline hoặc khóa thay thế. Ứng dụng host quản lý việc xoay khóa và giữ khóa cũ.
+
+Bên đọc log cần cập nhật bộ lọc sự kiện: `auto_scaling_triggered` và wrapper `consensus_scaling` đổi thành `consensus_capacity_recommendation`; `resource_scaling_triggered` đổi thành `resource_capacity_recommendation`. Các đường dẫn Parquet legacy `log/error_mitigation/consensus_scaling.parquet` và `log/error_mitigation/resource_scaling.parquet`, field payload (gồm `auto_scale_enabled`) và record hiện có vẫn tương thích. Log gây hiểu nhầm `key_rotation_scheduled` và field `next_rotation` được bỏ; cảnh báo về interval vẫn còn.
 
 ## 3. Chiến lược phân loại lỗi
 
@@ -46,14 +73,14 @@ Các thành phần nằm trong thư mục `hierachain/error_mitigation/`.
 | :--- | :--- | :--- |
 | INFO / WARNING | Bất thường vận hành nhỏ | Ghi log và tiếp tục |
 | ERROR | Lỗi xác thực sự kiện hoặc lỗi xử lý tạm thời | Thử lại kèm giãn cách hoặc từ chối |
-| CRITICAL | Hỏng trạng thái hoặc không khớp Merkle root | Hoàn tác và cách ly |
+| CRITICAL | Hỏng trạng thái hoặc không khớp Merkle root | Từ chối, ghi log và yêu cầu khôi phục vận hành |
 | FATAL | Lỗi phần cứng hoặc lỗi đồng thuận không thể phục hồi | Khóa hệ thống khẩn cấp |
 
 ## 4. Nhật ký sự kiện
 
 `TransactionJournal` cung cấp khả năng lưu trữ ghi trước:
 
-1. Ghi bền vững: Ghi các bản ghi vào tệp Parquet trên đĩa trước khi các block hoàn tất.
+1. Ghi bền vững: Ghi tiếp record Arrow có frame và fsync xuống đĩa trước khi block hoàn tất; Parquet cũ vẫn đọc được.
 2. Thực thi schema: Đảm bảo mọi bản ghi nhật ký khớp với schema sự kiện bắt buộc.
 3. Khả năng phát lại: Phát lại các sự kiện đã ghi từ đĩa vào hàng đợi sắp xếp khi nút khởi động lại.
 
@@ -64,35 +91,12 @@ journal = TransactionJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 
-## 5. Quy trình phục hồi
-
-```mermaid
-graph TD
-    A[Phát hiện sự cố] --> B{ErrorClassifier}
-    B -->|Mức độ Thấp| C[Ghi log và tiếp tục]
-    B -->|Mức độ Trung bình| D[Thử lại / Phục hồi tự động]
-    B -->|Mức độ Cao| E[Hoàn tác về snapshot đã xác minh]
-    
-    D --> D1[Phục hồi mạng]
-    D --> D2[Phục hồi đồng thuận]
-    D --> D3[Tự động mở rộng]
-    
-    E --> F[Xác thực trạng thái sau hoàn tác]
-    F --> G[Phát lại nhật ký để khôi phục dữ liệu hợp lệ]
-```
-
-## 6. Các loại snapshot
-
-`RollbackManager` quản lý 4 phạm vi snapshot:
-
-* `CONFIGURATION`: Cài đặt nút và các tham số môi trường.
-* `CHAIN_STATE`: Mã băm block và sổ cái trạng thái thế giới trên Main Chain cùng các Sub-Chain.
-* `CONSENSUS_STATE`: Số thứ tự view hiện tại, tập hợp validator và trạng thái leader.
-* `FULL_SYSTEM`: Bản lưu trữ toàn diện kết hợp cấu hình, block chuỗi và trạng thái đồng thuận.
-
 ## Tài liệu liên quan
 
 * [Module Adapters](./adapters.md)
 * [Module Core](./core.md)
 * [Khóa cụm khẩn cấp](./cluster.md)
 
+`ErrorClassifier` gọi callback lockdown được cung cấp cho lỗi security mức HIGH hoặc CRITICAL và lỗi performance mức CRITICAL. `DataValidator.validate_table()` kiểm tra kiểu Arrow bắt buộc ở mọi mức; strict kiểm tra thêm null. Kiểm tra consistency so sánh từng hàng theo thứ tự, gồm details JSON đã giải mã. Journal duyệt thư mục và mở tệp qua descriptor với cờ no-follow để từ chối symlink.
+
+Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của `details` và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem [quyền sở hữu journal cục bộ](../consensus/ordering.md#quyền-sở-hữu-journal-cục-bộ).

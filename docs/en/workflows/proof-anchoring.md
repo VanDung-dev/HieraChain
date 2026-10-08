@@ -8,9 +8,9 @@ icon: material/anchor
 
 ## Overview
 
-After a block is finalized on a Sub-Chain, the Sub-Chain submits a cryptographic proof (hash and optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. This keeps domain data off the root chain while still enforcing global immutability.
+After a block is finalized on a Sub-Chain, the Sub-Chain submits a cryptographic proof (hash and optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. Submission succeeds only after a signed MainChain block containing the proof is finalized, saved through durable SQL storage, and read back with its hash, Merkle root, and signature verified. SQLite uses WAL with `synchronous=FULL` for these commits. An unavailable or unsupported storage backend causes submission to fail.
 
-This is not a user initiated call. It is a post-block trigger that fires when `chain_length % proof_interval == 0`.
+Automatic submission runs after a Sub-Chain block is finalized when the configured time interval has elapsed and a newer block has not yet been submitted. The authenticated REST endpoint can also trigger submission.
 
 ---
 
@@ -38,8 +38,9 @@ sequenceDiagram
     SC->>SC: _generate_default_proof_metadata()
     SC->>MC: add_proof(sub_chain_name, proof_hash, metadata, zk_proof)
     MC->>MC: Verify ZK proof (if enabled)
-    MC->>MC: Store proof block on Main Chain
-    MC-->>SC: True (success)
+    MC-->>SC: Proof queued
+    SC->>MC: Finalize signed proof block, save and read back from storage
+    MC-->>SC: Durable proof confirmed
 
     SC->>SC: Record proof_submitted event
     SC->>SC: Update last_proof_submission timestamp
@@ -51,11 +52,11 @@ sequenceDiagram
 
 | Step | Description |
 |:-----|:------------|
-| **1. Trigger check** | `auto_submit_proof_if_needed()` checks `len(chain) > 1` and block has been finalized |
+| **1. Trigger check** | `auto_submit_proof_if_needed()` checks the elapsed interval and whether a newer finalized block exists. |
 | **2. ZK generation** | If `HRC_ENABLE_ZK_PROOFS=true`: ZKProver computes over `(old_state_root, new_state_root, events)`. Retries 3× with backoff |
-| **3. Proof metadata** | `_generate_default_proof_metadata()` builds `{ sub_chain_name, block_count, latest_hash, timestamp }` |
-| **4. Main Chain write** | `MainChain.add_proof()` verifies ZK proof, appends a new proof block |
-| **5. Record** | Sub-Chain logs a `proof_submitted` internal event and updates `last_proof_submission` |
+| **3. Proof metadata** | `_generate_default_proof_metadata()` builds summary metadata; MainChain rejects forbidden detail fields inside nested dictionaries or lists and sanitizes accepted containers recursively before recording them |
+| **4. Main Chain write** | `MainChain.add_proof()` verifies and queues the proof; the submission path finalizes and reads back the signed block from durable storage. |
+| **5. Record** | Only after durable readback, Sub-Chain logs a `proof_submitted` event and updates `last_proof_submission`. |
 
 ---
 
@@ -84,7 +85,8 @@ sequenceDiagram
 |:----------|:---------|
 | ZK proof generation fails | Retry up to 3× with exponential backoff; if `HRC_ZK_REQUIRED_MAINCHAIN=true`, abort |
 | Main Chain write fails | Exception logged, `last_proof_submission` not updated; retry on next block |
-| Main Chain ZK verification fails | `add_proof()` raises, proof block not appended |
+| Durable storage is absent, unsupported, or readback fails | Submission returns `False`; a retry can persist an already queued or finalized proof without adding a duplicate. |
+| Required ZK proof is missing or verification fails | `MainChain.add_proof()` returns `False`; no proof is recorded |
 
 ---
 
@@ -94,9 +96,9 @@ sequenceDiagram
 |:-----|:--------------|:-----|
 | Trigger | `SubChain.auto_submit_proof_if_needed()` | `hierarchical/sub_chain/base.py` |
 | ZK generate | `ZKProver.generate_proof()` | `security/zk_prover.py` |
-| Proof metadata | `_generate_default_proof_metadata()` | `hierarchical/sub_chain/base.py` |
+| Proof metadata | `_generate_default_proof_metadata()` | `hierarchical/sub_chain/proof.py` |
 | Anchor on Main | `MainChain.add_proof()` | `hierarchical/main_chain/base.py` |
-| ZK verify | `ZKVerifier.verify_proof()` | `security/verify/zk_verifier.py` |
+| ZK verify | `ZKVerifier.verify()` | `security/verify/zk_verifier.py` |
 
 ---
 

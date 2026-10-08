@@ -1,8 +1,8 @@
 # Sub-chain Namespace Template
-# This template is used by K8sNamespaceManager to create isolated namespaces
+# This template is used by the Kubernetes deployment workflow to create isolated namespaces
 # for each sub-chain in the hierarchical blockchain system.
 #
-# Variables (replaced by K8sNamespaceManager):
+# Variables (replaced by the deployment workflow):
 #   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
 #   {{NAMESPACE_PREFIX}} - Configurable prefix (default: hrc-subchain-)
 ---

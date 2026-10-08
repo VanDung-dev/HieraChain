@@ -7,14 +7,41 @@ event retrieval. The tests ensure the HieraChain maintains data
 integrity and follows the project's architectural principles.
 """
 
-import time
-import pytest
 import random
 import string
+import time
 from typing import Any
 
-from hierachain.core import Blockchain
-from hierachain.core import Block
+import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+)
+
+from hierachain.core import Block, Blockchain
+from hierachain.security.verify.block_verifier import BlockVerifier
+
+
+def _public_key_pem(private_key: Ed25519PrivateKey) -> bytes:
+    return private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+
+def _signed_next_block(
+    chain: Blockchain, private_key: Ed25519PrivateKey
+) -> Block:
+    previous_block = chain.get_latest_block()
+    block = Block(
+        index=previous_block.index + 1,
+        events=[{"entity_id": "entity-1", "event": "updated"}],
+        previous_hash=previous_block.hash,
+        creator_id="validator-1",
+    )
+    message = BlockVerifier._get_signable_content(block)
+    block.signature = private_key.sign(message).hex()
+    return block
 
 
 def test_blockchain_creation():
@@ -92,6 +119,87 @@ def test_block_adding_and_validation():
     assert result is True
     assert len(chain.chain) == 2  # Genesis + new block
     assert chain.is_chain_valid() is True
+
+
+def test_add_block_accepts_signed_block_with_trusted_key() -> None:
+    chain = Blockchain(name="SignedBlockAddChain")
+    private_key = Ed25519PrivateKey.generate()
+    block = _signed_next_block(chain, private_key)
+    chain.trusted_public_keys["validator-1"] = _public_key_pem(private_key)
+
+    assert chain.add_block(block, public_key=_public_key_pem(private_key)) is True
+    assert chain.get_latest_block() is block
+
+
+def test_chain_validation_requires_trusted_key_for_signed_block() -> None:
+    chain = Blockchain(name="SignedChainValidation")
+    private_key = Ed25519PrivateKey.generate()
+    block = _signed_next_block(chain, private_key)
+    trusted_keys = {**chain.trusted_public_keys, "validator-1": _public_key_pem(private_key)}
+
+    assert chain.add_block(block, public_key=trusted_keys["validator-1"]) is False
+    chain.trusted_public_keys.update(trusted_keys)
+    assert chain.add_block(block, public_key=trusted_keys["validator-1"])
+    assert chain.is_chain_valid(trusted_public_keys=trusted_keys) is True
+
+    del chain.trusted_public_keys["validator-1"]
+    assert chain.is_chain_valid() is False
+    assert chain.get_chain_stats()["chain_valid"] is False
+
+    block.signature = "ab" * 64
+    assert chain.is_chain_valid(trusted_public_keys=trusted_keys) is False
+    block.signature = None
+    assert chain.is_chain_valid(trusted_public_keys=trusted_keys) is False
+
+
+def test_loaded_signed_chain_is_not_valid_without_trusted_key() -> None:
+    chain = Blockchain(name="LoadedSignedChain")
+    private_key = Ed25519PrivateKey.generate()
+    block = _signed_next_block(chain, private_key)
+    public_key = _public_key_pem(private_key)
+    chain.trusted_public_keys["validator-1"] = public_key
+    assert chain.add_block(block, public_key=public_key)
+
+    with pytest.raises(ValueError, match="Chain integrity check failed"):
+        Blockchain.from_dict(chain.to_dict())
+
+    trusted_keys = {**chain.trusted_public_keys, "validator-1": public_key}
+    restored = Blockchain.from_dict(chain.to_dict(), trusted_public_keys=trusted_keys)
+    assert restored.is_chain_valid(trusted_keys) is True
+
+    corrupted_data = chain.to_dict()
+    corrupted_data["chain"][1]["signature"] = "ab" * 64
+    with pytest.raises(ValueError, match="Chain integrity check failed"):
+        Blockchain.from_dict(
+            corrupted_data, trusted_public_keys=trusted_keys
+        )
+
+
+def test_add_block_rejects_removed_signature_when_key_is_supplied() -> None:
+    chain = Blockchain(name="StrippedSignatureChain")
+    private_key = Ed25519PrivateKey.generate()
+    block = _signed_next_block(chain, private_key)
+    block.signature = None
+
+    assert chain.add_block(block, public_key=_public_key_pem(private_key)) is False
+
+
+@pytest.mark.parametrize("key_mode", ["missing", "wrong"])
+def test_add_block_rejects_signed_block_without_matching_key(
+    key_mode: str,
+) -> None:
+    chain = Blockchain(name=f"SignedBlockRejectChain-{key_mode}")
+    genesis = chain.get_latest_block()
+    block = _signed_next_block(chain, Ed25519PrivateKey.generate())
+    public_key = (
+        None
+        if key_mode == "missing"
+        else _public_key_pem(Ed25519PrivateKey.generate())
+    )
+
+    assert chain.add_block(block, public_key=public_key) is False
+    assert len(chain.chain) == 1
+    assert chain.chain[0] is genesis
 
 
 def test_entity_event_retrieval():
@@ -219,7 +327,7 @@ def test_blockchain_with_malicious_blocks():
 
     # Should either reject the block or mark chain as invalid
     # Depending on implementation, this might return False or make chain invalid
-    if not result is True:
+    if result is not True:
         assert result is False  # Block rejected
     else:
         # If block was added, chain should be invalid
@@ -416,3 +524,21 @@ def test_blockchain_block_cache_integration():
     assert stats["total_blocks"] == 6  # Genesis + 5 created
     assert stats["total_events"] == 51  # 1 from genesis + 50 added
     assert stats["chain_valid"] is True
+
+
+def test_accepted_event_and_entity_queries_own_nested_data() -> None:
+    chain = Blockchain(name="SnapshotChain")
+    event = {"entity_id": "entity-1", "event": "created", "details": {"items": ["original"]}}
+    chain.add_event(event)
+    assert "timestamp" not in event
+    event["details"]["items"].append("changed")
+    block = chain.create_block()
+    assert chain.add_block(block)
+    events = chain.get_events_by_entity("entity-1")
+    assert events[0]["details"]["items"] == ["original"]
+    events[0]["details"]["items"].clear()
+    indexed = chain.get_indexed_entity_events("entity-1")
+    indexed[0]["event"]["details"]["items"].clear()
+    indexed.clear()
+    assert chain.get_events_by_entity("entity-1")[0]["details"]["items"] == ["original"]
+    assert len(chain.get_indexed_entity_events("entity-1")) == 1

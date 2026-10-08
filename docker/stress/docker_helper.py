@@ -20,15 +20,16 @@ class DockerSocketClient:
     def request(self, method: str, path: str, body=None) -> tuple[int, str]:
         if not os.path.exists(self.socket_path):
             raise FileNotFoundError(f"Docker socket not found at {self.socket_path}")
-        conn = http.client.HTTPConnection("localhost")
+        conn = http.client.HTTPConnection("localhost", timeout=10)
         conn.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        conn.sock.connect(self.socket_path)
-        
-        headers = {"Content-Type": "application/json"}
-        conn.request(method, path, body=json.dumps(body) if body else None, headers=headers)
-        res = conn.getresponse()
-        data = res.read().decode()
-        return res.status, data
+        try:
+            conn.sock.connect(self.socket_path)
+            headers = {"Content-Type": "application/json"}
+            conn.request(method, path, body=json.dumps(body) if body else None, headers=headers)
+            res = conn.getresponse()
+            return res.status, res.read().decode()
+        finally:
+            conn.close()
 
     def container_action(self, container_name: str, action: str) -> bool:
         try:
@@ -43,11 +44,7 @@ class DockerSocketClient:
 
     def container_update(self, container_name: str, cpus: float) -> bool:
         try:
-            quota = int(cpus * 100000)
-            body = {
-                "CpuPeriod": 100000,
-                "CpuQuota": quota
-            }
+            body = {"NanoCpus": int(cpus * 1_000_000_000)}
             status, data = self.request("POST", f"/v1.41/containers/{container_name}/update", body)
             if status in (200, 204):
                 return True
@@ -93,7 +90,7 @@ def run_docker_container_action(container_name: str, action: str) -> tuple[str, 
         # Try docker CLI
         result = subprocess.run(["docker", action, container_name], capture_output=True, text=True, timeout=15)
         if result.returncode == 0:
-            return result.stdout, result.stderr
+            return result.stdout, ""
         # If CLI failed but exists, log and try socket
         logger.info(f"Docker CLI failed (code {result.returncode}), trying docker socket...")
     except FileNotFoundError:
@@ -117,7 +114,7 @@ def run_docker_container_update(container_name: str, cpus: str) -> tuple[str, st
     try:
         result = subprocess.run(["docker", "update", "--cpus", cpus, container_name], capture_output=True, text=True, timeout=15)
         if result.returncode == 0:
-            return result.stdout, result.stderr
+            return result.stdout, ""
     except FileNotFoundError:
         pass
     except Exception:
@@ -140,7 +137,7 @@ def run_docker_exec(container_name: str, cmd: list[str]) -> tuple[str, str]:
     try:
         result = subprocess.run(["docker", "exec", container_name] + cmd, capture_output=True, text=True, timeout=15)
         if result.returncode == 0:
-            return result.stdout, result.stderr
+            return result.stdout, ""
     except FileNotFoundError:
         pass
     except Exception:

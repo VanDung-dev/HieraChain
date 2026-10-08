@@ -41,10 +41,10 @@ graph TD
 |-----------|---------|----------------------|
 | `block.py` | Event container using Apache Arrow columnar storage | Composite Pattern - Blocks contain multiple events |
 | `blockchain.py` | Base blockchain with validation, indexing | Template Method - Extended by MainChain and SubChain |
-| `cache.py` / `cache_manager.py` | Hybrid caching (LRU, LFU, FIFO, TTL) | Strategy Pattern - Different cache policies per data type |
+| `cache.py` | In-memory cache with LRU, LFU, FIFO, and TTL policies | Utility used by `KeyManager` |
 | `core/utils.py` | Common utility functions (event structure validation, etc.) | Utility Library |
 
-**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The caching engine supports customizable strategies (`LRU`, `LFU`, `FIFO`, `TTL`) to optimize memory access during block query operations.
+**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The caching engine supports customizable strategies (`LRU`, `LFU`, `FIFO`, `TTL`) for the security key and permission lookups that use it.
 
 ---
 
@@ -56,17 +56,12 @@ graph TD
 | `sub_chain.py` | Domain-specific chains with detailed events | Worker / Specialist |
 | `channel.py` | Isolated data spaces for organizations | Communication Channel |
 | `multi_org.py` | Multi-organization architecture with MSP | Enterprise Boundary Manager |
-| `proof_aggregation.py` | Batches multiple proofs into one | Aggregator / Compressor |
 | `hierarchy_manager.py` | Orchestrates entire chain hierarchy | Facade / Controller |
 | `transaction_manager.py` | Cross-chain 2PC transactions | Transaction Coordinator |
 | `private_data.py` | **[MỚI]** Private data collections per organization | Data Privacy Guard |
-| `k8s_namespace_manager.py` | **[MỚI]** Kubernetes namespace lifecycle management for sub-chain isolation | Infrastructure Manager |
-| `rebalancer.py` | **[MỚI]** Dynamic sub-chain splitting when load exceeds threshold | Auto-Scaling Engine |
 
 **Key Additions**:
 
-* **`K8sNamespaceManager`**: Deploys each Sub-Chain into an isolated Kubernetes namespace—ensuring complete resource isolation, fault isolation, independent scaling, and easier monitoring. Supports both real K8s and mock mode.
-* **`SubChainRebalancer`**: Monitors sub-chain load in events/second (EPS). When throughput exceeds a configurable threshold, automatically splits the sub-chain into two child branches and migrates state using configurable strategies (`HASH_BASED`, `TIME_BASED`, `ROUND_ROBIN`).
 * **`private_data.py`**: Manages private data collections scoped per-organization within a channel, ensuring data isolation even between organizations sharing the same Sub-Chain.
 
 ---
@@ -127,31 +122,7 @@ graph TD
 
 | Component | Purpose | Design Pattern |
 |-----------|---------|----------------|
-| `cluster_manager.py` | Node health tracking, quorum-based coordination | Observer + Quorum |
-| `lockdown_protocol.py` | Gossip-style P2P lockdown broadcast and voting | State Machine + P2P |
-| `state_sync_manager.py` | Cross-node state synchronization | Sync Manager |
 | `cross_level_sync.py` | Cross-level hierarchical synchronization | Hierarchical Sync |
-
-**Key Feature — Quorum-Based Lockdown**:
-
-This is a critical production-grade feature. When anomalies are detected:
-
-```mermaid
-flowchart TD
-    A["Node detects threat"] --> B["Broadcasts LOCKDOWN_VOTE<br/>(signed with HMAC)"]
-    B --> C["Peers receive and register votes"]
-    C --> D{2/3 majority?}
-    D -->|Yes| E["Cluster enters lockdown"]
-    D -->|No| C
-    E --> F["All nodes halt new event processing"]
-    F --> G["Node broadcasts QUARANTINE_REPORT<br/>(pending events fingerprint)"]
-    G --> H["After recovery:<br/>RECOVERY_VOTE"]
-    H --> I{2/3 majority?}
-    I -->|Yes| J["Resume"]
-    I -->|No| H
-```
-
-The `ClusterLockdownManager` uses gossip-style P2P messaging via ZeroMQ with HMAC-signed messages and 5-minute message expiry to prevent replay attacks.
 
 ---
 
@@ -160,7 +131,6 @@ The `ClusterLockdownManager` uses gossip-style P2P messaging via ZeroMQ with HMA
 | Component | Purpose | Features |
 |-----------|---------|----------|
 | `alert_system.py` | Centralized alert management with anomaly detection | Z-score anomaly, Email/Webhook notifications |
-| `performance_metrics.py` | System performance metric collection | CPU, memory, throughput tracking |
 | `performance_monitor.py` | Real-time performance monitoring daemon | Background thread, threshold-based alerts |
 
 **AlertManager Architecture**:
@@ -184,20 +154,7 @@ Alert categories: `RISK_MANAGEMENT | PERFORMANCE | SECURITY | CONSENSUS | STORAG
 
 | Component | Purpose | Design Pattern |
 |-----------|---------|----------------|
-| `risk_analyzer.py` | Multi-domain risk assessment (consensus, security, performance, storage) | Analyzer / Assessment Engine |
-| `mitigation_strategies.py` | Automated risk mitigation playbooks | Strategy Pattern |
 | `audit_logger.py` | Immutable audit trail for compliance | Audit Log / Event Sourcing |
-
-**Risk Domains Covered**:
-
-| Domain | Example Risks Detected |
-|--------|----------------------|
-| **Consensus** | Insufficient BFT nodes (`n < 3f+1`), high leader timeout, message verification failures |
-| **Security** | Certificate expiry, brute-force attempts, weak encryption key size |
-| **Performance** | High CPU/memory, event pool overflow, slow block creation |
-| **Storage** | Oversized world state, overdue backups, slow queries |
-
-Each `RiskAssessment` includes: severity, likelihood (0.0–1.0), affected components, and mitigation recommendations.
 
 ---
 
@@ -230,8 +187,6 @@ Each `RiskAssessment` includes: severity, likelihood (0.0–1.0), affected compo
 | Component | Purpose |
 |-----------|---------|
 | `journal.py` | Durability layer using Apache Arrow (`[Length (4 bytes)][Batch Bytes...]`) |
-| `recovery_engine.py` | Automated failure recovery |
-| `rollback_manager.py` | State rollback capabilities |
 | `data_validator.py` | Input validation |
 | `error_classifier.py` | **[MỚI]** Classify errors by type for targeted recovery |
 | `validator.py` | **[MỚI]** Extended validation framework for business rules |
@@ -385,14 +340,14 @@ The configuration is highly flexible via **environment variables**:
 | Key | Purpose | Default |
 |-----|---------|---------|
 | `HRC_CONSENSUS_TYPE` | Consensus selection (PoA/PoF/BFT) | `proof_of_authority` |
-| `HRC_STORAGE_BACKEND` | Storage backend (sqlite/redis/memory) | `sqlite` |
+| `HRC_STORAGE_BACKEND` | Storage backend (sqlite/postgres/redis/memory) | `postgres` |
 | `HRC_ENABLE_ZK_PROOFS` | Enable ZK proof verification | `false` |
 | `HRC_AUTH_ENABLED` | API authentication enforcement | `false` |
 | `HRC_CLUSTER_SECRET` | **[MỚI]** Shared HMAC secret for cluster lockdown messages | _(required for cluster)_ |
 | `HRC_SMTP_USERNAME` / `HRC_SMTP_PASSWORD` | **[MỚI]** Email alert credentials | _(optional)_ |
 | `HRC_IPFS_HOST` | **[MỚI]** IPFS daemon API address (multiaddr) | `/ip4/127.0.0.1/tcp/5001` |
 | `HRC_IPFS_ENCRYPTION_KEY` | **[MỚI]** Hex-encoded AES-256 key for IPFS content | _(auto-generated if missing)_ |
-| `DATABASE_URL` | Database connection string | `sqlite:///hierachain.db` |
+| `DATABASE_URL` | Database connection string | `postgresql://hiera:hiera@localhost:5432/hierachain` |
 
 Additional config components:
 
@@ -456,13 +411,11 @@ This mirrors enterprise organizational structure: CEO coordinates at high level,
 ### 5. Cloud-Native / Kubernetes-Ready
 
 * **K8s Namespace Manager** for sub-chain isolation in production clusters
-* **Sub-chain auto-rebalancer** for elastic horizontal scaling
 * **Cross-level state sync** for distributed consistency
 
 ### 6. Observability & Operations
 
 * **Real-time alert system** with anomaly detection (Z-score)
-* **Multi-domain risk analyzer** with actionable recommendations
 * **Immutable audit logger** for compliance
 * **Blockchain Explorer** for developer inspection
 
@@ -477,12 +430,11 @@ This mirrors enterprise organizational structure: CEO coordinates at high level,
 | **Adapter** | `adapters/database/`, `integration/erp_adapters/` | Pluggable backend implementations |
 | **Cache-Aside** | `caching.py`, `PolicyEngine` | On-demand caching with fallback |
 | **Strategy** | Cache policies, consensus types, split strategies | Swappable algorithms |
-| **State Machine** | `DomainContract` lifecycle, `ClusterLockdownManager` | Controlled state transitions |
-| **Observer** | `AlertManager`, `ClusterManager` callbacks | Event-driven notifications |
+| **State Machine** | `DomainContract` lifecycle | Controlled state transitions |
+| **Observer** | `AlertManager` callbacks | Event-driven notifications |
 | **Composite** | Blocks containing events | Treat single/many uniformly |
 | **Pipeline** | Event processing flow | Sequential transformation stages |
 | **Template Method** | Base `Blockchain` class | Common algorithm skeleton with customizable steps |
-| **Quorum** | `ClusterManager`, `ClusterLockdownManager` | Distributed consensus for operational decisions |
 | **ABAC** | `PolicyEngine` | Attribute-Based Access Control |
 
 ---
@@ -497,16 +449,8 @@ flowchart TD
     D --> E["5. Consensus Validation<br/>(PoA/PoF/BFT + ZK verification)"]
     E --> F["6. Storage & Caching<br/>(adapters/database: SQLite/Redis + LRU/TTL cache)"]
     F --> G["7. Proof Submission to Main Chain<br/>(if Sub-Chain)"]
-    G --> H["8. Risk Analysis & Monitoring<br/>(concurrent, async)"]
+    G --> H["8. Monitoring and audit logging"]
     H --> I["9. Alert Dispatch<br/>(Email/Webhook if thresholds exceeded)"]
-```
-
-**Cluster-level flow (parallel)**:
-
-```mermaid
-flowchart LR
-    Node["Each node"] --> CM["ClusterManager<br/>(heartbeat tracking)"]
-    Node --> CLM["ClusterLockdownManager<br/>(anomaly → quorum vote →<br/>lockdown/recovery)"]
 ```
 
 ---
@@ -518,10 +462,10 @@ HieraChain is designed as an **enterprise-grade business ledger** that:
 1. Avoids cryptocurrency concepts entirely (no mining, no tokens)
 2. Uses hierarchical structure mirroring enterprise org charts
 3. Prioritizes **performance** (Arrow columnar storage, parallel processing, Arrow Flight)
-4. Prioritizes **reliability** (durability journal, rollback, circuit breakers, cluster quorum)
+4. Prioritizes **reliability** (durability journal, rollback and circuit breakers)
 5. Integrates seamlessly with existing ERP systems
 6. Is **cloud-native** (K8s namespace isolation, auto-rebalancing)
 7. Provides **enterprise-grade security** (ABAC policies, ZK proofs, key backup, sanitization)
-8. Offers **full observability** (alerts, risk analysis, explorer, audit trail)
+8. Offers **full observability** (alerts, explorer and audit trail)
 
-The system is built for **business process management** at enterprise scale, where multiple organizations need a shared, trustworthy ledger without the complexity of cryptocurrency consensus mechanisms. The addition of Cluster Management, Monitoring, and Risk Management layers makes it production-ready for critical business operations.
+The system is built for **business process management** at enterprise scale, where multiple organizations need a shared, trustworthy ledger without the complexity of cryptocurrency consensus mechanisms. Monitoring and audit logging support operational visibility.

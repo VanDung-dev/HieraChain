@@ -1,6 +1,6 @@
 ---
 title: "Integration Module"
-description: "Enterprise system bridge for ERP integration: SAP, Oracle, and Dynamics connectors with field mapping and change detection."
+description: "ERP mapping and scheduling primitives with explicitly gated synthetic vendor fixtures."
 icon: material/puzzle
 ---
 
@@ -8,100 +8,90 @@ icon: material/puzzle
 
 ## 1. Overview
 
-The `integration` module connects HieraChain to enterprise software systems such as SAP, Oracle, and Microsoft Dynamics. It extracts records from external ERP systems, normalizes data through a mapping engine, and records verifiable state events on domain sub-chains.
+The `integration` module provides field mapping, change detection, and scheduling utilities for applications that connect an ERP adapter to a HieraChain event sink. It does not include a real SAP, Oracle, or Microsoft Dynamics transport, and the API server does not start ERP synchronization automatically. Callers register their own adapter and chain sink.
 
 ## 2. Core components
 
-All integration components reside in `hierachain/integration/`.
-
 ### 2.1 ERP Integration Ledger (`erp_ledger.py`, `erp/base.py`)
 
-* Coordinates data synchronization pipelines.
-* Integrates `MappingEngine` for field transformations.
-* Manages `SyncScheduler` to poll external APIs on recurring intervals.
+* Coordinates caller-provided adapters and translates their records through a mapping profile.
+* Passes the profile's `config` to the registered adapter constructor.
+* Requires a chain sink for scheduled delivery; use `translate_erp_to_blockchain()` for translation-only work.
+* Accepts optional `detect_changes` and `key_fields` profile metadata. Key fields support dotted paths such as `material.document_number`.
 
-### 2.2 Enterprise adapters (`enterprise.py`)
+An adapter registered with `register_adapter()` must provide `get_changes_since_last_sync()`. A sink's `add_event()` must return `True` or a non-empty event identifier for the event to count as accepted.
 
-* Connectors for SAP, Oracle, and Microsoft Dynamics.
-* Reads endpoint URLs and credentials from environment variables (`HRC_SAP_*`, `HRC_ORACLE_*`, `HRC_DYNAMICS_*`).
-* Handles authentication handshakes and HTTP session lifecycles.
+### 2.2 Exported vendor fixtures (`enterprise.py`)
+
+`SAPIntegration`, `OracleIntegration`, and `DynamicsIntegration` return synthetic fixture records. `EnterpriseIntegration.connect_to_erp()` rejects them by default. Pass `{"simulation_mode": True}` to opt in during tests or demonstrations. These classes make no network requests and do not authenticate against a vendor system.
 
 ### 2.3 Change detector (`erp/change_detector.py`)
 
-* Compares incoming ERP data against previous state snapshots.
-* Isolates delta modifications to avoid recording redundant events.
+* Compares business fields against an in-memory snapshot scoped by profile and entity key.
+* Ignores its own `changes` and `change_detected` metadata when taking the next snapshot, so an unchanged record remains unchanged.
 
 ## 3. Mapping engine
 
-The `MappingEngine` transforms enterprise payload fields into standardized event properties:
+The mapping engine transforms source fields into event fields and builds nested objects from dotted destinations such as `details.quantity`.
 
-| Transformer | Function | Example Transformation |
+| Transformer | Function | Example transformation |
 | :--- | :--- | :--- |
 | `date` | Standardizes timestamp formats | `12/04/2024` -> `ISO-8601` |
-| `amount` | Normalizes numbers and currencies | `5000` -> `5000.0` (float) |
+| `amount` | Normalizes numeric values | `5000` -> `5000.0` |
 | `status` | Maps business status codes | `REQ` -> `REQUESTED` |
-| `id` | Prefixes identifiers | `123` -> `ERP_123` |
+| `id` | Adds identifier prefixes | `123` -> `ERP_123` |
 | `boolean` | Normalizes truth values | `1/Yes/On` -> `True` |
 
-## 4. Synchronization flow
+Mapping rules, adapter config, and key fields are copied when a profile is created and when it is read. Changes to caller-owned input objects do not alter the registered profile.
 
-`SyncScheduler` manages polling and retries for external data sources:
+## 4. Synchronization and retries
 
-```mermaid
-sequenceDiagram
-    participant ERP as ERP System (SAP/Oracle)
-    participant Sync as SyncScheduler
-    participant Map as MappingEngine
-    participant HRC as HieraChain SubChain
+`SyncScheduler` invokes a caller-provided adapter, translates each returned record, and submits it to the supplied chain sink. A record counts as processed only after the sink acknowledges it. A missing sink fails before the adapter is queried. Per-record translation or delivery errors make the run `failed`; `get_sync_status()` exposes accepted-event counts and errors.
 
-    Sync->>ERP: Poll for changes (interval)
-    ERP-->>Sync: Return ERP records
-    
-    loop Per Record
-        Sync->>Map: Translate ERP -> Blockchain event
-        Map->>Map: Apply transformers (ID, date, status)
-        Map-->>Sync: Normalized event dict
-        Sync->>HRC: Submit event to Sub-Chain
-    end
-```
+Successful runs use the configured interval. Failed runs retry after 30, 60, then 120 seconds by default, with the delay capped at 300 seconds. After three retries beyond the initial attempt, the task reports `retry_exhausted` and stops scheduling further runs. Scheduler status is in memory and does not survive a process restart. Delivery is at least once when a batch is retried: records accepted during an earlier partial run can be submitted again. Use stable event identifiers, an adapter delivery cursor, and sink-side deduplication or operator reconciliation; this module does not provide exactly-once delivery.
+
+Replacing or stopping a profile cancels its pending timer and prevents stale generations from starting another run. It cannot cancel an adapter call that is already running; that call may still deliver records before it returns, while its stale result is ignored by the scheduler.
 
 ## 5. Usage example
 
-### Configure mapping and scheduled sync
+Register an adapter implemented by your application and provide a sink:
 
 ```python
 from hierachain.integration.erp_ledger import ERPIntegrationLedger
 
-sap_mapping = {
-    "entity_id": "material.document_number",
-    "event": {
-        "source_path": "material.event_type",
-        "transformer": "status",
-        "params": {"mapping": {"GR": "GOODS_RECEIPT"}}
-    },
-    "details.quantity": {
-        "source_path": "material.qty",
-        "transformer": "amount"
-    }
-}
-
 ledger = ERPIntegrationLedger()
-# Start syncing with a domain sub-chain
+ledger.register_adapter("sap", MyConfiguredSapAdapter)  # application-provided
+ledger.create_mapping_profile(
+    "SAP_Logistics",
+    "sap",
+    {
+        "entity_id": "material.document_number",
+        "event": "material.event_type",
+        "details.quantity": "material.qty",
+    },
+    config={"tenant": "example"},
+    detect_changes=True,
+    key_fields=["material.document_number"],
+)
 ledger.start_scheduled_sync(
     profile_name="SAP_Logistics",
     interval_seconds=60,
-    chain=sub_chain_instance
+    chain=sub_chain_instance,
 )
 ```
 
-## 6. Resilience and security
+`MyConfiguredSapAdapter` and `sub_chain_instance` are supplied by the calling application. Vendor fixture classes are separate, simulation-only examples.
 
-* Thread concurrency: Uses `ThreadPoolExecutor` to handle concurrent sync profiles without blocking main event processing.
-* Secret isolation: Credentials use environment variables rather than configuration files in version control.
-* Automatic retry: Sync workers use exponential backoff when encountering transient network timeouts.
+## 6. Runtime scope
+
+The integration ledger is a library component; it is not wired into the REST server lifecycle. Applications must register adapters, choose a chain sink, manage credentials in their own adapter, and monitor the returned sync status.
 
 ## Related
 
 * [Hierarchical Module](./hierarchical.md)
 * [Core Module](./core.md)
 * [Error Mitigation](./error-mitigation.md)
+
+## Change detection identity
+
+Configured `key_fields` must be a non-empty list of non-empty field paths. Missing, null or empty-string identity values raise `ValueError` before the detector mutates its snapshot or the record. Numeric `0` remains valid. Nested SAP paths such as `material.document_number` distinguish records; missing identities are never grouped under an `unknown` key. Scheduled synchronization reports such records as failed translation rather than successful delivery.

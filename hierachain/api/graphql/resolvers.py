@@ -1,21 +1,38 @@
+import base64
+import binascii
+import json
 import time
-import orjson
+from typing import Any
+
 import graphene
 from graphene import ObjectType
 
-from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.graphql.types import (
-    EventType, BlockType, BlockMetadataType, ChainStatusType, AddEventInput
+    AddEventInput,
+    BlockMetadataType,
+    BlockType,
+    ChainStatusType,
+    EventType,
 )
+from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.event_query import select_event_page
+from hierachain.core.utils import get_block_events
+from hierachain.serialization import dumps_json, loads_json
+
+MAX_QUERY_RESULTS = 100
 
 
-def _get_chain_for_name(chain_name):
+def _bounded_limit(limit: int | None) -> int:
+    return MAX_QUERY_RESULTS if limit is None else max(0, min(limit, MAX_QUERY_RESULTS))
+
+
+def _get_chain_for_name(chain_name: str) -> Any | None:
     manager = get_hierarchy_manager()
     sub_chains = manager.get_all_sub_chains()
     if chain_name in sub_chains:
         return sub_chains[chain_name]
-    main_chain = manager.get_main_chain()
-    return main_chain
+    return manager.get_main_chain() if chain_name == "main_chain" else None
 
 
 def _get_block_from_chain(chain, block_index, chain_name):
@@ -28,27 +45,23 @@ def _get_block_from_chain(chain, block_index, chain_name):
     return None
 
 
-def resolve_block(_root, _info, chain_name, block_index):
-    manager = get_hierarchy_manager()
-
-    sub_chains = manager.get_all_sub_chains()
-    if chain_name in sub_chains:
-        chain = sub_chains[chain_name]
-        return _get_block_from_chain(chain, block_index, chain_name)
-
-    main_chain = manager.get_main_chain()
-    if main_chain:
-        return _get_block_from_chain(main_chain, block_index, "main_chain")
-
-    return None
+def resolve_block(_root: Any, _info: Any, chain_name: str, block_index: int) -> BlockType | None:
+    chain = _get_chain_for_name(chain_name)
+    if chain is None:
+        return None
+    return _get_block_from_chain(chain, block_index, chain_name)
 
 
-def _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name):
+def _get_blocks_from_chain(
+    chain: Any, from_index: int | None, to_index: int | None, limit: int, chain_name: str,
+) -> list[BlockType]:
     chain_blocks = chain.chain
-    start = from_index if from_index is not None else 0
-    end = to_index if to_index is not None else len(chain_blocks)
+    start = max(0, from_index) if from_index is not None else 0
+    end = min(len(chain_blocks), start + limit)
+    if to_index is not None:
+        end = max(0, min(end, to_index))
     blocks = []
-    for block in chain_blocks[start:end][:limit]:
+    for block in chain_blocks[start:end]:
         if block is None or not hasattr(block, 'index'):
             continue
         blocks.append(_to_block_type(block, chain_name))
@@ -56,92 +69,68 @@ def _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name):
 
 
 def resolve_blocks(
-    _root, _info, chain_name, from_index=None, to_index=None, limit=100
-):
+    _root: Any, _info: Any, chain_name: str,
+    from_index: int | None = None, to_index: int | None = None, limit: int | None = None,
+) -> list[BlockType]:
     chain = _get_chain_for_name(chain_name)
     if not chain:
         return []
-    return _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name)
+    return _get_blocks_from_chain(chain, from_index, to_index, _bounded_limit(limit), chain_name)
 
 
-def _filter_event_by_entity_id(event, entity_id):
-    if not entity_id:
-        return True
-    return getattr(event, 'entity_id', None) == entity_id
-
-
-def _filter_event_by_type(event, event_type):
-    if not event_type:
-        return True
-    event_type_value = getattr(event, 'event_type', None) or getattr(event, 'event', None)
-    return event_type_value == event_type
-
-
-def _filter_event_by_time(event_time, from_timestamp, to_timestamp):
-    if not from_timestamp and not to_timestamp:
-        return True
-    if from_timestamp and event_time < from_timestamp:
-        return False
-    if to_timestamp and event_time > to_timestamp:
-        return False
-    return True
-
-
-def _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
-    event_time = getattr(event, 'timestamp', 0)
-    return (
-        _filter_event_by_entity_id(event, entity_id) and
-        _filter_event_by_type(event, event_type) and
-        _filter_event_by_time(event_time, from_timestamp, to_timestamp)
-    )
-
-
-def _get_filtered_events_from_block(
-    block, entity_id, event_type, from_timestamp, to_timestamp
-):
-    if not hasattr(block, 'events') or not block.events:
-        return []
-
-    filtered = []
-    for event in block.events:
-        if _filter_event(
-            event, entity_id, event_type, from_timestamp, to_timestamp
+def _decode_event_cursor(cursor: str | None, chain_name: str) -> tuple[int, int] | None:
+    if cursor is None:
+        return None
+    try:
+        if len(cursor) > 1024:
+            raise ValueError("Cursor is too long")
+        decoded = loads_json(base64.b64decode(cursor, altchars=b"-_", validate=True))
+        if (
+            not isinstance(decoded, list) or len(decoded) != 4 or decoded[0] != 1 or decoded[1] != chain_name
+            or any(type(value) is not int or value < 0 for value in decoded[2:])
         ):
-            filtered.append(_to_event_type(event))
-    return filtered
+            raise ValueError("Cursor does not identify an event in this chain")
+        return decoded[2], decoded[3]
+    except (ValueError, TypeError, binascii.Error) as exc:
+        raise ValueError("Invalid event cursor") from exc
 
 
-def _get_events_from_chain(
-    chain, entity_id, event_type, from_timestamp, to_timestamp
-):
-    for block in chain.chain:
-        block_events = _get_filtered_events_from_block(
-            block, entity_id, event_type, from_timestamp, to_timestamp
-        )
-        for event in block_events:
-            yield event
+def _encode_event_cursor(chain_name: str, entry: dict[str, Any]) -> str:
+    raw = dumps_json([1, chain_name, entry["block_index"], entry["event_index"]]).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii")
 
 
 def resolve_events(
-    _root,
-    _info,
-    chain_name,
-    entity_id=None,
-    event_type=None,
-    from_timestamp=None,
-    to_timestamp=None,
-    limit=100
-):
+    _root: Any,
+    _info: Any,
+    chain_name: str,
+    entity_id: str | None = None,
+    event_type: str | None = None,
+    from_timestamp: float | None = None,
+    to_timestamp: float | None = None,
+    limit: int | None = None,
+    after: str | None = None,
+) -> list[EventType]:
+    position = _decode_event_cursor(after, chain_name)
     chain = _get_chain_for_name(chain_name)
-    if not chain:
+    effective_limit = _bounded_limit(limit)
+    if not chain or effective_limit == 0:
         return []
 
+    filters = {
+        "entity_id": entity_id, "event_type": event_type, "from_timestamp": from_timestamp,
+        "to_timestamp": to_timestamp, "limit": effective_limit, "after": position,
+    }
+    entries = (
+        chain.get_event_page(**filters)
+        if isinstance(chain, Blockchain)
+        else select_event_page(chain.chain, **filters)
+    )
     events = []
-    for event in _get_events_from_chain(chain, entity_id, event_type, from_timestamp, to_timestamp):
+    for entry in entries:
+        event = _to_event_type(entry["event"])
+        event.cursor = _encode_event_cursor(chain_name, entry)
         events.append(event)
-        if len(events) >= limit:
-            break
-
     return events
 
 
@@ -191,9 +180,8 @@ class AddEventMutation(graphene.Mutation):
         if event.chain_name in sub_chains:
             chain = sub_chains[event.chain_name]
         else:
-            main_chain = manager.get_main_chain()
-            chain = main_chain
-            if not main_chain:
+            chain = manager.get_main_chain() if event.chain_name == "main_chain" else None
+            if chain is None:
                 result = AddEventMutation()
                 result.success = False
                 result.error = f"Chain {event.chain_name} not found"
@@ -203,8 +191,8 @@ class AddEventMutation(graphene.Mutation):
             details = {}
             if event.details:
                 try:
-                    details = orjson.loads(event.details)
-                except orjson.JSONDecodeError:
+                    details = loads_json(event.details)
+                except json.JSONDecodeError:
                     result = AddEventMutation()
                     result.success = False
                     result.error = "Invalid JSON in details"
@@ -235,10 +223,8 @@ class Mutations(ObjectType):
     add_event = AddEventMutation.Field()
 
 
-def _extract_events(block):
-    if hasattr(block, 'events') and block.events:
-        return [_to_event_type(event) for event in block.events]
-    return []
+def _extract_events(block: Any) -> list[EventType]:
+    return [_to_event_type(event) for event in get_block_events(block)]
 
 
 def _build_block_metadata(block, chain_name, events_count):
@@ -275,10 +261,22 @@ def _to_block_type(block, chain_name):
     return block_type
 
 
-def _to_event_type(event):
+def _to_event_type(event: Any) -> EventType:
+    if isinstance(event, dict):
+        converted = EventType(
+            entity_id=event.get("entity_id", ""),
+            event_type=event.get("event_type") or event.get("event", ""),
+            details=dumps_json(event["details"]) if event.get("details") is not None else "",
+            details_cid=event.get("details_cid"),
+            details_nonce=event.get("details_nonce"),
+            timestamp=event.get("timestamp", 0),
+            signature=event.get("signature", ""),
+        )
+        converted.details_metadata = event.get("details_metadata")
+        return converted
     details = ""
     if hasattr(event, 'data') and event.data:
-        details = orjson.dumps(event.data).decode()
+        details = dumps_json(event.data)
 
     event_type = getattr(event, 'event_type', None) or getattr(event, 'event', '')
 

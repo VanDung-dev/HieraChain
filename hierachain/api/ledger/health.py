@@ -2,8 +2,13 @@
 
 import time
 import uuid as uuid_lib
-from fastapi import APIRouter, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+
+from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.consensus.ordering.types import OrderingStatus
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
 router = APIRouter(tags=["HieraChain"])
 
@@ -11,6 +16,26 @@ router = APIRouter(tags=["HieraChain"])
 @router.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
+
+
+@router.get("/ready")
+async def readiness_check(
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+):
+    """Report ready only after every registered ordering service finishes recovery."""
+    ready = all(
+        getattr(getattr(chain, "ordering_service", None), "status", None)
+        == OrderingStatus.ACTIVE
+        for chain in manager.get_all_sub_chains().values()
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK if ready else status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "status": "ready" if ready else "not_ready",
+            "timestamp": time.time(),
+        },
+    )
 
 
 @router.get("/network/ping/{target_id}")

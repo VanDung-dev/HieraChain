@@ -15,17 +15,14 @@ from typing import Any
 
 class OrganizationError(Exception):
     """Exception raised for organization-related errors"""
-    pass
 
 
 class NetworkError(Exception):
     """Exception raised for network-related errors"""
-    pass
 
 
 class ConsensusError(Exception):
     """Exception raised for consensus-related errors"""
-    pass
 
 
 class TransactionState(str, Enum):
@@ -33,6 +30,7 @@ class TransactionState(str, Enum):
 
     PENDING = "pending"
     PREPARED = "prepared"
+    IN_DOUBT = "in_doubt"
     COMMITTED = "committed"
     ROLLED_BACK = "rolled_back"
     FAILED = "failed"

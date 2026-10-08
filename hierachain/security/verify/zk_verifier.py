@@ -1,21 +1,21 @@
 """
 Zero Knowledge Proof Verifier for HieraChain Ledger.
 
-This module implements the ZKVerifier class that verifies ZK proofs from SubChains
-to ensure state transitions are mathematically correct, preventing Fake Proofs.
+This module exposes the ZKVerifier interface for SubChain proof flows.
+Only mock hash comparison is implemented; it does not prove valid transitions.
 
 Supports two modes:
 - Mock: Uses SHA-256 hash comparison for development/testing.
-- Production: Integrates with ZoKrates or external proving service.
+- Production: Unimplemented placeholder; verification raises ZKVerificationError.
 """
 
 import hashlib
-import orjson
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
 
 from hierachain.config.settings import settings
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.serialization import dumps_canonical_json
 
 logger = get_security_logger()
 
@@ -53,12 +53,11 @@ class ZKPublicInputs:
     
     def to_bytes(self) -> bytes:
         """Serialize to bytes for hashing."""
-        return orjson.dumps(self.to_dict(), option=orjson.OPT_SORT_KEYS)
+        return dumps_canonical_json(self.to_dict())
 
 
 class ZKVerificationError(Exception):
     """Exception raised when ZK proof verification fails."""
-    pass
 
 
 def _verify_mock(proof: bytes, public_inputs: ZKPublicInputs) -> bool:
@@ -147,9 +146,8 @@ class ZKVerifier:
     Zero Knowledge Proof Verifier for MainChain.
     
     Responsibilities:
-    - Verify ZK proofs from SubChains.
-    - Reject invalid state transitions (Fake Proofs).
-    - Support both Mock and Production modes.
+    - Compare mock proof commitments with their public inputs for testing.
+    - Report unsupported production verification as an error.
     
     Usage:
         verifier = ZKVerifier(mode="mock")
@@ -177,7 +175,8 @@ class ZKVerifier:
             if getattr(settings, 'ENABLE_ZK_PROOFS', False):
                 logger.critical(
                     "ZK mode is 'mock' but ENABLE_ZK_PROOFS=True! "
-                    "Mock proofs are forgeable — set ZK_MODE=production."
+                    "Mock proofs are forgeable; production ZK verification "
+                    "is not implemented."
                 )
 
         # Load verification key for production mode

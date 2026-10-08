@@ -36,6 +36,7 @@ The **SDK** module provides a Python Software Development Kit that enables exter
 
     * **Lockdown Awareness**: Automatically detects and handles errors when the Node is in lockdown mode (`X-Lockdown-Mode`).
     * **Connection Pooling**: Optimizes HTTP connection reuse to reduce latency.
+    * **Health Check**: Checks the API's `/api/ledger/health` route.
 
 *   :material-magnify-expand:{ .lg .middle } __Advanced Queries__
 
@@ -43,6 +44,8 @@ The **SDK** module provides a Python Software Development Kit that enables exter
 
     * **Entity Tracing**: Trace entity lifecycle across Sub-Chains.
     * **CID Resolution**: Automatically decrypts data from IPFS when querying blocks.
+
+Entity IDs are percent-encoded as one URL path segment for trace requests. When `api_key` is configured, both clients reject redirects for read requests; a 3xx response is returned as `HieraChainAPIError` so `X-API-Key` is never forwarded to a redirected origin.
 
 </div>
 
@@ -116,7 +119,7 @@ The SDK defines specific exception classes for applications to handle with disti
 | :--- | :--- | :--- |
 | `CircuitOpenError` | System is continuously failing, SDK paused sending requests. | Wait some time before retrying. |
 | `LockdownError` | Target node is in security lockdown mode. | Check administrator notifications. |
-| `ServiceUnavailableError` | Server overloaded (503). | SDK will automatically retry with backoff. |
+| `ServiceUnavailableError` | Server overloaded (503). | GET may retry with backoff; POST is sent once. |
 | `HieraChainAPIError` | Logic error from the API or invalid data. | Review payload and access permissions. |
 
 ---

@@ -8,7 +8,7 @@ icon: material/console
 
 ## Overview
 
-The **CLI** module provides a powerful command-line tool named `hrc`, enabling operators and developers to interact quickly with the HieraChain system without using the web interface or making manual API calls.
+The **CLI** module provides the `hrc` command for managing HieraChain from a terminal.
 
 The tool is built on the **Click** library, supporting logical command grouping, tab-completion, and strict parameter handling.
 
@@ -34,9 +34,10 @@ Used to initialize and monitor the hierarchical structure of chains.
 
     *   *Arguments*: `[supply_chain|healthcare|finance|manufacturing]`
     *   *Options*: `--name` (Required), `--parent` (Default: `main`).
+    *   The current hierarchy manager attaches sub-chains to `main`; a named nested parent is rejected explicitly.
 
 *   **`hrc chain list`**: List all existing chains and their block counts.
-*   **`hrc chain submit-proof`**: Submit cryptographic proof from Sub-Chain to Main Chain for cross-chain validation.
+*   **`hrc chain submit-proof`**: Currently exits with a nonzero status. Use the authenticated REST proof endpoint backed by durable SQL storage.
 
 ### `event` Commands (Event Management)
 
@@ -55,9 +56,9 @@ Used to record and query business activities.
 
 Used to generate and verify Ed25519 key pairs for Validators.
 
-*   **`hrc key generate`**: Generate a new key pair.
+*   **`hrc key generate`**: Generate a new key pair in a new file with mode `0600` on POSIX systems. An existing output file is never overwritten; the private key is not printed.
 
-    *   *Options*: `--output` (Default: `validator_key.json`), `--format` (json/hex).
+    *   *Options*: `--output` (Default: `validator_key.json`), `--format` (`json` or `hex`). The hex file contains the private key on the first line and the public key on the second line.
 
 *   **`hrc key show`**: Display key information from a file (masks the secret key).
 *   **`hrc key verify`**: Verify the validity of a key pair (public key matches secret key).
@@ -68,7 +69,7 @@ Used to operate API nodes.
 
 *   **`hrc node start`**: Start the FastAPI server.
 
-    *   *Options*: `--host`, `--port`, `--reload` (For development).
+    *   *Options*: `--host`, `--port`, `--reload` (For development). The global `--config` option selects the node configuration loaded before startup.
 
 *   **`hrc node init`**: Initialize data directory and default configuration for a new node.
 
@@ -76,10 +77,12 @@ Used to operate API nodes.
 
 Tools for auditors to check ledger integrity.
 
-*   **`hrc verify chain`**: Verify the link structure between blocks (hash chaining).
-*   **`hrc verify signatures`**: Verify all digital signatures of blocks and events in the database.
+*   **`hrc verify chain`**: Verify block hashes, Merkle roots, chain links, and required block signatures against configured trusted keys. Missing blocks, an empty database, unavailable trusted keys, or invalid data return a nonzero exit status.
+*   **`hrc verify signatures`**: Verify required block signatures and any signed events. Unsigned events are counted as unverified; an event with incomplete signing data or an invalid signature returns a nonzero exit status. An empty database also returns a nonzero exit status.
 
-    *   *Options*: `--limit` (Check only the N most recent blocks), `--db` (Database path).
+Both commands accept `--db` (SQLite path/URL or PostgreSQL URL; otherwise the configured database is used). `verify signatures` also accepts `--limit` to check only the N most recent blocks in each chain. Signed events need a public key in `details.public_key` or `details.sender_public_key` for verification.
+
+These commands inspect stored blocks. Chain creation and event commands use the durable `HierarchyManager` registry and restore registered sub-chains from the configured SQLite or PostgreSQL store on each invocation. Event ordering uses each sub-chain's durable ordering journal.
 
 ---
 
@@ -92,17 +95,20 @@ Tools for auditors to check ledger integrity.
 hrc node init --data-dir ./my_data
 
 # Create a component supply chain
-hrc chain create supply_chain --name logistics_01 --parent main
+hrc --config ./my_data/config.yaml chain create supply_chain --name logistics_01 --parent main
 ```
 
 ### 2. Record a Production Process
 
 ```bash
 # Start production of entity ITEM-99
-hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
+hrc --config ./my_data/config.yaml event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
 
-# Complete and submit proof to Main Chain
-hrc chain submit-proof logistics_01
+# Start the API with the same node configuration
+hrc --config ./my_data/config.yaml node start
+
+# Submit proofs through the authenticated REST API backed by durable SQL storage
+curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 ```
 
 ### 3. Verify Data Integrity
@@ -116,11 +122,15 @@ hrc verify signatures --limit 100
 
 ## Configuration & Environment Variables
 
-CLI reads configuration from the `chains.json` file by default, or from a file specified via a global option:
+CLI reads `data/config.yaml` by default, or from a file specified before the command with the global option:
 
 ```bash
-hrc --config custom_config.json chain list
+hrc --config ./my_data/config.yaml chain list
 ```
+
+`hrc node init` writes YAML containing `database_url` and `node_id`. The CLI also accepts a JSON object with those fields. It applies the values to chain commands and API startup. Explicit `DATABASE_URL`, `HRC_DATABASE_URL`, `HRC_NODE_ID`, or `NODE_ID` environment values take precedence. Configuration files may contain only `database_url` and `node_id`.
+
+Sub-chain ordering journals are stored under `data/<chain-name>` relative to the current working directory. Keep that directory persistent and run the CLI from a stable working directory; a custom `--data-dir` currently relocates the hierarchy database and configuration, not those journals.
 
 ---
 

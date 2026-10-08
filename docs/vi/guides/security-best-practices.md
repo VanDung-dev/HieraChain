@@ -18,6 +18,12 @@ icon: material/shield-star
 * Bật HSTS/CORS/Rate limit phù hợp với môi trường và front‑end hợp lệ.
 * Bật guard tài nguyên để giảm tải khi hệ thống quá tải.
 
+## Lưu trạng thái khóa xác thực
+
+* Dùng backend brute-force SQLite hoặc Redis khi xác thực API chạy trên nhiều worker. Cả hai backend đều đếm lần thất bại nguyên tử giữa các worker.
+* Backend memory và file giữ bộ đếm lần thử trong một tiến trình; chỉ chạy một worker với các backend này. Các instance dùng file sẽ tải lại trạng thái khóa để nhận biết lệnh khóa do instance khác trong cùng triển khai ghi ở lần kiểm tra tiếp theo.
+* Lỗi backend dùng chung sẽ dừng yêu cầu xác thực. Hãy khôi phục backend đã cấu hình trước khi tiếp tục phục vụ yêu cầu cần xác thực.
+
 ## Thành phần liên quan
 
 * Identity/MSP/Key: `hierachain/security/{identity.py, msp.py, key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}`

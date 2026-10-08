@@ -7,17 +7,17 @@ This module implements the Block class following the Ledger guidelines:
 - Events are domain-specific operations with metadata
 """
 
-import time
 import hashlib
 import logging
+import time
 from typing import Any
+
 import pyarrow as pa
 import pyarrow.compute as pc
-import orjson
 
+from hierachain.core.merkle_tree import MerkleTree, serialize_event_payload
 from hierachain.core.utils import generate_hash
-from hierachain.core.merkle_tree import MerkleTree
-
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +32,17 @@ class Block:
     - Hashing uses strict JSON canonicalization.
     """
     __slots__ = (
-        'index', 'timestamp', 'previous_hash', 'nonce',
-        'merkle_root', 'creator_id', 'signature', '_events', 'hash',
-        '_cached_events',
+        '_events',
+        'creator_id',
+        'hash',
+        'index',
+        'merkle_root',
+        'nonce',
+        'previous_hash',
+        'signature',
+        'timestamp',
     )
     _events: pa.Table
-    _cached_events: list[dict[str, Any]] | None
 
     def __init__(
         self,
@@ -51,7 +56,7 @@ class Block:
         signature: str | None = None
     ):
         self.index = index
-        self.timestamp = timestamp or time.time()
+        self.timestamp = time.time() if timestamp is None else timestamp
         self.previous_hash = previous_hash
         self.nonce = nonce
         self.creator_id = creator_id
@@ -60,10 +65,8 @@ class Block:
         # Handle events based on input type
         if isinstance(events, pa.Table):
             self._events = events
-            self._cached_events = None
             self.merkle_root = merkle_root if merkle_root is not None else calculate_merkle_from_arrow(self._events)
         else:
-            self._cached_events = events
             if merkle_root is not None:
                 self.merkle_root = merkle_root
                 self._events = convert_events_to_arrow(events)
@@ -107,11 +110,8 @@ class Block:
         return table_to_list_of_dicts(filtered)
 
     def to_event_list(self) -> list[dict[str, Any]]:
-        """Convert internal Arrow events to a list of dictionaries."""
-        cached = self._cached_events
-        if cached is None:
-            cached = self._cached_events = table_to_list_of_dicts(self.events)
-        return cached
+        """Return an independent event snapshot of the verified Arrow data."""
+        return table_to_list_of_dicts(self.events)
 
     def validate_structure(self) -> bool:
         """
@@ -208,31 +208,6 @@ def _process_event_details(details: Any) -> list[tuple[str, str]]:
     return []
 
 
-def _should_exclude_from_payload(key: str, value: Any) -> bool:
-    """Check if a field should be excluded from the JSON payload."""
-    return isinstance(value, (bytes, bytearray)) or key == 'data'
-
-
-def _prepare_payload_value(key: str, value: Any) -> Any:
-    """Prepare a value for JSON serialization."""
-    if key == 'details' and isinstance(value, list):
-        try:
-            return dict(value)
-        except (TypeError, ValueError):
-            return value
-    return value
-
-
-def _serialize_event_payload(event: dict[str, Any]) -> bytes:
-    """Serialize the event payload to binary JSON, cleaning binary/data fields."""
-    payload = {
-        k: _prepare_payload_value(k, v)
-        for k, v in event.items()
-        if not _should_exclude_from_payload(k, v)
-    }
-    return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
-
-
 def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
     """Convert list of dicts to Arrow Table."""
     processed, _ = _prepare_events(events_list)
@@ -251,7 +226,7 @@ def _prepare_events(events_list: list[dict[str, Any]]) -> tuple[list[dict[str, A
     for e in events_list:
         ev = e.copy()
         ev['details'] = _process_event_details(ev.get('details'))
-        data = _serialize_event_payload(e)
+        data = serialize_event_payload(e)
         ev['data'] = data
         processed.append(ev)
         data_list.append(data)
@@ -311,7 +286,7 @@ def _recover_from_data_column(row: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(data, (str, bytes, bytearray)):
         return None
     try:
-        return orjson.loads(data)
+        return loads_json(data)
     except (ValueError, TypeError) as e:
         logger.debug("JSON decode fallback: %s", e)
         return None
@@ -345,7 +320,7 @@ def table_to_list_of_dicts(table: pa.Table) -> list[dict[str, Any]]:
     Uses 'data' field for full payload recovery when available.
     """
     if 'data' in table.column_names:
-        return [orjson.loads(d.as_py()) for d in table.column('data') if d is not None]
+        return [loads_json(d.as_py()) for d in table.column('data') if d is not None]
 
     has_data_col = 'data' in table.column_names
     return [_process_arrow_row(row, has_data_col) for row in table.to_pylist()]

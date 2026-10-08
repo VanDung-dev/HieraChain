@@ -7,17 +7,29 @@ Supports psycopg v3 ConnectionPool / psycopg2 / SQLAlchemy connection pooling wi
 
 from __future__ import annotations
 
+import json
 import time
-from typing import Any
 from contextlib import contextmanager
+from typing import Any
 
-import orjson
 from hierachain.adapters.database.base.sql_adapter import SQLBase
-from hierachain.security.secure_logging import get_storage_logger
-from hierachain.core.blockchain import Blockchain
 from hierachain.adapters.database.postgres_schema import init_database_schema
+from hierachain.core.blockchain import Blockchain
+from hierachain.security.secure_logging import get_storage_logger
+from hierachain.serialization import dumps_json, loads_json
 
 logger = get_storage_logger()
+
+
+def _decode_jsonb(value: Any, default: Any = None) -> Any:
+    if value is None:
+        return default
+    if isinstance(value, (str, bytes, bytearray)):
+        try:
+            return loads_json(value)
+        except json.JSONDecodeError:
+            return value
+    return value
 
 
 class PostgresAdapter(SQLBase):
@@ -26,6 +38,10 @@ class PostgresAdapter(SQLBase):
     Stores and retrieves blockchain data using high-performance connection pooling
     and native PostgreSQL dialects.
     """
+    _block_range_placeholder = "%s"
+    _ledger_placeholder = "%s"
+    _ledger_registry_lock_suffix = " FOR SHARE"
+    _ledger_begin = ""
 
     def __init__(self, database_url: str = "postgresql://hiera:hiera@localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
         self.database_url = database_url
@@ -38,23 +54,21 @@ class PostgresAdapter(SQLBase):
     def _init_pool(self) -> None:
         """Initialize connection pool depending on available drivers."""
         try:
-            import psycopg
-            from psycopg_pool import ConnectionPool
             from psycopg.rows import dict_row
+            from psycopg_pool import ConnectionPool
 
             self._pool = ConnectionPool(
                 conninfo=self.database_url,
                 min_size=self.pool_min,
                 max_size=self.pool_max,
-                kwargs={"row_factory": dict_row},
+                kwargs={"row_factory": dict_row, "connect_timeout": 3},
                 open=True,
             )
             logger.info("Initialized psycopg3 connection pool for PostgreSQL")
         except ImportError:
             try:
-                import psycopg2
-                from psycopg2.pool import ThreadedConnectionPool
                 from psycopg2.extras import RealDictCursor
+                from psycopg2.pool import ThreadedConnectionPool
 
                 self._pool = ThreadedConnectionPool(
                     minconn=self.pool_min,
@@ -97,7 +111,8 @@ class PostgresAdapter(SQLBase):
             with self._get_connection() as conn:
                 init_database_schema(conn.cursor())
                 conn.commit()
-        except Exception as e:
+        # Optional PostgreSQL drivers expose different backend exception types.
+        except Exception as e:  # noqa: BLE001
             logger.warning("PostgreSQL schema initialization deferred or failed: %s", e)
 
     def _execute_store_chain(self, conn: Any, chain: Blockchain) -> bool:
@@ -142,34 +157,21 @@ class PostgresAdapter(SQLBase):
     def _execute_query_events_filter(
         self,
         cursor: Any,
+        filter_column: str,
+        filter_value: str,
         chain_name: str | None,
-        entity_id: str | None,
-        event_type: str | None,
-        start_time: float | None,
-        end_time: float | None,
-        limit: int
     ) -> list[dict[str, Any]]:
-        query = "SELECT * FROM events WHERE 1=1"
-        params: list[Any] = []
-
+        if filter_column not in self._FILTER_COLUMNS:
+            return []
+        query = (
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
+            f"FROM events WHERE {self._FILTER_COLUMNS[filter_column]} = %s"
+        )
+        params: list[Any] = [filter_value]
         if chain_name:
             query += " AND chain_name = %s"
             params.append(chain_name)
-        if entity_id:
-            query += " AND entity_id = %s"
-            params.append(entity_id)
-        if event_type:
-            query += " AND event_type = %s"
-            params.append(event_type)
-        if start_time is not None:
-            query += " AND timestamp >= %s"
-            params.append(start_time)
-        if end_time is not None:
-            query += " AND timestamp <= %s"
-            params.append(end_time)
-
-        query += " ORDER BY timestamp DESC LIMIT %s"
-        params.append(limit)
+        query += " ORDER BY timestamp"
 
         cursor.execute(query, tuple(params))
         return [self._create_event_from_row(row) for row in cursor.fetchall()]
@@ -186,7 +188,7 @@ class PostgresAdapter(SQLBase):
         created_at: float
     ) -> bool:
         cursor = conn.cursor()
-        meta_json = orjson.dumps(metadata).decode() if metadata else None
+        meta_json = dumps_json(metadata) if metadata else None
         cursor.execute(
             """
             INSERT INTO proofs
@@ -248,20 +250,48 @@ class PostgresAdapter(SQLBase):
 
     def _execute_save_block(self, conn: Any, block_data: dict[str, Any]) -> bool:
         cursor = conn.cursor()
-        meta_json = (
-            orjson.dumps(block_data.get("metadata_json")).decode()
-            if block_data.get("metadata_json")
-            else None
+        chain_name = block_data.get("chain_name")
+        if not chain_name:
+            raise ValueError("chain_name is required when saving a PostgreSQL block")
+
+        # Keep block inserts self-contained, matching SQLiteAdapter and the FK.
+        cursor.execute(
+            """
+            INSERT INTO chains (name, chain_type, created_at, updated_at)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (name) DO NOTHING
+            """,
+            (chain_name, "sub", time.time(), time.time()),
+        )
+        metadata = block_data.get("metadata_json") or block_data.get("metadata")
+        if not metadata and block_data.get("merkle_root"):
+            metadata = {"merkle_root": block_data["merkle_root"]}
+        meta_json = dumps_json(metadata) if metadata else None
+        cursor.execute(
+            """
+            DELETE FROM events
+            WHERE chain_name = %s AND block_hash IN (
+                SELECT hash FROM blocks WHERE chain_name = %s AND "index" = %s
+            )
+            """,
+            (chain_name, chain_name, block_data["index"]),
         )
         cursor.execute(
             """
             INSERT INTO blocks
             (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (hash) DO NOTHING
+            ON CONFLICT (chain_name, "index") DO UPDATE SET
+                hash = EXCLUDED.hash,
+                previous_hash = EXCLUDED.previous_hash,
+                timestamp = EXCLUDED.timestamp,
+                nonce = EXCLUDED.nonce,
+                events_count = EXCLUDED.events_count,
+                metadata_json = EXCLUDED.metadata_json,
+                created_at = EXCLUDED.created_at
             """,
             (
-                block_data["chain_name"],
+                chain_name,
                 block_data["index"],
                 block_data["hash"],
                 block_data["previous_hash"],
@@ -273,48 +303,64 @@ class PostgresAdapter(SQLBase):
             ),
         )
 
+        event_rows = []
         for event in block_data.get("events", []):
-            data_json = (
-                orjson.dumps(event.get("data", {})).decode()
-                if isinstance(event.get("data"), (dict, list))
-                else event.get("data")
-            )
-            cursor.execute(
-                """
-                INSERT INTO events
-                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
+            event_rows.append(
                 (
-                    block_data["chain_name"],
+                    chain_name,
                     block_data["hash"],
                     event.get("event_id") or event.get("id"),
                     event.get("entity_id"),
                     event.get("event") or event.get("event_type", "unknown"),
                     event.get("timestamp", time.time()),
-                    data_json,
-                    event.get("sender_id"),
+                    dumps_json(event),
+                    event.get("submitted_by") or event.get("sender_id"),
                     time.time(),
-                ),
+                )
+            )
+
+        if event_rows:
+            cursor.executemany(
+                """
+                INSERT INTO events
+                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                event_rows,
             )
         conn.commit()
         return True
 
-    @staticmethod
-    def _execute_get_block_by_index(cursor: Any, chain_name: str, index: int) -> Any | None:
+    def _execute_get_block_by_index(
+        self, cursor: Any, index: int, chain_name: str | None,
+    ) -> dict[str, Any] | None:
         cursor.execute(
-            "SELECT * FROM blocks WHERE chain_name = %s AND \"index\" = %s",
-            (chain_name, index),
+            "SELECT * FROM blocks WHERE \"index\" = %s AND chain_name = %s",
+            (index, chain_name),
         )
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
 
-    @staticmethod
-    def _execute_get_latest_block(cursor: Any, chain_name: str) -> Any | None:
-        cursor.execute(
-            "SELECT * FROM blocks WHERE chain_name = %s ORDER BY \"index\" DESC LIMIT 1",
-            (chain_name,),
-        )
-        return cursor.fetchone()
+    def _execute_get_latest_block(
+        self, cursor: Any, chain_name: str | None,
+    ) -> dict[str, Any] | None:
+        if chain_name:
+            cursor.execute(
+                "SELECT * FROM blocks WHERE chain_name = %s ORDER BY \"index\" DESC LIMIT 1",
+                (chain_name,),
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM blocks ORDER BY \"index\" DESC LIMIT 1"
+            )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
 
     @staticmethod
     def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:
@@ -327,7 +373,7 @@ class PostgresAdapter(SQLBase):
             "entity_id": row["entity_id"],
             "event": row["event_type"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"] or "{}"),
+            "data": _decode_jsonb(row["data"], {}),
         }
 
     @staticmethod
@@ -346,6 +392,34 @@ class PostgresAdapter(SQLBase):
         )
         conn.commit()
         return True
+
+    @staticmethod
+    def _execute_load_hierarchy_registry(cursor: Any) -> None:
+        cursor.execute("SELECT value FROM chain_state WHERE key = %s", ("hierarchy_registry",))
+
+    @staticmethod
+    def _execute_save_hierarchy_registry(
+        conn: Any, encoded: str, expected_revision: str | None,
+    ) -> bool:
+        cursor = conn.cursor()
+        if expected_revision is None:
+            cursor.execute(
+                """
+                INSERT INTO chain_state (key, value, last_block_hash, updated_at)
+                VALUES ('hierarchy_registry', %s::jsonb, '', %s)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+                WHERE chain_state.value->>'_revision' IS NULL
+                """,
+                (encoded, time.time()),
+            )
+        else:
+            cursor.execute(
+                "UPDATE chain_state SET value=%s::jsonb, updated_at=%s "
+                "WHERE key='hierarchy_registry' AND value->>'_revision' = %s",
+                (encoded, time.time(), expected_revision),
+            )
+        saved = cursor.rowcount == 1
+        return saved
 
     @staticmethod
     def _execute_delete_chain(conn: Any, chain_name: str) -> bool:

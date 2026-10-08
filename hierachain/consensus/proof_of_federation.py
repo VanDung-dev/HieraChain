@@ -12,15 +12,13 @@ Enhanced with ZK Proof verification for trustless block validation.
 import time
 from typing import Any
 
-from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder
+from nacl.signing import SigningKey
 
-from hierachain.consensus.base_consensus import (
-    BaseConsensus, _verify_block_zk_proof
-)
+from hierachain.consensus.base_consensus import BaseConsensus, _verify_block_zk_proof
 from hierachain.core.block import Block
-from hierachain.security.security_utils import verify_signature
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.security_utils import verify_signature
 
 logger = get_security_logger()
 
@@ -37,7 +35,7 @@ class ProofOfFederation(BaseConsensus):
     - Fault Tolerance: If a leader misses their turn, the protocol can skip to the next
     (implementation handled via timeout/view-change logic in higher layers).
     """
-    __slots__ = ('validators', 'validator_metadata', '_signing_key')
+    __slots__ = ('_signing_key', 'validator_metadata', 'validators')
 
     def __init__(self, name: str = "ProofOfFederation",
                  signing_key_hex: str | None = None):
@@ -65,7 +63,7 @@ class ProofOfFederation(BaseConsensus):
     
         # Configuration defaults (can be updated via settings)
         self.config = {
-            "block_interval": 5.0,  # Faster than PoA (typically 10s)
+            "block_interval": 5.0,  # Federation timing is independent of PoA settings.
             "min_validators": 3,    # Minimum size for a valid federation
             "enforce_rotation": True
         }
@@ -268,7 +266,8 @@ class ProofOfFederation(BaseConsensus):
             previous_hash=block.previous_hash,
             timestamp=block.timestamp,
             events=events,
-            nonce=block.nonce
+            nonce=block.nonce,
+            creator_id=block.creator_id,
         )
 
     def verify_quorum_signatures(
@@ -311,7 +310,8 @@ def _extract_signer_id(block: Block) -> str | None:
     # Check end of block first for performance
     for event in reversed(events):
         if event.get("event") == "consensus_finalization":
-            return event.get("details", {}).get("leader_id")
+            details = event.get("details")
+            return details.get("leader_id") if isinstance(details, dict) else None
     return None
 
 
@@ -384,26 +384,24 @@ def _verify_block_quorum(
         signer_id: Pre-extracted signer ID (avoids scanning block events twice).
 
     Returns:
-        True if the signature is valid or no signature is present,
-        False if the signature is invalid.
+        True only if the trusted signer signed this block's original payload.
     """
     if signer_id is None:
         signer_id = _extract_signer_id(block)
     if not signer_id:
-        logger.warning("Block %d has no signer ID — quorum verification skipped", block.index)
-        return True
+        logger.warning("Block %d has no signer ID — rejecting", block.index)
+        return False
 
     events = block.to_event_list()
-    consensus_event = None
-    for event in reversed(events):
-        if event.get("event") == "consensus_finalization":
-            consensus_event = event
-            break
-    if consensus_event is None:
-        logger.warning("Block %d has no consensus_finalization event", block.index)
-        return True
+    if (not events or events[-1].get("event") != "consensus_finalization"
+            or any(event.get("event") == "consensus_finalization" for event in events[:-1])):
+        logger.warning("Block %d has invalid consensus_finalization position", block.index)
+        return False
+    consensus_event = events[-1]
 
-    details = consensus_event.get("details", {})
+    details = consensus_event.get("details")
+    if not isinstance(details, dict):
+        return False
     signature = details.get("signature", "")
 
     if not isinstance(signature, str) or not signature:
@@ -418,12 +416,21 @@ def _verify_block_quorum(
         )
         return False
 
-    # Signature was created against the unfinalized block hash (before
-    # consensus_finalization was appended). Use block_hash from the
-    # consensus_finalization details to avoid timestamp/index drift.
+    # Rebuild the payload that was signed before finalization was appended.
     block_hash = details.get("block_hash")
     if not isinstance(block_hash, str) or not block_hash:
         logger.warning("Block %d consensus_finalization has no block_hash", block.index)
+        return False
+    unsigned_block = Block(
+        index=block.index,
+        events=events[:-1],
+        timestamp=block.timestamp,
+        previous_hash=block.previous_hash,
+        nonce=block.nonce,
+        creator_id=block.creator_id,
+    )
+    if unsigned_block.hash != block_hash:
+        logger.warning("Block %d signed hash does not match its payload", block.index)
         return False
     message = block_hash.encode("utf-8")
     is_valid = verify_signature(public_key, message, signature)

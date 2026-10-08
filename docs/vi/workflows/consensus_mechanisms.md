@@ -19,7 +19,7 @@ HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable)
 | **Giá trị cấu hình** | `proof_of_authority` | `proof_of_federation` | `byzantine_fault_tolerant` |
 | **Tầng áp dụng** | SubChain (Nội bộ) / MainChain đơn lẻ | MainChain Liên minh (Đa tổ chức) | SubChain / MainChain BFT |
 | **Thành phần hoàn thiện** | Bất kỳ nút ủy quyền nào được đăng ký | Chỉ Trưởng nhóm xoay vòng: `Validators[index % n]` | 2f+1 trên tổng số n trình xác thực qua PBFT |
-| **Loại chữ ký** | Ed25519 (bất đối xứng) | Chữ ký liên minh SHA-256 | Phiếu bầu PBFT tổng hợp |
+| **Loại chữ ký** | Ed25519 (bất đối xứng) | Ed25519 trên hash khối trước khi hoàn thiện | Phiếu bầu PBFT tổng hợp |
 | **Xoay vòng Trưởng nhóm** | Tùy chọn vòng tròn (round-robin) | Bắt buộc, xác định bởi chỉ số khối | Dựa trên View (Khung nhìn), thay đổi khi gặp lỗi |
 | **Kiểm tra Bằng chứng ZK** | Tùy chọn | Bắt buộc trong `validate_block()` | Không áp dụng |
 | **Trình xác thực tối thiểu** | Chỉ cần 1 nút ủy quyền | ≥ 3 (cấu hình `min_validators`) | n ≥ 3f + 1 |
@@ -84,8 +84,8 @@ sequenceDiagram
     Note right of POF: Quét tất cả các sự kiện để tìm cụm từ bị cấm
     POF->>POF: _verify_block_zk_proof(block, previous_block)
     Note right of POF: Bắt buộc — làm hỏng khối nếu ZK không hợp lệ
-    POF->>POF: _create_federation_signature(block, leader_id)<br/>SHA-256(hash:leader_id:block.index:time)
-    POF->>POF: Thêm sự kiện consensus_finalization<br/>{ leader_id, validators_count, round, signature }
+    POF->>POF: _create_federation_signature(block, signing_key)<br/>Ed25519 sign(block.hash)
+    POF->>POF: Thêm sự kiện consensus_finalization<br/>{ leader_id, block_hash, validators_count, round, signature }
     POF-->>OS: Khối đã Hoàn thiện ✅
 ```
 
@@ -98,6 +98,10 @@ sequenceDiagram
 | Xác thực ZK | `_verify_block_zk_proof()` | `consensus/proof_of_federation.py` |
 | Chữ ký liên minh | `_create_federation_signature()` | `consensus/proof_of_federation.py` |
 | Hoàn thiện khối | `ProofOfFederation.finalize_block()` | `consensus/proof_of_federation.py` |
+
+`validate_block()` dựng lại khối trước sự kiện hoàn thiện và đối chiếu hash với `block_hash` đã ký. Hàm từ chối khi thiếu khóa tin cậy của validator, payload bị sửa hoặc sự kiện hoàn thiện không nằm cuối.
+
+Mọi block, kể cả genesis, phải có `signature` Ed25519 hợp lệ từ creator nằm trong danh sách khóa tin cậy. `HRC_VALIDATOR_IDENTITY` cung cấp khóa ký cố định; `HRC_BLOCK_TRUSTED_KEYS_FILE` cung cấp map `creator_id` tới public key được operator phê duyệt. `Blockchain.add_block(block, public_key=...)` chỉ chấp nhận PEM key tường minh khi khóa đó khớp map. `Blockchain.is_chain_valid()` và `Blockchain.from_dict()` xác minh toàn bộ chain; thiếu khóa, block không ký và chữ ký sai đều không hợp lệ. CLI dùng cùng file khóa tin cậy và kiểm tra từng chain có tên trong database SQLite.
 
 ---
 

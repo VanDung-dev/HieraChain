@@ -4,8 +4,8 @@ BFT Message Dispatcher component.
 
 from typing import Any
 
+from hierachain.consensus.bft.helpers import broadcast, send_via_zmq
 from hierachain.consensus.bft.types import BFTMessage
-from hierachain.consensus.bft.helpers import send_via_zmq, broadcast
 
 
 class BFTMessageDispatcher:

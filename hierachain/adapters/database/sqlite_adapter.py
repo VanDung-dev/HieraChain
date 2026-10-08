@@ -6,11 +6,12 @@ Uses sqlite3 module for connection management and SQL execution.
 """
 
 import sqlite3
+import uuid
 from contextlib import contextmanager
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
-from hierachain.security.secure_logging import get_storage_logger
 from hierachain.adapters.database.sqlite_schema import init_database_schema
+from hierachain.security.secure_logging import get_storage_logger
 
 logger = get_storage_logger()
 
@@ -28,17 +29,29 @@ class SQLiteAdapter(SQLBase):
                 f"Security: Invalid database path '{self.database_path}'."
                 f"Path traversal detected."
             )
-        self._init_schema()
+        self._memory_uri: str | None = None
+        self._keeper_connection: sqlite3.Connection | None = None
+        if database_path == ":memory:":
+            self._memory_uri = f"file:hierachain-{uuid.uuid4().hex}?mode=memory&cache=shared"
+            self._keeper_connection = sqlite3.connect(self._memory_uri, uri=True)
+        try:
+            self._init_schema()
+        except Exception:
+            self.close()
+            raise
 
     @contextmanager
     def _get_connection(self):
         """Get a SQLite connection with dict-like row access and optimized settings."""
-        conn = sqlite3.connect(self.database_path)
+        if self._memory_uri is None:
+            conn = sqlite3.connect(self.database_path)
+        else:
+            conn = sqlite3.connect(self._memory_uri, uri=True)
         conn.row_factory = sqlite3.Row
         try:
-            # Enable high-performance PRAGMAs
+            # FULL sync is required before acknowledging durable blocks and proofs.
             conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA synchronous=NORMAL;")
+            conn.execute("PRAGMA synchronous=FULL;")
             conn.execute("PRAGMA cache_size=-64000;")  # 64MB cache size
             yield conn
         except Exception as e:
@@ -54,7 +67,10 @@ class SQLiteAdapter(SQLBase):
             conn.commit()
 
     def close(self) -> None:
-        """No-op: SQLite uses per-request connections, nothing to close."""
+        """Close the keeper connection that anchors a shared in-memory database."""
+        if self._keeper_connection is not None:
+            self._keeper_connection.close()
+            self._keeper_connection = None
 
     def __str__(self) -> str:
         return f"SQLiteAdapter(database_path={self.database_path})"

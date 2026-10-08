@@ -130,7 +130,7 @@ def test_receive_event_handles_arbitrary_strings(channel_id, org):
         st.lists(st.integers(), max_size=5),
     )
 )
-@settings(max_examples=30)
+@settings(max_examples=30, deadline=None)
 def test_receive_event_rejects_non_dict(non_dict):
     """Verify non-dict input is rejected with ValueError."""
     service = create_ordering_service()

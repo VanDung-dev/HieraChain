@@ -2,15 +2,15 @@
 Ordering storage handler for the HieraChain ordering service.
 """
 
-import time
 import hashlib
 import logging
 import struct
-from typing import Any
+import time
 from queue import Queue
-import orjson
+from typing import Any
 
 from hierachain.consensus.ordering.types import PendingEvent
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def make_serializable(obj: Any) -> Any:
     return str(obj)
 
 
-def _orjson_default(obj: Any) -> Any:
+def _json_default(obj: Any) -> Any:
     if isinstance(obj, bytes):
         return obj.hex()
     return str(obj)
@@ -38,7 +38,7 @@ def _orjson_default(obj: Any) -> Any:
 
 def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     """Generate unique event ID"""
-    json_bytes = orjson.dumps(event_data, default=_orjson_default)
+    json_bytes = dumps_json(event_data, default=_json_default).encode("utf-8")
     h = hashlib.sha256()
     h.update(channel_id.encode('utf-8'))
     h.update(json_bytes)

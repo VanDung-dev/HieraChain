@@ -1,6 +1,6 @@
 ---
 title: "Risk Management Module"
-description: "Automated risk detection, scoring, and mitigation: Risk Analyzer, Mitigation Engine, and Immutable Audit Trail."
+description: "Audit logging and integrity reporting for operational events."
 icon: material/alert-circle
 ---
 
@@ -8,35 +8,13 @@ icon: material/alert-circle
 
 ## Overview
 
-The **Risk Management** module is HieraChain's security and operations control center. It not only monitors abnormal signs but also proactively proposes mitigation strategies and records immutable audit logs to ensure maximum transparency and compliance for the enterprise.
+The **Risk Management** package currently provides audit logging and integrity reporting for operational events.
 
 ---
 
-## Centralized Risk Governance Architecture
-
-The system operates through the close coordination of three core components:
+## Main Component
 
 <div class="grid cards" markdown>
-
-*   :material-magnify-scan:{ .lg .middle } __Risk Analyzer__
-
-    ---
-
-    __File__: `risk_analyzer.py`
-
-    * Multi-domain risk analysis: Consensus, Security, Performance, and Storage.
-    * Risk assessment based on **Severity** and **Likelihood**.
-    * Automatically proposes mitigation recommendations.
-
-*   :material-shield-airplane:{ .lg .middle } __Mitigation Manager__
-
-    ---
-
-    __File__: `mitigation_strategies.py`
-
-    * Creates mitigation plans based on detected risks.
-    * Executes automatic remediation actions (Scale-out, Renew Certs, Backup, etc.).
-    * Manages priority and dependencies between actions.
 
 *   :material-file-lock:{ .lg .middle } __Audit Logger__
 
@@ -44,87 +22,42 @@ The system operates through the close coordination of three core components:
 
     __File__: `audit_logger.py`
 
-    * Records the entire risk lifecycle in **JSONL** format.
-    * Ensures data integrity using **SHA-256** hashing.
+    * Stores audit events in the configured backend; Arrow Parquet is the default, and `FileAuditStorage` writes JSONL.
+    * Computes a **SHA-256** digest over every `AuditEvent` field.
     * Supports querying and creating reports for compliance auditing.
 
 </div>
 
 ---
 
-## Risk Lifecycle
-
-```mermaid
-graph TD
-    subgraph "Detection Phase"
-        A[Monitoring Signals] --> B[Risk Analyzer]
-        B --> C{Risk Detected?}
-    end
-
-    subgraph "Mitigation Phase"
-        C -- Yes --> D[Mitigation Manager]
-        D --> E[Create Plan]
-        E --> F[Execute Actions]
-    end
-
-    subgraph "Audit Phase"
-        B -- Log Detection --> G[(Immutable Audit Logs)]
-        F -- Log Results --> G
-        G --> H[Verification & Compliance]
-    end
-```
-
----
-
-## Risk Classification and Alert Thresholds
-
-HieraChain defines strict thresholds to trigger analysis:
-
-| Domain | Check Indicator | Risk Threshold |
-| :--- | :--- | :--- |
-| **Consensus** | BFT Node Count | `< 3f + 1` (Critical) |
-| **Security** | Certificate (MSP) Expiry | `< 30 days` (High) |
-| **Performance** | CPU/RAM Usage | `> 85%` (High) |
-| **Storage** | Last Backup Time | `> 24 hours` (High) |
-
----
-
-## Deployment Example
-
-### 1. Perform Comprehensive Risk Analysis
-```python
-from hierachain.risk_management import RiskAnalyzer
-
-analyzer = RiskAnalyzer()
-# Collect system data
-system_snapshot = get_system_snapshot() 
-risks = analyzer.perform_comprehensive_analysis(system_snapshot)
-
-if risks['security']:
-    print(f"Detected {len(risks['security'])} security risks!")
-```
-
-### 2. Activate Automatic Mitigation Plan
-```python
-from hierachain.risk_management.mitigation_strategies import MitigationManager
-
-mitigation_mgr = MitigationManager()
-# Create plan based on risk list
-plan = mitigation_mgr.create_mitigation_plan(risks['performance'])
-
-# Execute asynchronously to not affect main flow
-results = mitigation_mgr.execute_mitigation_plan(plan, async_execution=True)
-```
-
----
-
 ## Audit Logging and Integrity
 
-Every event in the module is stored with a unique Correlation ID and protected against tampering:
+Audit event integrity uses a separate trusted digest manifest:
 
-*   **Hashing**: Each audit record contains a SHA-256 hash of its content, enabling detection of log tampering.
-*   **Rotation**: Automatic log rotation (100MB) and compression of old data for storage optimization.
-*   **Retention**: Logs are stored by default for 90 days (configurable).
+*   Set `HRC_AUDIT_MANIFEST_WRITE_URL` to the PostgreSQL URL used to record digests. In production, `AuditLogger` refuses to start without this URL or an explicit `integrity_digest_writer(event_id, digest)` callback. To enable built-in read verification, set `HRC_AUDIT_MANIFEST_READ_URL` separately to a URL that can read the manifest; the writer URL is not reused as a reader credential.
+*   Keep the manifest database outside the archive's mutable host or volume, with separate access controls. Give the application role only `INSERT` on the table and a separate verifier role only `SELECT`; both need schema `USAGE`. A sidecar that can be edited alongside the archive does not provide tamper evidence.
+*   Create the two roles and the manifest table in that database before starting the logger:
+
+    ```sql
+    CREATE TABLE public.audit_event_digests (
+        event_id TEXT PRIMARY KEY,
+        digest TEXT NOT NULL CHECK (digest ~ '^[0-9a-f]{64}$'),
+        recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    REVOKE ALL ON public.audit_event_digests FROM PUBLIC;
+    GRANT USAGE ON SCHEMA public TO audit_manifest_writer, audit_manifest_reader;
+    GRANT INSERT ON public.audit_event_digests TO audit_manifest_writer;
+    GRANT SELECT ON public.audit_event_digests TO audit_manifest_reader;
+    ```
+
+*   `query_events()` and `generate_report()` return archive data without a trusted-manifest status. Do not treat those results as verified. Call `query_events_with_integrity(filter_criteria, limit)` for an explicit `AuditReadResult`: it returns `verified` only after checking the full archive against the manifest, returns `unverified` when no digest reader is configured, and returns `failed` with no events when the manifest cannot be read or any archive record is missing, extra, duplicated, or changed.
+*   The explicit API can use `HRC_AUDIT_MANIFEST_READ_URL` or an `integrity_digest_reader()` callback. A write-only URL is not used to read digests. For lower-level verification, pass `manifest.load_hashes()` and the complete archive event set to `verify_integrity(events, expected_hashes)`.
+*   `verify_integrity(events, expected_hashes)` returns `False` when the manifest is missing or when event IDs or digests differ. Pass the complete event set represented by the manifest; missing, extra, duplicate, or changed records fail verification.
+*   If archive storage or the digest writer fails, the exception reaches the caller and no success statistics or alerts are emitted. A failure after archive storage can leave an event without a manifest entry; verification rejects it.
+*   Arrow audit files rotate at 100 MB. `get_event_count()` uses Parquet row counts for an unfiltered count and scans only the selected filter columns in bounded batches otherwise. SQLite and Arrow apply the same event type, severity, source, user, and inclusive time-range filters.
+*   Arrow retention is explicit: `ArrowAuditStorage.cleanup_old_events(max_age_seconds)` removes a Parquet archive only when every event in it is older than the cutoff. It returns the number of deleted events. Mixed-age archives and legacy `.arrow`, `.log`, or `.jsonl` files remain; no automatic cleanup runs. Coordinate archive deletion with the independently stored digest manifest before using full-manifest integrity verification.
+*   `FileAuditStorage` writes daily JSONL files.
+*   Audit retrieval and counting fail with `RuntimeError` when a database, archive, or decoded record cannot be read. They do not convert a failed search into `[]`, `0`, or a partial result. Corrupt Parquet files are not retried as legacy Arrow frames; truncated legacy frames and malformed JSONL records also fail. A valid empty search still returns `[]` or `0`. Consumers must handle the error before presenting a report. A limited query validates only the records it reads, and an unfiltered Parquet count uses metadata; neither replaces complete archive integrity verification.
 
 ---
 
@@ -133,3 +66,7 @@ Every event in the module is stored with a unique Correlation ID and protected a
 *   [Performance Monitoring](./monitoring.md)
 *   [Security and Identity](./security.md)
 *   [System Error Mitigation](./error-mitigation.md)
+
+## CSV report export
+
+`AuditLogger.generate_report(..., output_format="csv")` uses CSV quoting for commas, quotes and line breaks in every cell. Text cells whose first non-whitespace character is `=`, `+`, `-` or `@` receive an apostrophe prefix to prevent spreadsheet formula interpretation. This export policy changes those CSV text cells; the stored events and JSON export retain the original values. CSV export does not imply trusted-manifest verification.

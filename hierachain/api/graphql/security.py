@@ -8,8 +8,8 @@ Provides security measures for GraphQL queries:
 - Rate limiting per IP
 """
 
-import time
 import re
+import time
 from collections import defaultdict
 from threading import Lock
 

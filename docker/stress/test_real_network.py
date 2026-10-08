@@ -5,14 +5,15 @@ These tests send actual HTTP requests to running HieraChain nodes.
 Requires Docker containers to be running with the API server.
 """
 
-import pytest
 import logging
 
+import pytest
+
 from docker.stress.real_stress_client import (
-    RealStressClient,
-    run_real_stress_test,
     REAL_REQUESTS,
+    RealStressClient,
     generate_event,
+    run_real_stress_test,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,13 +36,7 @@ class TestRealNetworkStress:
         # Try to connect to nodes
         health = client.check_all_nodes()
 
-        # At least one node should be reachable in Docker environment
-        # In non-Docker environment, this may fail which is expected
-        if any(health.values()):
-            print(f"\nNode health status: {health}")
-            assert True
-        else:
-            pytest.skip("No nodes reachable - run in Docker environment")
+        assert health and all(health.values()), f"Not all configured nodes are healthy: {health}"
 
     def test_wait_for_nodes(self):
         """Test waiting for nodes to become healthy."""
@@ -50,11 +45,7 @@ class TestRealNetworkStress:
         # Short timeout for test
         result = client.wait_for_nodes(timeout=10)
 
-        if result:
-            print("\nAll nodes are healthy!")
-            assert True
-        else:
-            pytest.skip("Nodes not available - run in Docker environment")
+        assert result, "Configured Docker nodes did not become healthy"
 
     @pytest.mark.stress
     def test_light_stress(self):
@@ -65,20 +56,18 @@ class TestRealNetworkStress:
             workers=2,
         )
 
-        # Skip if no test was run (no nodes available)
-        if results.total_requests == 0:
-            pytest.skip("No nodes available - run in Docker/K8s environment")
+        assert results.total_requests > 0
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        assert results.successful_requests > 0
 
-        print(f"\n=== Light Stress Test Results ===")
+        print("\n=== Light Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Failed: {results.failed_requests}")
         print(f"Avg Response Time: {results.avg_response_time*1000:.2f}ms")
 
-        # If nodes are reachable, we should have some successful requests
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            print(f"Success Rate: {success_rate*100:.1f}%")
+        success_rate = results.successful_requests / results.total_requests
+        print(f"Success Rate: {success_rate*100:.1f}%")
 
     @pytest.mark.stress
     def test_medium_stress(self):
@@ -89,18 +78,17 @@ class TestRealNetworkStress:
             workers=4,
         )
 
-        # Skip if no test was run (no nodes available)
-        if results.total_requests == 0:
-            pytest.skip("No nodes available - run in Docker/K8s environment")
+        assert results.total_requests > 0
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        assert results.successful_requests > 0
 
-        print(f"\n=== Medium Stress Test Results ===")
+        print("\n=== Medium Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Avg Response Time: {results.avg_response_time*1000:.2f}ms")
 
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            print(f"Success Rate: {success_rate*100:.1f}%")
+        success_rate = results.successful_requests / results.total_requests
+        print(f"Success Rate: {success_rate*100:.1f}%")
 
     @pytest.mark.stress
     def test_heavy_stress(self):
@@ -111,21 +99,19 @@ class TestRealNetworkStress:
             workers=8,
         )
 
-        # Skip if no test was run (no nodes available)
-        if results.total_requests == 0:
-            pytest.skip("No nodes available - run in Docker/K8s environment")
+        assert results.total_requests > 0
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        assert results.successful_requests > 0
 
-        print(f"\n=== Heavy Stress Test Results ===")
+        print("\n=== Heavy Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Failed: {results.failed_requests}")
         print(f"Avg Response Time: {results.avg_response_time*1000:.2f}ms")
 
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            print(f"Success Rate: {success_rate*100:.1f}%")
-
-            assert success_rate >= 0.05, f"Too many failures: {success_rate*100:.1f}%"
+        success_rate = results.successful_requests / results.total_requests
+        print(f"Success Rate: {success_rate*100:.1f}%")
+        assert success_rate >= 0.05, f"Too many failures: {success_rate*100:.1f}%"
 
 
 class TestEventSubmission:
@@ -133,7 +119,6 @@ class TestEventSubmission:
 
     def test_generate_event(self):
         """Test event generation."""
-        client = RealStressClient()
         event = generate_event()
 
         # Match EventRequest schema from hierachain.api.ledger.schemas
@@ -143,27 +128,27 @@ class TestEventSubmission:
         assert "data" in event["details"]
 
     @pytest.mark.stress
-    def test_submit_single_event(self):
+    def test_submit_single_event(self) -> None:
         """Test submitting a single event."""
         client = RealStressClient()
 
         # Check if nodes are available
-        if not client.wait_for_nodes(timeout=10):
-            pytest.skip("No nodes available")
+        assert client.wait_for_nodes(timeout=60), "Configured Docker nodes did not become healthy"
 
         # Find a healthy node
         healthy = [
             nid for nid, s in client.node_status.items()
             if s.is_healthy
         ]
-        if not healthy:
-            pytest.skip("No healthy nodes")
+        assert healthy, "No healthy Docker node to receive the event"
 
         node_id = healthy[0]
+        assert client.create_chain(node_id), f"Could not prepare the event test chain on {node_id}"
         event = generate_event()
 
         result = client.submit_event(node_id, event)
         print(f"\nEvent submitted to {node_id}: {result}")
+        assert result, f"Live event submission failed on {node_id}"
 
 
 if __name__ == "__main__":

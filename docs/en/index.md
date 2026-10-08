@@ -46,7 +46,7 @@ Important scope notes:
     * [Overview](workflows/overview.md) · [Consensus Mechanisms](workflows/consensus_mechanisms.md)
     * [Event Submission](workflows/event-submission.md) · [Proof Anchoring](workflows/proof-anchoring.md)
     * [Cross-Chain 2PC](workflows/cross-chain-2pc.md) · [BFT Consensus](workflows/bft-consensus.md)
-    * [Cluster Lockdown](workflows/cluster-lockdown.md) · [Error Recovery](workflows/error-recovery.md)
+    * [Error Recovery](workflows/error-recovery.md)
     * [Entity Tracing](workflows/entity-tracing.md) · [Chain Rehydration](workflows/chain-rehydration.md)
     * [Integrity Validation](workflows/integrity-validation.md) · [Policy Enforcement](workflows/policy-enforcement.md)
     * [WebSocket Streaming](workflows/websocket-streaming.md) · [IPFS Storage](workflows/ipfs-storage.md)
@@ -70,9 +70,9 @@ Important scope notes:
     ---
 
     * [Authorization & Access Control](security/authorization-access-control.md)
-    * [Lockdown & Logging](security/lockdown-logging.md)
+    * [Secure Logging](security/lockdown-logging.md)
     * [Fault-tolerance & Integrity](security/fault-tolerance-integrity.md)
-    * [Risk Analyzer](security/risk-analyzer.md)
+    * [Input Sanitization](security/risk-analyzer.md)
     * [Encryption & Keys](security/encryption-keys.md)
     * [Decentralized ZKP](security/decentralized-zkp.md)
 

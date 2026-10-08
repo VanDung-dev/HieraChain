@@ -18,6 +18,12 @@ Recommends standard practices for deploying HieraChain securely in production en
 * Enable HSTS/CORS/Rate limit appropriate to environment and valid front-ends.
 * Enable resource guard to shed load when the system is overloaded.
 
+## Authentication lockout storage
+
+* Use the SQLite or Redis brute-force backend when API authentication runs in multiple worker processes. Both backends count failures atomically across workers.
+* The memory and file backends keep attempt counts in one process; run one worker with either backend. Running file-backed instances reload lockouts so a lockout written by another instance in the same deployment becomes visible on the next check.
+* Shared backend errors stop the authentication request. Restore the configured backend before serving authenticated requests again.
+
 ## Related Components
 
 * Identity/MSP/Key: `hierachain/security/{identity.py, msp.py, key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}`

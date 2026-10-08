@@ -1,65 +1,36 @@
 ---
 title: "Decentralized Zero-Knowledge Proofs"
-description: "Protecting private data with ZK technology: Proving correctness without revealing raw data."
+description: "Current ZK implementation scope: mock proof-flow fixtures and unsupported production placeholders."
 icon: material/brain
 ---
 
 # Decentralized Zero-Knowledge Proofs
 
-HieraChain's most advanced security layer, enabling evidence sharing about data between sub-chains and the main chain without exposing sensitive business content.
+HieraChain exposes prover and verifier interfaces for cross-chain proof flows. The implemented mode is a development mock based on a SHA-256 commitment to public inputs. It does not prove business rules, state-transition correctness, or zero-knowledge privacy. Production proving and verification are not implemented.
 
 ## 1. ZK Prover
 
 **File**: `hierachain/security/zk_prover.py`
 
-The component that generates proofs at Sub-Chains:
-
-*   **Proof Generation**: Creates mathematical proofs asserting that an event or state is valid.
-*   **Data Hiding**: Detailed event content is replaced by a unique identifier (Hash).
-*   **Privacy Preservation**: Ensures the Main Chain never sees raw Sub-Chain data.
+* `ZKProver(mode="mock")` generates a fixture containing a hash of public inputs and random padding. Anyone with the inputs can construct a matching commitment.
+* `ZKProver(mode="production").generate_proof(...)` returns `ZKProofResult(success=False, proof=b"", error=...)` because the production backend is unimplemented.
+* `generate_proof_bytes(...)` raises `ZKProvingError` when generation fails. Loading a proving key or setting a circuit path does not implement the backend.
 
 ## 2. ZK Verifier
 
 **File**: `hierachain/security/verify/zk_verifier.py`
 
-The verification component at the Main Chain:
+* Mock verification compares the commitment with a hash of the public inputs. A matching hash establishes no mathematical proof of a valid transition.
+* Production verification raises `ZKVerificationError` wrapping the unimplemented backend error for well-formed inputs; malformed inputs return `False` before backend dispatch.
+* Loading a verification key does not make production verification available.
 
-*   **Efficient Verification**: Validates ZK proof correctness with low computational cost.
-*   **Trustless Validation**: Allows the Main Chain to trust Sub-Chain data without needing access to that data.
-*   **Cross-chain Integrity**: Ensures data integrity when moving between tiers in the hierarchical architecture.
+## 3. Configuration and runtime boundary
 
----
+`HRC_ENABLE_ZK_PROOFS` defaults to `false`; `HRC_ZK_MODE` defaults to `mock`. Enabling verification does not install a production backend. Keep mock mode confined to development and test proof flows. Setting `HRC_ZK_MODE=production` alone cannot provide a functioning ZK deployment.
 
-## ZK Operation Flow
-
-```mermaid
-sequenceDiagram
-    participant SC as Sub-Chain (Prover)
-    participant MC as Main Chain (Verifier)
-    
-    SC->>SC: Process Private Business Event
-    SC->>SC: Generate ZK Proof (f(x) = y)
-    SC->>MC: Submit Hash + ZK Proof
-    MC->>MC: Verify ZK Proof (Fast Check)
-    alt Proof is Valid
-        MC-->>MC: Commit Proof to Ledger
-        MC-->>SC: Acknowledge Success
-    else Proof is Invalid
-        MC-->>SC: Reject & Flag Security Alert
-    end
-```
-
----
-
-## Real-world Applications
-
-*   **Financial Reporting**: Proving total revenue meets a certain threshold without revealing individual invoice details.
-*   **Supply Chain Management**: Confirming a shipment has passed quality inspection without disclosing proprietary production formulas.
-*   **Authorization Validation**: Proving a user has sufficient rights to perform an action without revealing their specific identity on the main chain.
-
----
+Signed block verification, Merkle roots and durable MainChain anchors are separate implemented integrity mechanisms. They must not be described as zero-knowledge proofs of business correctness. Applications needing real ZK validation require a separately implemented and validated proving/verifying backend and circuit contract.
 
 ## Related
 
-*   [Hierarchical architecture](../modules/hierarchical.md)
-*   [Authorization & Access Control](./authorization-access-control.md)
+* [Hierarchical architecture and feature support](../modules/hierarchical.md)
+* [Authorization & Access Control](./authorization-access-control.md)

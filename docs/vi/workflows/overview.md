@@ -33,17 +33,16 @@ Bảng này liệt kê tất cả luồng để tra cứu nhanh:
 
 | Luồng công việc | Nhóm | Kích hoạt | Kết quả | Mô-đun chính |
 |:---------|:------|:--------|:-------|:-----------|
-| [Gửi Sự kiện](./event-submission.md) | A | `POST /api/ledger/chains/{name}/events` | Khối được thêm vào Sub-Chain | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
+| [Gửi Sự kiện](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API trả `event_id`; block được tạo và finalize ở xử lý nền | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Sub-Chain | Mã băm bằng chứng trên Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
-| [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED` hoặc `ROLLED_BACK` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
-| [Đồng thuận BFT](./bft-consensus.md) | B | `HRC_MAINCHAIN_CONSENSUS` / `HRC_CONSENSUS_TYPE` | Khối được xác nhận bởi 2f+1 validator | `consensus/bft/consensus.py` |
-| [Khóa băng Cụm](./cluster-lockdown.md) | C | Bất thường vượt ngưỡng rủi ro | Tất cả node bị đóng băng / khôi phục | `cluster/lockdown_types.py` + `cluster/lockdown_protocol.py` |
-| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi mạng / hết hạn leader / lỗi toàn vẹn | Trạng thái khôi phục từ snapshot | `error_mitigation/rollback_manager.py` + `consensus_recovery.py` |
+| [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK` hoặc `IN_DOUBT` có thể phục hồi | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
+| [Đồng thuận BFT](./bft-consensus.md) | B | Thành phần consensus BFT được sử dụng tường minh; không được chọn qua biến cấu hình MainChain/SubChain | Quy trình đồng thuận BFT riêng | `consensus/bft/consensus.py` |
+| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi xác thực / hết hạn leader / sự kiện bị gián đoạn | Lỗi được phân loại, replay journal hoặc BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
 | [Truy vết Thực thể](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Dấu vết kiểm toán liên chuỗi đầy đủ | `domains/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại node hoặc lệch mã băm | Chuỗi trong bộ nhớ đồng bộ với DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Xác thực Tính toàn vẹn](./integrity-validation.md) | D | Định kỳ / thủ công / bất thường Risk Alerts | `IntegrityReport` (HEALTHY / DEGRADED) | `security/verify/block_verifier.py` |
 | [Thực thi Chính sách](./policy-enforcement.md) | E | Mọi thao tác nhạy cảm về quyền | `allow` hoặc `deny` kèm đường dẫn quyết định | `security/policy_engine.py` |
-| [Luồng dữ liệu WebSocket](./websocket-streaming.md) | E | Client kết nối tới `/ws/{chain_name}` | Đẩy khối/sự kiện thời gian thực | `api/websocket/manager.py` |
+| [Luồng dữ liệu WebSocket](./websocket-streaming.md) | E | Client kết nối tới `/ws`, có thể truyền `chain_name` qua query | Đẩy khối/sự kiện thời gian thực | `api/websocket/manager.py` |
 | [Lưu trữ Mã hóa IPFS](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | Trả về CID; bản mã trên IPFS | `api/storage/ipfs_client.py` |
 | [Cảnh báo Rủi ro](./risk-alerts.md) | E | Lịch `PerformanceMonitor` | Cảnh báo được gửi; leo thang nếu không xác nhận | `monitoring/alert_system.py` |
 | [Đồng bộ Tích hợp ERP](./erp-integration.md) | E | Timer `SyncScheduler` | Sự kiện ERP được gửi tới Sub-Chain | `integration/erp_ledger.py` |
@@ -82,7 +81,6 @@ Các luồng được nhóm thành sáu khu vực. Dùng bảng điều khiển 
 
     Quản trị, kích hoạt khóa băng và phục hồi.
 
-    * [Khóa băng Cụm](./cluster-lockdown.md)
     * [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md)
 
 * :material-shield-check:{ .lg .middle } __Nhóm D: Tính toàn vẹn và truy vết__
@@ -141,15 +139,13 @@ flowchart TD
     WF1 -->|upload large data| WF12["🗄️ IPFS Storage"]
 
     WF1 -->|cross-chain op| WF3["2PC Cross-Chain"]
-    WF1 -->|BFT mode| WF4["👑 BFT Consensus"]
+    WF4["👑 BFT Consensus"] -. Separate component .-> WF1
 
     WF9["🔍 Integrity Scan"] -->|DEGRADED| WF13["🚨 Risk & Alerts"]
-    WF13 -->|critical threshold| WF5["🔒 Cluster Lockdown"]
-    WF5 -.->|after lockdown| WF6["🔧 Error Recovery"]
+    WF13 -->|critical alert| WF6["🔧 Error Recovery"]
     WF6 -.->|snapshot fail| WF8["♻️ Rehydration"]
     WF8 -.->|restore state| WF1
 
-    WF5 -.->|key rotation| WF16["🔑 Key Backup"]
     WF15 -.->|cert issued| WF16
 
     WF7["🗂️ Entity Tracing"] -.->|reads| WF1
@@ -163,9 +159,8 @@ flowchart TD
 |:---|:---|
 | **ERP → ERP Sync → Gửi Sự kiện → Neo giữ Bằng chứng** | Pipeline tiếp nhận: thay đổi nghiệp vụ → sự kiện nội bộ → khối Sub-Chain → mã băm bằng chứng neo lên chuỗi gốc. |
 | **MSP Identity → Thực thi Chính sách → Gửi Sự kiện** | Đường xác thực bảo mật: xác minh cert nội bộ (`msp.py:verify_certificate`) → kiểm tra chính sách ABAC → chấp nhận/từ chối sự kiện. |
-| **Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Khóa băng Cụm → Phục hồi Lỗi** | Đường phát hiện bất thường: `block_verifier`/`risk_analyzer` → gửi cảnh báo → khóa băng → `rollback_manager` khôi phục. |
-| **Khóa băng Cụm → Sao lưu Khóa** | Không có liên kết tự động trong mã: xoay vòng/sao lưu khóa là thao tác thủ công qua `cli/key.py` (không do khóa băng kích hoạt). |
-| **Phục hồi Lỗi → Nạp lại Trạng thái** | Dự phòng đồng bộ trạng thái: xác thực snapshot cục bộ thất bại kích hoạt dựng lại chuỗi trong bộ nhớ từ nhật ký DB. |
+| **Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Phục hồi Lỗi** | Đường phát hiện bất thường: `block_verifier` → gửi cảnh báo → phục hồi vận hành. |
+| **Phục hồi Lỗi → Nạp lại Trạng thái** | Dự phòng đồng bộ trạng thái: replay journal và nạp lại chuỗi dựng lại trạng thái trong bộ nhớ từ storage bền vững. |
 
 ---
 

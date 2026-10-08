@@ -1,81 +1,14 @@
-"""
-Risk Management — Shared types, enums, and value objects.
-
-Enums and dataclasses used across the risk analysis, mitigation,
-and audit logging subsystems.
-"""
+"""Shared types for audit logging."""
 
 from __future__ import annotations
 
-import orjson
 import hashlib
-from typing import Any, Callable
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import Enum
+from typing import Any
 
+from hierachain.serialization import dumps_canonical_json, dumps_json
 
-# --- Risk Analyzer Types ---
-
-class RiskSeverity(Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
-class RiskCategory(Enum):
-    CONSENSUS = "consensus"
-    SECURITY = "security"
-    PERFORMANCE = "performance"
-    STORAGE = "storage"
-    OPERATIONAL = "operational"
-
-
-@dataclass
-class RiskAssessment:
-    risk_id: str
-    category: RiskCategory
-    severity: RiskSeverity
-    description: str
-    impact: str
-    likelihood: float
-    mitigation_recommendations: list[str]
-    detected_at: float
-    affected_components: list[str]
-
-
-# --- Mitigation Strategy Types ---
-
-class MitigationStatus(Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
-@dataclass
-class MitigationAction:
-    action_id: str
-    description: str
-    execution_function: Callable[[dict[str, Any]], bool]
-    priority: int
-    estimated_duration: int
-    requires_downtime: bool = False
-    dependencies: list[str] | None = None
-
-
-@dataclass
-class MitigationResult:
-    action_id: str
-    status: MitigationStatus
-    start_time: float
-    end_time: float | None
-    error_message: str | None
-    output: dict[str, Any]
-
-
-# --- Audit Logger Types ---
 
 class AuditEventType(Enum):
     RISK_DETECTED = "risk_detected"
@@ -120,6 +53,8 @@ class AuditEvent:
         data = asdict(self)
         data['event_type'] = self.event_type.value
         data['severity'] = self.severity.value
+        # Keep hashing and storage stable when callers supply integer timestamps.
+        data['timestamp'] = float(data['timestamp'])
         data['details'] = self._sanitize_data(data['details'])
         if data.get('affected_entities'):
             data['affected_entities'] = self._sanitize_data(data['affected_entities'])
@@ -136,10 +71,10 @@ class AuditEvent:
         return data
 
     def to_json(self) -> str:
-        return orjson.dumps(self.to_dict(), default=str).decode()
+        return dumps_json(self.to_dict(), default=str)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'AuditEvent':
+    def from_dict(cls, data: dict[str, Any]) -> AuditEvent:
         return cls(
             event_id=data['event_id'],
             event_type=AuditEventType(data['event_type']),
@@ -156,10 +91,8 @@ class AuditEvent:
         )
 
     def calculate_hash(self) -> str:
-        content = (
-            f"{self.event_id}{self.timestamp}{self.source_component}{self.description}"
-        )
-        return hashlib.sha256(content.encode()).hexdigest()
+        content = dumps_canonical_json(self.to_dict(), default=str)
+        return hashlib.sha256(content).hexdigest()
 
 
 class AuditFilter:

@@ -6,7 +6,7 @@ icon: material/shield-key
 
 # Bằng chứng Không tiết lộ (Zero-Knowledge Proofs)
 
-HieraChain sử dụng **Zero-Knowledge Proofs (ZK)** để đảm bảo tính xác thực của các giao dịch trên hệ thống phân cấp mà không cần tiết lộ toàn bộ dữ liệu chi tiết của từng sự kiện (Event). Các Sub-chain sẽ tạo Proof chứng minh một quá trình chuyển đổi trạng thái là hợp lệ, và Main-chain sẽ tiến hành xác minh Proof đó.
+HieraChain cung cấp interface proof ZK cho việc submit từ Sub-chain lên MainChain. Triển khai hiện tại hỗ trợ mock proof cho phát triển; proving và verification production chưa được triển khai.
 
 ### 1. Cơ chế Hoạt động của ZKProver & ZKVerifier
 
@@ -15,14 +15,14 @@ Hệ thống cung cấp hai module cốt lõi đảm nhiệm công việc này:
 * **`ZKProver`** (Nằm tại Sub-chain - `hierachain/security/zk_prover.py`):
   
     * Đóng vai trò là bên chứng minh (Prover).
-    * Khi một Sub-chain sinh ra một block mới, nó tạo ra một trạng thái mới (World State).
-    * `ZKProver` sẽ sinh ra các đoạn mã Proof để chứng minh cho logic chuyển trạng thái từ `old_state_root` sang `new_state_root` trong `block_index` tương ứng vừa được kích hoạt.
+    * Đầu vào proof Sub-chain dùng Merkle root của event trong block trước và block mới nhất.
+    * Triển khai mock hiện tại gắn các đầu vào này vào một hash. Nó không chứng minh chuyển trạng thái projection entity hoặc xác thực quy tắc nghiệp vụ.
 
 * **`ZKVerifier`** (Nằm tại Main-chain - `hierachain/security/verify/zk_verifier.py`):
   
     * Đóng vai trò là bên xác minh (Verifier).
-    * Khi nhận được tín hiệu Proof từ Sub-chain gửi lên Main-chain, `ZKVerifier` sẽ phân tích và xác minh tính hợp lệ của toán học cũng như tính toàn vẹn trạng thái.
-    * Giải quyết triệt để nguy cơ **Fake Proofs** (Chứng cứ giả). Nếu Proof không vượt qua xác minh, giao dịch đính kèm trên Main-chain sẽ bị từ chối thẳng thừng.
+    * Với mock proof, `ZKVerifier` kiểm tra định dạng và commitment tới public inputs được cung cấp.
+    * Proof bị từ chối sẽ chặn submission tương ứng lên MainChain. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.
 
 ### 2. Các Chế độ Hoạt động (Modes)
 
@@ -31,23 +31,25 @@ Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi
 #### a. Mock Mode (Mặc định)
 
 * Đây là chế độ phát triển (Dev) hoặc môi trường kiểm thử (Testing).
-* Mock Mode mô phỏng lại Groth16/Plonk ZK-SNARK bằng cách tạo ra một định dạng proof giả lập kích thước 2KB - 4KB với `mock_zkp_business\x00`.
+* Mock mode dùng định dạng `mock_zkp_v2\x00` với commitment SHA-256 tới public inputs; không chạy circuit SNARK.
 * Thay vì chạy circuit thuật toán, mock mode sử dụng tính toán hàm lượng băm nội suy (`hashlib.sha256`) đối với các tham số đầu vào (Public Inputs) và giả lập một độ trễ từ 100-500ms để đảm bảo giống với hệ thống proof thực.
 * Hỗ trợ quá trình dev tích hợp Main/Sub mà không yêu cầu cấu hình tài nguyên phần cứng lớn.
 
 #### b. Production Mode (ZoKrates)
 
-* Đây là chế độ vận hành sản xuất thực tế trên môi trường Mainnet/Enterprise.
+* Đây là interface dành cho production, hiện chưa được hỗ trợ.
 * Đòi hỏi thư mục khóa chứng minh ở biến `ZK_PROVING_KEY_PATH` và khóa xác minh ở `ZK_VERIFICATION_KEY_PATH`.
-* Proof được sinh ra qua một External Service (như ZoKrates) chứa những phương trình tính toán hàm bậc cao SNARKs vô cùng an toàn và khó giả mạo.
+* Các method production hiện gây `NotImplementedError`; cấu hình đường dẫn khóa không kích hoạt proving service bên ngoài.
 
 ### 3. Public Inputs (Đầu vào Công khai)
 
 Theo định nghĩa của `ZKPublicInputs`, các đối số đầu vào (được cả Prover và Verifier đồng bộ thống nhất) bao gồm:
 
-* **`old_state_root` (str)**: Merkle Root của World State ở block ngay trước đó. Phải là mã hash hợp lệ.
-* **`new_state_root` (str)**: Merkle Root mới nhất sau khi các event được đưa vào block cập nhật hiện tại.
-* **`block_index` (int)**: Số thứ tự block (cơ chế này giúp chặn hoàn toàn rủi ro Replay attacks).
+* **`old_state_root` (str)**: Merkle root của event trong block ngay trước đó; đường submit dùng `genesis` khi không có block trước.
+* **`new_state_root` (str)**: Merkle root của event trong block mới nhất, có fallback block hash hiện hành khi cần.
+* **`block_index` (int)**: Số thứ tự block được gắn vào proof; tầng submission vẫn phải kiểm tra freshness và chống trùng.
 * **`sub_chain_name` (str)**: ID hoặc tên định danh đầy đủ của Sub-chain đẩy Proof.
 
 Các tham số này đều được serialize định dạng JSON bytes chuẩn hóa chặt chẽ (sử dụng `sort_keys=True`) trước khi đem đi hash sinh Proof.
+
+`WorldState.get_state_root()` băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Proving và verification production hiện gây `NotImplementedError`; việc làm rõ root không triển khai circuit ZK production.

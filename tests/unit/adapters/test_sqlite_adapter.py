@@ -2,10 +2,15 @@
 Unit tests for SQLite adapter.
 """
 
-import pytest
 import os
+from pathlib import Path
+
+import pytest
+
 from hierachain.adapters.database import SQLiteAdapter
+from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.core import Blockchain
+from hierachain.core.block import Block
 
 
 @pytest.fixture
@@ -31,6 +36,8 @@ def test_initialization(adapter):
     """Test that adapter initializes correctly."""
     assert adapter.database_path is not None
     assert adapter.database_path.endswith(".db")
+    with adapter._get_connection() as connection:
+        assert connection.execute("PRAGMA synchronous").fetchone()[0] == 2
 
 
 def test_store_and_load_chain(adapter):
@@ -82,6 +89,46 @@ def test_get_entity_events(adapter):
     assert isinstance(events, list)
 
 
+def test_get_events_by_filter_uses_existing_event_columns(adapter):
+    chain_name = "event-filter-chain"
+    block = Block(
+        index=1,
+        timestamp=1234567890.0,
+        previous_hash="genesis",
+        events=[{
+            "entity_id": "entity-filter",
+            "event": "updated",
+            "timestamp": 1234567890.0,
+            "data": {"status": "ready"},
+        }],
+    )
+    assert adapter.save_block({
+        "chain_name": chain_name,
+        "index": block.index,
+        "hash": block.hash,
+        "previous_hash": block.previous_hash,
+        "timestamp": block.timestamp,
+        "nonce": block.nonce,
+        "events": block.to_event_list(),
+    })
+
+    by_entity = adapter.get_entity_events("entity-filter", chain_name)
+    by_type = adapter.get_events_by_type("updated", chain_name)
+
+    assert len(by_entity) == len(by_type) == 1
+    assert by_entity[0]["entity_id"] == "entity-filter"
+    assert by_type[0]["event"] == "updated"
+
+
+def test_get_events_by_filter_surfaces_query_errors(adapter):
+    with adapter._get_connection() as connection:
+        connection.execute("DROP TABLE events")
+        connection.commit()
+
+    with pytest.raises(RuntimeError, match="get_entity_events failed"):
+        adapter.get_entity_events("entity-filter", "missing-table-chain")
+
+
 def test_proof_storage(adapter):
     """Test storing and retrieving proofs."""
     main_chain = "Main"
@@ -116,3 +163,123 @@ def test_cleanup(adapter):
     # Test cleanup returns a boolean
     result = adapter.cleanup_old_data(30)
     assert isinstance(result, bool)
+
+
+def test_memory_database_is_shared_between_operation_connections() -> None:
+    adapter = SQLiteAdapter(":memory:")
+    try:
+        with adapter._get_connection() as first_connection:
+            first_connection.execute(
+                "INSERT INTO chains (name, chain_type, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?)",
+                ("memory-chain", "sub", 1.0, 1.0),
+            )
+            first_connection.commit()
+
+        with adapter._get_connection() as second_connection:
+            row = second_connection.execute(
+                "SELECT name FROM chains WHERE name = ?", ("memory-chain",)
+            ).fetchone()
+
+        assert row is not None
+        assert row["name"] == "memory-chain"
+    finally:
+        adapter.close()
+    assert adapter._keeper_connection is None
+
+
+def test_save_fetch_block_preserves_events_and_merkle_root(adapter) -> None:
+    events = [
+        {
+            "event_id": "ev-round-trip",
+            "entity_id": "entity-round-trip",
+            "event": "update",
+            "timestamp": 1234567890.0,
+            "data": {"version": 2},
+            "details": {"state": "ready"},
+            "details_cid": "cid:details-1",
+            "details_nonce": "nonce-1",
+            "signature": "sig-1",
+            "sender_id": "user-1",
+        }
+    ]
+    block = Block(index=1, timestamp=1234567890.0, previous_hash="prev", events=events)
+    chain = Blockchain("round-trip-chain")
+    chain._sign_block(block)
+    block_data = {
+        "chain_name": "round-trip-chain",
+        "index": block.index,
+        "hash": block.hash,
+        "previous_hash": block.previous_hash,
+        "timestamp": block.timestamp,
+        "nonce": block.nonce,
+        "events": block.to_event_list(),
+        "metadata": {
+            "merkle_root": block.merkle_root,
+            "creator_id": block.creator_id,
+            "signature": block.signature,
+        },
+    }
+
+    assert adapter.save_block(block_data)
+    fetched = adapter.get_block_by_index(block.index, "round-trip-chain")
+
+    assert fetched is not None
+    assert fetched["events"] == events
+    restored = _block_from_dict(fetched, chain.trusted_public_keys)
+    assert restored.to_event_list() == events
+    assert restored.calculate_merkle_root() == block.merkle_root
+
+
+def test_legacy_event_row_keeps_normalized_fallback_shape(adapter) -> None:
+    event = adapter._create_event_from_row(
+        {
+            "chain_name": "legacy-chain",
+            "entity_id": "entity-legacy",
+            "event_type": "create",
+            "timestamp": 1.0,
+            "data": '{"legacy":true}',
+        }
+    )
+
+    assert event == {
+        "chain_name": "legacy-chain",
+        "entity_id": "entity-legacy",
+        "event": "create",
+        "timestamp": 1.0,
+        "data": {"legacy": True},
+    }
+
+
+def test_json_event_survives_database_restart_without_changing_values(tmp_path: Path) -> None:
+    path = str(tmp_path / "json-round-trip.db")
+    event = {
+        "event_id": "json-round-trip", "entity_id": "asset-1", "event": "updated", "timestamp": 1.0,
+        "data": {"name": "Thiết bị 🌱", "large": 2**80 + 1, "values": [True, None, 1e-5]},
+        "details": {"nested": {"negative": -(2**80 + 1)}},
+    }
+    block = Block(index=1, timestamp=1.0, previous_hash="prev", events=[event])
+    chain = Blockchain("json-round-trip-chain")
+    chain._sign_block(block)
+    adapter = SQLiteAdapter(path)
+    try:
+        assert adapter.save_block({
+            "chain_name": chain.name, "index": block.index, "hash": block.hash,
+            "previous_hash": block.previous_hash, "timestamp": block.timestamp, "nonce": block.nonce,
+            "events": block.to_event_list(), "metadata": {
+                "merkle_root": block.merkle_root, "creator_id": block.creator_id, "signature": block.signature,
+            },
+        })
+    finally:
+        adapter.close()
+    reopened = SQLiteAdapter(path)
+    try:
+        fetched = reopened.get_block_by_index(1, chain.name)
+        assert fetched is not None
+        assert fetched["events"] == [event]
+        assert isinstance(fetched["events"][0]["data"]["large"], int)
+        restored = _block_from_dict(fetched, chain.trusted_public_keys)
+        assert restored.calculate_merkle_root() == block.merkle_root
+        assert restored.hash == block.hash
+    finally:
+        reopened.close()

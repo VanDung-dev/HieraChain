@@ -8,20 +8,36 @@ This includes:
 """
 
 import time
+from collections.abc import Iterator
+
+import pytest
 
 from hierachain.hierarchical import MainChain
 from hierachain.hierarchical import SubChain
 from hierachain.core import Block
+
+pytestmark = pytest.mark.usefixtures("isolated_chain_storage")
+
+
+@pytest.fixture
+def sub_chain(request: pytest.FixtureRequest) -> Iterator[SubChain]:
+    chain = SubChain(request.node.name, "testing")
+    chain.consensus.config["block_interval"] = 0
+    try:
+        yield chain
+    finally:
+        chain.shutdown()
 
 
 def _build_valid_event_block(chain):
     latest_block = chain.get_latest_block()
     block = Block(
         index=latest_block.index + 1,
-        events=[{"event": "valid_event", "timestamp": time.time()}],
+        events=[{"entity_id": "ENTITY-1", "event": "valid_event", "timestamp": time.time()}],
         previous_hash=latest_block.hash,
     )
-    block.calculate_hash()
+    block.creator_id = chain.node_identity.node_id
+    block.hash = block.calculate_hash()
     return block
 
 
@@ -40,22 +56,20 @@ def test_unfinalized_block_rejection():
     # Create a basic block
     fake_block = Block(
         index=new_index,
-        events=[{"event": "fake_event", "timestamp": time.time()}],
+        events=[{"entity_id": "ENTITY-1", "event": "fake_event", "timestamp": time.time()}],
         previous_hash=previous_hash
     )
     fake_block.calculate_hash()
+    chain._sign_block(fake_block)
 
     # Verify rejection
     assert chain.is_valid_new_block(fake_block) is False, "MainChain should reject unfinalized block"
 
-def test_sub_chain_consensus_flow():
+def test_sub_chain_consensus_flow(sub_chain: SubChain) -> None:
     """
     Test the full flow of creating and finalizing a block in SubChain
     with consensus integration.
     """
-    sub_chain = SubChain("TestSubChain_PoA", "testing")
-    sub_chain.consensus.config["block_interval"] = 0
-
     # Add some operations
     sub_chain.start_operation("ENTITY-1", "test_op")
     sub_chain.complete_operation("ENTITY-1", "test_op", {"result": "success"})
@@ -80,28 +94,27 @@ def test_sub_chain_consensus_flow():
     assert "authority_id" in consensus_data
     assert consensus_data["consensus_type"] == "proof_of_authority"
 
-def test_signature_tampering_detection():
+def test_signature_tampering_detection(sub_chain: SubChain) -> None:
     """
     Test that tampering with a finalized block's signature
     causes it to be rejected.
     """
-    chain = SubChain("TamperTestChain", "testing")
-    chain.consensus.config["block_interval"] = 0
-
-    # Create a block
-    chain.start_operation("ENTITY-X", "test_op")
+    chain = sub_chain
 
     # 1. Create raw block
     block = _build_valid_event_block(chain)
 
     # 2. Finalize it properly
-    finalized_block = chain.consensus.finalize_block(block, chain.name)
+    finalized_block = chain._finalize_ordered_block(block, chain.get_latest_block())
+    chain._sign_block(finalized_block)
 
     # Verify it IS valid initially
     assert chain.is_valid_new_block(finalized_block) is True
 
     # 3. Tamper with signature
     events = finalized_block.to_event_list()
+    original_signature = next(e["details"]["authority_signature"] for e in events
+                              if e.get("event") == "consensus_finalization")
     for e in events:
         if e.get("event") == "consensus_finalization":
             e["details"] = dict(e["details"]) # ensure it's a dict
@@ -116,11 +129,14 @@ def test_signature_tampering_detection():
         nonce=finalized_block.nonce
     )
     tampered_block.calculate_hash()
+    chain._sign_block(tampered_block)
+    assert chain.is_valid_new_block(tampered_block) is False, "Chain should reject a tampered authority signature"
 
     # 4. Verify rejection
     # Tamper ID to unauthorized one
     for e in events:
         if e.get("event") == "consensus_finalization":
+            e["details"]["authority_signature"] = original_signature
             e["details"]["authority_id"] = "unauthorized_node"
 
     tampered_id_block = Block(
@@ -129,21 +145,22 @@ def test_signature_tampering_detection():
         previous_hash=finalized_block.previous_hash,
         timestamp=finalized_block.timestamp
     )
+    chain._sign_block(tampered_id_block)
 
     assert chain.is_valid_new_block(tampered_id_block) is False, "Chain should reject block from unauthorized signer"
 
-def test_content_tampering_detection():
+def test_content_tampering_detection(sub_chain: SubChain) -> None:
     """
     Test that tampering with block content (hash) invalidates the signature verification.
     """
-    chain = SubChain("ContentTamperChain", "testing")
-    chain.consensus.config["block_interval"] = 0
-    chain.start_operation("ENTITY-Y", "test_op")
+    chain = sub_chain
 
     block = _build_valid_event_block(chain)
 
     # Finalize
-    finalized_block = chain.consensus.finalize_block(block, chain.name)
+    finalized_block = chain._finalize_ordered_block(block, chain.get_latest_block())
+    chain._sign_block(finalized_block)
+    assert chain.is_valid_new_block(finalized_block) is True
 
     # Let's change the Hash but keep signature.
     finalized_block.hash = "0000000000000000000000000000000000000000000000000000000000000000"

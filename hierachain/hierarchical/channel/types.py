@@ -2,7 +2,7 @@
 Shared types for the Channel package.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -22,6 +22,9 @@ class Organization:
     endpoints: list[str]
     certificates: dict[str, Any]
     roles: set[str]
+    member_registry: dict[str, dict[str, Any]] = field(
+        default_factory=dict, repr=False, compare=False
+    )
 
     def has_role(self, role: str) -> bool:
         return role in self.roles

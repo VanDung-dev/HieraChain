@@ -7,27 +7,31 @@ backoff, circuit breaker pattern, and aiohttp transport.
 
 from __future__ import annotations
 
-import logging
 import asyncio
-from typing import Any
+import json
+import logging
 from http import HTTPStatus
+from typing import Any
+from urllib.parse import quote
 
 import aiohttp
 
-from hierachain.sdk.types import (
-    HieraChainClientConfig,
-    CircuitBreaker,
-    EventResult,
-    NodeStatus,
-    ChainStats,
-    EntityTrace,
-)
 from hierachain.sdk.exceptions import (
     CircuitOpenError,
     HieraChainAPIError,
-    ServiceUnavailableError,
     LockdownError,
+    ServiceUnavailableError,
 )
+from hierachain.sdk.types import (
+    ChainStats,
+    CircuitBreaker,
+    CircuitState,
+    EntityTrace,
+    EventResult,
+    HieraChainClientConfig,
+    NodeStatus,
+)
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -66,25 +70,26 @@ class HieraChainAsyncClient:
         delay = self.config.initial_delay * (self.config.backoff_multiplier ** attempt)
         return min(delay, self.config.max_delay)
 
-    def _check_circuit_breaker(self) -> None:
-        if not self._circuit.allow_request():
+    def _check_circuit_breaker(self) -> bool:
+        state = self._circuit.acquire_request()
+        if state is None:
             raise CircuitOpenError(
                 f"Circuit breaker is open. Retry after "
                 f"{self.config.circuit_recovery_timeout}s"
             )
+        return state == CircuitState.HALF_OPEN
 
     async def _handle_response(self, response: aiohttp.ClientResponse) -> dict[str, Any]:
-        if response.status == HTTPStatus.SERVICE_UNAVAILABLE:
-            raise ServiceUnavailableError("Service unavailable", 503)
-
         if response.headers.get("X-Lockdown-Mode") == "true":
             raise LockdownError("Node is in lockdown mode", 503)
 
-        if response.status >= 500:
-            response.raise_for_status()
+        if response.status == HTTPStatus.SERVICE_UNAVAILABLE:
+            raise ServiceUnavailableError("Service unavailable", 503)
 
-        self._circuit.record_success()
-        return await response.json()
+        if not 200 <= response.status < 300:
+            raise HieraChainAPIError(f"HTTP {response.status}", status_code=response.status)
+
+        return {} if response.status == HTTPStatus.NO_CONTENT else await response.json(loads=loads_json)
 
     async def _execute_request(
         self,
@@ -97,25 +102,42 @@ class HieraChainAsyncClient:
         async with session.request(
             method=method,
             url=url,
-            json=data,
+            data=dumps_json(data).encode("utf-8") if data is not None else None,
+            headers=(
+                {"Content-Type": session.headers.get("Content-Type", "application/json")}
+                if data is not None else None
+            ),
             params=params,
             timeout=self.config.timeout,
+            allow_redirects=(
+                method.upper() in {"GET", "HEAD", "OPTIONS"}
+                and not session.headers.get("X-API-Key")
+            ),
         ) as response:
             return await self._handle_response(response)
 
-    async def _handle_request_error(self, e: Exception, attempt: int) -> None:
-        self._circuit.record_failure()
-        if attempt >= self.config.max_retries:
-            if isinstance(
-                e, (ServiceUnavailableError, LockdownError, HieraChainAPIError)
-            ):
+    async def _handle_request_error(
+        self, e: Exception, attempt: int, retries: int, probe: bool
+    ) -> None:
+        if (
+            isinstance(e, HieraChainAPIError)
+            and e.status_code is not None
+            and e.status_code < 500
+        ):
+            if probe:
+                self._circuit.release_probe()
+            raise e
+
+        self._circuit.record_failure(probe=probe)
+        if attempt >= retries or self._circuit.state == CircuitState.OPEN:
+            if isinstance(e, HieraChainAPIError):
                 raise e
             raise HieraChainAPIError(str(e)) from e
         delay = self._calculate_delay(attempt)
         logger.warning(
             "Request failed (%s: %s), retry %d/%d in %.1fs",
             type(e).__name__, e,
-            attempt + 1, self.config.max_retries, delay
+            attempt + 1, retries, delay
         )
         await asyncio.sleep(delay)
 
@@ -126,15 +148,32 @@ class HieraChainAsyncClient:
         data: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        self._check_circuit_breaker()
+        probe = self._check_circuit_breaker()
         url = f"{self.config.base_url}{endpoint}"
-        for attempt in range(self.config.max_retries + 1):
+        retries = (
+            self.config.max_retries
+            if method.upper() in {"GET", "HEAD", "OPTIONS"} and not probe
+            else 0
+        )
+        for attempt in range(retries + 1):
+            if attempt and self._circuit.state != CircuitState.CLOSED:
+                raise CircuitOpenError("Circuit breaker opened during retry")
             try:
-                return await self._execute_request(method, url, data, params)
-            except Exception as e:
-                await self._handle_request_error(e, attempt)
+                result = await self._execute_request(method, url, data, params)
+                self._circuit.record_success(probe=probe)
+                return result
+            except asyncio.CancelledError:
+                if probe:
+                    self._circuit.release_probe()
+                raise
+            except (HieraChainAPIError, aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
+                await self._handle_request_error(e, attempt, retries, probe)
+            except Exception:
+                if probe:
+                    self._circuit.release_probe()
+                raise
         raise HieraChainAPIError(
-            f"Request failed after {self.config.max_retries} retries"
+            f"Request failed after {retries} retries"
         )
 
     async def submit_event(self, chain_name: str, event_data: dict[str, Any]) -> EventResult:
@@ -189,7 +228,7 @@ class HieraChainAsyncClient:
         params = {"resolve_cid": str(resolve_cid).lower()}
         if chain_name:
             params["chain_name"] = chain_name
-        url = f"/api/ledger/entities/{entity_id}/trace"
+        url = f"/api/ledger/entities/{quote(entity_id, safe='')}/trace"
         response = await self._request("GET", url, params=params)
         return EntityTrace(
             entity_id=response.get("entity_id", entity_id),
@@ -199,7 +238,7 @@ class HieraChainAsyncClient:
 
     async def health_check(self) -> bool:
         try:
-            response = await self._request("GET", "/health")
+            response = await self._request("GET", "/api/ledger/health")
             return response.get("status") == "healthy"
         except (HieraChainAPIError, CircuitOpenError):
             return False
@@ -209,8 +248,8 @@ class HieraChainAsyncClient:
             await self._session.close()
             self._session = None
 
-    async def __aenter__(self) -> "HieraChainAsyncClient":
+    async def __aenter__(self) -> HieraChainAsyncClient:
         return self
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         await self.close()

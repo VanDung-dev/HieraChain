@@ -8,12 +8,13 @@ the event-based model and hierarchical structure principles.
 
 import logging
 import re
-import pyarrow as pa
 from abc import ABC, abstractmethod
 from typing import Any
 
-from hierachain.core.block import Block
+import pyarrow as pa
+
 from hierachain.config.settings import settings
+from hierachain.core.block import Block
 from hierachain.security.verify.zk_verifier import get_zk_verifier
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class BaseConsensus(ABC):
     in the HieraChain Ledger. It ensures that consensus algorithms
     work with the event-based model and support the hierarchical structure.
     """
-    __slots__ = ('name', 'config')
+    __slots__ = ('config', 'name')
 
     # Terms that should not appear in non-technical event fields
     FORBIDDEN_TERMS = ["transaction", "mining", "coin", "token", "wallet", "fee"]
@@ -212,6 +213,30 @@ def _verify_block_zk_proof(block: Block, previous_block: Block | None = None) ->
 
     if zk_proof is None:
         if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
+            proof_events = [
+                event for event in block.to_event_list()
+                if event.get("event") == "proof_submission"
+            ]
+            if proof_events:
+                try:
+                    verifier = get_zk_verifier()
+                    for event in proof_events:
+                        metadata = event.get("metadata", {})
+                        encoded = event.get("zk_proof")
+                        if not isinstance(metadata, dict) or not isinstance(encoded, str):
+                            return False
+                        proof_bytes = bytes.fromhex(encoded)
+                        if not verifier.verify(proof_bytes, {
+                            "old_state_root": metadata.get("previous_merkle_root", ""),
+                            "new_state_root": metadata.get("latest_merkle_root", ""),
+                            "block_index": metadata.get("latest_block_index", 0),
+                            "sub_chain_name": event.get("sub_chain"),
+                        }):
+                            return False
+                except Exception:
+                    logger.exception("Could not verify proof submissions in block %s", block.index)
+                    return False
+                return True
             logger.warning(
                 "Block %s: ZK proof required but missing",
                 block.index

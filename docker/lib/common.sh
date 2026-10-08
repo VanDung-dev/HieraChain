@@ -12,7 +12,7 @@ init_env() {
   case "$ENV" in
     docker)
       ENGINE="docker"
-      COMPOSE="$ENGINE compose -f docker/docker-compose.yml"
+      COMPOSE="$ENGINE compose --env-file .env -f docker/docker-compose.yml"
       COMPOSE_EXEC="$COMPOSE exec -T"
       COMPOSE_LOGS="$COMPOSE logs"
       ENGINE_EXEC="$ENGINE exec"
@@ -67,6 +67,33 @@ ensure_product_env() {
   fi
 }
 
+read_configured_ipfs_key() {
+  local env_file="$1" line value parsed_key="" seen=false
+  [ -f "$env_file" ] || return 1
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    [[ "$line" =~ ^[[:space:]]*(export[[:space:]]+)?IPFS_ENCRYPTION_KEY[[:space:]]*=[[:space:]]*(.*)$ ]] || continue
+    seen=true
+    value="${BASH_REMATCH[2]}"
+    value="${value%$'\r'}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ "$value" =~ ^\"([[:xdigit:]]{64})\"([[:space:]]*#.*)?$ ]] \
+      || [[ "$value" =~ ^\'([[:xdigit:]]{64})\'([[:space:]]*#.*)?$ ]] \
+      || [[ "$value" =~ ^([[:xdigit:]]{64})([[:space:]]+#.*)?$ ]]; then
+      parsed_key="${BASH_REMATCH[1]}"
+    elif [[ -z "$value" || "$value" =~ ^#.*$ ]]; then
+      parsed_key=""
+    else
+      return 2
+    fi
+  done < "$env_file"
+
+  [ "$seen" = true ] || return 1
+  printf '%s' "$parsed_key"
+}
+
 ensure_keys() {
   if [ ! -f "$IPFS_DIR/swarm.key" ]; then
     mkdir -p "$IPFS_DIR"
@@ -75,10 +102,47 @@ ensure_keys() {
     echo "  swarm.key generated"
   fi
   if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
-    IPFS_ENCRYPTION_KEY=$(openssl rand -hex 32)
-    export IPFS_ENCRYPTION_KEY
-    echo "  IPFS_ENCRYPTION_KEY generated"
+    local configured_key configured_status env_file
+    for env_file in ".env" "docker/.env"; do
+      if [ -f "$env_file" ]; then
+        if configured_key=$(read_configured_ipfs_key "$env_file"); then
+          if [ -n "$configured_key" ]; then
+            IPFS_ENCRYPTION_KEY="$configured_key"
+            echo "  IPFS_ENCRYPTION_KEY loaded from $env_file"
+            break
+          fi
+        else
+          configured_status=$?
+          if [ "$configured_status" -eq 2 ]; then
+            echo "ERROR: IPFS_ENCRYPTION_KEY in $env_file must contain exactly 64 hexadecimal characters (32 bytes)"
+            exit 1
+          fi
+        fi
+      fi
+    done
   fi
+  if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
+    local encryption_key_file="$IPFS_DIR/encryption.key"
+    mkdir -p "$IPFS_DIR"
+    if [ ! -f "$encryption_key_file" ]; then
+      local generated_key
+      generated_key=$(openssl rand -hex 32)
+      # Create the secret once, without replacing a key created by a concurrent setup.
+      (umask 077; set -o noclobber; printf '%s\n' "$generated_key" > "$encryption_key_file") 2>/dev/null || true
+      if [ ! -f "$encryption_key_file" ]; then
+        echo "ERROR: could not persist IPFS encryption key to $encryption_key_file"
+        exit 1
+      fi
+    fi
+    chmod 600 "$encryption_key_file"
+    IFS= read -r IPFS_ENCRYPTION_KEY < "$encryption_key_file" || true
+    echo "  IPFS_ENCRYPTION_KEY loaded from $encryption_key_file"
+  fi
+  if [[ ! "$IPFS_ENCRYPTION_KEY" =~ ^[[:xdigit:]]{64}$ ]]; then
+    echo "ERROR: IPFS_ENCRYPTION_KEY must contain exactly 64 hexadecimal characters (32 bytes)"
+    exit 1
+  fi
+  export IPFS_ENCRYPTION_KEY
   if [ -z "${EXPLORER_TOKEN:-}" ]; then
     local tkn
     tkn=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
@@ -93,15 +157,23 @@ generate_keys() {
 
 WHEEL_DIR="docker/dist"
 
+ensure_stress_api_key() {
+  $COMPOSE --profile stress-test config --format json | uv run --no-sync python -c '
+import sys
+import json
+config = json.load(sys.stdin)
+key = config["services"]["stress-tester"].get("environment", {}).get("HRC_API_KEY")
+if not isinstance(key, str) or not key.strip():
+    raise SystemExit("ERROR: set HRC_API_KEY in .env or the environment to a provisioned chains/events/proofs key before stress")
+'
+}
+
 build_wheel() {
   local wheel
-  wheel=$(ls "$WHEEL_DIR"/hierachain-*.whl 2>/dev/null | head -1)
-  if [ -n "$wheel" ] && [ "$wheel" -nt pyproject.toml ]; then
-    echo "  Wheel up-to-date: $(basename "$wheel")"
-    return
-  fi
   echo "  Building wheel..."
   mkdir -p "$WHEEL_DIR"
+  # setuptools reuses build/lib, which can retain modules deleted from the source tree.
+  rm -rf build
   rm -f "$WHEEL_DIR"/hierachain-*.whl
   uv build --wheel -o "$WHEEL_DIR"
   wheel=$(ls "$WHEEL_DIR"/hierachain-*.whl | head -1)
@@ -116,7 +188,7 @@ generate_identities() {
 build_image() {
   build_wheel
   echo ""; echo "[2/6] Building image..."
-  $ENGINE build -t "$IMAGE_NAME" -f docker/Dockerfile .
+  $ENGINE build --target production -t "$IMAGE_NAME" -f docker/Dockerfile .
   sleep 5
 }
 
@@ -303,15 +375,18 @@ run_tests() {
 
   $COMPOSE --profile stress-test run --rm stress-tester \
     bash -c "
+      set -e
       mkdir -p /app/log/report
       export TARGET_NODES='${TARGET_NODES}'
       export TEST_DURATION='${DURATION:-60}'
       export REAL_REQUESTS='true'
+      export HRC_STRESS_ENV='${ENV}'
       export HRC_IPFS_ENABLED=true
       export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
       export HRC_IPFS_ENCRYPTION_KEY='${IPFS_ENCRYPTION_KEY}'
       ${k8s_env}
-      pytest docker/stress/ -v \
+      pytest docker/stress/ -v --log-level=INFO --durations=10 \
+        -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
         --html=/app/log/report/${report}.html \
         --self-contained-html \
         --junitxml=/app/log/report/${report}.xml
@@ -365,7 +440,7 @@ print_setup_summary() {
   done
 
   echo ""
-  echo "Encryption Key: ${IPFS_ENCRYPTION_KEY:0:16}..."
+  echo "Encryption Key: configured (hidden)"
   echo ""
   echo "Next steps:"
   echo "  Stress test: bash docker/hierachain.sh stress ${ENV} --reuse"

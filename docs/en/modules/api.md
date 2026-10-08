@@ -12,6 +12,8 @@ The API module handles communication between external clients and the HieraChain
 
 ### Core components
 
+Importing API client helpers, such as `hierachain.api.storage.ipfs_client`, does not create the server application. The `app` and `create_app` exports load the server when requested; production authentication requirements remain enforced. API lifespan shutdown closes its hierarchy manager and resets the lazy manager/tracer providers, including cleanup after a P2P startup failure.
+
 * FastAPI server (`server.py`) is the entry point. It sets up middleware, authentication, and routers.
 * Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.
 * GraphQL endpoint offers flexible field selection with depth and complexity limits.
@@ -41,7 +43,7 @@ The default limit is 100 requests per minute, configured with `HRC_RATE_LIMIT_RP
 
 ### Authentication
 
-`APIKeyVerifier` checks the `X-API-Key` header. Enable or disable it with `HRC_AUTH_ENABLED`.
+`APIKeyVerifier` checks the `X-API-Key` header for HTTP and WebSocket access. Production requires `HRC_AUTH_ENABLED=true` and a provisioned `HRC_API_KEYS_FILE`; dev/test can disable authentication. With authentication enabled, GraphQL checks scopes for every operation: chain and block queries require `chains`, event queries and `addEvent` require `events`, and a block query that selects nested events requires both scopes. WebSocket streams contain both block and event messages, so connecting and subscribing requires `chains` and `events` (or `all`). Production GraphQL and WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.
 
 ---
 
@@ -67,8 +69,8 @@ These endpoints interact directly with ledger state:
 These endpoints support business workflows:
 
 * Channels create private communication paths between organizations (`POST /api/business/channels`).
-* Private data collections hold data that is not shared on the common ledger.
-* Domain contracts deploy and run business-specific smart contracts.
+* Private collection metadata can be managed, but `POST /api/business/private-data` currently returns HTTP 501 because this API has no private-data store. It does not accept inline values or IPFS references as stored data.
+* Domain contracts register metadata; `POST /api/business/contracts/execute` returns HTTP 501 because the execution engine is not implemented.
 * Organizations register and manage identities through MSP.
 
 ### admin: system and admin
@@ -93,17 +95,16 @@ Use GraphQL when clients need to select specific fields or reduce payload size.
 * Complexity is limited to 1000 points per query, based on field and operation counts.
 * Introspection (`__schema`) is disabled in production.
 
-### Query example (lazy-loading IPFS)
+### Query example
 
-You can choose whether to fetch and decrypt IPFS data with `resolveCid`.
+Event queries require the `events` permission. Block and chain queries require `chains`; selecting events nested under a block requires both.
 
 ```graphql
 query {
-  events(chainName: "supply_chain", entityId: "PROD-001", resolveCid: true) {
+  events(chainName: "supply_chain", entityId: "PROD-001", limit: 20) {
     eventType
-    details  # Will be automatically fetched from IPFS and decrypted if needed
+    details
     timestamp
-    isOffchain
   }
 }
 ```
@@ -112,9 +113,9 @@ query {
 
 ## WebSocket (real-time streaming)
 
-Endpoint: `/ws`
+Connect to `/ws`. To select a chain when connecting, pass `chain_name`, for example `/ws?chain_name=supply_chain`.
 
-The server pushes data as soon as a block is committed or an event arrives.
+When authentication is enabled, send the `X-API-Key` header in the WebSocket handshake. The connection and each subscription require both `chains` and `events` permissions because the current stream sends both kinds of messages to chain subscribers. The server pushes data as soon as a block is committed or an event arrives.
 
 ### Main message types
 
@@ -176,3 +177,9 @@ curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 * [Hierarchical Structure](./hierarchical.md)
 * [Storage & IPFS Integration](./storage.md)
 * [Security & Identity](../security/encryption-keys.md)
+
+GraphQL reads Arrow events as rows and awaits asynchronous field resolvers, including event details. Nested block events require both `chains` and `events` scopes. Unknown chain names return no query result and reject mutations; they do not fall back to the main chain.
+
+### JSON encoding
+
+Explicit JSON responses and HTTP exception handlers use FastAPI/Starlette `JSONResponse`. Default responses and response models retain FastAPI/Pydantic validation, serialization and OpenAPI schemas. Request-validation errors retain status `422` and the `detail` list. WebSocket messages use standard-library JSON encoded as UTF-8 text frames.

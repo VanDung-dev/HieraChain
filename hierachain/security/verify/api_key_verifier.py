@@ -7,16 +7,22 @@ Ensures only authorized clients with valid, non-revoked API keys can access
 protected resources.
 """
 
-import time
+import asyncio
 import sys
+import time
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
+
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
-from typing import Any, cast, Union
-from pathlib import Path
+from starlette.requests import HTTPConnection
 
-from hierachain.security.secure_logging import get_security_logger
-from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.config.settings import get_settings
+from hierachain.security.brute_force_protector import BruteForceProtector
+from hierachain.security.secure_logging import get_security_logger
+
+if TYPE_CHECKING:
+    from hierachain.security.key_manager import KeyManager
 
 # Add the project root to the path for imports
 _file_path = __file__
@@ -40,7 +46,7 @@ def _get_system_context() -> dict:
     }
 
 
-def _extract_client_ip(request: Request) -> str:
+def _extract_client_ip(request: HTTPConnection) -> str:
     """Extract client IP from request for brute-force tracking."""
     client = request.client if request else None
     if client is not None:
@@ -69,7 +75,7 @@ class APIKeyVerifier:
     - Comprehensive error handling and auditing
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, key_manager: "KeyManager | None" = None):
         """
         Initialize APIKeyVerifier with configuration.
         
@@ -80,10 +86,11 @@ class APIKeyVerifier:
                 - key_name: Name of the key parameter
                 - cache_ttl: Cache time-to-live in seconds
                 - revocation_check: How often to check revocation
+            key_manager: Pre-provisioned keys for the API app, when provided.
         """
         self.config = config
         from hierachain.security.key_manager import KeyManager
-        self.key_manager = KeyManager()  # Handles key storage, revocation checks
+        self.key_manager = key_manager if key_manager is not None else KeyManager()
         self.enabled = config.get('enabled', True)
         self.key_location = config.get('key_location', 'header')
         self.key_name = config.get('key_name', 'x-api-key')
@@ -101,7 +108,7 @@ class APIKeyVerifier:
         bf_config = config.get('brute_force', {})
         self.brute_force_protector = BruteForceProtector(bf_config)
     
-    async def __call__(self, request: Request, api_key: str | None = None) -> dict:
+    async def __call__(self, request: HTTPConnection, api_key: str | None = None) -> dict:
         """
         Verify API key from the incoming request.
         
@@ -126,7 +133,7 @@ class APIKeyVerifier:
         await self._check_brute_force_protection(client_ip)
         
         api_key = await self._extract_api_key(request, api_key)
-        self._validate_api_key_present(api_key, client_ip)
+        await self._validate_api_key_present(api_key, client_ip)
         
         # Narrow api_key to str for Mypy
         if api_key is None:
@@ -138,10 +145,10 @@ class APIKeyVerifier:
 
     async def _check_brute_force_protection(self, client_ip: str) -> None:
         """Check if IP is locked out due to brute-force attempts."""
-        if not self.brute_force_protector.is_locked_out(client_ip):
+        if not await asyncio.to_thread(self.brute_force_protector.is_locked_out, client_ip):
             return
             
-        remaining = self.brute_force_protector.get_remaining_lockout(client_ip)
+        remaining = await asyncio.to_thread(self.brute_force_protector.get_remaining_lockout, client_ip)
         self._log_security_event("ip_locked_out", {
             "ip": client_ip,
             "remaining_seconds": round(remaining),
@@ -153,19 +160,19 @@ class APIKeyVerifier:
         )
 
     async def _extract_api_key(
-        self, request: Request, api_key: str | None
+        self, request: HTTPConnection, api_key: str | None
     ) -> str | None:
         """Extract API key from request if not provided directly."""
         if api_key or not request:
             return api_key
         return await self.api_key_dependency(request)
 
-    def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
+    async def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
         """Validate that API key is provided."""
         if api_key:
             return
             
-        self.brute_force_protector.record_failure(client_ip, "no_key")
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, "no_key")
         self._log_security_event("missing_api_key", {"timestamp": time.time()})
         raise HTTPException(
             status_code=401,
@@ -176,15 +183,14 @@ class APIKeyVerifier:
         self, api_key: str, key_prefix: str, client_ip: str
     ) -> None:
         """Verify API key validity and revocation status."""
-        if not self.key_manager.is_valid(api_key):
-            await self._handle_invalid_key(key_prefix, client_ip)
-            
-        if self.key_manager.is_revoked(api_key):
+        if await asyncio.to_thread(self.key_manager.is_revoked, api_key):
             await self._handle_revoked_key(key_prefix, client_ip)
+        if not await asyncio.to_thread(self.key_manager.is_valid, api_key):
+            await self._handle_invalid_key(key_prefix, client_ip)
 
     async def _handle_invalid_key(self, key_prefix: str, client_ip: str) -> None:
         """Handle invalid API key case."""
-        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, key_prefix)
         self._log_security_event("invalid_api_key", {
             "key_prefix": key_prefix,
             "timestamp": time.time()
@@ -196,7 +202,7 @@ class APIKeyVerifier:
 
     async def _handle_revoked_key(self, key_prefix: str, client_ip: str) -> None:
         """Handle revoked API key case."""
-        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, key_prefix)
         self._log_security_event("revoked_api_key", {
             "key_prefix": key_prefix,
             "timestamp": time.time()
@@ -217,6 +223,7 @@ class APIKeyVerifier:
         context = {
             "user_id": user_id,
             "app_details": app_details,
+            "permissions": self.key_manager.get_permissions(api_key),
             "api_key_prefix": key_prefix,
             "verified_at": time.time(),
             "_api_key": api_key
@@ -255,7 +262,7 @@ class APIKeyVerifier:
         Returns:
             Decorator function that checks permissions
         """
-        def permission_dependency(context: dict = Depends(self)) -> dict:
+        def permission_dependency(context: dict = Depends(self)) -> dict:  # noqa: B008
             # Extract API key from context
             api_key = context.get('_api_key')
             
@@ -301,14 +308,14 @@ def get_auth_dependency() -> Any:
     return None
 
 
-def _get_active_verifier() -> Any:
-    """Helper to get an instance for Depends"""
-    return get_auth_dependency()
+def _get_active_verifier(connection: HTTPConnection) -> APIKeyVerifier | None:
+    """Get the verifier owned by the current application."""
+    return getattr(connection.app.state, "auth_verifier", None)
 
 
 async def require_event_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access event-related endpoints.
@@ -332,7 +339,7 @@ async def require_event_access(
 
 async def require_chain_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access chain-related endpoints.
@@ -356,7 +363,7 @@ async def require_chain_access(
 
 async def require_proof_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access proof submission endpoints.
@@ -412,7 +419,9 @@ class ResourcePermissionChecker:
             bool: True if context has the required permission, False otherwise
         """
         app_details = context.get('app_details', {})
-        permissions = app_details.get('permissions', [])
+        permissions = context.get('permissions')
+        if permissions is None:
+            permissions = app_details.get('permissions', [])
         return permission_type in permissions or 'all' in permissions
 
     @staticmethod

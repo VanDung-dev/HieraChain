@@ -5,14 +5,14 @@ BFT View Change Manager component.
 import logging
 from typing import Any
 
-from hierachain.consensus.bft.types import ConsensusState, MessageType, BFTMessage
 from hierachain.consensus.bft.helpers import (
-    verify_message_signature,
-    validate_view_change_proof,
-    start_view_change_timer,
-    _create_signed_bft_message,
     _add_to_votes,
+    _create_signed_bft_message,
+    start_view_change_timer,
+    validate_view_change_proof,
+    verify_message_signature,
 )
+from hierachain.consensus.bft.types import BFTMessage, ConsensusState, MessageType
 
 logger = logging.getLogger(__name__)
 

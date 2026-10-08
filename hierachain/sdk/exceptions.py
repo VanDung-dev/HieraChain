@@ -9,7 +9,6 @@ from __future__ import annotations
 
 class CircuitOpenError(Exception):
     """Raised when circuit breaker is open."""
-    pass
 
 
 class HieraChainAPIError(Exception):
@@ -22,9 +21,7 @@ class HieraChainAPIError(Exception):
 
 class ServiceUnavailableError(HieraChainAPIError):
     """Service returned 503 - system overloaded or in lockdown."""
-    pass
 
 
 class LockdownError(HieraChainAPIError):
     """Node is in lockdown mode."""
-    pass

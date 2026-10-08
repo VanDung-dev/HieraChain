@@ -7,8 +7,8 @@ including validator management, round-robin leader selection, and block validati
 
 import time
 
-from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder
+from nacl.signing import SigningKey
 
 from hierachain.consensus import ProofOfFederation
 from hierachain.core import Block
@@ -91,16 +91,27 @@ def test_pof_block_validation_correct_leader():
     block = Block(
         index=1,
         events=[{"entity_id": "TEST", "event": "test", "timestamp": time.time()}],
-        previous_hash=previous_block.hash
+        previous_hash=previous_block.hash,
+        timestamp=previous_block.timestamp + pof.config["block_interval"] + 1,
+        creator_id=expected_leader,
     )
     
     # 1. Sign with CORRECT leader
     valid_block = pof.finalize_block(block, expected_leader)
-    # Update timestamp to meet interval
-    valid_block.timestamp = previous_block.timestamp + pof.config["block_interval"] + 1
-    
     # Mocking check: finalize_block adds the "consensus_finalization" event.
     assert pof.validate_block(valid_block, previous_block) is True
+
+    tampered = Block(
+        index=valid_block.index,
+        events=[
+            {"entity_id": "TEST", "event": "altered", "timestamp": time.time()},
+            valid_block.to_event_list()[-1],
+        ],
+        previous_hash=valid_block.previous_hash,
+        timestamp=valid_block.timestamp,
+        creator_id=valid_block.creator_id,
+    )
+    assert pof.validate_block(tampered, previous_block) is False
     
     # 2. Sign with WRONG leader (val_A)
     wrong_leader = "val_A"

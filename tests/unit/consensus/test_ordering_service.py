@@ -2,29 +2,28 @@
 Unit tests for the Ordering Service
 """
 
-import time
 import os
-import tempfile
 import shutil
-from typing import Any
+import tempfile
+import time
+from typing import Any, Generator
+from unittest.mock import patch
 
-from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
-from hierachain.core import Block
+import pytest
+
+from hierachain.config import Settings
+from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.error_mitigation import (
-    ErrorClassifier,
-    PriorityLevel,
-    ErrorCategory,
     ConsensusValidator,
     EncryptionValidator,
+    ErrorCategory,
+    ErrorClassifier,
+    PriorityLevel,
     ResourceValidator,
-    APIValidator,
     ValidationError,
-    SecurityError,
-    NetworkRecoveryEngine,
-    AutoScaler,
-    ConsensusRecoveryEngine,
-    BackupRecoveryEngine,
 )
+from hierachain.error_mitigation.journal import TransactionJournal
+
 
 # Create a test node factory function to ensure fresh heartbeat
 def create_test_node():
@@ -67,13 +66,23 @@ def test_init_with_defaults():
     """Test initialization with default parameters"""
     temp_dir = create_test_temp_dir()
     service = None
+    replay_count = 0
+    original_replay = TransactionJournal.replay
+
+    def counted_replay(journal: TransactionJournal) -> Generator[dict[str, Any], None, None]:
+        nonlocal replay_count
+        replay_count += 1
+        yield from original_replay(journal)
+
     try:
         config = get_test_config(temp_dir)
-        service = OrderingService(nodes=[node], config=config)
-        assert service is not None
-        # Wait for service to become active
-        assert service.wait_for_active(timeout=5.0), "Service did not become active"
-        assert service.get_service_status()["status"] == "active"
+        with patch.object(TransactionJournal, "replay", counted_replay):
+            service = OrderingService(nodes=[node], config=config)
+            assert service is not None
+            # Wait for service to become active
+            assert service.wait_for_active(timeout=5.0), "Service did not become active"
+            assert replay_count == 1
+            assert service.get_service_status()["status"] == "active"
     finally:
         if service:
             service.shutdown()
@@ -106,6 +115,45 @@ def test_init_with_params():
             except PermissionError:
                 time.sleep(0.5)
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_event_pool_uses_configured_limit():
+    """Test that the event pool applies the configured hard limit."""
+    temp_dir = create_test_temp_dir()
+    service = None
+    try:
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        assert service.event_pool.maxsize == Settings.EVENT_POOL_MAX_SIZE
+    finally:
+        if service:
+            service.shutdown()
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_receive_event_rejects_unavailable_service():
+    """Test that events are rejected when recovery cannot activate the service."""
+    temp_dir = create_test_temp_dir()
+    service = None
+    try:
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        service.status = OrderingStatus.MAINTENANCE
+
+        with patch.object(service, "wait_for_active", return_value=False):
+            with pytest.raises(Exception, match="maintenance"):
+                service.receive_event(
+                    {"entity_id": "UNAVAILABLE-001", "event": "test_event"},
+                    "test-channel",
+                    "test-org",
+                )
+
+        assert not service.pending_events
+        assert service.event_pool.empty()
+    finally:
+        if service:
+            service.shutdown()
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_receive_valid_event():
@@ -203,32 +251,6 @@ def test_block_creation() -> None:
         assert len(block.events) == 3
     finally:
         _cleanup_ordering_service(service, temp_dir)
-
-
-def test_invalid_event_handling():
-    """Test invalid event handling functionality"""
-    temp_dir = create_test_temp_dir()
-    service = None
-    try:
-        config = get_test_config(temp_dir)
-        service = OrderingService(nodes=[node], config=config)
-
-        # Event missing required fields
-        invalid_event = {"entity_id": "TEST-001", "timestamp": time.time()}
-        service.receive_event(invalid_event, "test-channel", "test-org")
-
-        # Wait for processing
-        time.sleep(1.0)  # Increased wait time
-
-    finally:
-        if service:
-            service.shutdown()
-        if os.path.exists(temp_dir):
-            try:
-                shutil.rmtree(temp_dir)
-            except PermissionError:
-                time.sleep(0.5)
-                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_timeout_block_creation():
@@ -1101,54 +1123,25 @@ def test_consensus_validator_with_edge_cases():
     assert validator_large_f.validate_node_count(nodes_301)
 
 
-def test_encryption_validator_with_large_keys():
+def test_encryption_validator_with_large_keys() -> None:
     """Test encryption validator with large key sizes"""
-    config = {"algorithm": "AES-256-GCM"}
-    validator = EncryptionValidator(config)
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    config = {"algorithm": "AES-256-GCM", "key_id": "test-key"}
+    keys = {"test-key": AESGCM.generate_key(bit_length=256)}
+    validator = EncryptionValidator(config, key_resolver=keys.__getitem__)
 
     # Test validation passes
     assert validator.validate_config() is True
 
     # Test encryption of large data
     large_data = "A" * (1024 * 1024)  # 1MB of data
-    try:
-        encrypted = validator.encrypt_data(large_data)
-        assert "ciphertext" in encrypted
-        assert "tag" in encrypted
-        assert "iv" in encrypted
-        assert encrypted["algorithm"] == "AES-256-GCM"
-    except SecurityError:
-        # May fail in some environments due to missing dependencies
-        pass  # Acceptable for this test
-
-
-def test_api_validator_with_complex_forbidden_content():
-    """Test API validator with complex forbidden content"""
-    config = {}
-    validator = APIValidator(config)
-
-    # Test with nested forbidden terms
-    complex_data = {
-        "entity_id": "API-TEST-001",
-        "event": "api_complex_test",
-        "timestamp": time.time(),
-        "payload": {
-            "nested": {
-                "transaction": "should not be here",  # Forbidden term
-                "data": "normal data"
-            }
-        }
-    }
-
-    # Should raise ValidationError due to forbidden term "transaction"
-    try:
-        validator.validate_endpoint_data(complex_data)
-        # If we get here, the validation didn't catch the forbidden term
-        # This might be expected depending on implementation depth
-        pass
-    except ValidationError:
-        # This is expected if the validator properly checks nested content
-        pass
+    encrypted = validator.encrypt_data(large_data)
+    assert "ciphertext" in encrypted
+    assert "tag" in encrypted
+    assert "iv" in encrypted
+    assert encrypted["algorithm"] == "AES-256-GCM"
+    assert validator.decrypt_data(encrypted) == large_data
 
 
 def test_resource_validator_with_extreme_values():
@@ -1482,164 +1475,3 @@ def test_access_control_validation():
             except PermissionError:
                 time.sleep(0.5)
                 shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-def test_network_recovery_with_complex_data():
-    """Test network recovery with complex data payloads"""
-    config = {"timeout_multiplier": 2.0, "redundancy_factor": 2}
-    engine = NetworkRecoveryEngine(config)
-
-    # Test with binary data
-    binary_message = {
-        "entity_id": "NETWORK-001",
-        "event": "network_test",
-        "timestamp": time.time(),
-        "binary_data": bytes([i % 256 for i in range(1000)]).hex()
-    }
-
-    target_nodes = ["node1", "node2", "node3"]
-
-    # This is a mock test since actual network sending is simulated
-    health = engine.monitor_network_health()
-    assert "timestamp" in health
-    assert "avg_latency_ms" in health
-
-    # Verify unused variables to suppress linter errors
-    assert binary_message["entity_id"] == "NETWORK-001"
-    assert "node1" in target_nodes
-
-
-def test_auto_scaler_with_edge_configurations():
-    """Test auto scaler with extreme configurations"""
-    # Test with very small thresholds
-    config_small = {
-        "auto_scale": True,
-        "scale_up_threshold": 0.01,
-        "scale_down_threshold": 0.005,
-        "min_nodes": 1,
-        "max_nodes": 2
-    }
-
-    scaler_small = AutoScaler(config_small)
-    assert scaler_small.scale_up_threshold == 0.01
-    assert scaler_small.scale_down_threshold == 0.005
-
-    # Test with very large thresholds
-    config_large = {
-        "auto_scale": True,
-        "scale_up_threshold": 0.99,
-        "scale_down_threshold": 0.95,
-        "min_nodes": 10,
-        "max_nodes": 20
-    }
-
-    scaler_large = AutoScaler(config_large)
-    assert scaler_large.scale_up_threshold == 0.99
-    assert scaler_large.scale_down_threshold == 0.95
-
-
-def test_consensus_recovery_with_complex_state():
-    """Test consensus recovery with complex state data"""
-    config = {}
-    engine = ConsensusRecoveryEngine(config)
-
-    complex_state = {
-        "view_number": 10,
-        "timestamp": time.time(),
-        "node_states": {
-            "node1": {"status": "active", "last_response": time.time()},
-            "node2": {"status": "passive", "last_response": time.time() - 10},
-            "node3": {"status": "failed", "last_response": time.time() - 100}
-        },
-        "pending_messages": [
-            {"id": "msg1", "content": "test", "timestamp": time.time()},
-            {
-                "id": "msg2",
-                "content": bytes([1, 2, 3, 4]).hex(),
-                "timestamp": time.time()
-            }
-        ]
-    }
-
-    # Test recovery with complex state
-    result = engine.recover_consensus_state(complex_state)
-    assert result is True  # Should succeed with valid state
-
-
-def test_backup_recovery_with_large_files():
-    """Test backup recovery with large files"""
-    config = {"locations": ["primary"], "integrity_check": "sha256"}
-    engine = BackupRecoveryEngine(config)
-
-    # Create a temporary large file for testing
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        # Write 1MB of data
-        large_data = b"A" * (1024 * 1024)
-        tmp_file.write(large_data)
-        backup_path = tmp_file.name
-
-    try:
-        # Test recovery from backup
-        result = engine.recover_from_backup(backup_path)
-        # Should handle the file properly (result depends on implementation details)
-        assert result in [True, False]  # Just check it doesn't crash
-    finally:
-        # Clean up
-        if os.path.exists(backup_path):
-            os.unlink(backup_path)
-
-
-def test_recovery_after_system_crash():
-    """Test recovery procedures after system crash simulation"""
-    # Test network recovery engine recovery
-    network_config = {"timeout_multiplier": 2.0}
-    network_engine = NetworkRecoveryEngine(network_config)
-
-    # Simulate network operations
-    latency_data = [100.0, 150.0, 200.0, 175.0]
-    timeout = network_engine.adjust_timeout(latency_data)
-    assert timeout > 0
-
-    # Test auto scaler recovery
-    scaler_config = {
-        "auto_scale": True,
-        "scale_up_threshold": 0.8,
-        "scale_down_threshold": 0.3
-    }
-    scaler = AutoScaler(scaler_config)
-
-    # Should be able to scale after cooldown period
-    assert scaler._can_scale() is True
-
-    # Test consensus recovery after crash
-    consensus_config = {}
-    consensus_engine = ConsensusRecoveryEngine(consensus_config)
-
-    # Simulate leader failure recovery
-    recovery_result = consensus_engine.handle_leader_failure("failed_leader_1", 5)
-    assert recovery_result is True
-
-
-def test_access_validation_in_recovery():
-    """Test access validation in recovery operations if applicable"""
-    config = {}
-    engine = ConsensusRecoveryEngine(config)
-
-    # Test with various node metrics including edge cases
-    node_metrics = {
-        "node1": {
-            "last_response": time.time(),
-            "response_time": 0.1,
-            "failure_count": 0
-        },
-        "node2": {
-            "last_response": time.time() - 100,  # Silent node
-            "response_time": 10.0,
-            "failure_count": 10
-        }
-    }
-
-    actions = engine.handle_node_performance_issues(node_metrics)
-    assert isinstance(actions, dict)
-    assert "view_change" in actions
-    assert "isolated_nodes" in actions

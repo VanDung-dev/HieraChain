@@ -4,17 +4,20 @@ Add business events to a sub-chain with optional off-chain
 (IPFS) storage for large payloads.
 """
 
-import time
 import re
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+import time
+from typing import Any
 
-from hierachain.api.ledger.schemas import EventRequest, EventResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+
 from hierachain.api.ledger.depds import get_hierarchy_manager
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.security.sanitization import sanitize_string, sanitize_dict
-from hierachain.security.verify.api_key_verifier import require_event_access
-from hierachain.security.secure_logging import SecureLogger
+from hierachain.api.ledger.schemas import EventRequest, EventResponse
 from hierachain.api.storage.endpoint_helpers import process_event_details
+from hierachain.consensus.ordering.types import OrderingBackpressureError
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.security.sanitization import sanitize_dict, sanitize_string
+from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.api_key_verifier import require_event_access
 
 router = APIRouter(tags=["HieraChain"])
 api_logger = SecureLogger("hierachain.api.ledger")
@@ -101,7 +104,14 @@ async def add_event(
 
     event = _build_event_data(event_request, inline_details, cid_info)
 
-    sub_chain.add_event(event)
+    try:
+        event_id = sub_chain.add_event(event)
+    except OrderingBackpressureError as exc:
+        raise HTTPException(status_code=503, detail={
+            "message": str(exc), "event_id": exc.event_id, "journaled": exc.journaled,
+        }) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     _log_event_success(chain_name, event["entity_id"], cid_info)
 
@@ -110,7 +120,57 @@ async def add_event(
         message=f"Event added to chain '{chain_name}'" + (
             " (off-chain storage)" if cid_info else ""
         ),
-        event_id=(
-            f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
+        event_id=event_id
+    )
+
+
+@router.post(
+    "/channels/{channel_id}/organizations/{org_id}/events",
+    response_model=EventResponse,
+)
+async def add_channel_event(
+    channel_id: str,
+    org_id: str,
+    event_request: EventRequest,
+    background_tasks: BackgroundTasks,
+    auth_context: dict[str, Any] = Depends(require_event_access),
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+) -> EventResponse:
+    channel = manager.get_channel(channel_id)
+    if channel is None:
+        raise HTTPException(status_code=404, detail=f"Channel '{channel_id}' not found")
+
+    user_id = auth_context.get("user_id")
+    if not isinstance(user_id, str) or not user_id.strip():
+        raise HTTPException(status_code=403, detail="Authenticated user is not registered")
+
+    inline_details, cid_info = process_event_details(
+        event_request,
+        background_tasks=background_tasks,
+    )
+    event = _build_event_data(event_request, inline_details, cid_info)
+    event["submitted_by"] = user_id
+
+    try:
+        accepted = channel.submit_event(event, org_id, submitter_user_id=user_id)
+    except RuntimeError as exc:
+        api_logger.error("Channel event persistence failed", channel_id=channel_id)
+        raise HTTPException(status_code=503, detail="Channel event could not be persisted") from exc
+    if not accepted:
+        raise HTTPException(
+            status_code=403,
+            detail="User is not authorized to submit events to this channel",
         )
+
+    api_logger.audit(
+        action="add_event",
+        resource="channel",
+        success=True,
+        channel_id=channel_id,
+        org_id=org_id,
+        entity_id=event["entity_id"],
+    )
+    return EventResponse(
+        success=True,
+        message=f"Event added to channel '{channel_id}'",
     )

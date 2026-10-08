@@ -45,14 +45,15 @@ For nodes in the network to communicate, the system uses **ZeroMQ TCP transport*
 
 ## 3. Kubernetes Deployment (K8s Orchestration)
 
-For HieraChain, the Kubernetes environment is the top choice for Sub-chain management. The system integrates the **`K8sNamespaceManager`** component to provide:
+The repository includes Kubernetes deployment manifests under `docker/k8s/`. Namespace and workload lifecycle are handled by the Kubernetes deployment workflow rather than by a runtime namespace manager:
 
 * **Isolation Principle**: Each Sub-chain is allocated a separate **Namespace**. Memory leaks or resource overload in one Sub-chain will not spread to others.
 * **Microservice Lifecycle**: Uses K8s Deployment to manage Pods.
+* **Resource isolation**: Namespace, resource requests, limits, and network policy are defined in the deployment manifests.
 
 ### Namespace & Resource Limits Management
 
-When creating a new Sub-chain through `HierarchyManager`, the system automatically sends a request to `K8sNamespaceManager` to allocate a Deployment with the following configuration limits (Quotas):
+Resource requests and limits are defined in the Kubernetes manifests and applied by the deployment workflow. `HierarchyManager` does not provision Kubernetes namespaces at runtime.
 
 * **Resource Requests:**
 
@@ -63,11 +64,3 @@ When creating a new Sub-chain through `HierarchyManager`, the system automatical
 
     * **CPU:** `1000m` (1 vCPU). Leverages `parallel_engine.py` module for multi-threading.
     * **Memory:** `1Gi` (Prevents Out-of-Memory due to In-memory Storage overflow).
-
-### Lifecycle Management
-
-Through the API or SDK, administrators can:
-
-1. **Provisioning**: Call `K8sNamespaceManager.provision_sub_chain_deployment(deploy_config)` passing the number of `replicas`.
-2. **Monitoring**: Monitor `ACTIVE` Pod count, retrieve `resource_quotas` via `get_namespace_resources`.
-3. **Termination**: When a Sub-chain stops operating, `delete_namespace` will be called to clean up all Pods and Volumes (if any) without affecting the Main-chain.

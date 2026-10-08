@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Tổng quan
 
-Module **Network** là lớp xương sống cho phép các nút (Nodes) trong mạng lưới HieraChain giao tiếp với nhau. Được thiết kế với triết lý "Bảo mật đa tầng" (Defense-in-Depth), module này kết hợp sức mạnh truyền tải của **ZeroMQ** với các thuật toán mật mã hiện đại để đảm bảo mọi thông điệp đều được mã hóa, xác thực và chống giả mạo.
+Module **Network** quản lý giao tiếp giữa các node HieraChain qua **ZeroMQ**. Module dùng các cơ chế mật mã để mã hóa và xác thực thông điệp.
 
 ---
 
 ## Kiến trúc Bảo mật Đa tầng (Layered Security)
 
-HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết hợp ba lớp bảo vệ độc lập:
+HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
 <div class="grid cards" markdown>
 
@@ -37,6 +37,8 @@ HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết 
     * Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).
     * Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.
     * Quy trình Handshake 2 bước: `INIT` và `ACK`.
+    * Ràng buộc subject và khóa ký của chứng chỉ còn hiệu lực với routing ID
+      ZeroMQ và danh tính tổ chức đã đăng ký.
 
 *   :material-shield-sync:{ .lg .middle } __Lớp 3: Integrity & Replay Protection__
 
@@ -46,6 +48,7 @@ HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết 
 
     * Mọi thông điệp P2P đều được ký số (Digital Signature).
     * Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).
+    * Cả hai thông điệp handshake đều có `timestamp` và `nonce` đã ký, được replay gate của transport chấp nhận.
 
 </div>
 
@@ -56,8 +59,11 @@ HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết 
 ### 1. ZMQ Transport (`zmq_transport.py`)
 Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket **ROUTER** (để nhận) và **DEALER** (để gửi). 
 
-*   **Hiệu năng**: Xử lý hàng nghìn thông điệp mỗi giây với độ trễ cực thấp.
+*   **Truyền tải**: Dùng socket không đồng bộ; broadcast gửi tuần tự tới các peer đã đăng ký.
 *   **Identity Management**: Quản lý định danh các nút ở mức socket để định tuyến chính xác.
+*   **Replay buffer**: Giữ tối đa 1.000 cặp timestamp/nonce với nonce dạng chuỗi dài tối đa 128 ký tự. Khi tất cả mục vẫn nằm trong cửa sổ 60 giây, thông điệp mới bị từ chối cho đến khi có mục hết hạn.
+
+`NetworkClient` theo dõi seed và peer đăng ký thủ công trong cùng registry. Gỡ peer cũng đóng socket DEALER gửi đi của peer đó. Peer được xem là healthy trong 60 giây đầu sau khi đăng ký; mỗi thông điệp nhận vào hợp lệ từ định danh socket đã đăng ký sẽ gia hạn khoảng này. Peer im lặng chuyển unhealthy khi đọc trạng thái hoặc danh sách peer. Chỉ báo health này không xác thực peer hay xác nhận thông điệp gửi đi đã được nhận.
 
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Điều phối quy trình thiết lập kết nối an toàn:
@@ -93,6 +99,12 @@ sequenceDiagram
     
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
+
+Responder gửi lại nonce của `HANDSHAKE_INIT` trong ACK đã ký. Initiator chỉ
+nhận ACK khi đang có handshake gửi đi tương ứng, peer vượt qua chính sách tin
+cậy đã cấu hình, và chứng chỉ ACK còn hiệu lực, được ràng buộc với routing ID
+cùng khóa ký của peer. Chứng chỉ CA, bản ghi danh tính, tổ chức hoặc khóa bị
+thiếu hay không khớp đều bị từ chối.
 
 ---
 
@@ -137,3 +149,5 @@ await secure_node.send_secure("peer_002", payload)
 *   [Bảo mật và MSP (Security)](./security.md)
 *   [Đồng thuận BFT (Consensus)](../consensus/bft_consensus.md)
 *   [Giám sát mạng (Monitoring)](./monitoring.md)
+
+ZeroMQ nhận frame tối đa 1 MiB và đúng hai frame ứng dụng (định danh bên gửi và nội dung); frame thừa được đọc bỏ, không gom vào danh sách multipart Python. Kết nối secure xác minh danh tính và chữ ký trước khi lưu replay, với cache riêng tối đa 1.000 mục mỗi peer đã xác minh. Transport plain yêu cầu peer ID đã cấu hình và tách cache theo peer; không bảo đảm danh tính bằng chữ ký. Các giới hạn này cần đi cùng kiểm soát kết nối và băng thông ở tầng triển khai.

@@ -7,6 +7,7 @@ under variable request load to ensure physical resource safety boundaries.
 import os
 import logging
 import threading
+import math
 from dataclasses import dataclass, field
 from typing import List
 
@@ -82,6 +83,10 @@ class TestResourceMonitoring:
     
     @pytest.fixture(autouse=True)
     def setup(self):
+        if not os.path.exists("/var/run/docker.sock"):
+            if os.getenv("HRC_STRESS_ENV") == "docker":
+                pytest.fail("Docker stress requires the mounted Docker Engine socket")
+            pytest.skip("Live resource metrics require the mounted Docker Engine socket")
         self.stress_tester = ResourceStressTester()
         self.node_status = {}
         
@@ -93,99 +98,77 @@ class TestResourceMonitoring:
                 continue
             node_id = parts[0]
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=f"http://{node}")
+
+    def _assert_live_metrics(self, results):
+        expected_nodes = set(self.stress_tester.node_status)
+        assert results.total_requests > 0
+        assert results.successful_requests > 0
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        assert results.avg_response_time > 0
+        assert results.metrics_history
+        assert {metric.node_id for metric in results.metrics_history} == expected_nodes
+        assert all(
+            metric.memory_usage > 0
+            and all(math.isfinite(value) and value >= 0 for value in (
+                metric.cpu_usage, metric.disk_usage, metric.network_io
+            ))
+            for metric in results.metrics_history
+        ), "Docker resource counters must contain finite, non-default measurements"
         
     def test_cpu_usage_monitoring(self):
         """Test CPU usage monitoring."""
         # Run test for 30 seconds
         results = self.stress_tester.run_resource_stress_test(30)
         
-        # Check if we have metrics
-        if not results.metrics_history:
-            pytest.skip("No metrics collected - run in Docker environment")
+        self._assert_live_metrics(results)
         
         # Get average CPU usage
         avg_cpu = results.get_avg_cpu_usage()
         
         logger.info("Average CPU usage: %.1f%%", avg_cpu)
         
-        # Allow higher CPU usage during stress test
-        if avg_cpu > 90:
-            logger.warning("High CPU usage detected: %.1f%%", avg_cpu)
-        
-        # This is a monitoring test, not a pass/fail test
-        assert True
-    
     def test_memory_usage_monitoring(self):
         """Test memory usage monitoring."""
         # Run test for 30 seconds
         results = self.stress_tester.run_resource_stress_test(30)
         
-        # Check if we have metrics
-        if not results.metrics_history:
-            pytest.skip("No metrics collected - run in Docker environment")
+        self._assert_live_metrics(results)
         
         # Get average memory usage
         avg_memory = results.get_avg_memory_usage()
         
         logger.info("Average Memory usage: %.1fMB", avg_memory)
         
-        # Memory usage should not exceed 90% during stress test
-        if avg_memory > 90:
-            logger.warning("High memory usage detected: %.1fMB", avg_memory)
-        
-        # This is a monitoring test, not a pass/fail test
-        assert True
-    
     def test_disk_usage_monitoring(self):
         """Test disk usage monitoring."""
         # Run test for 30 seconds
         results = self.stress_tester.run_resource_stress_test(30)
         
-        # Check if we have metrics
-        if not results.metrics_history:
-            pytest.skip("No metrics collected - run in Docker environment")
+        self._assert_live_metrics(results)
         
         # Get average disk usage
         avg_disk = results.get_avg_disk_usage()
         
-        logger.info("Average Disk usage: %.1fMB", avg_disk)
+        logger.info("Average block I/O: %.3fMB/s", avg_disk)
         
-        # Disk usage should not exceed 90% during stress test
-        if avg_disk > 90:
-            logger.warning("High disk usage detected: %.1fMB", avg_disk)
-        
-        # This is a monitoring test, not a pass/fail test
-        assert True
-    
     def test_network_io_monitoring(self):
         """Test network IO monitoring."""
         # Run test for 30 seconds
         results = self.stress_tester.run_resource_stress_test(30)
         
-        # Check if we have metrics
-        if not results.metrics_history:
-            pytest.skip("No metrics collected - run in Docker environment")
+        self._assert_live_metrics(results)
         
         # Get average network IO
         avg_network = results.get_avg_network_io()
         
         logger.info("Average Network IO: %.1fMB/s", avg_network)
         
-        # Network IO should not exceed 100MB/s
-        if avg_network > 100:
-            logger.warning("High network IO detected: %.1fMB/s", avg_network)
-        
-        # This is a monitoring test, not a pass/fail test
-        assert True
-    
     def test_combined_resource_monitoring(self):
         """Test combined resource monitoring."""
         # Run test for 45 seconds
         results = self.stress_tester.run_resource_stress_test(45)
         
-        # Check if we have metrics
-        if not results.metrics_history:
-            pytest.skip("No metrics collected - run in Docker environment")
+        self._assert_live_metrics(results)
         
         # Get average metrics
         avg_cpu = results.get_avg_cpu_usage()
@@ -196,13 +179,9 @@ class TestResourceMonitoring:
         logger.info("Resource Monitoring Results:")
         logger.info("Average CPU usage: %.1f%%", avg_cpu)
         logger.info("Average Memory usage: %.1fMB", avg_memory)
-        logger.info("Average Disk usage: %.1fMB", avg_disk)
+        logger.info("Average block I/O: %.1fMB/s", avg_disk)
         logger.info("Average Network IO: %.1fMB/s", avg_network)
         
-        # This is a monitoring test, not a pass/fail test
-        assert True
-
-
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,

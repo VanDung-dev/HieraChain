@@ -35,9 +35,10 @@ dependencies = [
     "graphene>=3.4.3",
     "httpx>=0.28.1",
     "hvac>=2.4.0",
-    "kubernetes>=36.0.2",
     "prometheus-client>=0.25.0",
     "psutil>=7.2.2",
+    "psycopg[binary]>=3.3.0",
+    "psycopg-pool>=3.3.0",
     "pyarrow>=24.0.0",
     "pydantic>=2.13.4",
     "pynacl>=1.6.2",
@@ -51,7 +52,6 @@ dependencies = [
     "idna>=3.18",
     "httptools>=0.8.0",
     "watchfiles>=1.2.0",
-    "orjson>=3.11.9",
     "uvloop>=0.19.0",
 ]
 dynamic = ["version"]
@@ -76,6 +76,8 @@ dev = [
     "bandit>=1.9.4",
     "pip-audit>=2.10.1",
     "semgrep>=1.175.0",
+    "ruff>=0.16.8",
+    "ty>=0.0.83",
 ]
 
 [project.scripts]
@@ -91,6 +93,17 @@ hrc = "hierachain.cli.__init__:hrc"
 
 [tool.setuptools]
 packages = { find = { include = ["hierachain*"] } }
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"hierachain/hierarchical/hierarchy_manager/base.py" = ["E402"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

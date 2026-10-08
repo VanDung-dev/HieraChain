@@ -18,25 +18,9 @@ HieraChain theo dõi sức khỏe hệ thống trên 4 lĩnh vực rủi ro (đ�
 sequenceDiagram
     autonumber
     participant PM as 📊 PerformanceMonitor
-    participant RA as 🔍 RiskAnalyzer
     participant AM as 🚨 AlertManager
     participant AD as 📈 AnomalyDetector
     participant NTF as 📧 Email / Webhook Notifier
-
-    PM->>RA: perform_comprehensive_analysis(system_data)
-
-    par Rủi ro Đồng thuận (Consensus)
-        RA->>RA: analyze_consensus_risks()<br/>Kiểm tra: node_count >= 3f+1, leader_timeout, msg_verify_rate
-    and Rủi ro Bảo mật (Security)
-        RA->>RA: analyze_security_risks()<br/>Kiểm tra: cert_expiry, failed_auth, encryption_strength
-    and Rủi ro Hiệu năng (Performance)
-        RA->>RA: analyze_performance_risks()<br/>Kiểm tra: CPU%, memory%, event_pool_size
-    and Rủi ro Lưu trữ (Storage)
-        RA->>RA: analyze_storage_risks()<br/>Kiểm tra: world_state_size, backup_age
-    end
-
-    RA->>RA: Cập nhật active_risks + risk_history
-    RA-->>PM: all_risks { consensus, security, performance, storage }
 
     PM->>AM: check_metric(metric_name, value, source)
     AM->>AD: add_data_point(metric_name, value)
@@ -92,14 +76,13 @@ sequenceDiagram
 
 | Bước | Mô tả |
 |:-----|:------|
-| **1. Phân tích** | `RiskAnalyzer.perform_comprehensive_analysis()` chạy song song 4 lĩnh vực. |
-| **2. Kiểm tra chỉ số** | `AlertManager.check_metric()` so sánh từng chỉ số với quy tắc. |
-| **3. Phát hiện bất thường** | `AnomalyDetector` dùng baseline thống kê để gắn cờ điểm bất thường. |
-| **4. Kiểm tra cooldown** | Quy tắc có cooldown để tránh bão cảnh báo. |
-| **5. Kiểm tra trùng lặp** | `_is_duplicate_alert()` loại bỏ nếu cùng quy tắc và cùng nguồn đã có cảnh báo đang hoạt động. |
-| **6. Gửi thông báo** | Gửi đồng thời tới Email và/hoặc Webhook đã cấu hình. |
-| **7. Leo thang** | Cảnh báo không xác nhận sẽ tăng `escalation_level += 1` và gửi lại. |
-| **8. Hoàn tất vòng đời**| Vận hành xác nhận thành `ACKNOWLEDGED`; chỉ số về mức an toàn thành `RESOLVED`. |
+| **1. Kiểm tra chỉ số** | `AlertManager.check_metric()` so sánh từng chỉ số với quy tắc. |
+| **2. Phát hiện bất thường** | `AnomalyDetector` dùng baseline thống kê để gắn cờ điểm bất thường. |
+| **3. Kiểm tra cooldown** | Quy tắc có cooldown để tránh bão cảnh báo. |
+| **4. Kiểm tra trùng lặp** | `_is_duplicate_alert()` loại bỏ nếu cùng quy tắc và cùng nguồn đã có cảnh báo đang hoạt động. |
+| **5. Gửi thông báo** | Gửi đồng thời tới Email và/hoặc Webhook đã cấu hình. |
+| **6. Leo thang** | Cảnh báo không xác nhận sẽ tăng `escalation_level += 1` và gửi lại. |
+| **7. Hoàn tất vòng đời**| Vận hành xác nhận thành `ACKNOWLEDGED`; chỉ số về mức an toàn thành `RESOLVED`. |
 
 ---
 
@@ -110,7 +93,6 @@ sequenceDiagram
 | Lỗi gửi Email | Ghi log; vẫn cố gửi qua Webhook |
 | Webhook offline | Thử lại 1 lần; ghi log; đánh dấu `notification_failed` |
 | Bão cảnh báo (quá nhiều trùng lặp) | Cooldown tự loại bỏ cảnh báo trùng từ cùng quy tắc |
-| RiskAnalyzer ném exception | Bắt exception, trả về dữ liệu rủi ro một phần, kích hoạt cảnh báo lỗi phân tích |
 
 ---
 
@@ -118,7 +100,6 @@ sequenceDiagram
 
 | Bước | Lớp / Phương thức | Tệp |
 |:-----|:--------------|:-----|
-| Phân tích rủi ro | `RiskAnalyzer.perform_comprehensive_analysis()` | `risk_management/risk_analyzer.py` |
 | Kiểm tra chỉ số | `AlertManager.check_metric()` | `monitoring/alert_system.py` |
 | Phát hiện bất thường | `AnomalyDetector.is_anomaly()` | `monitoring/alert_system.py` |
 | Tạo cảnh báo | `AlertManager._create_alert()` | `monitoring/alert_system.py` |
@@ -131,5 +112,4 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Khóa băng Cụm](./cluster-lockdown.md): cảnh báo CRITICAL không xử lý có thể kích hoạt khóa băng
 - [Xác thực Tính toàn vẹn](./integrity-validation.md): trạng thái DEGRADED kích hoạt cảnh báo tại đây

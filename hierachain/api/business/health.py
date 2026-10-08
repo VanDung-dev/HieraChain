@@ -1,6 +1,7 @@
 """API business — health-check endpoint."""
 
 import time
+
 from fastapi import APIRouter
 
 router = APIRouter(tags=["HieraChain-business"])

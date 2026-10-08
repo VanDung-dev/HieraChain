@@ -24,7 +24,7 @@ sequenceDiagram
     participant WSM as 📡 WebSocketManager
     participant SC as 📦 SubChain
 
-    Client->>WS: WebSocket Upgrade (GET /ws/{chain_name})
+    Client->>WS: WebSocket Upgrade (GET /ws?chain_name=supply_chain)
     WS->>WSM: connect(connection_id, websocket, chain_name)
     WSM->>WSM: Check max_connections (default 1000)
     WSM->>WSM: Registry.add(connection_id, conn)
@@ -32,17 +32,17 @@ sequenceDiagram
     WS-->>Client: Connection established ✅
 
     opt Client subscribes to specific event types
-        Client->>WS: { "action": "subscribe", "event_types": ["quality_check", ...] }
+        Client->>WS: { "type": "subscribe", "chain_name": "supply_chain", "event_types": ["quality_check", ...] }
         WS->>WSM: subscribe(connection_id, chain_name, event_types)
         WSM->>WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
 
-    Note over SC: Block finalized (Event Submission step 8)
+    Note over SC: Block committed after asynchronous ordering (Event Submission)
 
     SC->>WSM: broadcast_new_block(chain_name, block_data)
     WSM->>WSM: get_chain_subscribers(chain_name)
     loop Each subscriber
-        WSM->>Client: send_text(JSON { type: "block_added", data: block_data })
+        WSM->>Client: send_text(JSON { type: "block_added", chain_name: chain_name, data: block_data })
     end
 ```
 
@@ -79,7 +79,7 @@ sequenceDiagram
 // Block added notification
 {
     "type": "block_added",
-    "chain": "supply_chain",
+    "chain_name": "supply_chain",
     "data": {
         "index": 42,
         "hash": "a3f8b2c1...",
@@ -92,8 +92,7 @@ sequenceDiagram
 // Event notification (if subscribed to event_types)
 {
     "type": "event",
-    "chain": "supply_chain",
-    "event_type": "quality_check",
+    "chain_name": "supply_chain",
     "data": {
         "entity_id": "product-SKU-001",
         "event": "quality_check",
@@ -108,12 +107,12 @@ sequenceDiagram
 
 | Step | Description |
 |:-----|:------------|
-| **1. Upgrade** | HTTP GET with `Upgrade: websocket` header |
+| **1. Upgrade** | Connect to `/ws`, optionally passing `chain_name` as a query parameter |
 | **2. Capacity check** | Reject if `active_connections >= max_connections` (default 1000) |
 | **3. Register** | `ConnectionRegistry.add()` stores connection by `connection_id` |
 | **4. Subscribe** | `SubscriptionManager.subscribe_to_chain()` links connection to chain |
 | **5. Optional filter** | Client can narrow to specific `event_types` |
-| **6. Broadcast** | After Event Submission finalizes a block, `broadcast_new_block()` fans out to all subscribers |
+| **6. Broadcast** | After the Sub-Chain commits a block, `broadcast_new_block()` fans out to subscribers |
 | **7. Ping loop** | Background thread pings every 30s; removes unresponsive connections after 10s timeout |
 
 ---

@@ -5,36 +5,17 @@ This test suite covers the reliability features of the hierarchical chain.
 Specifically, it tests the recovery and rehydration capabilities of the chain.
 """
 
-import os
-import shutil
 import time
 
 import pytest
 
 from hierachain.hierarchical import SubChain
-from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
+pytestmark = pytest.mark.usefixtures("isolated_chain_storage")
 
-def _cleanup_chain(chain_name: str) -> None:
-    """Clean up both filesystem journal and DB records for a chain."""
-    data_dir = f"data/{chain_name}"
-    if os.path.exists(data_dir):
-        shutil.rmtree(data_dir, ignore_errors=True)
-    # Also remove DB records so each run starts from a clean state
-    try:
-        db = SQLiteAdapter()
-        db.delete_chain(chain_name)
-        db.close()
-    except Exception:
-        pass
-
-
-@pytest.mark.flaky(reruns=3)
 def test_recovery_and_rehydration():
     chain_name = "test_reliability_chain"
-
-    # Setup: Clean up previous runs (both filesystem AND database)
-    _cleanup_chain(chain_name)
+    chain1 = chain2 = None
 
     try:
         print("\n[Test] Starting Recovery & Rehydration Test")
@@ -79,7 +60,7 @@ def test_recovery_and_rehydration():
 
         # Stop Chain 1 (drain commit_queue + shutdown ordering service)
         chain1.stop()
-        del chain1
+        chain1 = None
         
         # 2. Second Run: Simulation of Crash/Restart
         print("[Test] Phase 2: Restarting (Simulating Crash)...")
@@ -123,5 +104,6 @@ def test_recovery_and_rehydration():
         print("[Test] Successfully verified integrity of 3 restored blocks.")
 
     finally:
-        # Cleanup
-        _cleanup_chain(chain_name)
+        for chain in (chain1, chain2):
+            if chain is not None:
+                chain.shutdown()

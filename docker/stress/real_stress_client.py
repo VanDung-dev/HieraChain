@@ -5,12 +5,12 @@ Sends actual HTTP requests to HieraChain nodes for stress testing.
 This replaces the simulation-based tests with real network requests.
 """
 
-import os
-import time
-import random
 import hashlib
-import threading
 import logging
+import os
+import random
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any
@@ -18,6 +18,7 @@ from typing import Any
 import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter
+from urllib3.util import Timeout
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,12 @@ REAL_REQUESTS = os.getenv("REAL_REQUESTS", "true").lower() == "true"
 
 # Default chain name for stress testing
 DEFAULT_CHAIN_NAME = os.getenv("STRESS_CHAIN_NAME", "stress_test")
+
+
+def get_auth_headers() -> dict[str, str]:
+    """Use the same configured credential for HTTP and WebSocket stress clients."""
+    api_key = os.getenv("HRC_API_KEY", "")
+    return {os.getenv("HRC_API_KEY_NAME", "X-API-Key"): api_key} if api_key.strip() else {}
 
 
 @dataclass
@@ -86,10 +93,7 @@ def _collect_worker_results(futures: list) -> None:
         futures: List of futures from thread pool.
     """
     for future in as_completed(futures):
-        try:
-            future.result()
-        except Exception as e:
-            logger.error("Worker error: %s", e)
+        future.result()
 
 
 class RealStressClient:
@@ -107,15 +111,8 @@ class RealStressClient:
         self.results = StressTestResult()
         self.session = requests.Session()
         
-        # Increase connection pool for concurrent workers and configure robust HTTP retries
-        from urllib3.util import Retry
-        retries = Retry(
-            total=3,
-            backoff_factor=0.1,
-            status_forcelist=[502, 503, 504],
-            raise_on_status=False
-        )
-        adapter = HTTPAdapter(pool_connections=150, pool_maxsize=150, max_retries=retries)
+        # Each attempt must fit its request budget and expose actual cluster failures.
+        adapter = HTTPAdapter(pool_connections=150, pool_maxsize=150, max_retries=0)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
@@ -125,11 +122,7 @@ class RealStressClient:
             "Content-Type": "application/json",
         })
         
-        # Add API Key if provided in environment
-        api_key = os.getenv("HRC_API_KEY")
-        if api_key:
-            key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
-            self.session.headers.update({key_name: api_key})
+        self.session.headers.update(get_auth_headers())
 
         # Initialize node status — exclude gateway (port 80, non-API)
         for node in self.nodes:
@@ -141,30 +134,41 @@ class RealStressClient:
             url = f"http://{node}"
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
-    def check_health(self, node_id: str) -> bool:
-        """Check if a node is healthy by trying multiple system endpoints."""
+    def preflight_auth(self) -> None:
+        """Abort before load or chaos if a node rejects the configured credential."""
+        if not get_auth_headers():
+            raise RuntimeError("Set HRC_API_KEY to a provisioned stress key before sending requests")
+        try:
+            for node_id, status in self.node_status.items():
+                response = self.session.get(f"{status.url}/api/ledger/chains", timeout=self.timeout)
+                if response.status_code != 200:
+                    raise RuntimeError(
+                        f"Authentication preflight failed on {node_id}: HTTP {response.status_code}; "
+                        "check key permissions and active lockout before retrying"
+                    )
+        except requests.RequestException as exc:
+            raise RuntimeError("Authentication preflight could not reach all configured nodes") from exc
+        finally:
+            self.session.close()
+
+    def check_health(self, node_id: str, timeout: float | None = None) -> bool:
+        """Require recovered hierarchy and active orderers before sending load."""
         status = self.node_status.get(node_id)
         if not status:
             return False
 
-        # Endpoints to try in order of preference
-        endpoints = ["/api/admin/status", "/api/ledger/health", "/"]
-        
-        for endpoint in endpoints:
-            try:
-                url = f"{status.url}{endpoint}"
-                response = self.session.get(url, timeout=self.timeout)
-                if response.status_code == 200:
-                    status.is_healthy = True
-                    return True
-            except requests.RequestException as e:
-                logger.debug(f"Endpoint {endpoint} failed for {node_id}: {e}")
-                continue
-
-        # If we reach here, all endpoints failed
         status.is_healthy = False
-        logger.warning(f"❌ Node {node_id} is UNHEALTHY (all endpoints failed at {status.url})")
-        return False
+        try:
+            response = self.session.get(
+                f"{status.url}/api/ledger/ready",
+                timeout=self.timeout if timeout is None else Timeout(total=timeout),
+            )
+            status.is_healthy = response.status_code == 200
+            if not status.is_healthy:
+                status.last_error = f"Readiness HTTP {response.status_code}: {response.text[:100]}"
+        except requests.RequestException as exc:
+            status.last_error = str(exc)
+        return status.is_healthy
 
     def check_all_nodes(self) -> dict[str, bool]:
         """Check health of all nodes."""
@@ -182,12 +186,14 @@ class RealStressClient:
             return chains if isinstance(chains, list) else []
         return []
 
-    def _do_submit_event(self, status: NodeStatus, chain_name: str, event: dict) -> bool:
+    def _do_submit_event(
+        self, status: NodeStatus, chain_name: str, event: dict, timeout: float | None = None,
+    ) -> bool:
         start = time.time()
         response = self.session.post(
             f"{status.url}/api/ledger/chains/{chain_name}/events",
             json=event,
-            timeout=self.timeout,
+            timeout=self.timeout if timeout is None else Timeout(total=timeout),
         )
         elapsed = time.time() - start
         with self.lock:
@@ -217,13 +223,23 @@ class RealStressClient:
         logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...",
                    min_healthy, len(self.node_status), timeout)
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            healthy = sum(1 for nid in self.node_status if self.check_health(nid))
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            healthy = 0
+            for status in self.node_status.values():
+                status.is_healthy = False
+            for node_id in self.node_status:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                if self.check_health(node_id, timeout=min(3.0, self.timeout, remaining)):
+                    healthy += 1
             if healthy >= min_healthy:
                 logger.info("Cluster ready: %d nodes healthy", healthy)
                 return True
-            time.sleep(2.0)
+            remaining = deadline - time.monotonic()
+            if remaining > 0:
+                time.sleep(min(2.0, remaining))
 
         return False
 
@@ -232,6 +248,7 @@ class RealStressClient:
         node_id: str,
         event: dict[str, Any],
         chain_name: str = DEFAULT_CHAIN_NAME,
+        timeout: float | None = None,
     ) -> bool:
         """Submit an event to a node's chain."""
         status = self.node_status.get(node_id)
@@ -239,9 +256,9 @@ class RealStressClient:
             return False
 
         try:
-            return self._do_submit_event(status, chain_name, event)
+            return self._do_submit_event(status, chain_name, event, timeout)
         except requests.RequestException as e:
-            if isinstance(e, requests.exceptions.ConnectionError):
+            if timeout is None and isinstance(e, requests.exceptions.ConnectionError):
                 try:
                     return self._do_submit_event(status, chain_name, event)
                 except requests.RequestException:
@@ -509,43 +526,22 @@ class RealStressClient:
         print("=" * 60)
 
 
-    def create_chains_on_nodes(self) -> bool:
+    def create_chains_on_nodes(self, chain_name: str = DEFAULT_CHAIN_NAME) -> bool:
         """Create stress test chain on all nodes.
         
         Returns:
-            True if at least one chain was created successfully.
+            True only if the chain is available on every configured node.
         """
-        chain_created = False
-        
+        if not self.node_status:
+            return False
         for node_id in self.node_status:
-            if not self._try_create_chain_on_node(node_id):
-                continue
-            chain_created = True
-        
-        return chain_created
+            if not self._try_create_chain_on_node(node_id, chain_name):
+                return False
+        return True
     
-    def _try_create_chain_on_node(self, node_id: str) -> bool:
-        """Try to create chain on a single node with retry logic."""
-        attempts = 50 if len(self.node_status) == 1 else 1
-
-        if attempts > 1:
-            logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
-
-        for i in range(attempts):
-            if self.create_chain(node_id, DEFAULT_CHAIN_NAME):
-                logger.info("Chain created/verified on %s (attempt %d)", node_id, i + 1)
-                return True
-            if self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME):
-                logger.info("Chain '%s' confirmed via GET on %s", DEFAULT_CHAIN_NAME, node_id)
-                return True
-            logger.warning("Failed to create chain on %s (attempt %d/%d)", node_id, i + 1, attempts)
-            time.sleep(0.2)
-
-        logger.info("Creation attempts exhausted on %s, verifying chain existence...", node_id)
-        confirmed = self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME)
-        if confirmed:
-            logger.info("Chain '%s' confirmed via fallback verification on %s", DEFAULT_CHAIN_NAME, node_id)
-        return confirmed
+    def _try_create_chain_on_node(self, node_id: str, chain_name: str = DEFAULT_CHAIN_NAME) -> bool:
+        """Verify once after an ambiguous creation failure; do not hide unavailable nodes."""
+        return self.create_chain(node_id, chain_name) or self.verify_chain_exists(node_id, chain_name)
 
 
 def run_real_stress_test(
@@ -569,22 +565,17 @@ def run_real_stress_test(
     # Wait for nodes to be healthy
     logger.info("Waiting for nodes to become healthy...")
     if not client.wait_for_nodes(timeout=60):
-        logger.warning("Not all nodes are healthy, proceeding anyway")
+        raise RuntimeError("Real stress test requires all configured nodes to be healthy")
 
     # Check if any nodes are healthy - if not, skip the test
     healthy_nodes = [nid for nid, status in client.node_status.items() if status.is_healthy]
     if not healthy_nodes:
-        logger.warning("No healthy nodes available - skipping stress test")
-        # Return empty results to indicate no test was run
-        return StressTestResult()
+        raise RuntimeError("Real stress test found no healthy nodes")
 
     # Create chain on healthy nodes for stress testing
     logger.info("Creating stress test chain on healthy nodes...")
     if not client.create_chains_on_nodes():
-        # Check again if any chain was created on any node
-        # In some cases, nodes might be reachable but chain creation fails due to other issues
-        # In that case, we still try to run the test as nodes are reachable
-        logger.warning("Could not create chain on nodes, but nodes are reachable - proceeding anyway")
+        raise RuntimeError("Could not create or verify the stress test chain on live nodes")
 
     # Run test
     _results = client.run_flood_test(
@@ -592,6 +583,10 @@ def run_real_stress_test(
         events_per_second=events_per_second,
         workers=workers,
     )
+    if _results.total_requests == 0:
+        raise RuntimeError("Real stress test generated no live event requests")
+    if _results.successful_requests + _results.failed_requests != _results.total_requests:
+        raise RuntimeError("Real stress test request counters do not reconcile")
 
     client.print_results()
     return _results

@@ -8,7 +8,7 @@ icon: material/shield-key
 
 ## Tổng quan
 
-Đồng thuận BFT chạy PBFT 3 pha khi hoàn tất khối. Nó yêu cầu `n >= 3f + 1` để chịu được `f` node lỗi hoặc gian lận. Cơ chế này thay thế bước `finalize_block()` trong luồng Gửi Sự kiện khi hệ thống chạy ở chế độ BFT.
+Thành phần thư viện BFT được export và demo độc lập sử dụng PBFT 3 pha. Nó yêu cầu `n >= 3f + 1` để chịu được `f` node lỗi hoặc gian lận. Luồng runtime MainChain và SubChain hiện tại không khởi tạo BFT; bên gọi sử dụng tường minh `BFTConsensus.request()`.
 
 Với chi tiết PoA và PoF, xem [Cơ chế Đồng thuận](./consensus_mechanisms.md).
 
@@ -21,43 +21,45 @@ Yêu cầu hệ thống: tối thiểu 4 node để chịu 1 lỗi Byzantine (n=
 ```mermaid
 sequenceDiagram
     autonumber
-    participant OS as ⚙️ OrderingService
-    participant L as 👑 Nút Trưởng nhóm (Leader Node)
-    participant ledger as 🖥️ Trình xác thực 1 (Validator 1)
-    participant business as 🖥️ Trình xác thực 2 (Validator 2)
-    participant Vf as 🖥️ Trình xác thực f (Validator f)
-
-    OS->>L: Gom cụm sự kiện sẵn sàng → kích hoạt đồng thuận
+    participant C as Client
+    participant L as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+    participant R3 as Replica 3
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHA 1 — CHUẨN BỊ TRƯỚC (PRE-PREPARE)
-        L->>L: Gán số thứ tự, tạo thông điệp PRE-PREPARE
-        L->>ledger: PRE-PREPARE(view, seq, block_digest)
-        L->>business: PRE-PREPARE(view, seq, block_digest)
-        L->>Vf: PRE-PREPARE(view, seq, block_digest)
+        Note over L,R3: PHASE 1 — PRE-PREPARE
+        C->>L: request(operation)
+        L->>L: Hash full canonical request and record local PREPARE
+        L->>R1: PRE-PREPARE(view, seq, digest, request)
+        L->>R2: PRE-PREPARE(view, seq, digest, request)
+        L->>R3: PRE-PREPARE(view, seq, digest, request)
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHA 2 — CHUẨN BỊ (PREPARE)
-        ledger->>ledger: Xác thực PRE-PREPARE, phát tin PREPARE
-        ledger->>L: PREPARE(view, seq, digest)
-        ledger->>business: PREPARE(view, seq, digest)
-        business->>L: PREPARE(view, seq, digest)
-        business->>ledger: PREPARE(view, seq, digest)
-        Note over L: Thu thập đủ 2f phiếu bầu PREPARE
+        Note over L,R3: PHASE 2 — PREPARE
+        R1->>R1: Recompute digest and record local PREPARE
+        R2->>R2: Recompute digest and record local PREPARE
+        R3->>R3: Recompute digest and record local PREPARE
+        R1->>L: PREPARE(view, seq, digest)
+        R2->>L: PREPARE(view, seq, digest)
+        R3->>L: PREPARE(view, seq, digest)
+        Note over L,R3: Each node records its local COMMIT after 2f unique PREPARE votes
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over L,Vf: PHA 3 — CAM KẾT (COMMIT)
-        L->>ledger: COMMIT(view, seq, digest)
-        L->>business: COMMIT(view, seq, digest)
-        ledger->>L: COMMIT(view, seq, digest)
-        business->>L: COMMIT(view, seq, digest)
-        Note over L: Thu thập đủ 2f+1 phiếu bầu COMMIT → hoàn tất
-        L->>L: Hoàn tất & ký khối dữ liệu
-        L->>OS: Khối dữ liệu đã cam kết → đẩy vào commit_queue
+        Note over L,R3: PHASE 3 — COMMIT
+        L->>R1: COMMIT(view, seq, digest)
+        R1->>L: COMMIT(view, seq, digest)
+        R2->>L: COMMIT(view, seq, digest)
+        Note over L,R3: Apply after 2f+1 unique COMMIT votes, including the local vote
+        R1->>R1: Apply event to the attached chain
     end
 ```
+
+Primary và replica mỗi node đếm đúng một phiếu giai đoạn có chữ ký của chính mình. PRE-PREPARE bị từ chối nếu nội dung request không khớp với digest đã ký. Nếu thao tác ghi vào chain được gắn vào phát sinh lỗi hoặc trả về `False`, node giữ các message quorum và event ổn định trong bộ nhớ; một COMMIT hợp lệ được gửi lại có thể thử lại thao tác ghi. Node chỉ đánh dấu sequence đã cam kết sau khi thao tác ghi thành công.
+
+Khi không gắn application chain, thành phần chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event, như demo độc lập.
 
 ---
 
@@ -66,19 +68,18 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant ledger as 🖥️ Trình xác thực 1
+    participant ledger as 🖥️ Validator 1
     participant VM as 🔄 BFTViewChangeManager
-    participant NEW as 👑 Trưởng nhóm Mới (New Leader)
+    participant NEW as 👑 New Leader
 
-    Note over ledger: Phát hiện hết hạn kết nối với Leader (không nhận được PRE-PREPARE)
+    Note over ledger: Leader timeout detected (no PRE-PREPARE received)
 
-    ledger->>VM: trigger_view_change(current_view, failed_leader)
-    VM->>VM: view += 1
-    VM->>VM: Phát tin VIEW-CHANGE đến tất cả các trình xác thực
-    VM->>VM: Thu thập đủ f+1 phiếu bầu VIEW-CHANGE
-    VM->>NEW: Bầu trưởng nhóm mới: Validators[new_view % n]
-    NEW->>NEW: Phát tin thông điệp NEW-VIEW
-    NEW->>NEW: Bắt đầu lại từ Pha 1 — PRE-PREPARE
+    ledger->>VM: initiate_view_change(new_view)
+    VM->>VM: Broadcast VIEW-CHANGE to all validators
+    VM->>VM: Collect and validate 2f+1 VIEW-CHANGE votes
+    VM->>NEW: Elect new leader: Validators[new_view % n]
+    NEW->>NEW: Broadcast NEW-VIEW message
+    NEW->>NEW: Activate the new view
 ```
 
 ---
@@ -87,10 +88,10 @@ sequenceDiagram
 
 | Bước | Mô tả |
 |:-----|:------|
-| **PRE-PREPARE** | Leader gán số thứ tự và phát thông điệp chứa digest của khối tới mọi validator. |
-| **PREPARE** | Mỗi validator kiểm tra PRE-PREPARE, rồi phát phiếu PREPARE của mình. Leader thu đủ 2f phiếu hợp lệ. |
-| **COMMIT** | Leader phát COMMIT. Mỗi node thu đủ 2f+1 phiếu COMMIT trước khi xác nhận khối tại chỗ. |
-| **View Change** | Nếu leader không phản hồi trong timeout: validator tăng `view` lên 1, bầu `Validators[view % n]` làm leader mới. |
+| **PRE-PREPARE** | Primary gán số thứ tự, băm toàn bộ request chuẩn, ký digest và phát request. |
+| **PREPARE** | Mỗi node tính lại digest và ghi nhận đúng một phiếu PREPARE của mình. Mỗi node chuyển sang COMMIT sau `2f` phiếu PREPARE duy nhất, bao gồm phiếu của chính nó. |
+| **COMMIT** | Mỗi node đã PREPARED ghi nhận và phát đúng một phiếu COMMIT của mình. Node áp dụng event sau `2f + 1` phiếu COMMIT duy nhất, bao gồm phiếu của chính nó. |
+| **View Change** | Nếu leader im lặng quá timeout, manager thu thập `2f + 1` phiếu VIEW-CHANGE có chữ ký trước khi chấp nhận view mới. |
 
 ---
 
@@ -100,7 +101,7 @@ sequenceDiagram
 |:-----------|:-------|:------------------|:-------------------|
 | **PoA** | Dựa trên danh tính, node có thẩm quyền ký khối | Danh tiếng validator | Mạng riêng / nội bộ |
 | **PoF** | Luân phiên leader, đồng thuận đa số `height % n` | Phân tán niềm tin | Mạng liên doanh / đa tổ chức |
-| **BFT** | PBFT 3 pha | Chịu tới `f` node Byzantine trong `3f+1` | Môi trường quan trọng / đối kháng |
+| **BFT** | Thành phần thư viện PBFT 3 pha | Chịu tới `f` node Byzantine trong `3f+1` | Bên gọi tường minh và demo độc lập |
 
 ---
 
@@ -108,10 +109,11 @@ sequenceDiagram
 
 | Tình huống | Hành vi |
 |:-----------|:--------|
-| Leader không phản hồi | Kích hoạt View Change, bầu leader mới (`Validators[new_view % n]`) |
+| Leader không phản hồi | Kích hoạt View Change; primary mới là `all_nodes[new_view % n]` |
 | Validator gửi digest không hợp lệ | Phiếu bị loại, không tính vào quorum |
 | Chia mạng < f node | Giao thức tiếp tục nếu vẫn đủ quorum 2f+1 |
 | Chia mạng >= f+1 node | Giao thức tạm dừng tới khi mạng nối lại (ưu tiên an toàn hơn sẵn sàng) |
+| Ghi chain được gắn vào thất bại | Giữ quorum COMMIT hiện tại và thử lại cùng event khi COMMIT hợp lệ được gửi lại |
 
 ---
 
@@ -119,17 +121,17 @@ sequenceDiagram
 
 | Bước | Lớp / Phương thức | Tệp |
 |:-----|:--------------|:-----|
-| PBFT 3 pha | `BFTConsensus.run_consensus()` | `consensus/bft/consensus.py` |
-| PRE-PREPARE | `BFTConsensus._send_pre_prepare()` | `consensus/bft/consensus.py` |
-| Thu thập PREPARE | `BFTConsensus._handle_prepare()` | `consensus/bft/consensus.py` |
-| Hoàn tất COMMIT | `BFTConsensus._handle_commit()` | `consensus/bft/consensus.py` |
-| Thay đổi phiên | `BFTViewChangeManager.trigger_view_change()` | `consensus/bft/consensus.py` |
-| Giao thức mạng | `ZmqTransport.send()` / `receive()` | `network/zmq_transport.py` |
+| Request và PRE-PREPARE | `BFTConsensus.request()` | `consensus/bft/consensus.py` |
+| Xác thực PRE-PREPARE và PREPARE cục bộ | `BFTConsensusEngine.handle_pre_prepare()` | `consensus/bft/engine.py` |
+| Quorum PREPARE và COMMIT cục bộ | `BFTConsensusEngine.handle_prepare()` | `consensus/bft/engine.py` |
+| Quorum COMMIT và áp dụng event | `BFTConsensusEngine.process_commit_quorum()` | `consensus/bft/engine.py` |
+| View Change | `BFTViewChangeManager.initiate_view_change()` | `consensus/bft/view_change.py` |
+| Giao thức mạng | `BFTMessageDispatcher.broadcast_msg()` | `consensus/bft/dispatcher.py` |
 
 ---
 
 ## Liên quan
 
 - [Cơ chế Đồng thuận](./consensus_mechanisms.md): chi tiết PoA và PoF
-- [Gửi Sự kiện](./event-submission.md): BFT thay thế bước `finalize_block()`
+- [Gửi Sự kiện](./event-submission.md): luồng gửi sự kiện của MainChain và SubChain
 - [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): khôi phục sau lỗi leader ở cấp hệ thống

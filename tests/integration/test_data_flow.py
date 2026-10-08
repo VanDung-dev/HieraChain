@@ -9,9 +9,12 @@ import shutil
 import time
 import pyarrow as pa
 import struct
+import pytest
 
 from hierachain.core.block import EVENT_SCHEMA
 from hierachain.hierarchical import SubChain
+
+pytestmark = pytest.mark.usefixtures("isolated_chain_storage")
 
 
 def _read_first_journal_row(journal_path, schema):

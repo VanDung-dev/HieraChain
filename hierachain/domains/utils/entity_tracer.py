@@ -7,15 +7,15 @@ across multiple Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
-from typing import Any
 from collections import defaultdict
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from typing import Any
 
 from hierachain.domains.utils.lifecycle import (
-    _identify_lifecycle_stages,
-    _analyze_status_transitions,
     _analyze_cross_chain_interactions,
+    _analyze_status_transitions,
+    _identify_lifecycle_stages,
 )
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
 
 def _get_current_status(events: list[dict[str, Any]]) -> str | None:

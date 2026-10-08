@@ -13,18 +13,20 @@ Template method pattern:
 - Override specific _execute_* methods for other DB dialects (MySQL, PostgreSQL, etc.)
 """
 
-from abc import ABC, abstractmethod
-import orjson
 import time
-from typing import Any, Callable
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import contextmanager
+from typing import Any
 
+from hierachain.adapters.database.channel_ledger_sql import ChannelLedgerSQLStorage
+from hierachain.config.settings import settings
 from hierachain.core.blockchain import Blockchain
 from hierachain.security.secure_logging import get_storage_logger
-from hierachain.config.settings import settings
+from hierachain.serialization import dumps_json, loads_json
 
 
-class SQLBase(ABC):
+class SQLBase(ChannelLedgerSQLStorage, ABC):
     """
     Abstract base class for SQL database adapters.
 
@@ -69,7 +71,7 @@ class SQLBase(ABC):
         try:
             raw = block_row['metadata_json']
             if raw:
-                metadata = orjson.loads(raw) if isinstance(raw, (str, bytes)) else raw
+                metadata = loads_json(raw) if isinstance(raw, (str, bytes)) else raw
         except (KeyError, IndexError, TypeError):
             pass
         merkle_root = metadata.get("merkle_root", "") if isinstance(metadata, dict) else ""
@@ -81,17 +83,33 @@ class SQLBase(ABC):
             "nonce": block_row['nonce'],
             "hash": block_row['hash'],
             "merkle_root": merkle_root,
+            "creator_id": metadata.get("creator_id") if isinstance(metadata, dict) else None,
+            "signature": metadata.get("signature") if isinstance(metadata, dict) else None,
         }
 
     @staticmethod
     def _create_event_from_row(row: Any) -> dict[str, Any]:
         """Create event dictionary from a database row."""
+        raw_data = row["data"]
+        if raw_data is None or raw_data == "" or raw_data == b"":
+            data = {}
+        elif isinstance(raw_data, (str, bytes, bytearray)):
+            data = loads_json(raw_data)
+        else:
+            data = raw_data
+        if (
+            isinstance(data, dict)
+            and data.get("entity_id") == row["entity_id"]
+            and data.get("event", data.get("event_type")) == row["event_type"]
+            and data.get("timestamp") == row["timestamp"]
+        ):
+            return data
         return {
             "chain_name": row["chain_name"],
             "entity_id": row["entity_id"],
             "event": row["event_type"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"] or "{}"),
+            "data": data,
         }
 
     def store_chain(self, chain: Blockchain) -> bool:
@@ -111,9 +129,13 @@ class SQLBase(ABC):
         domain_type = getattr(chain, 'domain_type', None)
         cursor.execute(
             """
-            INSERT OR REPLACE INTO chains
+            INSERT INTO chains
             (name, chain_type, domain_type, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                chain_type = excluded.chain_type,
+                domain_type = excluded.domain_type,
+                updated_at = excluded.updated_at
             """,
             (chain.name, chain_type, domain_type, time.time(), time.time()),
         )
@@ -145,6 +167,30 @@ class SQLBase(ABC):
             if settings.LOG_SQL_DETAIL:
                 self.logger.debug("Load chain error detail", error_type=type(e).__name__)
             return None
+
+    def list_chains(self) -> list[dict[str, Any]]:
+        """List sub-chains, propagating database failures to the caller."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, chain_type, domain_type FROM chains "
+                "WHERE chain_type = 'sub' ORDER BY name"
+            )
+            return [
+                {
+                    "name": row["name"],
+                    "chain_type": row["chain_type"],
+                    "domain_type": row["domain_type"],
+                }
+                for row in cursor.fetchall()
+            ]
+
+    def list_block_chain_names(self) -> list[str]:
+        """List chains with stored blocks, propagating database failures."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT chain_name FROM blocks ORDER BY chain_name")
+            return [row["chain_name"] for row in cursor.fetchall()]
 
     @staticmethod
     def _execute_fetch_chain_info(cursor: Any, chain_name: str) -> Any | None:
@@ -195,38 +241,38 @@ class SQLBase(ABC):
 
     _QUERIES_WITH_CHAIN: dict[str, str] = {
         "chain_name": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND chain_name = :fv ORDER BY timestamp"
         ),
         "event_type": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND event_type = :fv ORDER BY timestamp"
         ),
         "entity_id": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND entity_id = :fv ORDER BY timestamp"
         ),
         "timestamp": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND timestamp = :fv ORDER BY timestamp"
         ),
     }
 
     _QUERIES_WITHOUT_CHAIN: dict[str, str] = {
         "chain_name": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :fv ORDER BY timestamp"
         ),
         "event_type": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE event_type = :fv ORDER BY timestamp"
         ),
         "entity_id": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE entity_id = :fv ORDER BY timestamp"
         ),
         "timestamp": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE timestamp = :fv ORDER BY timestamp"
         ),
     }
@@ -256,7 +302,7 @@ class SQLBase(ABC):
                 self.logger.debug(
                     "Get events by filter error detail", error_type=type(e).__name__
                 )
-            return []
+            raise RuntimeError(f"{operation_name} failed") from e
 
     def _execute_query_events_filter(
         self, cursor: Any, filter_column: str,
@@ -313,7 +359,7 @@ class SQLBase(ABC):
                 sub_chain_name,
                 proof_hash,
                 block_index,
-                orjson.dumps(metadata).decode('utf-8'),
+                dumps_json(metadata),
                 time.time(),
                 time.time(),
             ),
@@ -446,7 +492,7 @@ class SQLBase(ABC):
                 "sub_chain_name": row['sub_chain_name'],
                 "proof_hash": row['proof_hash'],
                 "block_index": row['block_index'],
-                "metadata": orjson.loads(row['metadata'] or '{}'),
+                "metadata": loads_json(row['metadata'] or '{}'),
                 "submitted_at": row['submitted_at'],
             })
         return proofs
@@ -552,7 +598,7 @@ class SQLBase(ABC):
                 block_data["timestamp"],
                 block_data.get("nonce", 0),
                 len(events),
-                orjson.dumps(metadata).decode("utf-8") if metadata else None,
+                dumps_json(metadata) if metadata else None,
             ),
         )
 
@@ -571,7 +617,7 @@ class SQLBase(ABC):
                     event.get("entity_id"),
                     event.get("event", "unknown"),
                     event.get("timestamp", 0.0),
-                    orjson.dumps(event).decode("utf-8"),
+                    dumps_json(event),
                     event.get("submitted_by") or event.get("sender_id"),
                 ),
             )
@@ -583,18 +629,46 @@ class SQLBase(ABC):
         self, index: int, chain_name: str | None = None,
     ) -> dict[str, Any] | None:
         """Retrieve a block by its integer index."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_block_by_index(cursor, index, chain_name)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_block_by_index",
-                index=index,
-                chain_name=chain_name,
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_block_by_index(cursor, index, chain_name)
+
+    _block_range_placeholder = "?"
+
+    def get_blocks_from_index(
+        self, start_index: int, chain_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Load headers and ordered events in one coherent SQL statement."""
+        p = self._block_range_placeholder
+        where = f'b."index">={p}'
+        params: tuple[Any, ...] = (start_index,)
+        if chain_name is not None:
+            where += f' AND b.chain_name={p}'
+            params += (chain_name,)
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f'SELECT b.*, e.id AS event_row_id, e.entity_id AS event_entity_id, '
+                f'e.event_type AS event_type, e.timestamp AS event_timestamp, e.data AS event_data '
+                f'FROM blocks b LEFT JOIN events e ON e.chain_name=b.chain_name AND e.block_hash=b.hash '
+                f'WHERE {where} '
+                f'ORDER BY b.chain_name, b."index", e.id',
+                params,
             )
-            return None
+            blocks: list[dict[str, Any]] = []
+            previous_key = None
+            for row in cursor:
+                key = (row["chain_name"], row["index"])
+                if key != previous_key:
+                    blocks.append(self._create_block_data(row, []))
+                    previous_key = key
+                if row["event_row_id"] is not None:
+                    blocks[-1]["events"].append(self._create_event_from_row({
+                        "chain_name": row["chain_name"], "entity_id": row["event_entity_id"],
+                        "event_type": row["event_type"], "timestamp": row["event_timestamp"],
+                        "data": row["event_data"],
+                    }))
+            return blocks
 
     def _execute_get_block_by_index(
         self, cursor: Any, index: int, chain_name: str | None,
@@ -617,17 +691,9 @@ class SQLBase(ABC):
         self, chain_name: str | None = None,
     ) -> dict[str, Any] | None:
         """Retrieve the block with the highest index."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_latest_block(cursor, chain_name)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_latest_block",
-                chain_name=chain_name,
-            )
-            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_latest_block(cursor, chain_name)
 
     def _execute_get_latest_block(
         self, cursor: Any, chain_name: str | None,
@@ -650,17 +716,9 @@ class SQLBase(ABC):
 
     def get_event_by_id(self, event_id: str) -> dict[str, Any] | None:
         """Retrieve an event by its unique ID."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_event_by_id(cursor, event_id)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_event_by_id",
-                event_id=event_id,
-            )
-            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_event_by_id(cursor, event_id)
 
     @staticmethod
     def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:
@@ -673,10 +731,11 @@ class SQLBase(ABC):
             return None
         return {
             "event_id": row["event_id"],
+            "chain_name": row["chain_name"],
             "status": "ordered",
             "block_hash": row["block_hash"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"]) if row["data"] else {},
+            "data": loads_json(row["data"]) if row["data"] else {},
         }
 
     def update_state(self, key: str, value: Any, last_block_hash: str) -> None:
@@ -687,6 +746,68 @@ class SQLBase(ABC):
         self._execute_with_error_handling(
             "update_state", _op, key=key
         )
+
+    def save_hierarchy_registry(
+        self, state: dict[str, Any], *, expected_revision: str | None = None,
+        channel_ledgers: dict[str, Any] | None = None,
+    ) -> bool:
+        """Atomically reject a registry snapshot based on an obsolete revision."""
+        try:
+            if not isinstance(state.get("_revision"), str) or state["_revision"] == expected_revision:
+                raise ValueError("Registry writes require a new revision")
+            encoded = dumps_json(state)
+            with self._get_connection() as conn:
+                if not self._execute_save_hierarchy_registry(conn, encoded, expected_revision):
+                    conn.rollback()
+                    return False
+                self._initialize_channel_ledgers(conn, channel_ledgers or {})
+                conn.commit()
+                return True
+        except Exception as exc:
+            self.logger.error("Could not persist hierarchy registry", error_type=type(exc).__name__)
+            return False
+
+    @staticmethod
+    def _execute_save_hierarchy_registry(
+        conn: Any, encoded: str, expected_revision: str | None,
+    ) -> bool:
+        cursor = conn.cursor()
+        if expected_revision is None:
+            cursor.execute(
+                """
+                INSERT INTO chain_state (key, value, last_block_hash, updated_at)
+                VALUES ('hierarchy_registry', ?, '', ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+                WHERE json_extract(chain_state.value, '$._revision') IS NULL
+                """,
+                (encoded, time.time()),
+            )
+        else:
+            cursor.execute(
+                "UPDATE chain_state SET value=?, updated_at=? "
+                "WHERE key='hierarchy_registry' AND json_extract(value, '$._revision') = ?",
+                (encoded, time.time(), expected_revision),
+            )
+        saved = cursor.rowcount == 1
+        return saved
+
+    def load_hierarchy_registry(self) -> dict[str, Any] | None:
+        """Return the saved registry, or raise if storage cannot be read."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            self._execute_load_hierarchy_registry(cursor)
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        value = row["value"]
+        state = loads_json(value) if isinstance(value, (str, bytes, bytearray)) else value
+        if not isinstance(state, dict):
+            raise ValueError("Invalid hierarchy registry snapshot")
+        return state
+
+    @staticmethod
+    def _execute_load_hierarchy_registry(cursor: Any) -> None:
+        cursor.execute("SELECT value FROM chain_state WHERE key = ?", ("hierarchy_registry",))
 
     @staticmethod
     def _execute_update_state(
@@ -705,7 +826,7 @@ class SQLBase(ABC):
             """,
             (
                 key,
-                orjson.dumps(value).decode("utf-8") if not isinstance(value, (str, bytes)) else value,
+                dumps_json(value) if not isinstance(value, (str, bytes)) else value,
                 last_block_hash,
                 time.time(),
             ),
@@ -724,8 +845,12 @@ class SQLBase(ABC):
 
     @staticmethod
     def _execute_delete_chain(conn: Any, chain_name: str) -> bool:
-        """Default SQLite implementation."""
+        """Default SQLite implementation, including proof references."""
         cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM proofs WHERE main_chain_name = ? OR sub_chain_name = ?",
+            (chain_name, chain_name),
+        )
         cursor.execute("DELETE FROM events WHERE chain_name = ?", (chain_name,))
         cursor.execute("DELETE FROM blocks WHERE chain_name = ?", (chain_name,))
         cursor.execute("DELETE FROM chains WHERE name = ?", (chain_name,))

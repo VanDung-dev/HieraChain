@@ -1,6 +1,6 @@
 ---
 title: "Cluster Module"
-description: "Quản lý cụm node, cơ chế đồng bộ trạng thái phân tán và giao thức phong tỏa (lockdown) an toàn."
+description: "Đồng bộ liên tầng và các kiểu dữ liệu thông điệp của cluster."
 icon: material/server-network
 ---
 
@@ -8,45 +8,15 @@ icon: material/server-network
 
 ## Tổng quan
 
-Module **Cluster** là bộ não điều phối sự phối hợp giữa các node trong mạng lưới HieraChain. Nó đảm bảo hệ thống hoạt động như một thực thể thống nhất, duy trì tính nhất quán dữ liệu xuyên suốt các tầng phân cấp và cung cấp các cơ chế bảo vệ khẩn cấp khi phát hiện dấu hiệu bất thường.
+Module **Cluster** chứa runtime đồng bộ liên tầng và các kiểu dữ liệu dùng cho thông điệp cluster.
 
 ---
 
 ## Kiến trúc & Các thành phần chính
 
-Hệ thống được thiết kế theo mô hình phi tập trung với các thành phần chuyên biệt:
+Package hiện cung cấp hai khối chức năng nhỏ:
 
 <div class="grid cards" markdown>
-
-*   :material-server-network:{ .lg .middle } __Cluster Manager__
-
-    ---
-
-    __File__: `cluster_manager.py`
-
-    * Theo dõi sức khỏe (Health tracking) của toàn bộ node.
-    * Cơ chế Heartbeat để phát hiện node ngoại tuyến.
-    * Quản lý bỏ phiếu Quorum (2/3 majority).
-
-*   :material-shield-lock:{ .lg .middle } __Lockdown Protocol__
-
-    ---
-
-    __File__: `lockdown_protocol.py`
-
-    * Giao thức truyền tin Gossip qua P2P (ZMQ).
-    * Bảo mật bằng chữ ký HMAC-SHA256 (`HRC_CLUSTER_SECRET`).
-    * Cơ chế "Quarantine Report" (Báo cáo cách ly).
-
-*   :material-database-sync:{ .lg .middle } __State Sync (Resurrection)__
-
-    ---
-
-    __File__: `state_sync_manager.py`
-
-    * Khôi phục trạng thái sau sự cố hoặc phong tỏa.
-    * Cơ chế "Gap-fill" (Lấp đầy khoảng trống) block.
-    * Xác thực block nhận được từ đồng đẳng (peers).
 
 *   :material-connection:{ .lg .middle } __Cross-Level Sync__
 
@@ -57,70 +27,43 @@ Hệ thống được thiết kế theo mô hình phi tập trung với các th�
     * Đồng bộ bằng chứng (proofs) giữa Main Chain và Sub-Chains.
     * Đảm bảo tính toàn vẹn của cây phân cấp doanh nghiệp.
 
+*   :material-shield-lock:{ .lg .middle } __Kiểu dữ liệu thông điệp Lockdown__
+
+    ---
+
+    __File__: `lockdown_types.py`
+
+    * Định nghĩa thông điệp lockdown và quarantine có thể serialize.
+    * Cung cấp helper ký và xác thực HMAC.
+
 </div>
 
 ---
 
-## Giao thức Phong tỏa & Khôi phục (Lockdown & Recovery)
+## Sử dụng
 
-Đây là cơ chế an ninh tối thượng của HieraChain để bảo vệ sổ cái khi có tấn công hoặc lỗi hệ thống nghiêm trọng.
+`HierarchyManager` sở hữu instance `CrossLevelSyncManager` tùy chọn và dùng nó
+để đồng bộ metadata proof giữa main chain và sub-chain. Các kiểu dữ liệu trong
+`lockdown_types.py` chỉ là helper cho dữ liệu và chữ ký; chúng không triển khai
+bộ điều phối bỏ phiếu hoặc phong tỏa toàn cluster.
 
-### 1. Bỏ phiếu Quorum (Quorum Voting)
-Hệ thống yêu cầu đa số tuyệt đối (**2/3 số node**) đồng thuận để thay đổi trạng thái cụm:
-*   **Lockdown**: Tạm dừng mọi hoạt động ghi mới để bảo vệ dữ liệu hiện có.
-*   **Recovery**: Tái khởi động hệ thống sau khi đã xử lý xong sự cố.
-
-### 2. Báo cáo "Hơi thở cuối" (Quarantine Report)
-Trước khi một node thực hiện phong tỏa và xóa bộ nhớ đệm (event pool), nó sẽ phát đi một `QuarantineReport` chứa dấu vân tay (fingerprints) của các sự kiện chưa được ghi. Điều này giúp các node khác đối chiếu và phát hiện lỗ hổng dữ liệu sau khi khôi phục.
-
-### 3. Bảo mật thông điệp
-Mọi thông điệp trong cụm (Lockdown, Vote, Sync) đều phải được ký bằng **HMAC-SHA256** sử dụng khóa bí mật dùng chung `HRC_CLUSTER_SECRET`. Các thông điệp không hợp lệ hoặc hết hạn (>300s) sẽ bị loại bỏ ngay lập tức.
+Việc gửi proof của một Sub-Chain được tuần tự hóa trên chain đó trong lúc lấy
+tip hiện tại, kiểm tra anchor có sẵn, ghi event MainChain và xác minh đọc lại
+từ storage bền vững. Vì vậy các request đồng thời cho cùng tip sẽ dùng lại một
+proof anchor thay vì thêm bản trùng. Khóa này chỉ áp dụng trong một object
+Sub-Chain, không phải khóa phân tán giữa các tiến trình.
 
 ---
 
-## Cơ chế Đồng bộ Trạng thái (State Synchronization)
+## Chữ ký báo cáo Quarantine
 
-Khi một node mới gia nhập hoặc một node vừa khôi phục từ trạng thái phong tỏa, nó sẽ thực hiện quy trình **Resurrection**:
+`QuarantineReport.compute_signature(secret_key)` tính HMAC-SHA256 trên mọi trường do `to_dict()` trả về, trừ `signature`: `msg_type`, `lockdown_type`, `node_id`, `timestamp`, `pending_event_ids`, `last_block_index`, `last_block_hash` và `total_pending`. Payload là JSON UTF-8 dạng gọn, sắp xếp khóa object, giữ nguyên Unicode và chỉ chấp nhận số hữu hạn. Thứ tự danh sách event được giữ nguyên và bảo vệ. Digest vẫn lấy 32 ký tự hex đầu tiên.
 
-1.  **Xác định khoảng trống (Gap Identification)**: Đối chiếu chỉ số (index) block cuối cùng với các peers.
-2.  **Yêu cầu dữ liệu (Sync Request)**: Gửi yêu cầu lấp đầy khoảng trống cho các node lành mạnh.
-3.  **Xác thực đa tầng (Verification)**: Mỗi block nhận về đều được kiểm tra hash chaining và chữ ký bởi `BlockVerifier`.
-4.  **Hợp nhất (Merging)**: Chỉ các dữ liệu hợp lệ mới được ghi vào database địa phương.
+Byte canonical dùng `hierachain.serialization.dumps_canonical_json(payload)`, tương đương `json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")` của thư viện chuẩn. Thành phần ký bên ngoài phải dùng cùng cách mã hóa. Chữ ký đã phát hành với cách biểu diễn float khác cần được ký lại từ dữ liệu tin cậy.
 
----
+Caller gán kết quả vào `report.signature`; `verify_signature(secret_key)` kiểm tra bằng phép so sánh thời gian hằng. Thay đổi bất kỳ trường báo cáo nào đều làm chữ ký sai. Round-trip JSON hoặc đổi thứ tự khóa object vẫn xác minh được. Chữ ký thiếu/sai định dạng và giá trị payload không được hỗ trợ trả `False`; ký timestamp không hữu hạn gây `ValueError`. `from_dict()` từ chối giá trị `msg_type` hoặc `lockdown_type` được cung cấp nhưng không mô tả báo cáo quarantine.
 
-## Ví dụ cấu hình & Sử dụng
-
-### Cấu hình biến môi trường
-```bash
-HRC_CLUSTER_SECRET="your-super-secret-hmac-key"
-HRC_QUORUM_THRESHOLD=0.66  # Tương đương 2/3
-```
-
-### Sử dụng ClusterManager trong mã nguồn
-```python
-from hierachain.cluster.cluster_manager import ClusterManager
-
-manager = ClusterManager(node_id="node-01")
-
-# Đăng ký node đồng đẳng
-manager.register_node("node-02", "192.168.1.10:5000", auth_token="...")
-
-# Bỏ phiếu phong tỏa khi phát hiện rủi ro
-if manager.vote_lockdown("node-01", reason="Phát hiện giả mạo hash"):
-    print("Quorum reached - Hệ thống đang chuyển sang trạng thái LOCKDOWN")
-```
-
----
-
-## Quan sát sức khỏe cụm (Health Metrics)
-
-`ClusterManager` cung cấp đối tượng `ClusterHealthMetrics` cho phép theo dõi:
-
-*   `total_nodes`: Tổng số node trong cấu hình.
-*   `healthy_nodes`: Số node đang hoạt động và gửi heartbeat đều đặn.
-*   `is_in_lockdown`: Trạng thái phong tỏa hiện tại của toàn cụm.
-*   `lockdown_votes`: Số phiếu bầu phong tỏa hiện tại.
+Chữ ký tạo bằng payload cũ chỉ có ba trường bị từ chối. Cần tạo lại báo cáo từ dữ liệu tin cậy và ký payload đầy đủ; không fallback sang định dạng chữ ký cũ. Caller cung cấp và bảo vệ khóa bí mật dùng chung. Các helper không cấp khóa, kiểm tra độ mới của báo cáo hoặc tự xác thực báo cáo trong bộ điều phối runtime.
 
 ---
 
@@ -129,3 +72,11 @@ if manager.vote_lockdown("node-01", reason="Phát hiện giả mạo hash"):
 *   [P2P Networking](./network.md)
 *   [Security Identity](./security.md)
 *   [Hierarchical Architecture](../architecture/hierarchy.md)
+
+## Trạng thái đồng bộ song song và tiếp nhận lockdown
+
+`CrossLevelSyncManager.get_status()` giữ trạng thái đang chạy khi còn bất kỳ sync hoặc xử lý conflict nào trong nhóm tác vụ chồng lấn. Khi nhóm hoàn tất, trạng thái là `failed` nếu có tác vụ thất bại, ngược lại là `complete`. Tác vụ độc lập tiếp theo mở nhóm mới. `get_stats()` có `active_operations`; `reset()` gây `RuntimeError` khi còn công việc. Lỗi callback hoàn tất được ghi log và không đảo ngược proof đã commit.
+
+`LockdownMessage.verify_signature()` chỉ xác thực chữ ký. Trước khi xử lý thông điệp, dispatcher của ứng dụng phải gọi `LockdownMessageGuard.accept(message, secret_key)` và chỉ xử lý khi nhận `True`. Giữ một guard xuyên suốt các request. Guard kiểm tra chữ ký và timestamp hữu hạn, mặc định cho phép thông điệp cũ tối đa 60 giây hoặc đi trước 5 giây, đồng thời từ chối nguyên tử payload đã tiếp nhận, kể cả khi đổi giữa chữ ký đầy đủ và rút gọn. Có thể cấu hình `max_age`, `future_skew`, `max_entries`. Khi kho replay đầy, guard từ chối thông điệp mới đến lúc entries hết hạn; không đẩy entries còn hiệu lực ra ngoài. Chữ ký sai không chiếm dung lượng.
+
+Repo chưa có dispatcher lockdown. Guard chỉ giữ trạng thái trong một process; không lưu qua restart hoặc chia sẻ giữa worker. Ứng dụng cần các bảo đảm này phải giữ trạng thái replay trong storage của dispatcher. Guard không kiểm tra tiếp nhận `QuarantineReport`.

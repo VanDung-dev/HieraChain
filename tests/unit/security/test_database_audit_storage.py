@@ -2,15 +2,23 @@
 Unit tests for persistent DatabaseAuditStorage.
 """
 
-import time
 import os
+import time
+from pathlib import Path
+
 import pytest
+
+from hierachain.risk_management import audit_logger as audit_logger_module
 from hierachain.risk_management.audit_logger import (
+    ArrowAuditStorage,
     AuditEvent,
     AuditEventType,
-    AuditSeverity,
     AuditFilter,
+    AuditLogger,
+    AuditSeverity,
     DatabaseAuditStorage,
+    FileAuditStorage,
+    verify_integrity,
 )
 
 
@@ -20,9 +28,20 @@ def temp_db_path(tmp_path):
     return str(db_file)
 
 
+class TrustedManifestStub:
+    def __init__(self) -> None:
+        self._hashes: dict[str, str] = {}
+
+    def write(self, event_id: str, digest: str) -> None:
+        self._hashes[event_id] = digest
+
+    def read(self) -> dict[str, str]:
+        return self._hashes.copy()
+
+
 def test_database_audit_storage_init(temp_db_path):
     """Test that DatabaseAuditStorage initializes database and tables successfully."""
-    storage = DatabaseAuditStorage(temp_db_path)
+    DatabaseAuditStorage(temp_db_path)
     assert os.path.exists(temp_db_path)
     
     # Try creating connection to check table
@@ -179,8 +198,9 @@ def test_database_audit_storage_concurrency(temp_db_path):
 
 def test_database_audit_storage_exception_handling(temp_db_path):
     """Test exception handling under database operation failures."""
-    from unittest.mock import patch
     import sqlite3
+    from unittest.mock import patch
+
     storage = DatabaseAuditStorage(temp_db_path)
     
     event = AuditEvent(
@@ -196,7 +216,327 @@ def test_database_audit_storage_exception_handling(temp_db_path):
     with patch("sqlite3.connect", side_effect=sqlite3.OperationalError("Mock database disk image is malformed")):
         # Should catch exception and return False safely without crashing
         assert storage.store_event(event) is False
-        assert len(storage.retrieve_events(AuditFilter())) == 0
-        assert storage.get_event_count(AuditFilter()) == 0
+        with pytest.raises(RuntimeError, match="retrieve audit events from DB"):
+            storage.retrieve_events(AuditFilter())
+        with pytest.raises(RuntimeError, match="count audit events in DB"):
+            storage.get_event_count(AuditFilter())
         assert storage.cleanup_old_events(10) == 0
 
+
+def test_verify_integrity_requires_trusted_digests_and_detects_tampering():
+    event = AuditEvent(
+        event_id="integrity-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=1.0,
+        source_component="test",
+        description="original",
+        details={"action": "login"},
+    )
+    expected_hashes = {event.event_id: event.calculate_hash()}
+
+    assert not verify_integrity([event])
+    assert verify_integrity([], {})
+    assert verify_integrity([event], expected_hashes)
+
+    event.details["action"] = "tampered"
+    assert not verify_integrity([event], expected_hashes)
+    assert not verify_integrity([event], {})
+    assert not verify_integrity([event, event], expected_hashes)
+
+    extra_event = AuditEvent(
+        event_id="extra-integrity-event",
+        event_type=AuditEventType.SYSTEM_EVENT,
+        severity=AuditSeverity.INFO,
+        timestamp=2.0,
+        source_component="test",
+        description="extra event",
+        details={},
+    )
+    assert not verify_integrity([], expected_hashes)
+    assert not verify_integrity([event, extra_event], expected_hashes)
+    assert not verify_integrity(
+        [event],
+        {**expected_hashes, extra_event.event_id: extra_event.calculate_hash()},
+    )
+
+
+def test_audit_logger_captures_processed_event_digest_after_storage(
+    tmp_path: Path,
+) -> None:
+    storage = FileAuditStorage(str(tmp_path))
+    trusted_manifest = TrustedManifestStub()
+
+    def capture_digest(event_id: str, digest: str) -> None:
+        stored_events = storage.retrieve_events(AuditFilter())
+        assert any(event.event_id == event_id for event in stored_events)
+        trusted_manifest.write(event_id, digest)
+
+    audit_logger = AuditLogger(
+        storage=storage,
+        enable_real_time_alerts=False,
+        integrity_digest_writer=capture_digest,
+    )
+    audit_logger.add_event_processor(
+        lambda event: AuditEvent.from_dict(
+            {**event.to_dict(), "details": {**event.details, "processed": True}}
+        )
+    )
+
+    audit_logger.log_security_event(
+        event_type="login",
+        description="Successful login",
+        details={"user": "operator"},
+    )
+
+    stored_events = storage.retrieve_events(AuditFilter())
+    assert len(stored_events) == 1
+    assert stored_events[0].details["processed"] is True
+    expected_hashes = trusted_manifest.read()
+    assert expected_hashes[stored_events[0].event_id] == stored_events[0].calculate_hash()
+    assert verify_integrity(stored_events, expected_hashes)
+
+
+def test_audit_logger_surfaces_digest_writer_failure(tmp_path: Path) -> None:
+    storage = FileAuditStorage(str(tmp_path))
+
+    def fail_to_capture(_event_id: str, _digest: str) -> None:
+        raise RuntimeError("manifest unavailable")
+
+    audit_logger = AuditLogger(
+        storage=storage,
+        enable_real_time_alerts=False,
+        integrity_digest_writer=fail_to_capture,
+    )
+
+    with pytest.raises(RuntimeError, match="manifest unavailable"):
+        audit_logger.log_security_event(
+            event_type="login",
+            description="Successful login",
+            details={"user": "operator"},
+        )
+
+    assert audit_logger.get_statistics()["total_events"] == 0
+    assert len(storage.retrieve_events(AuditFilter())) == 1
+
+
+def test_production_audit_logger_requires_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HRC_ENV", "production")
+    monkeypatch.delenv("HRC_AUDIT_MANIFEST_WRITE_URL", raising=False)
+
+    with pytest.raises(RuntimeError, match="trusted digest manifest writer"):
+        AuditLogger(storage=FileAuditStorage(str(tmp_path)))
+
+
+def test_audit_logger_does_not_acknowledge_storage_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    storage = FileAuditStorage(str(tmp_path))
+    monkeypatch.setattr(storage, "store_event", lambda _event: False)
+    audit_logger = AuditLogger(storage=storage, enable_real_time_alerts=False)
+
+    with pytest.raises(RuntimeError, match="Failed to store audit event"):
+        audit_logger.log_security_event("login", "Failed", {})
+    assert audit_logger.get_statistics()["total_events"] == 0
+
+
+def test_manifest_url_connects_default_digest_writer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from unittest.mock import MagicMock
+
+    backend = MagicMock()
+    monkeypatch.setenv("HRC_ENV", "production")
+    monkeypatch.setenv("HRC_AUDIT_MANIFEST_WRITE_URL", "postgresql://manifest-test")
+    monkeypatch.setattr(
+        audit_logger_module, "PostgresAuditManifest", lambda _url: backend,
+    )
+    storage = FileAuditStorage(str(tmp_path))
+    audit_logger = AuditLogger(storage=storage, enable_real_time_alerts=False)
+
+    audit_logger.log_security_event("login", "Successful", {"status": "ok"})
+
+    event = storage.retrieve_events(AuditFilter())[0]
+    backend.write_digest.assert_called_once_with(event.event_id, event.calculate_hash())
+    assert audit_logger.get_statistics()["total_events"] == 1
+
+
+def test_database_storage_integrity_manifest_accepts_valid_events(temp_db_path):
+    storage = DatabaseAuditStorage(temp_db_path)
+    event = AuditEvent(
+        event_id="integrity-db-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=1.0,
+        source_component="test",
+        description="stored event",
+        details={"action": "login"},
+        affected_entities=["entity:1"],
+    )
+    expected_hashes = {event.event_id: event.calculate_hash()}
+
+    assert storage.store_event(event)
+    retrieved = storage.retrieve_events(AuditFilter())
+    assert retrieved[0].affected_entities == ["entity:1"]
+    assert verify_integrity(retrieved, expected_hashes)
+
+
+def test_database_storage_adds_integrity_field_to_existing_schema(
+    temp_db_path: str,
+) -> None:
+    import sqlite3
+
+    conn = sqlite3.connect(temp_db_path)
+    conn.execute(
+        """
+        CREATE TABLE audit_events (
+            event_id TEXT PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            timestamp REAL NOT NULL,
+            source_component TEXT NOT NULL,
+            description TEXT NOT NULL,
+            details TEXT,
+            user_id TEXT,
+            session_id TEXT,
+            ip_address TEXT,
+            correlation_id TEXT
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    storage = DatabaseAuditStorage(temp_db_path)
+    event = AuditEvent(
+        event_id="integrity-migrated-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=1.0,
+        source_component="test",
+        description="stored event",
+        details={"action": "login"},
+        affected_entities=["entity:1"],
+    )
+    expected_hashes = {event.event_id: event.calculate_hash()}
+
+    assert storage.store_event(event)
+    retrieved = storage.retrieve_events(AuditFilter())
+    assert retrieved[0].affected_entities == ["entity:1"]
+    assert verify_integrity(retrieved, expected_hashes)
+
+
+def test_arrow_storage_integrity_manifest_covers_all_event_fields(tmp_path):
+    storage = ArrowAuditStorage(str(tmp_path))
+    event = AuditEvent(
+        event_id="integrity-arrow-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=1.0,
+        source_component="test",
+        description="stored event",
+        details={"action": "login"},
+        affected_entities=["account:1"],
+    )
+    expected_hashes = {event.event_id: event.calculate_hash()}
+
+    try:
+        assert storage.store_event(event)
+        retrieved = storage.retrieve_events(AuditFilter())
+        assert retrieved[0].affected_entities == ["account:1"]
+        assert verify_integrity(retrieved, expected_hashes)
+
+        retrieved[0].details["action"] = "tampered"
+        assert not verify_integrity(retrieved, expected_hashes)
+    finally:
+        storage.close()
+
+
+def test_sqlite_and_arrow_share_filter_and_count_semantics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sqlite_store = DatabaseAuditStorage(str(tmp_path / "audit.db"))
+    arrow_store = ArrowAuditStorage(str(tmp_path / "arrow"))
+    events = [
+        AuditEvent(
+            event_id=f"event-{index}",
+            event_type=kind,
+            severity=severity,
+            timestamp=float(index),
+            source_component=source,
+            description="audit event",
+            details={"index": index},
+            user_id=user,
+            affected_entities=[f"entity-{index}"],
+        )
+        for index, kind, severity, source, user in (
+            (1, AuditEventType.SECURITY_EVENT, AuditSeverity.WARNING, "api", "user-a"),
+            (2, AuditEventType.SYSTEM_EVENT, AuditSeverity.INFO, "worker", "user-b"),
+            (3, AuditEventType.SECURITY_EVENT, AuditSeverity.WARNING, "api", "user-b"),
+        )
+    ]
+    try:
+        for event in events:
+            assert sqlite_store.store_event(event)
+            assert arrow_store.store_event(event)
+
+        filters = [
+            AuditFilter(),
+            AuditFilter(source_components=["api"]),
+            AuditFilter(user_ids=["user-b"]),
+            AuditFilter(event_types=[AuditEventType.SECURITY_EVENT], severity_levels=[AuditSeverity.WARNING]),
+            AuditFilter(time_range=(2.0, 3.0)),
+            AuditFilter(source_components=["api"], user_ids=["user-b"], time_range=(3.0, 3.0)),
+            AuditFilter(source_components=[]),
+        ]
+        for filter_criteria in filters:
+            sqlite_events = sqlite_store.retrieve_events(filter_criteria)
+            arrow_events = arrow_store.retrieve_events(filter_criteria)
+            assert {event.event_id for event in sqlite_events} == {event.event_id for event in arrow_events}
+            assert sqlite_store.get_event_count(filter_criteria) == arrow_store.get_event_count(filter_criteria)
+
+        assert sqlite_store.retrieve_events(AuditFilter(), limit=0)
+        assert len(arrow_store.retrieve_events(AuditFilter(), limit=0)) == len(events)
+        assert sqlite_store.retrieve_events(AuditFilter(), limit=-1)
+        assert len(arrow_store.retrieve_events(AuditFilter(), limit=-1)) == len(events)
+        assert sqlite_store.retrieve_events(AuditFilter(source_components=["api"]))[0].affected_entities is not None
+
+        monkeypatch.setattr(audit_logger_module.pq, "read_table", lambda *_a, **_kw: (_ for _ in ()).throw(
+            AssertionError("count loaded the full archive")
+        ))
+        assert arrow_store.get_event_count(AuditFilter()) == 3
+        assert arrow_store.get_event_count(AuditFilter(source_components=["api"])) == 2
+    finally:
+        arrow_store.close()
+
+
+def test_arrow_retention_removes_only_fully_expired_parquet_files(tmp_path: Path) -> None:
+    store = ArrowAuditStorage(str(tmp_path / "arrow"))
+    now = time.time()
+
+    def event(event_id: str, timestamp: float) -> AuditEvent:
+        return AuditEvent(
+            event_id=event_id,
+            event_type=AuditEventType.SYSTEM_EVENT,
+            severity=AuditSeverity.INFO,
+            timestamp=timestamp,
+            source_component="audit",
+            description="retention event",
+            details={},
+        )
+
+    try:
+        assert store.store_event(event("old", now - 100))
+        store.retrieve_events(AuditFilter())  # Seal the old file.
+        assert store.store_event(event("recent", now))
+        assert store.cleanup_old_events(50) == 1
+        assert [item.event_id for item in store.retrieve_events(AuditFilter())] == ["recent"]
+
+        assert store.store_event(event("mixed-old", now - 100))
+        assert store.store_event(event("mixed-recent", now))
+        assert store.cleanup_old_events(50) == 0
+        assert store.get_event_count(AuditFilter()) == 3
+    finally:
+        store.close()

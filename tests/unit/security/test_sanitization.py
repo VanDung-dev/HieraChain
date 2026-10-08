@@ -46,30 +46,12 @@ class TestXSSPayloads:
         result = sanitize_string('<embed src="evil.swf">', context="general")
         assert "<embed" not in result
 
-    def test_javascript_uri_escaped(self):
-        # html.escape won't escape "javascript:" but it does escape
-        # the surrounding tags; for inline URIs the word stays
-        result = sanitize_string("javascript:alert(1)", context="general")
-        # Output should be a string (may or may not escape javascript:)
-        assert isinstance(result, str)
-
-
 # ------------------------------------------------------------------ #
 # Template injection tests (html.escape preserves {{...}})
 # ------------------------------------------------------------------ #
 
 class TestTemplateInjection:
     """Verify that template injection patterns are processed."""
-
-    def test_jinja_pattern_processed(self):
-        """sanitize_string should at least return a string for
-        {{...}} patterns — html.escape doesn't escape curly braces."""
-        result = sanitize_string("{{config.__class__}}", context="general")
-        assert isinstance(result, str)
-
-    def test_dollar_brace_processed(self):
-        result = sanitize_string("${7*7}", context="general")
-        assert isinstance(result, str)
 
     def test_erb_processed(self):
         result = sanitize_string("<%= system('id') %>", context="general")
@@ -140,13 +122,6 @@ class TestIsSafeInput:
         assert not is_safe
         assert "Script tag detected" in reason
     
-    def test_xss_payload_accepted_with_warning(self):
-        """Legacy test - dangerous input is now rejected."""
-        is_safe, reason = is_safe_input("<script>alert('xss')</script>")
-        # New implementation rejects instead of accepting
-        assert not is_safe
-
-
 # ------------------------------------------------------------------ #
 # sanitize_error_message tests
 # ------------------------------------------------------------------ #

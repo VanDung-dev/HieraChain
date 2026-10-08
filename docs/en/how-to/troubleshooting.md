@@ -72,7 +72,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 * If `ResourceGuardMiddleware` is integrated, 503 may be due to CPU/RAM exceeding thresholds.
 * Check rate limit/HSTS/CORS configuration in `settings.py`.
-* Reduce event batch sizes, enable advanced caching if appropriate (`ADVANCED_CACHING_ENABLED`).
+* Reduce event batch sizes; tune existing cache instances only after profiling their usage.
 
 ## Redis/SQLite not connecting
 

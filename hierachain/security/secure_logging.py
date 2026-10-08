@@ -6,13 +6,13 @@ by sanitizing user input before logging and using structured log formats.
 """
 
 import logging
-import orjson
 import re
-from typing import Any
 from datetime import datetime, timezone
-
+from typing import Any
 
 # Characters that can be used for log injection
+from hierachain.serialization import dumps_json
+
 LOG_INJECTION_CHARS = {
     "\n": "\\n",
     "\r": "\\r",
@@ -33,6 +33,9 @@ _SENSITIVE_KEYS = (
 )
 _JSON_SENSITIVE = re.compile(rf'(?i)("(?:{_SENSITIVE_KEYS})"\s*:\s*)"[^"]*"')
 _KV_SENSITIVE = re.compile(rf'(?i)((?:{_SENSITIVE_KEYS})\s*[:=]\s*)(?:[^\s"\'&,;)}}]+)')
+_SENSITIVE_FIELD = re.compile(
+    rf"(?i)(?:[a-z0-9]+[_-])*(?:{_SENSITIVE_KEYS}|secret[_-]?key|authorization)"
+)
 
 _SEVERITY_MAP = {
     "critical": logging.CRITICAL,
@@ -57,6 +60,18 @@ def _sanitize_string(value: str) -> str:
     return result
 
 
+def _sanitize_fields(fields: dict[str, Any]) -> dict[str, str]:
+    """Redact a sensitive field's entire value before traversing containers."""
+    return {
+        _sanitize_string(str(key)): (
+            "***" if _SENSITIVE_FIELD.fullmatch(
+                re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", str(key))
+            ) else sanitize_for_log(value)
+        )
+        for key, value in fields.items()
+    }
+
+
 def sanitize_for_log(value: Any) -> str:
     """
     Sanitize a value before logging to prevent log injection.
@@ -75,11 +90,9 @@ def sanitize_for_log(value: Any) -> str:
         case str():
             return _sanitize_string(value)
         case dict():
-            return orjson.dumps(
-                {k: sanitize_for_log(v) for k, v in value.items()}
-            ).decode()
+            return dumps_json(_sanitize_fields(value))
         case list() | tuple():
-            return orjson.dumps([sanitize_for_log(item) for item in value]).decode()
+            return dumps_json([sanitize_for_log(item) for item in value])
         case _:
             return _sanitize_string(str(value))
 
@@ -111,9 +124,9 @@ class SecureLogger:
         
         # Add extra fields with sanitization
         if kwargs:
-            log_entry["data"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
+            log_entry["data"] = _sanitize_fields(kwargs)
         
-        return orjson.dumps(log_entry).decode()
+        return dumps_json(log_entry)
     
     def info(self, message: str, *args: Any, **kwargs: Any):
         """Log info with sanitized data."""
@@ -178,15 +191,15 @@ class SecureLogger:
         """
         self.logger.log(
             _SEVERITY_MAP.get(severity, logging.INFO),
-            orjson.dumps({
+            dumps_json({
                 "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "type": "security_event",
                 "event_type": sanitize_for_log(event_type),
                 "severity": severity,
                 "logger": self.name,
                 "message": sanitize_for_log(message),
-                **({"context": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {})
-            }).decode()
+                **({"context": _sanitize_fields(kwargs)} if kwargs else {})
+            })
         )
     
     def audit(
@@ -211,7 +224,7 @@ class SecureLogger:
         """
         self.logger.log(
             logging.INFO,
-            orjson.dumps({
+            dumps_json({
                 "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "type": "audit",
                 "action": sanitize_for_log(action),
@@ -220,8 +233,8 @@ class SecureLogger:
                 "logger": self.name,
                 **({"user_id": sanitize_for_log(user_id)} if user_id else {}),
                 **({"org_id": sanitize_for_log(org_id)} if org_id else {}),
-                **({"details": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {}),
-            }).decode()
+                **({"details": _sanitize_fields(kwargs)} if kwargs else {}),
+            })
         )
 
 
@@ -254,8 +267,8 @@ def log_user_action(
         user_input: User-provided input to sanitize
         **kwargs: Additional data to include
     """
-    logger.log(level, orjson.dumps({
+    logger.log(level, dumps_json({
         "message": message,
         "user_input": sanitize_for_log(user_input) if user_input is not None else None,
-        **({k: sanitize_for_log(v) for k, v in kwargs.items()} if kwargs else {}),
-    }).decode())
+        **(_sanitize_fields(kwargs) if kwargs else {}),
+    }))

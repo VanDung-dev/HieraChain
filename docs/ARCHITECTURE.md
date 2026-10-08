@@ -318,9 +318,9 @@ ZK verification is integrated into all consensus mechanisms:
 HieraChain adopts an omnipresent security philosophy relying on **6 core pillars**. Rather than being a single module, these pillars bind components across `hierachain.security`, `hierachain.cluster`, and `hierachain.risk_management` into a holistic enterprise-grade defense mechanism:
 
 * 👤 **Authorization**: `PolicyEngine` (ABAC) and MSP Identity enforcing zero-trust access control.
-* 🔒 **Lockdown & Logging**: `ClusterLockdownManager` via Quorum voting, paired with tamper-evident `SecureLogger`.
+* 🔒 **Logging**: tamper-evident `SecureLogger` and operational audit logging.
 * 🛡️ **Fault-tolerance**: BFT and PoF consortium models resisting Byzantine behaviors and network splits.
-* 📈 **Risk Analyzer**: Real-time Z-score anomaly detection to identify and flag suspicious transaction patterns.
+* 📈 **Monitoring**: Real-time anomaly detection and alert dispatch.
 * 🔑 **Encryption**: AES-256-GCM for all IPFS Swarm data, Ed25519 signatures, and mTLS/ZMQ Curve for the transport layer.
 * 🔐 **Decentralized Zero-Knowledge Proofs**: ZK circuits (`ZKProver`/`ZKVerifier`) allowing systemic truth verification without revealing raw private data on the Main Chain.
 

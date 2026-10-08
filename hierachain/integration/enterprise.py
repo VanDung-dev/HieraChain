@@ -8,11 +8,11 @@ hierarchical structure where sub-chain events are later summarized on the
 main chain.
 """
 
-import os
-import time
 import logging
+import time
 from typing import Any
 
+from hierachain.integration.erp.mapping import set_nested_value
 from hierachain.integration.types import IntegrationError
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def _get_nested_value(data: dict[str, Any], path: str) -> Any:
 
 
 class BaseERPIntegration:
-    """Base class for ERP system integrations"""
+    """Base class for explicitly opted-in synthetic ERP fixtures."""
     
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
@@ -53,32 +53,31 @@ class BaseERPIntegration:
         """Check if connected to ERP system"""
         return self.connected
 
+    def _require_simulation_mode(self, vendor: str) -> None:
+        if self.config.get("simulation_mode") is not True:
+            raise IntegrationError(
+                f"{vendor} fixture connector is simulation-only; "
+                "set simulation_mode=True to opt in"
+            )
 
-class SAPIntegration(BaseERPIntegration):
-    """SAP ERP system integration"""
-    
-    def connect(self) -> bool:
-        """Connect to SAP system"""
-        # Placeholder implementation
-        # In real implementation, this would use SAP RFC or REST API
-        url = self.config.get("url")
-        username = os.environ.get("HRC_SAP_USERNAME", self.config.get("username"))
-        password = os.environ.get("HRC_SAP_PASSWORD", self.config.get("password"))
-        
-        if not all([url, username, password]):
-            raise IntegrationError("Missing required SAP connection parameters")
-        
-        # Simulate connection
+    def _connect_simulation(self, vendor: str) -> bool:
+        self._require_simulation_mode(vendor)
         self.connected = True
         return True
+
+
+class SAPIntegration(BaseERPIntegration):
+    """SAP-shaped fixture connector for tests and demonstrations."""
+    
+    def connect(self) -> bool:
+        """Enable synthetic records only when simulation mode is explicit."""
+        return self._connect_simulation("SAP")
     
     def get_events(self) -> list[dict[str, Any]]:
         """Get events from SAP system"""
         if not self.connected:
             raise IntegrationError("Not connected to SAP system")
-        
-        # Placeholder implementation
-        # In real implementation, this would query SAP tables/APIs
+        self._require_simulation_mode("SAP")
         return [
             {
                 "material": {
@@ -93,27 +92,17 @@ class SAPIntegration(BaseERPIntegration):
 
 
 class OracleIntegration(BaseERPIntegration):
-    """Oracle ERP system integration"""
+    """Oracle-shaped fixture connector for tests and demonstrations."""
     
     def connect(self) -> bool:
-        """Connect to Oracle system"""
-        # Placeholder implementation
-        url = self.config.get("url")
-        username = os.environ.get("HRC_ORACLE_USERNAME", self.config.get("username"))
-        password = os.environ.get("HRC_ORACLE_PASSWORD", self.config.get("password"))
-        
-        if not all([url, username, password]):
-            raise IntegrationError("Missing required Oracle connection parameters")
-        
-        self.connected = True
-        return True
+        """Enable synthetic records only when simulation mode is explicit."""
+        return self._connect_simulation("Oracle")
     
     def get_events(self) -> list[dict[str, Any]]:
         """Get events from Oracle system"""
         if not self.connected:
             raise IntegrationError("Not connected to Oracle system")
-        
-        # Placeholder implementation
+        self._require_simulation_mode("Oracle")
         return [
             {
                 "record": {
@@ -128,27 +117,18 @@ class OracleIntegration(BaseERPIntegration):
 
 
 class DynamicsIntegration(BaseERPIntegration):
-    """Microsoft Dynamics ERP system integration"""
+    """Dynamics-shaped fixture connector for tests and demonstrations."""
     
     def connect(self) -> bool:
-        """Connect to Dynamics system"""
-        # Placeholder implementation
-        url = self.config.get("url")
-        username = os.environ.get("HRC_DYNAMICS_USERNAME", self.config.get("username"))
-        password = os.environ.get("HRC_DYNAMICS_PASSWORD", self.config.get("password"))
-        
-        if not all([url, username, password]):
-            raise IntegrationError("Missing required Dynamics connection parameters")
-        
-        self.connected = True
-        return True
+        """Enable synthetic records only when simulation mode is explicit."""
+        return self._connect_simulation("Microsoft Dynamics")
     
     def get_events(self) -> list[dict[str, Any]]:
         """Get events from Dynamics system"""
         if not self.connected:
             raise IntegrationError("Not connected to Dynamics system")
         
-        # Placeholder implementation
+        self._require_simulation_mode("Microsoft Dynamics")
         return [
             {
                 "sales": {
@@ -192,7 +172,7 @@ class EnterpriseIntegration:
         for bc_field, erp_path in mapping_rules.items():
             value = _get_nested_value(erp_event, erp_path)
             if value is not None:
-                blockchain_event[bc_field] = value
+                set_nested_value(blockchain_event, bc_field, value)
         
         # Add required metadata
         blockchain_event["timestamp"] = time.time()

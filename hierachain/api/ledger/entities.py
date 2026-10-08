@@ -5,17 +5,17 @@ Trace an entity's events across the main chain and all sub-chains.
 
 from fastapi import APIRouter, Depends
 
-from hierachain.api.ledger.schemas import EntityTraceResponse
-from hierachain.api.ledger.depds import get_hierarchy_manager, get_entity_tracer
 from hierachain.api.ledger.chains import validate_chain_exists
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.utils.entity_tracer import EntityTracer
-from hierachain.security.sanitization import sanitize_string
-from hierachain.security.verify.api_key_verifier import require_chain_access
+from hierachain.api.ledger.depds import get_entity_tracer, get_hierarchy_manager
+from hierachain.api.ledger.schemas import EntityTraceResponse
 from hierachain.api.storage.endpoint_helpers import (
     is_ipfs_enabled,
     resolve_multiple_events,
 )
+from hierachain.domains.utils.entity_tracer import EntityTracer
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.security.sanitization import sanitize_string
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain"])
 

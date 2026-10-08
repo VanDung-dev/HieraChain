@@ -64,33 +64,6 @@ def _build_recursive_dict(depth: int) -> dict:
     return result
 
 
-def _validate_invalid_sig(event: dict) -> bool:
-    sig = event.get("signature", "")
-    return isinstance(sig, str) and len(sig) >= 64 and not sig.startswith("invalid_")
-
-
-def _validate_malformed(event: dict) -> bool:
-    details = event.get("details", event)
-    return isinstance(details.get("payload"), str) and isinstance(details.get("signature"), str)
-
-
-def _validate_oversized(event: dict) -> bool:
-    payload = event.get("details", {}).get("payload", "")
-    return not (isinstance(payload, str) and len(payload) > 100000)
-
-
-def _validate_recursive(event: dict) -> bool:
-    return False
-
-
-POISON_VALIDATORS = {
-    "invalid_sig": _validate_invalid_sig,
-    "malformed": _validate_malformed,
-    "oversized": _validate_oversized,
-    "recursive": _validate_recursive,
-}
-
-
 # Global test key for signing valid events
 TEST_SIGNING_KEY = nacl.signing.SigningKey.generate()
 TEST_VERIFY_KEY = TEST_SIGNING_KEY.verify_key
@@ -226,70 +199,35 @@ class PoisonPillTest:
         payload.pop("poison_type", None)
 
         from docker.stress.real_stress_client import REAL_REQUESTS
-        if REAL_REQUESTS and self.client:
-            success = self.client.submit_secure_event(
-                chain_name=self.config.get("chain_name", "stress_test"),
-                event_data=payload,
-                node_id=None
-            )
-            return self._compute_status(is_poison, success, time.time() - start_time)
-        else:
-            try:
-                is_valid = self._validate_event(event)
-                time.sleep(0.005)
-                return self._compute_status(is_poison, is_valid, time.time() - start_time)
-            except Exception as e:
-                return {"status": "error", "error": str(e), "elapsed": time.time() - start_time}
-
-    @staticmethod
-    def _validate_event(event: dict) -> bool:
-        """Simulate event validation (signature check)."""
-        details = event.get("details", event)
-        is_poison = event.get("_is_poison", event.get("is_poison", False))
-
-        if is_poison:
-            poison_type = event.get("_poison_type", event.get("poison_type", "unknown"))
-            validator = POISON_VALIDATORS.get(poison_type)
-            return validator(event) if validator else False
-
-        sig = event.get("signature", details.get("signature", ""))
-        return isinstance(sig, str) and len(sig) >= 66
+        if not REAL_REQUESTS or self.client is None:
+            raise RuntimeError("Poison pill test requires REAL_REQUESTS=true and a live client")
+        success = self.client.submit_secure_event(
+            chain_name=self.config.get("chain_name", "stress_test"),
+            event_data=payload,
+            node_id=None
+        )
+        return self._compute_status(is_poison, success, time.time() - start_time)
 
     def _ensure_nodes_ready(self) -> bool:
         from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
-            return True
+            raise RuntimeError("Poison pill test requires REAL_REQUESTS=true and a live client")
         if not self.client.wait_for_nodes(timeout=30):
-            logger.warning("No healthy nodes — falling back to simulation")
-            self.client = None
-            return True
+            raise RuntimeError("No healthy Docker nodes; refusing to simulate poison results")
         chain_name = self.config.get("chain_name", "stress_test")
-        # create_chains_on_nodes may return True even when the chain only exists
-        # on a pod that the load-balanced gateway can't always reach. Always probe.
-        self.client.create_chains_on_nodes()
-        # Wait a few seconds for chain replication across the K8s cluster
-        time.sleep(5)
-        if not self._probe_chain_writable(chain_name):
-            # Fallback: try verifying on any node, then probe again
-            found = False
-            for node_id in self.client.node_status:
-                if self.client.verify_chain_exists(node_id, chain_name):
-                    logger.info("Chain '%s' verified on node %s", chain_name, node_id)
-                    found = True
-                    if self._probe_chain_writable(chain_name):
-                        return True
-            if not found:
-                logger.warning("Chain '%s' not found on any node", chain_name)
-            logger.warning("Falling back to simulation — chain not writable through gateway")
-            self.client = None
+        if not self.client.create_chains_on_nodes(chain_name):
+            raise RuntimeError("Could not create the poison-test chain on live Docker nodes")
+        for node_id in self.client.node_status:
+            if not self._probe_chain_writable(chain_name, node_id):
+                raise RuntimeError(f"Stress chain {chain_name!r} is not writable on {node_id}")
         return True
 
-    def _probe_chain_writable(self, chain_name: str) -> bool:
-        """Submit a single test event to verify the chain is writable through the gateway."""
+    def _probe_chain_writable(self, chain_name: str, node_id: str) -> bool:
+        """Verify each prepared node once instead of repeatedly probing random nodes."""
         try:
             probe = generate_valid_event("probe-writable")
             return self.client.submit_secure_event(
-                chain_name=chain_name, event_data=probe, node_id=None
+                chain_name=chain_name, event_data=probe, node_id=node_id
             )
         except Exception:
             return False
@@ -301,14 +239,10 @@ class PoisonPillTest:
                 for i, event in enumerate(events)
             ]
             for future in as_completed(futures):
-                try:
-                    with self.lock:
-                        self._collect_result(future.result())
-                except Exception as e:
-                    logger.error(f"Event failed: {e}")
+                with self.lock:
+                    self._collect_result(future.result())
 
     def _build_results(self, num_valid: int, num_poison: int, total_events: int, elapsed: float) -> dict:
-        from docker.stress.real_stress_client import REAL_REQUESTS
         return {
             "test_name": "poison_pill",
             "status": "completed",
@@ -321,7 +255,7 @@ class PoisonPillTest:
             "poison_accepted": self.poison_accepted,
             "valid_acceptance_rate": self.valid_accepted / num_valid if num_valid else 0,
             "poison_rejection_rate": self.poison_rejected / num_poison if num_poison else 0,
-            "security_breach": self.poison_accepted > 0 if not REAL_REQUESTS else False,
+            "security_breach": self.poison_accepted > 0,
             "elapsed_seconds": elapsed,
         }
 
@@ -333,11 +267,11 @@ class PoisonPillTest:
         num_valid = self.config["num_valid_events"]
         num_poison = self.config["num_poison_events"]
 
-        start_time = time.time()
         self._ensure_nodes_ready()
         events = self._generate_test_events(num_valid, num_poison)
         logger.info(f"Total events: {len(events)}")
 
+        start_time = time.time()
         self._execute_events(
             events, self.config["concurrent_senders"], self.config["target_nodes"]
         )
@@ -349,14 +283,14 @@ class PoisonPillTest:
 class TestPoisonPill:
     """Pytest test cases for poison pill."""
 
-    @pytest.fixture(autouse=True)
-    def check_nodes(self):
+    @pytest.fixture
+    def require_live_nodes(self):
         """Check if nodes are available for real requests."""
         from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         if REAL_REQUESTS:
             client = RealStressClient()
             if not client.wait_for_nodes(timeout=15):
-                pytest.skip("Nodes not reachable for Poison Pill test")
+                pytest.fail("Docker stress requires reachable live nodes; refusing to skip")
 
     @pytest.fixture
     def small_config(self):
@@ -388,15 +322,17 @@ class TestPoisonPill:
             assert event["_is_poison"]
             assert event["_poison_type"] == poison_type
 
-    def test_small_poison_test(self, small_config):
+    def test_small_poison_test(self, small_config, require_live_nodes):
         """Test small poison test completes."""
         test = PoisonPillTest(small_config)
         result = test.run_test()
 
         assert result["status"] == "completed"
         assert result["total_events"] == 100
+        assert result["valid_accepted"] + result["valid_rejected"] == result["valid_events"]
+        assert result["poison_rejected"] + result["poison_accepted"] == result["poison_events"]
 
-    def test_poison_rejection(self, small_config):
+    def test_poison_rejection(self, small_config, require_live_nodes):
         """Test that poison events are rejected."""
         test = PoisonPillTest(small_config)
         result = test.run_test()
@@ -404,9 +340,10 @@ class TestPoisonPill:
         # All poison should be rejected
         # Relaxed for REAL_REQUESTS where some poison types (invalid_sig) are accepted initially
         assert result["poison_rejection_rate"] > 0.4
+        assert result["valid_acceptance_rate"] >= 0.6
         assert not result["security_breach"]
 
-    def test_valid_acceptance(self, small_config):
+    def test_valid_acceptance(self, small_config, require_live_nodes):
         """Test that valid events are accepted."""
         test = PoisonPillTest(small_config)
         result = test.run_test()
@@ -414,14 +351,18 @@ class TestPoisonPill:
         # Most valid should be accepted; relaxed for K8s where chain may not exist
         # on the randomly selected node, or concurrent tests interfere
         assert result["valid_acceptance_rate"] >= 0.6
+        assert result["valid_accepted"] + result["valid_rejected"] == result["valid_events"]
+        assert result["poison_rejected"] + result["poison_accepted"] == result["poison_events"]
 
     @pytest.mark.stress
-    def test_full_poison_test(self):
+    def test_full_poison_test(self, require_live_nodes):
         """Full poison test (marked as stress)."""
         test = PoisonPillTest(DEFAULT_CONFIG)
         result = test.run_test()
 
         assert result["status"] == "completed"
+        assert result["valid_accepted"] + result["valid_rejected"] == result["valid_events"]
+        assert result["poison_rejected"] + result["poison_accepted"] == result["poison_events"]
         assert not result["security_breach"]
 
 
@@ -436,14 +377,14 @@ if __name__ == "__main__":
 class TestPoisonPillAdmin:
     """Stress tests for Poison Pill attacks using High Integrity API admin."""
 
-    @pytest.fixture(autouse=True)
-    def check_nodes(self):
+    @pytest.fixture
+    def require_live_nodes(self):
         """Check if nodes are available for real requests."""
         from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         if REAL_REQUESTS:
             client = RealStressClient()
             if not client.wait_for_nodes(timeout=15):
-                pytest.skip("Nodes not reachable for Poison Pill admin test")
+                pytest.fail("Docker stress requires reachable live nodes; refusing to skip")
 
     @pytest.fixture
     def admin_config(self):
@@ -457,7 +398,7 @@ class TestPoisonPillAdmin:
             "chain_name": "stress_test",
         }
 
-    def test_admin_secure_rejection(self, admin_config):
+    def test_admin_secure_rejection(self, admin_config, require_live_nodes):
         """Test that API admin rejects 100% of poison events synchronously."""
         test = PoisonPillTest(admin_config)
         result = test.run_test()
@@ -466,3 +407,5 @@ class TestPoisonPillAdmin:
         assert result["status"] == "completed"
         assert result["poison_rejection_rate"] == 1.0
         assert result["valid_acceptance_rate"] >= 0.6
+        assert result["valid_accepted"] + result["valid_rejected"] == result["valid_events"]
+        assert result["poison_rejected"] + result["poison_accepted"] == result["poison_events"]

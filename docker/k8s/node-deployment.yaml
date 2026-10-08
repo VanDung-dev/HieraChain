@@ -36,12 +36,12 @@ spec:
               name: api-port
           command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               value: "node1"
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5001"
-            - name: PEERS
-              value: "hierachain-node2:5001,hierachain-node3:5001,hierachain-node4:5001"
+            - name: HRC_PEERS
+              value: "node2@hierachain-node2:5002,node3@hierachain-node3:5003,node4@hierachain-node4:5004"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
@@ -75,7 +75,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -125,12 +125,12 @@ spec:
               name: api-port
           command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               value: "node2"
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5002"
-            - name: PEERS
-              value: "hierachain-node1:5001,hierachain-node3:5001,hierachain-node4:5001"
+            - name: HRC_PEERS
+              value: "node1@hierachain-node1:5001,node3@hierachain-node3:5003,node4@hierachain-node4:5004"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
@@ -164,7 +164,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -213,12 +213,12 @@ spec:
               name: api-port
           command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               value: "node3"
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5003"
-            - name: PEERS
-              value: "hierachain-node1:5001,hierachain-node2:5001,hierachain-node4:5001"
+            - name: HRC_PEERS
+              value: "node1@hierachain-node1:5001,node2@hierachain-node2:5002,node4@hierachain-node4:5004"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
@@ -252,7 +252,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -301,12 +301,12 @@ spec:
               name: api-port
           command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               value: "node4"
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5004"
-            - name: PEERS
-              value: "hierachain-node1:5001,hierachain-node2:5001,hierachain-node3:5001"
+            - name: HRC_PEERS
+              value: "node1@hierachain-node1:5001,node2@hierachain-node2:5002,node3@hierachain-node3:5003"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
@@ -340,7 +340,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5

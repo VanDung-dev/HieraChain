@@ -15,7 +15,7 @@ This page describes the consensus mechanisms and the Ordering Service that Hiera
 * Base Consensus: `hierachain/consensus/base_consensus.py` defines the base interface and framework for consensus algorithms.
 * Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py` provides intra-organization consensus with a single MainChain that manages internal domain Sub-Chains.
 * Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py` provides inter-organization P2P MainChain alliance consensus for a consortium without a central RootChain.
-* BFT Consensus: `hierachain/consensus/bft/` adds Byzantine fault tolerance at the hierarchical level.
+* BFT Consensus: `hierachain/consensus/bft/` contains a separate implementation. The runtime paths for MainChain and SubChain use PoA or PoF.
 * Ordering Service: `hierachain/consensus/ordering/` orders events before block creation and is built from several components (Processor, Certifier, BlockBuilder).
 
 ### Typical flow
@@ -29,17 +29,19 @@ sequenceDiagram
 
     SC->>OS: 1. Submit Event
     OS->>OS: Queue & Batch
-    OS->>C: 2. Propose Batch
-    C->>C: Validate & Sign
-    C-->>SC: 3. Approved Block
-    SC->>SC: Finalize & Store
+    OS->>OS: 2. Create, store and enqueue block
+    SC->>OS: get_next_block()
+    OS-->>SC: Block
+    SC->>C: 3. Finalize block
+    C-->>SC: Finalized block
+    SC->>SC: Store block and update state
     SC->>MC: 4. Submit Proof (Root Hash)
     MC-->>SC: Acknowledge
 ```
 
 1. A Sub-Chain receives an event and pushes it to the Ordering Service queue.
-2. The Ordering Service builds a batch based on size and time thresholds and sends it to the selected consensus mechanism.
-3. The consensus mechanism (PoA, PoF or BFT) confirms the batch or block, then the Sub-Chain closes the block.
+2. The Ordering Service batches events by size and time thresholds, creates a block, and places it in the commit queue.
+3. The Sub-Chain finalizes blocks with PoA by default or PoF when configured.
 4. If Main Chain anchoring is enabled, the Sub-Chain sends the proof (Merkle root or hash) to the Main Chain for recording.
 
 ## Configuration
@@ -47,7 +49,7 @@ sequenceDiagram
 Variables in `hierachain/config/settings.py`:
 
 * `CONSENSUS_TYPE`: `proof_of_authority` (default) or `proof_of_federation`.
-* `BFT_ENABLED`: turns the BFT layer on or off for Byzantine-resistant scenarios.
+* `BFT_ENABLED`: the `Settings` class defines this attribute, but it does not select consensus for MainChain or SubChain. It is not an environment variable.
 * `VALIDATOR_TIMEOUT`: timeout between validators.
 * `CONSENSUS_FEDERATION_CONFIG`: federation parameters (for example `min_validators` and `block_interval`).
 
@@ -62,7 +64,7 @@ HRC_ZK_REQUIRED_MAINCHAIN=false
 
 * PoA is simple to deploy and has low latency, but it depends on a central validator for trust.
 * PoF balances trust and distribution, but it requires federation membership to be managed.
-* BFT tolerates Byzantine faults well, but it adds complexity and higher message overhead.
+* The BFT implementation lives under `hierachain/consensus/bft/` and is separate from the MainChain and SubChain runtime paths.
 * Ordering keeps event order and batching stable before a block is finalized.
 
 ## Related

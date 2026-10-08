@@ -6,17 +6,17 @@ icon: material/web
 
 ## Overview
 
-HieraChain is designed as a specialized **Plugin Layer** for enterprises, focusing on data immutability and verification rather than replacing existing Web2 infrastructure. Therefore, HieraChain has strict regulations regarding transport protocols.
+HieraChain runs alongside enterprise Web2 infrastructure as a layer for data immutability and verification. This guide describes the transport protocols supported by the core and how to place a proxy in front of it.
 
 ## Why No HTTP/2 and HTTP/3 Support?
 
-HieraChain **does not support** and **has no plans to support** HTTP/2 or HTTP/3 (QUIC) protocols directly from within the core. This stems from the "Don't reinvent the wheel" design philosophy and Python performance optimization.
+The HieraChain core currently supports HTTP/1.1. It does not serve HTTP/2 or HTTP/3 (QUIC) directly; terminate those client connections at a reverse proxy and forward requests to HieraChain over HTTP/1.1.
 
 ### 1. Position in System Architecture
 
 HieraChain does not replace existing databases but operates **alongside** them as a supplementary verification layer. Data is routed based on immutability needs:
 
-* **Regular data**: Goes directly to Web2 DB for maximum speed.
+* **Regular data**: Goes directly to the Web2 database.
 * **Data requiring verification**: Passes through HieraChain to create digital proofs before syncing.
 
 ```mermaid
@@ -35,33 +35,33 @@ graph TD
 
 ### 2. "Plugin Layer" Philosophy
 
-HieraChain is built to **run alongside** and add blockchain value to existing Enterprise Web2 systems:
+HieraChain runs alongside existing enterprise Web2 systems:
 
-* **Separate data flow**: Not all data needs blockchain. HieraChain only processes important "events" that require immutability, preventing the main system from being overloaded.
+* **Separate data flow**: HieraChain processes events that require immutability; other data can remain in the Web2 system.
 * **Separate database**: HieraChain maintains its own DB (World State/Ledger) for distributed proof storage, completely separate from Web2's business DB.
 * **Cross-check capability**: HieraChain has a mechanism to connect (read-only) to Web2 DB for cross-verifying integrity between business data and on-chain proofs.
-* **HTTP port security**: Security at the communication port (Port 80/443) is still handled by the Web2 network infrastructure.
+* **HTTP port security**: The Web2 network infrastructure handles security at ports 80 and 443.
 
 ### 3. Why HTTP/1.1
 
-* **Speed in internal network**: In a trusted network environment between Reverse Proxy and HieraChain, HTTP/1.1 is the simplest protocol, with the least overhead and highest performance for API tasks.
-* **Compatibility**: 100% of current API Gateway and Load Balancer solutions perfectly support forwarding down to HTTP/1.1.
-* **Resource focus**: Instead of spending CPU on complex connection negotiation, HieraChain dedicates all resources to:
+* **Internal network**: The reverse proxy forwards API requests to HieraChain over HTTP/1.1.
+* **Compatibility**: API gateways and load balancers can forward requests to HTTP/1.1 upstreams.
+* **Request handling**: HieraChain can use its resources for:
 
     * Event signature verification.
-    * BFT consensus.
-    * Ensuring ledger integrity.
+    * BFT consensus in the separate BFT component.
+    * Ledger integrity checks.
 
 ## Standard Enterprise Deployment
 
-If your system requires modern features like HTTP/2, HTTP/3, or gRPC for optimizing client connections, you **must** use the **Reverse Proxy Offloading** model.
+If your system requires HTTP/2 or HTTP/3 for client connections, use the **Reverse Proxy Offloading** model.
 
 1. **Web2 Layer (NGINX/Traefik/F5)**: Accepts HTTPS connections (HTTP/2 or HTTP/3 QUIC) from users, decrypts SSL.
-2. **HieraChain Layer**: Receives decrypted requests from the Proxy via high-speed HTTP/1.1 connections.
+2. **HieraChain Layer**: Receives decrypted requests from the Proxy over HTTP/1.1.
 
 !!! important
 
-    HieraChain will never replace existing Web2 infrastructure. HieraChain is built to run **underneath** those systems, providing auditability and immutability that traditional databases lack.
+    In this deployment, HieraChain runs alongside Web2 infrastructure and provides auditability and immutability for data that passes through it.
 
 ## Security Notes
 

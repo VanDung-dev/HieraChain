@@ -6,53 +6,43 @@ and verification services for the HieraChain Ledger.
 """
 
 # Identity Management
-from hierachain.security.identity import IdentityManager, IdentityError
+# Access Control & Protection
+from hierachain.security.brute_force_protector import BruteForceProtector
+from hierachain.security.identity import IdentityError, IdentityManager
 from hierachain.security.identity_loader import load_node_identity
-from hierachain.security.msp import (
-    Certificate,
-    CertificateAuthority,
-    OrganizationPolicies,
-    HierarchicalMSP,
-)
 
 # Key Management
 from hierachain.security.key_manager import KeyManager, initialize_default_keys
-from hierachain.security.key_provider import KeyProvider, LocalKeyProvider, FileVaultProvider
-
-# Access Control & Protection
-from hierachain.security.brute_force_protector import BruteForceProtector
-from hierachain.security.policy_engine import Policy, PolicyType, PolicyEffect, PolicyEngine
-from hierachain.security.sanitization import (
-    sanitize_string,
-    sanitize_dict,
-    sanitize_list,
-    sanitize_for_output,
-    sanitize_error_message,
-    is_safe_input,
-    safe_format,
-    ValidationError,
+from hierachain.security.key_provider import (
+    FileVaultProvider,
+    KeyProvider,
+    LocalKeyProvider,
+)
+from hierachain.security.msp import (
+    Certificate,
+    CertificateAuthority,
+    HierarchicalMSP,
+    OrganizationPolicies,
 )
 
-# Verification
-from hierachain.security.verify import (
-    BlockVerifier,
-    VerificationStatus,
-    VerificationResult,
-    BlockVerificationError,
-    APIKeyVerifier,
-    ResourcePermissionChecker,
-    create_verify_api_key,
-    get_auth_dependency,
-    require_event_access,
-    require_chain_access,
-    require_proof_access,
-    ZKPublicInputs,
-    ZKVerifier,
-    get_zk_verifier,
-    verify_zk_proof,
-    reset_zk_verifier,
-    ZKVerificationError,
-    SignatureVerifier,
+# Policy Engine
+from hierachain.security.policy_engine import (
+    ComparisonOperator,
+    Policy,
+    PolicyCondition,
+    PolicyEffect,
+    PolicyEngine,
+    PolicyType,
+)
+from hierachain.security.sanitization import (
+    ValidationError,
+    is_safe_input,
+    safe_format,
+    sanitize_dict,
+    sanitize_error_message,
+    sanitize_for_output,
+    sanitize_list,
+    sanitize_string,
 )
 
 # Security Utilities & Logging
@@ -62,26 +52,42 @@ from hierachain.security.secure_logging import (
     get_storage_logger,
 )
 from hierachain.security.security_utils import (
-    KeyPair,
     CryptoError,
-    verify_signature,
+    KeyPair,
     generate_key_pair_hex,
+    verify_signature,
+)
+
+# Verification
+from hierachain.security.verify import (
+    APIKeyVerifier,
+    BlockVerificationError,
+    BlockVerifier,
+    ResourcePermissionChecker,
+    SignatureVerifier,
+    VerificationResult,
+    VerificationStatus,
+    ZKPublicInputs,
+    ZKVerificationError,
+    ZKVerifier,
+    create_verify_api_key,
+    get_auth_dependency,
+    get_zk_verifier,
+    require_chain_access,
+    require_event_access,
+    require_proof_access,
+    reset_zk_verifier,
+    verify_zk_proof,
 )
 
 # Zero Knowledge Proving
 from hierachain.security.zk_prover import (
-    ZKProver,
     ZKProofResult,
+    ZKProver,
     ZKProvingError,
-    get_zk_prover,
     generate_zk_proof,
+    get_zk_prover,
     reset_zk_prover,
-)
-
-# Policy Engine
-from hierachain.security.policy_engine import (
-    PolicyCondition,
-    ComparisonOperator,
 )
 
 __all__ = [
@@ -155,5 +161,4 @@ __all__ = [
     # Policy Engine
     "PolicyCondition",
     "ComparisonOperator",
-    "PolicyEngine",
 ]

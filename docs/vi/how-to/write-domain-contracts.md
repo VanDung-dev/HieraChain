@@ -19,8 +19,7 @@ from hierachain.domains.chains.domain_chain import DomainChain
 
 chain = DomainChain(
     name="supply_chain_01",
-    domain_type="supply_chain",
-    storage_path="data/ledger.db"
+    domain_type="supply_chain"
 )
 ```
 
@@ -56,21 +55,18 @@ from hierachain.domains.chains.domain_chain import DomainChain
 from hierachain.domains.events.event_creators import create_quality_check
 
 chain = DomainChain(name="logistics_chain", domain_type="logistics")
+chain.register_entity("CONTAINER-409", {"origin": "Port A"})
 
 # Tạo sự kiện kiểm tra chất lượng đã qua kiểm thực
 event = create_quality_check(
     entity_id="CONTAINER-409",
     check_type="temperature_compliance",
     check_result="passed",
-    metadata={"temperature_c": 4.2}
+    details={"temperature_c": 4.2}
 )
 
 # Nạp sự kiện vào chuỗi nghiệp vụ
-chain.add_domain_event(
-    entity_id=event["entity_id"],
-    event=event["event"],
-    details=event["details"]
-)
+chain.add_domain_event(event)
 ```
 
 ## 4. Quản lý vòng đời thực thể
@@ -85,14 +81,13 @@ chain.add_domain_event(
 # Đăng ký thực thể
 chain.register_entity(
     entity_id="CONTAINER-409",
-    entity_type="cargo",
-    metadata={"origin": "Port A", "destination": "Port B"}
+    entity_data={"origin": "Port A", "destination": "Port B"}
 )
 
 # Cập nhật trạng thái thực thể
 chain.update_entity_status(
     entity_id="CONTAINER-409",
-    new_status="in_transit",
+    status="in_transit",
     reason="Departed facility"
 )
 ```

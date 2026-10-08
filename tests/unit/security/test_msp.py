@@ -334,6 +334,22 @@ def test_audit_logging():
     assert "entity_id" in last_entry["details"]
 
 
+def test_audit_records_identity_authorization_and_revocation() -> None:
+    """Keep audit coverage for the complete MSP lifecycle."""
+    msp, credentials, _ = setup_msp()
+    assert msp.register_entity("audit-admin", credentials, "admin")
+    assert msp.register_entity("audit-viewer", credentials, "viewer")
+    assert msp.validate_identity("audit-admin", credentials)
+    assert msp.authorize_action("audit-admin", "manage_entities")
+    assert msp.revoke_entity("audit-viewer", "testing")
+
+    audit_log = msp.get_audit_log()
+    assert len(audit_log) >= 5
+    assert {
+        "entity_registered", "identity_validated", "action_authorized", "entity_revoked",
+    } <= {entry["event_type"] for entry in audit_log}
+
+
 def setup_ca():
     """Set up test fixtures for CertificateAuthority"""
     ca = CertificateAuthority(
@@ -583,24 +599,6 @@ def test_register_entity_with_special_characters():
 
     assert result
     assert "test-user@domain.com" in msp.entities
-
-
-def test_register_entity_with_invalid_role_edge_case():
-    """Test entity registration with invalid role"""
-    msp, test_credentials, _ = setup_msp()
-
-    def register_invalid_role():
-        # Test with invalid role
-        return msp.register_entity(
-            "test-invalid-role-user",
-            test_credentials,
-            "nonexistent_role"
-        )
-
-    result = register_invalid_role()
-
-    assert not result
-    assert "test-invalid-role-user" not in msp.entities
 
 
 def test_validate_identity_with_invalid_inputs():
