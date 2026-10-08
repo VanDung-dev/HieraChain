@@ -98,7 +98,8 @@ def test_bulk_reads_use_one_statement_and_preserve_event_order(
     )
     assert store.get_blocks_from_db(7)[0].index == 7
     assert all(
-        len(block["events"]) == 3 for block in store.storage.get_blocks_from_index(0)
+        len(block["events"]) == 3
+        for block in store.storage.get_blocks_from_index(0, chain_name=store.chain_name)
     )
 
 
