@@ -33,7 +33,7 @@
     
     
       
-        <title>Versioning Module - HieraChain Docs</title>
+        <title>Module quản lý phiên bản - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#versioning-module-hierachainconfigversionpy" class="md-skip">
+        <a href="#module-quan-ly-phien-ban-hierachainconfigversionpy" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Versioning Module
+              Module quản lý phiên bản
             
           </span>
         </div>
@@ -4354,12 +4354,12 @@
   
 
 
-<h1 id="versioning-module-hierachainconfigversionpy">Versioning Module (<code>hierachain/config/version.py</code>)</h1>
+<h1 id="module-quan-ly-phien-ban-hierachainconfigversionpy">Module quản lý phiên bản (<code>hierachain/config/version.py</code>)</h1>
 <h2 id="1-tong-quan">1. Tổng quan</h2>
 <p>Module quản lý phiên bản xác định phiên bản phát hành cho HieraChain. Hệ thống định dạng tuple phiên bản có cấu trúc thành chuỗi chuẩn theo đặc tả PEP 440, đảm bảo các thành phần Core, API, SDK và CLI đồng bộ thông tin phiên bản phát hành.</p>
 <h2 id="2-cau-truc-tuple-phien-ban">2. Cấu trúc tuple phiên bản</h2>
 <p>HieraChain định nghĩa phiên bản hệ thống dưới dạng tuple 5 phần tử trong <code>hierachain/config/version.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">VERSION</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">VERSION</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 <p>Ý nghĩa các phần tử:</p>
 <ul>
@@ -4372,17 +4372,17 @@
 <h2 id="3-ham-inh-dang-phien-ban">3. Hàm định dạng phiên bản</h2>
 <p>Module cung cấp hàm chuyển đổi tuple thành chuỗi phiên bản tiêu chuẩn:</p>
 <ul>
-<li>Bản phát hành <code>final</code> bỏ qua hậu tố, trả về chuỗi ngữ nghĩa gọn như <code>0.1.0</code>.</li>
+<li>Bản phát hành <code>final</code> bỏ hậu tố, cho chuỗi version như <code>0.2.0</code>.</li>
 <li>Các cấp thử nghiệm thêm hậu tố chuẩn PEP 440 như <code>-alpha1</code> hoặc <code>-beta2</code>.</li>
-<li>Cấp <code>dev</code> định dạng theo mẫu <code>.devN</code>.</li>
+<li>Mức <code>dev</code> dùng <code>.devN</code> khi serial dương, hoặc <code>.dev</code> khi serial bằng 0.</li>
 </ul>
 <h2 id="4-su-dung-trong-ma-nguon">4. Sử dụng trong mã nguồn</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_version</span><span class="p">,</span> <span class="n">VERSION</span><span class="p">,</span> <span class="n">__version__</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Chuỗi phiên bản hiện tại</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Current version string</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"HieraChain Version: </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Định dạng tuple tùy chỉnh</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Explicit tuple formatting</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">custom_version</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"beta"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Formatted Version: </span><span class="si">{</span><span class="n">get_version</span><span class="p">(</span><span class="n">custom_version</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>

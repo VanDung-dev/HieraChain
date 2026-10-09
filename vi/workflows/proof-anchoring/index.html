@@ -4433,26 +4433,26 @@
     participant MC as 🔗 MainChain
 
     SC-&gt;&gt;SC: auto_submit_proof_if_needed()
-    SC-&gt;&gt;SC: Kiểm tra: chain length &gt; 1 AND block finalized
+    SC-&gt;&gt;SC: Check: chain length &gt; 1 AND block finalized
 
     alt ZK Proofs Enabled (HRC_ENABLE_ZK_PROOFS=true)
         SC-&gt;&gt;ZKP: generate_proof(old_state_root, new_state_root, block_index, events)
-        ZKP-&gt;&gt;ZKP: Tính toán bằng chứng (Simulate SHA-256 hoặc mạch ZoKrates)
+        ZKP-&gt;&gt;ZKP: Compute proof (Mock SHA-256; production backend unavailable)
         ZKP--&gt;&gt;SC: ProofResult { proof: bytes, success: bool }
-        SC-&gt;&gt;SC: Thử lại tối đa 3 lần với khoảng chờ tăng dần nếu thất bại
+        SC-&gt;&gt;SC: Retry up to 3× with exponential backoff on failure
     else ZK Proofs Disabled
         SC-&gt;&gt;SC: zk_proof = None
     end
 
     SC-&gt;&gt;SC: _generate_default_proof_metadata()
     SC-&gt;&gt;MC: add_proof(sub_chain_name, proof_hash, metadata, zk_proof)
-    MC-&gt;&gt;MC: Xác thực bằng chứng ZK (nếu bật)
-    MC--&gt;&gt;SC: Proof đã vào hàng chờ
-    SC-&gt;&gt;MC: Hoàn tất block proof đã ký, lưu và đọc lại từ storage
-    MC--&gt;&gt;SC: Proof bền vững đã xác nhận
+    MC-&gt;&gt;MC: Verify ZK proof (if enabled)
+    MC--&gt;&gt;SC: Proof queued
+    SC-&gt;&gt;MC: Finalize signed proof block, save and read back from storage
+    MC--&gt;&gt;SC: Durable proof confirmed
 
-    SC-&gt;&gt;SC: Ghi nhận sự kiện nội bộ proof_submitted
-    SC-&gt;&gt;SC: Cập nhật timestamp last_proof_submission</code></pre>
+    SC-&gt;&gt;SC: Record proof_submitted event
+    SC-&gt;&gt;SC: Update last_proof_submission timestamp</code></pre>
 <hr />
 <h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
 <table>
@@ -4503,8 +4503,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>production</code></td>
-<td style="text-align: left;">Mạch ZoKrates ZK-SNARKs</td>
-<td style="text-align: left;">Triển khai thực tế</td>
+<td style="text-align: left;">Backend tạo/xác minh chưa triển khai</td>
+<td style="text-align: left;">Chưa khả dụng</td>
 </tr>
 </tbody>
 </table>

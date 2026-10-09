@@ -4471,7 +4471,7 @@
 <li>Enforces append-only storage before events commit to blockchain state.</li>
 <li>Provides replay generators to reconstruct uncommitted events after ungraceful shutdowns.</li>
 </ul>
-<p><code>read_since(cursor=None)</code> flushes and fsyncs the active writer, reads durable frames, and returns <code>(records, (inode, byte_offset))</code>. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.</p>
+<p><code>read_since(cursor=None)</code> flushes the active writer and fsyncs it only when its file state is unknown or has changed. Successful appends are already fsynced before <code>log_event()</code> returns. It reads durable frames and returns <code>(records, (inode, byte_offset))</code>. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or required fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.</p>
 <p>Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.</p>
 <h3 id="23-recoverable-encryption-encryption_validatorpy">2.3 Recoverable encryption (<code>encryption_validator.py</code>)</h3>
 <p><code>EncryptionValidator(config, key_resolver)</code> uses AES-256-GCM. Encryption requires <code>config["key_id"]</code> and a caller-supplied <code>key_resolver(key_id)</code> that returns exactly 32 bytes for an approved, retained key. Missing IDs, unavailable keys, or invalid key material raise <code>SecurityError</code>; the validator does not generate disposable encryption keys.</p>
@@ -4496,38 +4496,7 @@
 <p><code>EncryptionValidator.validate_config()</code> warns when <code>key_rotation_interval</code> is below the existing <code>min_key_rotation_interval</code> (2,592,000 seconds). This is an advisory configuration comparison, not an evaluation of key age or an expiry policy. It creates no schedule, deadline, or replacement key. The host application manages rotation and retention of old keys.</p>
 <p>Log consumers must update their event filters: <code>auto_scaling_triggered</code> and its <code>consensus_scaling</code> wrapper become <code>consensus_capacity_recommendation</code>; <code>resource_scaling_triggered</code> becomes <code>resource_capacity_recommendation</code>. The legacy Parquet paths <code>log/error_mitigation/consensus_scaling.parquet</code> and <code>log/error_mitigation/resource_scaling.parquet</code>, payload fields (including <code>auto_scale_enabled</code>), and existing records remain compatible. The misleading <code>key_rotation_scheduled</code> log and <code>next_rotation</code> field are removed; the interval warning remains.</p>
 <h2 id="3-error-classification-strategy">3. Error classification strategy</h2>
-<p><code>ErrorClassifier</code> in <code>error_classifier.py</code> categorizes errors by severity and recommends mitigation actions:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Severity Level</th>
-<th style="text-align: left;">Category Meaning</th>
-<th style="text-align: left;">Mitigation Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">INFO / WARNING</td>
-<td style="text-align: left;">Minor operational anomalies</td>
-<td style="text-align: left;">Log and continue</td>
-</tr>
-<tr>
-<td style="text-align: left;">ERROR</td>
-<td style="text-align: left;">Event validation or transient processing failures</td>
-<td style="text-align: left;">Retry with backoff or reject</td>
-</tr>
-<tr>
-<td style="text-align: left;">CRITICAL</td>
-<td style="text-align: left;">State corruption or Merkle root mismatch</td>
-<td style="text-align: left;">Reject, log, and require operational recovery</td>
-</tr>
-<tr>
-<td style="text-align: left;">FATAL</td>
-<td style="text-align: left;">Irrecoverable consensus or hardware failure</td>
-<td style="text-align: left;">Emergency lockdown</td>
-</tr>
-</tbody>
-</table>
+<p><code>classify_error()</code> returns an <code>ErrorInfo</code> with a category, a <code>PriorityLevel</code>, and a mitigation strategy. The priority is calculated from impact and likelihood. <code>PriorityLevel</code> contains <code>CRITICAL</code>, <code>HIGH</code>, <code>MEDIUM</code>, and <code>LOW</code>.</p>
 <h2 id="4-transaction-journaling">4. Transaction journaling</h2>
 <p>The <code>TransactionJournal</code> provides write-ahead persistence:</p>
 <ol>

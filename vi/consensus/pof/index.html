@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giao thức đồng thuận liên minh: Bầu chọn lãnh đạo xác định, Biểu quyết Quorum và Quản trị đa tổ chức.">
+        <meta name="description" content="Thành viên validator PoF, luân phiên leader xác định, xác thực chữ ký và giới hạn tích hợp quorum.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#proof-of-federation-hierachainconsensusproof_of_federationpy" class="md-skip">
+        <a href="#proof-of-federation-pof" class="md-skip">
           Bỏ qua
         </a>
       
@@ -2823,10 +2823,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Cấu hình
       </span>
     </span>
   </a>
@@ -2834,65 +2834,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-tri-kien-truc-poa-va-pof" class="md-nav__link">
+  <a href="#luong-xac-thuc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vị trí Kiến trúc: PoA và PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-hoat-ong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Hoạt động
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-tinh-nang-noi-bat" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các tính năng nổi bật
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tham-so-cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tham số cấu hình
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#luong-xac-thuc-khoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Luồng Xác thực Khối
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#uu-iem-va-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ưu điểm và Hạn chế
+        Luồng xác thực
       </span>
     </span>
   </a>
@@ -4302,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Cấu hình
       </span>
     </span>
   </a>
@@ -4313,65 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-tri-kien-truc-poa-va-pof" class="md-nav__link">
+  <a href="#luong-xac-thuc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vị trí Kiến trúc: PoA và PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#co-che-hoat-ong" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cơ chế Hoạt động
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-tinh-nang-noi-bat" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các tính năng nổi bật
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tham-so-cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tham số cấu hình
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#luong-xac-thuc-khoi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Luồng Xác thực Khối
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#uu-iem-va-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ưu điểm và Hạn chế
+        Luồng xác thực
       </span>
     </span>
   </a>
@@ -4420,108 +4310,55 @@
   
 
 
-<h1 id="proof-of-federation-hierachainconsensusproof_of_federationpy">Proof of Federation (<code>hierachain/consensus/proof_of_federation.py</code>)</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p><strong>Proof of Federation (PoF)</strong> là giao thức đồng thuận liên chuỗi (<strong>Inter-MainChain</strong>) được thiết kế dành riêng cho các mạng liên minh tổ chức (<strong>Consortium Alliance</strong>). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z), mỗi bên tự vận hành một MainChain riêng, có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức <strong>mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị</strong>.</p>
-<hr />
-<h2 id="vi-tri-kien-truc-poa-va-pof">Vị trí Kiến trúc: PoA và PoF</h2>
+<h1 id="proof-of-federation-pof">Proof of Federation (PoF)</h1>
+<p><code>hierachain/consensus/proof_of_federation.py</code> triển khai danh sách validator đã sắp xếp, luân phiên leader xác định và chữ ký finalization Ed25519. Chọn rõ ràng cho MainChain bằng <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code>. Mặc định vẫn là PoA.</p>
+<h2 id="cau-hinh">Cấu hình</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Cơ chế Đồng thuận</th>
-<th style="text-align: left;">Phạm vi &amp; Mục đích</th>
-<th style="text-align: left;">Tầng Áp dụng &amp; Mô hình Quản trị</th>
+<th>Khóa cấu hình Python</th>
+<th>Mặc định</th>
+<th>Ý nghĩa</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
-<td style="text-align: left;"><strong>Nội bộ Tổ chức</strong> (Các Sub-Chain nghiệp vụ nội bộ)</td>
-<td style="text-align: left;"><strong>Tầng SubChain</strong> (Mặc định cho mọi sự kiện nội bộ; kiểm soát đơn quyền)</td>
+<td><code>min_validators</code></td>
+<td><code>3</code></td>
+<td>Số thành viên tối thiểu cho <code>can_create_block()</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
-<td style="text-align: left;"><strong>Liên minh Đa Tổ chức</strong> (Mạng liên kết MainChain P2P)</td>
-<td style="text-align: left;"><strong>Tầng MainChain</strong> (Cấu hình qua <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code> cho liên minh đa bên)</td>
+<td><code>block_interval</code></td>
+<td><code>5.0</code></td>
+<td>Validation yêu cầu giãn cách ít nhất 80% giá trị này</td>
+</tr>
+<tr>
+<td><code>enforce_rotation</code></td>
+<td><code>True</code></td>
+<td>Kiểm tra signer theo <code>validators[index % count]</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="co-che-hoat-ong">Cơ chế Hoạt động</h2>
-<p>PoF sử dụng mô hình luân phiên liên bang ngang hàng kết hợp với xác thực đa chữ ký:
-1.  <strong>Xoay vòng Lãnh đạo (Leader Rotation)</strong>: Leader có quyền đề xuất khối liên minh cho mỗi lượt được xác định bằng công thức toán học: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. Điều này ngăn chặn bất kỳ MainChain nào thao túng độc quyền lượt tạo khối.
-2.  <strong>Biểu quyết Quorum</strong>: Để một khối sự kiện liên tổ chức được xác nhận hợp lệ giữa các MainChain độc lập, nó cần đa chữ ký xác thực từ một ngưỡng tối thiểu các thành viên liên minh (thường là <strong>2/3 + 1</strong>).
-3.  <strong>Danh sách Validator Sắp xếp</strong>: Danh sách các MainChain tham gia được tự động sắp xếp đồng bộ trên tất cả các nút để đảm bảo tính nhất quán của lịch trình tạo khối.</p>
-<hr />
-<h2 id="cac-tinh-nang-noi-bat">Các tính năng nổi bật</h2>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5.5A3.5 3.5 0 0 1 15.5 9a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 8.5 9 3.5 3.5 0 0 1 12 5.5M5 8c.56 0 1.08.15 1.53.42-.15 1.43.27 2.85 1.13 3.96C7.16 13.34 6.16 14 5 14a3 3 0 0 1-3-3 3 3 0 0 1 3-3m14 0a3 3 0 0 1 3 3 3 3 0 0 1-3 3c-1.16 0-2.16-.66-2.66-1.62a5.54 5.54 0 0 0 1.13-3.96c.45-.27.97-.42 1.53-.42M5.5 18.25c0-2.07 2.91-3.75 6.5-3.75s6.5 1.68 6.5 3.75V20h-13zM0 20v-1.5c0-1.39 1.89-2.56 4.45-2.9-.59.68-.95 1.62-.95 2.65V20zm24 0h-3.5v-1.75c0-1.03-.36-1.97-.95-2.65 2.56.34 4.45 1.51 4.45 2.9z"/></svg></span> <strong>Quản trị Đa phương</strong></p>
-<hr />
-<p>Loại bỏ điểm yếu tập trung (Single Point of Failure). Nếu Leader hiện tại gặp sự cố, quyền tạo khối sẽ tự động chuyển cho nút tiếp theo trong chu kỳ.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m18 13 3 3v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4l3-3h.83l2 2H6.78L5 17h14l-1.77-2h-1.91l2-2zm1 7v-1H5v1zm-7.66-5-4.95-4.93a.996.996 0 0 1 0-1.41l6.37-6.37a.975.975 0 0 1 1.4.01l4.95 4.95c.39.39.39 1.02 0 1.41L12.75 15a.96.96 0 0 1-1.41 0m2.12-10.59L8.5 9.36l3.55 3.54L17 7.95z"/></svg></span> <strong>Biểu quyết Quorum</strong></p>
-<hr />
-<p>Cung cấp lớp bảo mật bổ sung bằng cách yêu cầu sự đồng thuận của đa số tổ chức thành viên trước khi chốt dữ liệu.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c-1.27 0-2.4.8-2.82 2H3v2h1.95L2 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3L6.05 7h3.12c.33.85.98 1.5 1.83 1.83V20H2v2h20v-2h-9V8.82c.85-.32 1.5-.97 1.82-1.82h3.13L15 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3l-2.95-7H21V5h-6.17C14.4 3.8 13.27 3 12 3m0 2a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-6.5 5.25L7 14H4zm13 0L20 14h-3z"/></svg></span> <strong>Công bằng &amp; Minh bạch</strong></p>
-<hr />
-<p>Mỗi tổ chức thành viên đều có cơ hội đóng góp và kiểm soát sổ cái ngang hàng nhau thông qua lịch trình được định sẵn.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="tham-so-cau-hinh">Tham số cấu hình</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tham số</th>
-<th style="text-align: left;">Ý nghĩa</th>
-<th style="text-align: left;">Mặc định</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>min_validators</code></td>
-<td style="text-align: left;">Số lượng nút tối thiểu để mạng hoạt động.</td>
-<td style="text-align: left;"><code>3</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>block_interval</code></td>
-<td style="text-align: left;">Chu kỳ tạo khối mục tiêu.</td>
-<td style="text-align: left;"><code>5.0</code> giây</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>enforce_rotation</code></td>
-<td style="text-align: left;">Bắt buộc xoay vòng leader sau mỗi khối.</td>
-<td style="text-align: left;"><code>True</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="luong-xac-thuc-khoi">Luồng Xác thực Khối</h2>
-<pre class="mermaid"><code>graph TD
-    A[Block Proposed by Leader] --&gt; B{Verify Leader Identity}
-    B -- Correct Leader --&gt; C[Collect Quorum Signatures]
-    C --&gt; D{Signatures &gt;= 2/3 + 1?}
-    D -- Yes --&gt; E[Commit Block to Ledger]
-    D -- No --&gt; F[Reject &amp; Wait for Next Leader]
-    B -- Wrong Leader --&gt; G[Reject Block]</code></pre>
-<hr />
-<h2 id="uu-iem-va-han-che">Ưu điểm và Hạn chế</h2>
-<ul>
-<li><strong>Ưu điểm</strong>: Phù hợp cho mạng liên minh đa bên, chống lại sự chi phối của một nhóm nhỏ, tính sẵn sàng cao.</li>
-<li><strong>Hạn chế</strong>: Tốn thêm băng thông mạng để thu thập chữ ký Quorum so với PoA, hiệu năng giảm nhẹ khi số lượng Validator tăng quá lớn.</li>
-</ul>
-<hr />
+<p>Các khóa cấu hình này thuộc instance đồng thuận. Hàm khởi tạo MainChain/SubChain hiện không tự áp dụng <code>CONSENSUS_FEDERATION_CONFIG</code>.</p>
+<p>Cấp public key thật của từng validator khi gọi <code>add_validator(validator_id, metadata={"public_key": ...})</code>. Các node phải thống nhất thành viên và khóa. Chỉ đặt selector không cấp đủ cấu hình federation.</p>
+<h2 id="luong-xac-thuc">Luồng xác thực</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[Proposed finalized block] --&gt; B{Structure and timestamp spacing valid?}
+    B --&gt;|Yes| C{Expected leader when rotation enabled?}
+    C --&gt;|Yes| D{Leader signature matches reconstructed payload?}
+    D --&gt;|Yes| E{Shared optional ZK check passes?}
+    E --&gt;|Yes| F[Validation succeeds]
+    B --&gt;|No| R[Reject]
+    C --&gt;|No| R
+    D --&gt;|No| R
+    E --&gt;|No| R</code></pre>
+<p>Helper <code>_verify_block_quorum()</code> thông thường kiểm tra chữ ký leader, không kiểm tra chữ ký quorum nhiều bên. Hàm riêng <code>verify_quorum_signatures(message, signatures, required_count=None)</code> đếm validator đã đăng ký khác nhau, mặc định <code>floor(2n/3)+1</code>. Hàm này không tự được gọi để thu thập phiếu khi finalize block. Class chưa triển khai failover tự động hoặc thay leader theo timeout.</p>
+<p>Xác minh ZK là tùy chọn dùng chung với PoA. Mock proof phát triển không bảo đảm zero-knowledge; tạo/xác minh production chưa khả dụng. <code>HRC_BLOCK_INTERVAL</code> đổi giãn cách PoA và không đổi interval PoF.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././poa/">Đồng thuận dựa trên thẩm quyền (PoA)</a></li>
-<li><a href="../../modules/network/">Kiến trúc mạng P2P</a></li>
-<li><a href="../../security/authorization-access-control/">Hệ thống bảo mật (Security)</a></li>
+<li><a href="../poa/">PoA</a></li>
+<li><a href="../../workflows/consensus_mechanisms/">Phạm vi runtime đồng thuận</a></li>
+<li><a href="../../architecture/zk-proofs/">Triển khai ZK</a></li>
 </ul>
 
 

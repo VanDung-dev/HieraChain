@@ -1706,10 +1706,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-upload-encrypt-store-pin" class="md-nav__link">
+  <a href="#upload-and-download" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: upload (encrypt, store, pin)
+        Upload and download
       </span>
     </span>
   </a>
@@ -1717,10 +1717,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-download-retrieve-decrypt" class="md-nav__link">
+  <a href="#security-and-integration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: download (retrieve, decrypt)
+        Security and integration
       </span>
     </span>
   </a>
@@ -1728,32 +1728,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling-ipfs-unavailable" class="md-nav__link">
+  <a href="#errors" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Error handling: IPFS unavailable
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-properties" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Security properties
+        Errors
       </span>
     </span>
   </a>
@@ -4313,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-upload-encrypt-store-pin" class="md-nav__link">
+  <a href="#upload-and-download" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: upload (encrypt, store, pin)
+        Upload and download
       </span>
     </span>
   </a>
@@ -4324,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-download-retrieve-decrypt" class="md-nav__link">
+  <a href="#security-and-integration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: download (retrieve, decrypt)
+        Security and integration
       </span>
     </span>
   </a>
@@ -4335,32 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling-ipfs-unavailable" class="md-nav__link">
+  <a href="#errors" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Error handling: IPFS unavailable
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-properties" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Security properties
+        Errors
       </span>
     </span>
   </a>
@@ -4422,186 +4378,112 @@
 
 <h1 id="ipfs-encrypted-storage">IPFS encrypted storage</h1>
 <h2 id="overview">Overview</h2>
-<p>Large or sensitive off-chain data such as document attachments, audit evidence or binary assets is kept on a private IPFS swarm with mandatory AES-256-GCM encryption. Only nodes that share the same encryption key can decrypt the data. IPFS returns a CID that is stored on-chain as a reference. Plaintext never leaves the encrypted boundary.</p>
-<p>Even if IPFS storage is compromised, the data is unreadable without the AES-256-GCM key.</p>
-<hr />
-<h2 id="flow-diagram-upload-encrypt-store-pin">Flow diagram: upload (encrypt, store, pin)</h2>
+<p><code>IPFSClient</code> uploads bytes or JSON to a configured Kubo daemon and returns a CID. <code>upload_bytes()</code> and <code>upload_json()</code> encrypt by default with AES-256-GCM. Direct callers can pass <code>encrypt=False</code>, which sends plaintext to IPFS. Configure the daemon and its network access separately; the client does not enforce a private swarm.</p>
+<p><code>create_ipfs_client_from_env()</code> requires <code>HRC_IPFS_ENCRYPTION_KEY</code> to contain exactly 64 hexadecimal characters (32 bytes). Missing or malformed keys raise <code>IPFSError</code>. Preserve this key across restarts so previously encrypted objects remain readable. A directly constructed client can generate an in-memory key when none is supplied; that key is not a persistent recovery mechanism.</p>
+<h2 id="upload-and-download">Upload and download</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller-&gt;&gt;IC: upload_json(data, encrypt=True, metadata)
-
-    IC-&gt;&gt;IC: json.dumps(data) → raw_bytes
-    IC-&gt;&gt;AES: encrypt(raw_bytes, aad=json(metadata))
-    Note right of AES: AES-256-GCM&lt;br/&gt;nonce = random 96-bit (secrets.token_bytes(12))&lt;br/&gt;ciphertext = AESGCM.encrypt(nonce, plaintext, aad)&lt;br/&gt;output = nonce || ciphertext
-    AES--&gt;&gt;IC: ciphertext, nonce
-
-    IC-&gt;&gt;IPFS: add_bytes(ciphertext)
-    IPFS--&gt;&gt;IC: CID (Content Identifier)
-
-    alt auto_pin=True (default)
-        IC-&gt;&gt;IPFS: pin.add(CID)
-        Note right of IPFS: Prevents garbage collection
-    end
-
-    IC--&gt;&gt;Caller: { cid, size, encrypted: True, nonce: hex(nonce) }
-    Note over Caller: Store CID + nonce on-chain for later retrieval</code></pre>
-<hr />
-<h2 id="flow-diagram-download-retrieve-decrypt">Flow diagram: download (retrieve, decrypt)</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller-&gt;&gt;IC: download_json(cid, encrypted=True, nonce=hex, metadata)
-    IC-&gt;&gt;IPFS: cat(cid) → ciphertext bytes
+    participant Caller as Application
+    participant IC as IPFSClient
+    participant AES as AESEncryption
+    participant IPFS as Kubo daemon
+    Caller-&gt;&gt;IC: upload_json(data, encrypt=True, metadata=metadata)
+    IC-&gt;&gt;IC: Serialize JSON to bytes
+    IC-&gt;&gt;AES: encrypt(bytes, canonical metadata AAD)
+    AES--&gt;&gt;IC: ciphertext, random 12-byte nonce
+    IC-&gt;&gt;IPFS: POST /api/v0/add (pin=auto_pin)
+    IPFS--&gt;&gt;IC: CID
+    IC--&gt;&gt;Caller: cid, size, encrypted, nonce, metadata if provided
+    Note over Caller: Retain CID, nonce and metadata; protect key separately
+    Caller-&gt;&gt;IC: download_json(cid, nonce=nonce, metadata=metadata)
+    IC-&gt;&gt;IPFS: POST /api/v0/cat?arg=cid
     IPFS--&gt;&gt;IC: ciphertext
-
-    IC-&gt;&gt;AES: decrypt(ciphertext, nonce_bytes, aad=json(metadata))
-    Note right of AES: Verify GCM authentication tag first&lt;br/&gt;If tag invalid → raise DecryptionError
-    AES--&gt;&gt;IC: plaintext bytes
-
-    IC-&gt;&gt;IC: json.loads(plaintext) → dict
-    IC--&gt;&gt;Caller: Decrypted data ✅</code></pre>
-<hr />
-<h2 id="error-handling-ipfs-unavailable">Error handling: IPFS unavailable</h2>
-<p><code>IPFSClient.is_available(cid)</code> checks <code>/api/v0/files/stat</code> with <code>arg=/ipfs/&lt;cid&gt;</code>. It returns <code>False</code> for unsuccessful responses or connection failures; it does not use the removed <code>/api/v0/object/stat</code> endpoint.</p>
-<pre class="mermaid"><code>flowchart LR
-    CALL["upload_json(data)"]
-    CONN["Connect to IPFS daemon\n(HRC_IPFS_HOST)"]
-    FAIL["❌ Connection refused\nor timeout"]
-    RETRY["Retry with backoff\n(max 3 attempts)"]
-    ERR["Raise IPFSConnectionError\nLog + Alert via Risk Alerts"]
-    OK["✅ CID returned"]
-
-    CALL --&gt; CONN
-    CONN --&gt;|Success| OK
-    CONN --&gt;|Fail| FAIL --&gt; RETRY
-    RETRY --&gt;|Max retries| ERR
-    RETRY --&gt;|Reconnected| OK</code></pre>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Serialize</strong></td>
-<td style="text-align: left;"><code>json.dumps(data)</code> → raw bytes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Encrypt</strong></td>
-<td style="text-align: left;">AES-256-GCM with random 96-bit nonce. AAD (additional authenticated data) = JSON-serialized metadata</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Upload</strong></td>
-<td style="text-align: left;">Raw ciphertext bytes sent to IPFS daemon via Kubo RPC API (<code>httpx</code>)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Pin</strong></td>
-<td style="text-align: left;"><code>pin.add(CID)</code> prevents garbage collection by IPFS GC daemon</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Return</strong></td>
-<td style="text-align: left;">Caller receives <code>{ cid, nonce }</code>; both must be stored on-chain for retrieval</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Retrieve</strong></td>
-<td style="text-align: left;"><code>cat(cid)</code> fetches ciphertext; <code>decrypt()</code> verifies GCM authentication tag before decrypting</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="security-properties">Security properties</h2>
+    IC-&gt;&gt;AES: decrypt(ciphertext, nonce, same metadata AAD)
+    AES--&gt;&gt;IC: Authenticated plaintext
+    IC--&gt;&gt;Caller: Decoded JSON</code></pre>
+<p>The ciphertext includes the GCM authentication tag. The nonce is returned separately as 24 hexadecimal characters. It is public metadata, not the encryption key. When metadata was used as additional authenticated data (AAD), supply the same metadata during download; the client serializes it with <code>dumps_canonical_json()</code>.</p>
+<p>Uploads pass <code>pin</code> to Kubo's add RPC using <code>auto_pin</code> (default <code>True</code>). <code>IPFSClient.pin()</code> is also available for explicit pinning. Retain pins and backups according to the daemon's operational policy.</p>
+<h2 id="security-and-integration">Security and integration</h2>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Property</th>
-<th style="text-align: left;">Mechanism</th>
+<th style="text-align: left;">Implementation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;">Confidentiality</td>
-<td style="text-align: left;">AES-256-GCM encryption</td>
+<td style="text-align: left;">AES-256-GCM when <code>encrypt=True</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Integrity</td>
-<td style="text-align: left;">GCM authentication tag (authenticated encryption)</td>
+<td style="text-align: left;">GCM tag verification with the same key, nonce and AAD</td>
 </tr>
 <tr>
-<td style="text-align: left;">Replay protection</td>
-<td style="text-align: left;">Unique random 96-bit nonce per upload</td>
+<td style="text-align: left;">Nonce</td>
+<td style="text-align: left;">Random 96-bit nonce per encryption; replay detection requires application state</td>
 </tr>
 <tr>
-<td style="text-align: left;">Key management</td>
-<td style="text-align: left;"><code>HRC_IPFS_ENCRYPTION_KEY</code> env var; auto-generated if missing</td>
+<td style="text-align: left;">Key configuration</td>
+<td style="text-align: left;">Stable <code>HRC_IPFS_ENCRYPTION_KEY</code> required by the environment factory</td>
 </tr>
 <tr>
-<td style="text-align: left;">Access control</td>
-<td style="text-align: left;">Policy Engine (Policy Enforcement) gates upload/download API calls</td>
+<td style="text-align: left;">Authorization</td>
+<td style="text-align: left;">The caller enforces permissions; the client does not invoke <code>PolicyEngine</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p>Keep the key in a secret manager. Store the CID, nonce, encryption flag and any AAD metadata needed for retrieval. Encryption does not prevent someone who can replay an old CID from requesting the same object again.</p>
+<h2 id="errors">Errors</h2>
+<p>Upload/download HTTP failures raise <code>IPFSError</code>; encryption failures propagate as <code>EncryptionError</code>. The client has no automatic three-attempt retry or Risk Alerts integration. The application decides whether to retry and how to report failures.</p>
+<p><code>IPFSClient.is_available(cid)</code> checks <code>/api/v0/files/stat</code> with <code>arg=/ipfs/&lt;cid&gt;</code> and returns <code>False</code> for unsuccessful responses or connection failures. It does not prove that the caller has the correct decryption key.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Upload entry</td>
+<td style="text-align: left;">JSON upload</td>
 <td style="text-align: left;"><code>IPFSClient.upload_json()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Encrypt</td>
-<td style="text-align: left;"><code>AESEncryption.encrypt()</code></td>
-<td style="text-align: left;"><code>api/storage/encryption.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Upload raw bytes</td>
+<td style="text-align: left;">Byte upload</td>
 <td style="text-align: left;"><code>IPFSClient.upload_bytes()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Encryption</td>
+<td style="text-align: left;"><code>AESEncryption.encrypt()</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/encryption.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Pin</td>
 <td style="text-align: left;"><code>IPFSClient.pin()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Download &amp; decrypt</td>
+<td style="text-align: left;">JSON download</td>
 <td style="text-align: left;"><code>IPFSClient.download_json()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Factory</td>
+<td style="text-align: left;">Environment factory</td>
 <td style="text-align: left;"><code>create_ipfs_client_from_env()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a>: gates upload/download authorization</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: IPFS connection failure triggers alerts</li>
-<li><a href=".././key-backup/">Key Backup</a>: same AES-256-GCM pattern used for key backup encryption</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: caller-managed authorization</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: application-managed failure reporting</li>
+<li><a href=".././key-backup/">Key Backup</a>: operator-managed key storage</li>
 </ul>
 
 

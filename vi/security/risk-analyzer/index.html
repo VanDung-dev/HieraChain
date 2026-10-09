@@ -4311,22 +4311,18 @@
 
 
 <h1 id="lam-sach-input">Làm sạch Input</h1>
-<p>Lớp bảo mật này xác thực và làm sạch dữ liệu không tin cậy trước khi logic nghiệp vụ xử lý.</p>
+<p>Module này cung cấp các phép biến đổi giá trị theo ngữ cảnh, không phải pipeline xác thực chung cho mọi request. <code>sanitize_string()</code> hỗ trợ ngữ cảnh HTML/general, log và filename; <code>sanitize_dict()</code> và <code>sanitize_list()</code> đệ quy áp dụng phép biến đổi đã chọn. <code>is_safe_input()</code> kiểm tra độ dài chuỗi và một số pattern script, JavaScript URI, template. Các helper này không xác thực theo schema ứng dụng và không cung cấp bảo vệ SQL, NoSQL hay command injection. Kiểm tra kích thước request và schema/độ sâu của route được thực hiện riêng; handler gọi sanitizer tại nơi cần.</p>
 <h2 id="lam-sach-xac-thuc-input">Làm sạch &amp; Xác thực Input</h2>
 <p><strong>File</strong>: <code>hierachain/security/sanitization.py</code></p>
-<p>Lớp phòng thủ chống lại các cuộc tấn công vào dữ liệu (Data-level attacks):</p>
-<ul>
-<li><strong>Injection Protection</strong>: Làm sạch dữ liệu đầu vào để ngăn chặn SQL Injection, NoSQL Injection và Command Injection.</li>
-<li><strong>Nested Bomb Protection</strong>: Giới hạn độ sâu của JSON payload để ngăn chặn các cuộc tấn công từ chối dịch vụ thông qua cấu trúc dữ liệu lồng nhau phức tạp.</li>
-<li><strong>Type Strictness</strong>: Đảm bảo dữ liệu đầu vào khớp hoàn toàn với schema định nghĩa, từ chối mọi trường thông tin dư thừa hoặc sai định dạng.</li>
-</ul>
+<p>API có kiểm tra kích thước request và model theo từng route ở những nơi được cấu hình. Handler chỉ chạy sanitizer khi gọi helper tương ứng.</p>
 <h2 id="luong-lam-sach-du-lieu-sanitization-flow">Luồng Làm sạch Dữ liệu (Sanitization Flow)</h2>
 <pre class="mermaid"><code>graph LR
-    A[Raw Request Body] --&gt; B[Size Limit Check]
-    B --&gt; C[JSON Schema Validation]
-    C --&gt; D[Recursive Type Checking]
-    D --&gt; E[Injection Pattern Scan]
-    E --&gt; F[Sanitized Data for Logic]</code></pre>
+    A[API request] --&gt; B[App middleware: payload-size check]
+    B --&gt; C[Route-specific request validation]
+    C --&gt; D[Route handler]
+    D --&gt;|when called| E[Context-specific sanitizer]
+    D --&gt; F[Business logic]
+    E --&gt; F</code></pre>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

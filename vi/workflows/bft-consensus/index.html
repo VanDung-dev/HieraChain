@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Luồng hoạt động đồng thuận chống gian lận (PBFT) để hoàn tất khối trong môi trường có tính đối kháng.">
+        <meta name="description" content="Tích hợp thư viện PBFT rõ ràng: phiếu các pha có chữ ký, ghi ứng dụng và thay đổi view.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4422,10 +4422,10 @@
 
 <h1 id="ong-thuan-bft">Đồng thuận BFT</h1>
 <h2 id="tong-quan">Tổng quan</h2>
+<p>Thành phần này cần caller tích hợp riêng. Chạy nhiều node API hoặc đặt <code>BFT_ENABLED</code> không tự nối PBFT vào MainChain/Sub-Chain.</p>
 <p>Thành phần thư viện BFT được export và demo độc lập sử dụng PBFT 3 pha. Nó yêu cầu <code>n &gt;= 3f + 1</code> để chịu được <code>f</code> node lỗi hoặc gian lận. Luồng runtime MainChain và SubChain hiện tại không khởi tạo BFT; bên gọi sử dụng tường minh <code>BFTConsensus.request()</code>.</p>
 <p>Với chi tiết PoA và PoF, xem <a href=".././consensus_mechanisms/">Cơ chế Đồng thuận</a>.</p>
 <p>Yêu cầu hệ thống: tối thiểu 4 node để chịu 1 lỗi Byzantine (n=4, f=1: 3x1+1=4).</p>
-<hr />
 <h2 id="bieu-o-luong-pbft-3-pha">Biểu đồ luồng: PBFT 3 pha</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4465,7 +4465,7 @@
     end</code></pre>
 <p>Primary và replica mỗi node đếm đúng một phiếu giai đoạn có chữ ký của chính mình. PRE-PREPARE bị từ chối nếu nội dung request không khớp với digest đã ký. Nếu thao tác ghi vào chain được gắn vào phát sinh lỗi hoặc trả về <code>False</code>, node giữ các message quorum và event ổn định trong bộ nhớ; một COMMIT hợp lệ được gửi lại có thể thử lại thao tác ghi. Node chỉ đánh dấu sequence đã cam kết sau khi thao tác ghi thành công.</p>
 <p>Khi không gắn application chain, thành phần chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event, như demo độc lập.</p>
-<hr />
+<p>Tiếp nhận yêu cầu xảy ra trước commit. Trạng thái thử lại nằm trong bộ nhớ và không bảo đảm áp dụng đúng một lần sau kết quả ghi không rõ ràng hoặc khởi động lại. Xem <a href="../../consensus/bft_consensus/">Thành phần BFT</a> để biết giới hạn truyền tải, cấu hình, phát lại và ZK.</p>
 <h2 id="bieu-o-luong-thay-oi-phien-view-change">Biểu đồ luồng: Thay đổi phiên (View Change)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4481,7 +4481,6 @@
     VM-&gt;&gt;NEW: Elect new leader: Validators[new_view % n]
     NEW-&gt;&gt;NEW: Broadcast NEW-VIEW message
     NEW-&gt;&gt;NEW: Activate the new view</code></pre>
-<hr />
 <h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
 <table>
 <thead>
@@ -4492,24 +4491,23 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>PRE-PREPARE</strong></td>
+<td style="text-align: left;">PRE-PREPARE</td>
 <td style="text-align: left;">Primary gán số thứ tự, băm toàn bộ request chuẩn, ký digest và phát request.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>PREPARE</strong></td>
+<td style="text-align: left;">PREPARE</td>
 <td style="text-align: left;">Mỗi node tính lại digest và ghi nhận đúng một phiếu PREPARE của mình. Mỗi node chuyển sang COMMIT sau <code>2f</code> phiếu PREPARE duy nhất, bao gồm phiếu của chính nó.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>COMMIT</strong></td>
+<td style="text-align: left;">COMMIT</td>
 <td style="text-align: left;">Mỗi node đã PREPARED ghi nhận và phát đúng một phiếu COMMIT của mình. Node áp dụng event sau <code>2f + 1</code> phiếu COMMIT duy nhất, bao gồm phiếu của chính nó.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>View Change</strong></td>
+<td style="text-align: left;">View Change</td>
 <td style="text-align: left;">Nếu leader im lặng quá timeout, manager thu thập <code>2f + 1</code> phiếu VIEW-CHANGE có chữ ký trước khi chấp nhận view mới.</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="so-sanh-thuat-toan-ong-thuan">So sánh thuật toán đồng thuận</h2>
 <table>
 <thead>
@@ -4522,26 +4520,25 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>PoA</strong></td>
+<td style="text-align: left;">PoA</td>
 <td style="text-align: left;">Dựa trên danh tính, node có thẩm quyền ký khối</td>
 <td style="text-align: left;">Danh tiếng validator</td>
 <td style="text-align: left;">Mạng riêng / nội bộ</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>PoF</strong></td>
-<td style="text-align: left;">Luân phiên leader, đồng thuận đa số <code>height % n</code></td>
+<td style="text-align: left;">PoF</td>
+<td style="text-align: left;">Luân phiên leader <code>height % n</code>; xác thực thông thường kiểm tra chữ ký của leader</td>
 <td style="text-align: left;">Phân tán niềm tin</td>
 <td style="text-align: left;">Mạng liên doanh / đa tổ chức</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>BFT</strong></td>
+<td style="text-align: left;">BFT</td>
 <td style="text-align: left;">Thành phần thư viện PBFT 3 pha</td>
 <td style="text-align: left;">Chịu tới <code>f</code> node Byzantine trong <code>3f+1</code></td>
 <td style="text-align: left;">Bên gọi tường minh và demo độc lập</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="xu-ly-loi">Xử lý lỗi</h2>
 <table>
 <thead>
@@ -4560,12 +4557,12 @@
 <td style="text-align: left;">Phiếu bị loại, không tính vào quorum</td>
 </tr>
 <tr>
-<td style="text-align: left;">Chia mạng &lt; f node</td>
-<td style="text-align: left;">Giao thức tiếp tục nếu vẫn đủ quorum 2f+1</td>
+<td style="text-align: left;">Đạt quorum COMMIT có chữ ký</td>
+<td style="text-align: left;">Việc áp dụng cần <code>2f + 1</code> phiếu khác nhau cho cùng yêu cầu</td>
 </tr>
 <tr>
-<td style="text-align: left;">Chia mạng &gt;= f+1 node</td>
-<td style="text-align: left;">Giao thức tạm dừng tới khi mạng nối lại (ưu tiên an toàn hơn sẵn sàng)</td>
+<td style="text-align: left;">Thiếu phiếu COMMIT</td>
+<td style="text-align: left;">Yêu cầu chưa được áp dụng cho đến khi đủ phiếu hợp lệ</td>
 </tr>
 <tr>
 <td style="text-align: left;">Ghi chain được gắn vào thất bại</td>
@@ -4573,7 +4570,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
@@ -4616,7 +4612,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href=".././consensus_mechanisms/">Cơ chế Đồng thuận</a>: chi tiết PoA và PoF</li>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Byzantine Fault Tolerant (PBFT) consensus flow for adversarial environment block finalization.">
+        <meta name="description" content="Explicit PBFT library integration: signed phase votes, application writes and view changes.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4422,10 +4422,10 @@
 
 <h1 id="bft-consensus">BFT consensus</h1>
 <h2 id="overview">Overview</h2>
+<p>This component requires explicit caller integration. Running multiple API nodes or setting <code>BFT_ENABLED</code> does not connect PBFT to MainChain/Sub-Chain automatically.</p>
 <p>The exported BFT library component and its standalone demo use 3-phase PBFT. It needs <code>n &gt;= 3f + 1</code> nodes to tolerate <code>f</code> faulty or malicious nodes. The current MainChain and SubChain runtime paths do not instantiate BFT; callers use <code>BFTConsensus.request()</code> explicitly.</p>
 <p>For PoA and PoF flows, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <p>You need at least 4 nodes to tolerate 1 Byzantine failure (n=4, f=1: 3×1+1=4).</p>
-<hr />
 <h2 id="flow-diagram-3-phase-pbft">Flow diagram: 3-phase PBFT</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4465,7 +4465,7 @@
     end</code></pre>
 <p>The primary and replicas count their own signed phase vote once. A PRE-PREPARE is rejected if its request body does not match the signed digest. If an attached chain write raises an error or returns <code>False</code>, the node keeps the quorum messages and the same event in memory; a repeated valid COMMIT can retry the write. It marks the sequence committed only after the write succeeds.</p>
 <p>Without an attached application chain, the component runs in protocol-only mode and records consensus status without writing an event, as in the standalone demo.</p>
-<hr />
+<p>Request admission is earlier than commitment. Retry state remains in memory and does not guarantee exactly-once application after ambiguous writes or restarts. See <a href="../../consensus/bft_consensus/">BFT component</a> for transport, configuration, replay and ZK limitations.</p>
 <h2 id="flow-diagram-view-change-leader-failure">Flow diagram: view change (leader failure)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4481,7 +4481,6 @@
     VM-&gt;&gt;NEW: Elect new leader: Validators[new_view % n]
     NEW-&gt;&gt;NEW: Broadcast NEW-VIEW message
     NEW-&gt;&gt;NEW: Activate the new view</code></pre>
-<hr />
 <h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
 <table>
 <thead>
@@ -4492,24 +4491,23 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>PRE-PREPARE</strong></td>
+<td style="text-align: left;">PRE-PREPARE</td>
 <td style="text-align: left;">Primary assigns a sequence number, hashes the complete canonical request, signs the digest, and broadcasts the request</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>PREPARE</strong></td>
+<td style="text-align: left;">PREPARE</td>
 <td style="text-align: left;">Each node recomputes the digest and records its own PREPARE once. Each node moves to COMMIT after <code>2f</code> unique PREPARE votes, including its own</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>COMMIT</strong></td>
+<td style="text-align: left;">COMMIT</td>
 <td style="text-align: left;">Each prepared node records and broadcasts its own COMMIT once. A node applies the event after <code>2f + 1</code> unique COMMIT votes, including its own</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>View Change</strong></td>
+<td style="text-align: left;">View Change</td>
 <td style="text-align: left;">If the leader is silent past the timeout, the manager collects <code>2f + 1</code> signed VIEW-CHANGE votes before accepting the new view</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="consensus-comparison">Consensus comparison</h2>
 <table>
 <thead>
@@ -4522,26 +4520,25 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>PoA</strong></td>
+<td style="text-align: left;">PoA</td>
 <td style="text-align: left;">Identity-based, authority signs</td>
 <td style="text-align: left;">Validator reputation</td>
 <td style="text-align: left;">Private / internal networks</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>PoF</strong></td>
-<td style="text-align: left;">Rotating leader, quorum <code>height % n</code></td>
+<td style="text-align: left;">PoF</td>
+<td style="text-align: left;">Rotating leader <code>height % n</code>; ordinary validation checks its signature</td>
 <td style="text-align: left;">Distributed trust</td>
 <td style="text-align: left;">Consortium / multi-org</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>BFT</strong></td>
+<td style="text-align: left;">BFT</td>
 <td style="text-align: left;">3-phase PBFT library component</td>
 <td style="text-align: left;">Up to <code>f</code> Byzantine nodes in <code>3f+1</code></td>
 <td style="text-align: left;">Explicit callers and the standalone demo</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="error-handling">Error handling</h2>
 <table>
 <thead>
@@ -4560,12 +4557,12 @@
 <td style="text-align: left;">Vote discarded, not counted toward quorum</td>
 </tr>
 <tr>
-<td style="text-align: left;">Network partition &lt; f nodes</td>
-<td style="text-align: left;">Protocol continues if quorum (2f+1) still reachable</td>
+<td style="text-align: left;">Reachable signed COMMIT quorum</td>
+<td style="text-align: left;">Application requires <code>2f + 1</code> distinct votes for the same request</td>
 </tr>
 <tr>
-<td style="text-align: left;">Network partition ≥ f+1 nodes</td>
-<td style="text-align: left;">Protocol halts until partition heals (safety over liveness)</td>
+<td style="text-align: left;">Too few COMMIT votes</td>
+<td style="text-align: left;">The request remains unapplied until enough valid votes arrive</td>
 </tr>
 <tr>
 <td style="text-align: left;">Attached chain write fails</td>
@@ -4573,7 +4570,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
@@ -4616,7 +4612,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a>: PoA and PoF details</li>

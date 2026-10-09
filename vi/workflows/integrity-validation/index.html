@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quét mã hóa toàn hệ thống để phát hiện các bất thường, lệch mã băm hoặc khối dữ liệu bị can thiệp trái phép.">
+        <meta name="description" content="Kiểm tra mật mã trên toàn hệ thống để phát hiện các bất thường, lệch mã băm hoặc khối dữ liệu bị can thiệp trái phép.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1630,10 +1630,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luong-phat-hien-can-thiep" class="md-nav__link">
+  <a href="#bao-cao-suc-khoe" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Luồng phát hiện can thiệp
+        Báo cáo sức khỏe
       </span>
     </span>
   </a>
@@ -1641,10 +1641,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-truc-bao-cao-toan-ven" class="md-nav__link">
+  <a href="#bao-cao-nhat-quan-lien-chuoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấu trúc báo cáo toàn vẹn
+        Báo cáo nhất quán liên chuỗi
       </span>
     </span>
   </a>
@@ -1652,21 +1652,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#trach-nhiem-cua-ben-goi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Trách nhiệm của bên gọi
       </span>
     </span>
   </a>
@@ -4324,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luong-phat-hien-can-thiep" class="md-nav__link">
+  <a href="#bao-cao-suc-khoe" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Luồng phát hiện can thiệp
+        Báo cáo sức khỏe
       </span>
     </span>
   </a>
@@ -4335,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-truc-bao-cao-toan-ven" class="md-nav__link">
+  <a href="#bao-cao-nhat-quan-lien-chuoi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấu trúc báo cáo toàn vẹn
+        Báo cáo nhất quán liên chuỗi
       </span>
     </span>
   </a>
@@ -4346,21 +4335,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#trach-nhiem-cua-ben-goi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Trách nhiệm của bên gọi
       </span>
     </span>
   </a>
@@ -4422,213 +4400,116 @@
 
 <h1 id="xac-thuc-tinh-toan-ven-he-thong">Xác thực tính toàn vẹn hệ thống</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Quy trình xác thực kiểm tra tính nhất quán mật mã của mọi chuỗi và xác minh proof lưu trên Main Chain khớp với khối mới nhất trên từng Sub-Chain. Đây là cơ chế chính để phát hiện can thiệp và đáp ứng kiểm toán.</p>
-<p>Quy trình chạy ba lớp kiểm tra song song: tính hợp lệ mật mã của Main Chain, tính hợp lệ của Sub-Chain, và tính nhất quán proof giữa hai cấp.</p>
-<hr />
+<p><code>HierarchyManager</code> cung cấp hai phương thức Python với kết quả khác nhau. <code>get_system_integrity_report()</code> tổng hợp tính hợp lệ của chuỗi và thống kê hệ thống. <code>validate_cross_chain_consistency()</code> xác minh khối bằng khóa ký tin cậy và so sánh khối cuối của từng Sub-Chain với bằng chứng MainChain mới nhất của nó.</p>
+<p>Cả hai phương thức kiểm tra tuần tự các chuỗi đã đăng ký. Bên gọi quyết định thời điểm chạy và cách xử lý thất bại. Không phương thức nào gọi <code>CrossChainValidator</code>, lên lịch khôi phục hay gửi cảnh báo rủi ro. API không có endpoint <code>/api/ledger/system/integrity</code>.</p>
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
-<pre class="mermaid"><code>flowchart TB
-    TRIGGER["🔍 Kích hoạt\nvalidate_cross_chain_consistency()\nhoặc get_system_integrity_report()"]
-
-    subgraph Validation["Lớp xác thực (song song)"]
-        direction TB
-        MC_VAL["🔗 Chuỗi chính\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        SC_VAL["📦 Tất cả Chuỗi con\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        PROOF["📋 Nhất quán Bằng chứng\n_compute_proof_consistency()\nLatest SubChain block.hash\n== MainChain latest_proofs[name]"]
-    end
-
-    REPORT["📊 Báo cáo Toàn vẹn Hệ thống"]
-    HEALTHY["✅ AN TOÀN (HEALTHY)\nTất cả các chuỗi hợp lệ\nBằng chứng nhất quán"]
-    DEGRADED["⚠️ CẢNH BÁO (DEGRADED)\nCó chuỗi không hợp lệ HOẶC\nBằng chứng thiếu/sai lệch"]
-    ALERT["🚨 Báo động qua hệ thống Cảnh báo Rủi ro"]
-
-    TRIGGER --&gt; MC_VAL
-    TRIGGER --&gt; SC_VAL
-    TRIGGER --&gt; PROOF
-
-    MC_VAL --&gt; REPORT
-    SC_VAL --&gt; REPORT
-    PROOF --&gt; REPORT
-
-    REPORT --&gt; HEALTHY
-    REPORT --&gt; DEGRADED --&gt; ALERT</code></pre>
-<hr />
-<h2 id="luong-phat-hien-can-thiep">Luồng phát hiện can thiệp</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant OP as 👤 Người vận hành / Giám sát
-    participant HM as 🏛️ HierarchyManager
-    participant BV as 🔍 BlockVerifier
-    participant CCV as 🛡️ CrossChainValidator
-
-    OP-&gt;&gt;HM: validate_cross_chain_consistency()
-    HM-&gt;&gt;BV: verify_chain(main_chain.chain)
-    BV-&gt;&gt;BV: Với mỗi khối: hash(prev_block) == block.previous_hash?
-    BV--&gt;&gt;HM: { valid: True/False, tampered_blocks: [] }
-
-    loop Trên từng Chuỗi con
-        HM-&gt;&gt;BV: verify_chain(sub_chain.chain)
-        BV--&gt;&gt;HM: { valid: True/False }
-        HM-&gt;&gt;HM: _compute_proof_consistency(sub_chain_name)
-        Note right of HM: sub_chain.latest_block.hash == main_chain.proofs[name]
-    end
-
-    HM-&gt;&gt;CCV: validate_system_integrity()
-    CCV-&gt;&gt;CCV: Quét tất cả các sự kiện để tìm từ khóa cấm về crypto
-    CCV--&gt;&gt;HM: { issues: [], forbidden_found: [] }
-
-    HM--&gt;&gt;OP: IntegrityReport { overall_status, per_chain, proof_consistency, issues }</code></pre>
-<hr />
-<h2 id="cau-truc-bao-cao-toan-ven">Cấu trúc báo cáo toàn vẹn</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714000000.0</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"overall_status"</span><span class="p">:</span> <span class="s2">"HEALTHY"</span><span class="p">,</span>          <span class="c1"># hoặc "DEGRADED"</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"system_overview"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">"total_sub_chains"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"total_sub_chain_blocks"</span><span class="p">:</span> <span class="mi">142</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"total_sub_chain_events"</span><span class="p">:</span> <span class="mi">3580</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">"system_uptime"</span><span class="p">:</span> <span class="mf">86400.0</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">},</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="s2">"main_chain"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="s2">"height"</span><span class="p">:</span> <span class="mi">47</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">},</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="s2">"sub_chains"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="s2">"supply_chain"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">61</span><span class="p">},</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="s2">"logistics"</span><span class="p">:</span>    <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">48</span><span class="p">},</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="s2">"finance"</span><span class="p">:</span>      <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">33</span><span class="p">}</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="p">},</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="s2">"proof_consistency"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="s2">"supply_chain"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            <span class="s2">"consistent"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>            <span class="s2">"latest_proof_hash"</span><span class="p">:</span> <span class="s2">"a3f8b2..."</span><span class="p">,</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>            <span class="s2">"chain_height"</span><span class="p">:</span> <span class="mi">61</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        <span class="p">}</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    <span class="p">},</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="s2">"issues"</span><span class="p">:</span> <span class="p">[]</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="p">}</span>
+<pre class="mermaid"><code>flowchart TD
+    Caller[Operator or application] --&gt; Health[get_system_integrity_report]
+    Health --&gt; Validity[MainChain and SubChain is_chain_valid checks]
+    Validity --&gt; Summary[Health summary and statistics]
+    Caller --&gt; Consistency[validate_cross_chain_consistency]
+    Consistency --&gt; Verify[BlockVerifier with trusted keys, sequentially]
+    Verify --&gt; Proofs[Compare current tips with latest MainChain proofs]
+    Proofs --&gt; Report[Block and proof consistency report]
+    Summary --&gt; Handle[Caller handles results]
+    Report --&gt; Handle</code></pre>
+<h2 id="bao-cao-suc-khoe">Báo cáo sức khỏe</h2>
+<p><code>get_system_integrity_report()</code> trả về:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Trường</th>
+<th style="text-align: left;">Ý nghĩa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>timestamp</code></td>
+<td style="text-align: left;">Thời điểm báo cáo</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>overall_status</code>, <code>integrity_status</code></td>
+<td style="text-align: left;"><code>HEALTHY</code> hoặc <code>DEGRADED</code> dựa trên tính hợp lệ của chuỗi</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>system_overview</code></td>
+<td style="text-align: left;">Tổng số Sub-Chain và thời gian hoạt động hệ thống</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>main_chain</code></td>
+<td style="text-align: left;">Tính hợp lệ và chiều cao MainChain</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sub_chains</code></td>
+<td style="text-align: left;">Tính hợp lệ và chiều cao của từng chuỗi</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sub_chain_details</code></td>
+<td style="text-align: left;">Loại miền, khối, sự kiện, thực thể, thao tác và tính hợp lệ</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>issues</code></td>
+<td style="text-align: left;">Mô tả lỗi xác thực chuỗi</td>
+</tr>
+</tbody>
+</table>
+<p>Kết quả này không có trường <code>proof_consistency</code>. Báo cáo chuỗi khỏe mạnh không chứng minh mọi khối cuối Sub-Chain hiện tại đều có neo MainChain tương ứng.</p>
+<h2 id="bao-cao-nhat-quan-lien-chuoi">Báo cáo nhất quán liên chuỗi</h2>
+<p><code>validate_cross_chain_consistency()</code> trả về <code>timestamp</code>, <code>main_chain_valid</code>, <code>overall_consistent</code>, <code>sub_chain_validation</code>, <code>block_verification</code> và <code>proof_consistency</code>. Việc xác minh khối dùng <code>BlockVerifier.verify_chain(chain.chain, chain.trusted_public_keys)</code> cho MainChain và từng Sub-Chain đã đăng ký.</p>
+<p>Mỗi kết quả bằng chứng chứa <code>consistent</code>, <code>pending</code>, <code>reason</code>, <code>chain_height</code> và <code>last_block_index</code>. Khi có bằng chứng, kết quả còn có <code>latest_proof_hash</code>, <code>latest_block_hash</code> và <code>latest_proof_block_index</code>. Nhất quán nghĩa là hash bằng chứng đã lưu bằng hash khối cuối Sub-Chain hiện tại.</p>
+<p><code>pending=True</code> giải thích trường hợp neo bị thiếu hoặc cũ khi chưa đến lần gửi tiếp theo theo lịch bằng chứng của chuỗi. Nó vẫn đặt <code>consistent=False</code> và khiến <code>overall_consistent=False</code>. Bản thân độ trễ theo lịch không phải bằng chứng dữ liệu bị sửa trái phép.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># manager is the application's configured HierarchyManager.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">health</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_system_integrity_report</span><span class="p">()</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">consistency</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">validate_cross_chain_consistency</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">proof</span> <span class="ow">in</span> <span class="n">consistency</span><span class="p">[</span><span class="s2">"proof_consistency"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"consistent"</span><span class="p">]:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="nb">print</span><span class="p">(</span><span class="n">chain_name</span><span class="p">,</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"pending"</span><span class="p">],</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"reason"</span><span class="p">])</span>
 </code></pre></div>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Kích hoạt</strong></td>
-<td style="text-align: left;">Timer định kỳ, lệnh vận hành, hoặc phát hiện bất thường từ Risk Alerts.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Xác thực Main Chain</strong></td>
-<td style="text-align: left;"><code>BlockVerifier.verify_chain()</code> tính lại hash mọi khối và kiểm tra liên kết <code>previous_hash</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Xác thực Sub-Chain</strong></td>
-<td style="text-align: left;">Chạy xác thực tương tự song song trên mọi Sub-Chain đã đăng ký.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Nhất quán proof</strong></td>
-<td style="text-align: left;">So sánh <code>sub_chain.latest_block.hash</code> với proof lưu trên Main Chain <code>main_chain.proofs[chain_name]</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Quét từ cấm</strong></td>
-<td style="text-align: left;"><code>CrossChainValidator</code> quét payload sự kiện để tìm thuật ngữ tiền mã hóa.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Tổng hợp báo cáo</strong></td>
-<td style="text-align: left;">Ghép kết quả thành một <code>IntegrityReport</code> duy nhất.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Cảnh báo khi DEGRADED</strong></td>
-<td style="text-align: left;">Nếu có kiểm tra lỗi, Risk Alerts gửi thông báo chi tiết ngay.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tình huống</th>
-<th style="text-align: left;">Trạng thái</th>
-<th style="text-align: left;">Hành động</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Lệch hash trên Main Chain</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Đánh dấu chỉ số khối bị can thiệp; phát cảnh báo khẩn</td>
-</tr>
-<tr>
-<td style="text-align: left;">Sub-Chain thiếu proof</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Ghi log thiếu proof; gửi cảnh báo</td>
-</tr>
-<tr>
-<td style="text-align: left;">Hash Sub-Chain khác proof trên Main Chain</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Phát hiện can thiệp; phát cảnh báo mức cao</td>
-</tr>
-<tr>
-<td style="text-align: left;">Tìm thấy từ cấm trong sự kiện</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Đánh dấu sự kiện, ghi log kèm đường dẫn chi tiết</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h2 id="trach-nhiem-cua-ben-goi">Trách nhiệm của bên gọi</h2>
+<p>Chạy kiểm tra thuật ngữ miền riêng qua <code>CrossChainValidator</code> nếu ứng dụng cần. Chủ động kết nối việc xử lý báo cáo với <code>AlertManager</code> hoặc quy trình khôi phục vận hành. Không có hook tích hợp sẵn từ báo cáo sang cảnh báo hoặc dựng lại chuỗi.</p>
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
+<th style="text-align: left;">Thao tác</th>
+<th style="text-align: left;">Phương thức</th>
 <th style="text-align: left;">Tệp</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Báo cáo toàn phần</td>
-<td style="text-align: left;"><code>HierarchyManager.get_system_integrity_report()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager/base.py</code></td>
+<td style="text-align: left;">Phương thức công khai</td>
+<td style="text-align: left;"><code>HierarchyManager.get_system_integrity_report()</code> / <code>validate_cross_chain_consistency()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Kiểm tra nhất quán</td>
-<td style="text-align: left;"><code>HierarchyManager.validate_cross_chain_consistency()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager/base.py</code></td>
+<td style="text-align: left;">Triển khai báo cáo</td>
+<td style="text-align: left;"><code>_compute_system_integrity_report()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/validation.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác thực chuỗi</td>
+<td style="text-align: left;">Triển khai kiểm tra nhất quán</td>
+<td style="text-align: left;"><code>_validate_cross_chain_consistency()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/validation.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Xác minh chữ ký/hash</td>
 <td style="text-align: left;"><code>BlockVerifier.verify_chain()</code></td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/verify/block_verifier.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác thực đơn khối</td>
-<td style="text-align: left;"><code>BlockVerifier.verify_block()</code></td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Quét từ cấm</td>
+<td style="text-align: left;">Kiểm tra miền riêng</td>
 <td style="text-align: left;"><code>CrossChainValidator.validate_system_integrity()</code></td>
-<td style="text-align: left;"><code>domains/utils/cross_chain_validator.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">REST API</td>
-<td style="text-align: left;"><code>GET /ledger/system/integrity</code></td>
-<td style="text-align: left;"><code>api/ledger/routes.py</code></td>
+<td style="text-align: left;"><code>hierachain/domains/utils/cross_chain_validator.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././proof-anchoring/">Neo giữ Bằng chứng</a>: tạo proof được kiểm tra ở đây</li>
-<li><a href=".././chain-rehydration/">Nạp lại Trạng thái Chuỗi</a>: gọi nếu phát hiện không nhất quán và cần nạp lại từ DB</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: nhận cảnh báo DEGRADED từ quy trình này</li>
+<li><a href=".././proof-anchoring/">Neo bằng chứng</a>: tạo các neo đã lưu</li>
+<li><a href=".././chain-rehydration/">Khôi phục chuỗi</a>: đồng bộ chuỗi theo lời gọi rõ ràng</li>
+<li><a href=".././risk-alerts/">Phân tích rủi ro và cảnh báo</a>: gửi cảnh báo do bên gọi quản lý</li>
 </ul>
 
 

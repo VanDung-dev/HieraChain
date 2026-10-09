@@ -3237,6 +3237,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#declared-settings-without-runtime-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declared settings without runtime consumers
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#logging" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4705,6 +4716,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#declared-settings-without-runtime-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declared settings without runtime consumers
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#logging" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4784,7 +4806,7 @@
   
 
 
-<h1 id="system-configuration">System Configuration</h1>
+<h1 id="system-configuration">System configuration</h1>
 <h2 id="purpose">Purpose</h2>
 <p>This page lists the main HieraChain settings, their defaults, and how to override them. All values are defined in <code>hierachain/config/settings.py</code> and read from environment variables or constants.</p>
 <h2 id="scope">Scope</h2>
@@ -4809,17 +4831,22 @@
 <ul>
 <li><code>HRC_API_HOST</code> (default: <code>localhost</code> in dev, <code>127.0.0.1</code> in production)</li>
 <li><code>HRC_API_PORT</code> (default: <code>2661</code>)</li>
-<li><code>API_VERSION</code> (constant: <code>ledger</code> as defined in <code>hierachain/config/settings.py:189</code>, not <code>admin</code>)</li>
+<li><code>API_VERSION</code> (constant: <code>ledger</code>; business/admin routes have their own prefixes)</li>
 </ul>
 <h3 id="consensus-and-blockchain">Consensus and blockchain</h3>
 <ul>
-<li><code>HRC_CONSENSUS_TYPE</code> / <code>HRC_MAINCHAIN_CONSENSUS</code> (alias, default: <code>proof_of_authority</code>; supported: <code>proof_of_authority</code>, <code>proof_of_federation</code>)</li>
+<li>
+<p><code>HRC_CONSENSUS_TYPE</code> / <code>HRC_MAINCHAIN_CONSENSUS</code> (alias, default: <code>proof_of_authority</code>; supported: <code>proof_of_authority</code>, <code>proof_of_federation</code>)</p>
+</li>
+<li>
+<p><code>HRC_BLOCK_INTERVAL</code> (default <code>0.0</code> seconds): additional PoA spacing; a positive interval requires at least half that spacing during validation. It does not control PoF. Default Sub-Chain batching still uses 50 events and a 1-second timeout.</p>
+</li>
 <li><code>CONSENSUS_FEDERATION_CONFIG</code>: federation config (min_validators: 3, block_interval: 5.0). This is a Settings attribute, not an env var.</li>
 <li><code>VALIDATOR_TIMEOUT</code> (default: <code>30</code> seconds). Settings attribute.</li>
 <li><code>BFT_ENABLED</code> (default: <code>True</code>), <code>BFT_FAULT_TOLERANCE</code> (default: <code>1</code>), <code>BFT_NODE_COUNT</code> (default: <code>4</code>). Settings attributes (no <code>HRC_BFT_ENABLED</code> env var).</li>
 <li>Block limits: <code>BLOCK_SIZE_LIMIT</code> (default: <code>1000</code> events/block in dev, <code>10</code> in test)</li>
 <li><code>PROOF_SUBMISSION_INTERVAL</code> (default: <code>300</code> seconds in dev, <code>10</code> in test)</li>
-<li><code>HRC_VALIDATOR_IDENTITY</code>: validator identity file path (default: <code>validator_key.json</code>)</li>
+<li><code>HRC_VALIDATOR_IDENTITY</code>: complete node identity file path (default: <code>validator_key.json</code>). It requires node/MSP IDs, signing private/public keys and transport private/public keys; the two-field <code>hrc key generate</code> output alone is insufficient. See <a href="../../getting-started/quickstart/">Quickstart</a>.</li>
 <li><code>HRC_BLOCK_TRUSTED_KEYS_FILE</code>: required JSON file mapping <code>creator_id</code> to Ed25519 public-key hex. The local key in <code>HRC_VALIDATOR_IDENTITY</code> must match its entry. Missing or mismatched files stop chain/API startup. Every block, including genesis, requires a trusted signature. Existing unsigned chains need migration before startup.</li>
 </ul>
 <h3 id="storage-and-cache">Storage and cache</h3>
@@ -4839,11 +4866,12 @@
 <li><code>HRC_IPFS_HOST</code> (default: <code>/ip4/127.0.0.1/tcp/5001</code>). IPFS daemon address.</li>
 <li><code>HRC_IPFS_AUTO_PIN</code> (default: <code>true</code>). Pins data after upload so it is not garbage collected.</li>
 <li><code>HRC_IPFS_TIMEOUT</code> (default: <code>120</code> seconds). Max wait for IPFS calls.</li>
-<li><code>HRC_IPFS_ENCRYPTION_KEY</code>: AES-256 key (32-byte hex). All nodes in the same channel or organization must use the same value.</li>
+<li><code>HRC_IPFS_ENCRYPTION_KEY</code>: required by the IPFS environment factory, exactly 64 hex characters (32 bytes). Missing or invalid values raise <code>IPFSError</code>. Nodes reading the same encrypted object need the same key, nonce and metadata AAD; preserve the key across restarts.</li>
 </ul>
 <h3 id="parallel-processing-and-resources">Parallel processing and resources</h3>
 <ul>
-<li>DoS protection: <code>HRC_EVENT_POOL_MAX_SIZE</code> (default: <code>10000</code>), <code>HRC_RAM_CRITICAL_THRESHOLD</code> (<code>95.0</code> %)</li>
+<li><code>HRC_EVENT_POOL_MAX_SIZE</code> (default: <code>10000</code>) bounds the ordering event queue.</li>
+<li><code>HRC_RAM_CRITICAL_THRESHOLD</code> (default: <code>95.0</code> %) is declared in settings but has no runtime consumer in ordering or storage.</li>
 </ul>
 <h3 id="security-and-authentication">Security and authentication</h3>
 <ul>
@@ -4859,7 +4887,7 @@
 <li><code>HRC_BF_MAX_FAILURES</code> (default: <code>5</code>)</li>
 <li><code>HRC_BF_LOCKOUT_SECONDS</code> (default: <code>900</code> = 15 minutes)</li>
 <li><code>HRC_BF_WINDOW_SECONDS</code> (default: <code>300</code> = 5 minutes)</li>
-<li>Redis lockout TTL follows <code>HRC_BF_LOCKOUT_SECONDS</code>; lockout checks read the shared key on each request. Failure counts remain process-local.</li>
+<li>Redis lockout TTL follows <code>HRC_BF_LOCKOUT_SECONDS</code>; lockout checks read the shared key on each request. SQLite and Redis count failures atomically across workers. Redis uses its server time and an atomic Lua update for the failure window and lockout threshold. Memory/file attempt counts remain local to one process.</li>
 </ul>
 </li>
 <li>Identity and organization: <code>IDENTITY_MANAGER_ENABLED</code> (<code>True</code>), <code>REQUIRE_ORGANIZATION_VALIDATION</code> (<code>True</code>), <code>MSP_ENABLED</code> (<code>True</code>)</li>
@@ -4871,6 +4899,7 @@
 <li><code>HRC_P2P_PEER_ALLOWLIST</code> (comma-separated peer IDs for strict mode)</li>
 <li><code>HRC_P2P_REQUIRE_SIGNATURES</code> (<code>false</code> in dev, <code>true</code> in production)</li>
 </ul>
+<p>Production fixes the trust policy to <code>strict</code> and the signature requirement to <code>True</code>; environment values do not override those production attributes. <code>SecureConnectionManager</code> uses these settings. The API startup path constructs <code>NetworkClient</code> with seed peers and transport keys, without wiring this manager, the trust policy or signature verification into that client. See <a href="../../modules/network/">Network</a>.</p>
 <h3 id="cors">CORS</h3>
 <ul>
 <li><code>HRC_CORS_ALLOW_ALL</code> (<code>true</code> in dev, <code>false</code> in production)</li>
@@ -4883,6 +4912,7 @@
 <li><code>HRC_HSTS_ENABLED</code> (<code>false</code> in dev/test; <code>true</code> in production)</li>
 <li><code>HRC_HSTS_MAX_AGE</code> (default: <code>31536000</code> = 1 year)</li>
 </ul>
+<p>These settings are declared and checked for configuration warnings, but the API middleware does not add <code>Strict-Transport-Security</code>. Configure the header at the HTTPS reverse proxy.</p>
 <h3 id="rate-limiting">Rate limiting</h3>
 <ul>
 <li><code>HRC_RATE_LIMIT</code> (<code>false</code> in dev/test; <code>true</code> in production)</li>
@@ -4892,7 +4922,7 @@
 </ul>
 <h3 id="monitoring-and-metrics">Monitoring and metrics</h3>
 <ul>
-<li><code>HRC_METRICS_ENABLED</code> (default: <code>false</code>). Enables <code>/metrics</code> for Prometheus.</li>
+<li><code>HRC_METRICS_ENABLED</code> (default: <code>false</code>). Enables <code>/metrics</code> to export the default Prometheus registry. No HTTP latency/request counters or ledger collectors are registered by the API.</li>
 <li><code>HRC_TRUSTED_PROXIES</code> (default: <code>127.0.0.1</code>). Trusted reverse proxy IPs (for HTTP/2, HTTP/3).</li>
 </ul>
 <h3 id="multi-organization">Multi-organization</h3>
@@ -4909,6 +4939,7 @@
 <li><code>HRC_ZK_VERIFICATION_KEY</code>, <code>HRC_ZK_PROVING_KEY</code>, <code>HRC_ZK_CIRCUIT</code> (file paths)</li>
 <li><code>HRC_ZK_REQUIRED_MAINCHAIN</code> (default: <code>false</code>)</li>
 </ul>
+<p>Mock is for development only; <code>production</code> proving/verifying is unimplemented. Enabling flags or configuring keys/circuits does not supply a production backend.</p>
 <h3 id="cross-level-state-sync">Cross-level state sync</h3>
 <ul>
 <li><code>HRC_CROSS_LEVEL_SYNC</code> (default: <code>true</code>)</li>
@@ -4920,19 +4951,24 @@
 <li><code>ERP_INTEGRATION_ENABLED</code> (<code>True</code>)</li>
 <li><code>SUPPORTED_ERP_SYSTEMS</code> (list: <code>sap</code>, <code>oracle</code>, <code>microsoft_dynamics</code>)</li>
 </ul>
+<p>These attributes do not start ERP sync in the API. Built-in vendor connectors are <code>simulation_mode=True</code> fixtures; applications must provide real adapters.</p>
+<h3 id="declared-settings-without-runtime-consumers">Declared settings without runtime consumers</h3>
+<p><code>HRC_BLOCK_CREATION_MODE</code>, <code>HRC_BLOCK_MAX_WAIT_SEC</code>, <code>HRC_PARQUET_ROLL_INTERVAL</code>, <code>HRC_POSTGRES_SYNC_MODE</code> and <code>HRC_SQL_RETENTION_DAYS</code> are read into settings but have no runtime consumers under <code>hierachain/</code>. Setting them does not change batching, rotate Parquet, start a SQL batch worker or purge old events automatically. Configure batching on the ordering service/Sub-Chain itself.</p>
 <h3 id="logging">Logging</h3>
 <ul>
-<li><code>LOG_LEVEL</code> (default: <code>DEBUG</code> in dev, <code>DEBUG</code> in test, <code>WARNING</code> in production)</li>
+<li><code>LOG_LEVEL</code>: the selected environment class fixes this attribute to <code>DEBUG</code> in dev/test and <code>WARNING</code> in production. Setting the <code>LOG_LEVEL</code> environment variable does not override those class values.</li>
 <li><code>LOG_FORMAT</code> (standard Python logging format string).</li>
 <li><code>HRC_LOG_FORMAT</code>: <code>text</code> (default) or <code>json</code> (for centralized logging like ELK/Loki).</li>
 <li><code>HRC_LOG_SQL_DETAIL</code> (default: <code>false</code>)</li>
 </ul>
+<p>The launchers configure Uvicorn separately: <code>python -m hierachain</code> selects <code>debug</code> for a DEBUG settings level and <code>info</code> otherwise; <code>hrc node start</code> uses <code>info</code>. <code>HRC_LOG_FORMAT</code> controls the application formatter.</p>
 <h3 id="cli">CLI</h3>
 <ul>
 <li><code>CLI_CONFIG_FILE</code> (default: <code>data/config.yaml</code>; default node config used by <code>hrc --config</code>)</li>
 <li><code>CLI_LOG_LEVEL</code> (default: <code>INFO</code>)</li>
 </ul>
 <h2 id="example-env-development">Example .env (development)</h2>
+<p>Add a signing identity and trusted-key map from the <a href="../../getting-started/quickstart/">Quickstart</a> before initializing chains.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>HRC_ENV=dev
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>HRC_API_HOST=0.0.0.0
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>HRC_API_PORT=2661
@@ -4940,20 +4976,24 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>HRC_AUTH_ENABLED=false
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>HRC_CORS_ALLOW_ALL=true
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>LOG_LEVEL=DEBUG
 </code></pre></div>
 <h2 id="recommended-production-configuration-minimum">Recommended production configuration (minimum)</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>HRC_ENV=production
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>HRC_API_HOST=0.0.0.0
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>HRC_AUTH_ENABLED=true
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HRC_CORS_ALLOW_ALL=false
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>HRC_CORS_ORIGINS=https://portal.example.com
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>HRC_RATE_LIMIT=true
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>DATABASE_URL=postgresql://user:pass@db:5432/hierachain
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>HRC_STORAGE_BACKEND=postgres
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>HRC_IPFS_ENABLED=true
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>HRC_API_KEYS_FILE=/run/secrets/api_keys.json
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>HRC_VALIDATOR_IDENTITY=/run/secrets/identity.json
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HRC_BLOCK_TRUSTED_KEYS_FILE=/run/secrets/trusted_block_keys.json
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>HRC_API_KEY_REVOCATIONS_DB=/var/lib/hierachain/api_key_revocations.sqlite3
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>HRC_NODE_ID=node1
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>HRC_API_HOST=0.0.0.0
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>HRC_AUTH_ENABLED=true
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>HRC_CORS_ALLOW_ALL=false
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>HRC_CORS_ORIGINS=https://portal.example.com
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_RATE_LIMIT=true
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>DATABASE_URL=postgresql://user:pass@db:5432/hierachain
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>HRC_STORAGE_BACKEND=postgres
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>HRC_IPFS_ENABLED=true
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 </code></pre></div>
 
 

@@ -1232,10 +1232,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-production-mode-zokrates" class="md-nav__link">
+  <a href="#b-production-mode-unimplemented" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        b. Production Mode (ZoKrates)
+        b. Production Mode (unimplemented)
       </span>
     </span>
   </a>
@@ -4309,10 +4309,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-production-mode-zokrates" class="md-nav__link">
+  <a href="#b-production-mode-unimplemented" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        b. Production Mode (ZoKrates)
+        b. Production Mode (unimplemented)
       </span>
     </span>
   </a>
@@ -4384,24 +4384,23 @@
 <ul>
 <li>Đóng vai trò là bên xác minh (Verifier).</li>
 <li>Với mock proof, <code>ZKVerifier</code> kiểm tra định dạng và commitment tới public inputs được cung cấp.</li>
-<li>Proof bị từ chối sẽ chặn submission tương ứng lên MainChain. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.</li>
+<li>Proof bị từ chối sẽ chặn submission lên MainChain khi <code>HRC_ENABLE_ZK_PROOFS=true</code> và có cung cấp proof, hoặc khi <code>HRC_ZK_REQUIRED_MAINCHAIN=true</code>; mặc định cả hai thiết lập đều là <code>false</code>. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.</li>
 </ul>
 </li>
 </ul>
 <h3 id="2-cac-che-o-hoat-ong-modes">2. Các Chế độ Hoạt động (Modes)</h3>
-<p>Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi trường triển khai thực tế của Sub-chain (linh hoạt cấu hình qua biến môi trường <code>ZK_MODE</code>):</p>
+<p>Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi trường triển khai thực tế của Sub-chain (linh hoạt cấu hình qua biến môi trường <code>HRC_ZK_MODE</code>):</p>
 <h4 id="a-mock-mode-mac-inh">a. Mock Mode (Mặc định)</h4>
 <ul>
 <li>Đây là chế độ phát triển (Dev) hoặc môi trường kiểm thử (Testing).</li>
 <li>Mock mode dùng định dạng <code>mock_zkp_v2\x00</code> với commitment SHA-256 tới public inputs; không chạy circuit SNARK.</li>
-<li>Thay vì chạy circuit thuật toán, mock mode sử dụng tính toán hàm lượng băm nội suy (<code>hashlib.sha256</code>) đối với các tham số đầu vào (Public Inputs) và giả lập một độ trễ từ 100-500ms để đảm bảo giống với hệ thống proof thực.</li>
 <li>Hỗ trợ quá trình dev tích hợp Main/Sub mà không yêu cầu cấu hình tài nguyên phần cứng lớn.</li>
 </ul>
-<h4 id="b-production-mode-zokrates">b. Production Mode (ZoKrates)</h4>
+<h4 id="b-production-mode-unimplemented">b. Production Mode (unimplemented)</h4>
 <ul>
 <li>Đây là interface dành cho production, hiện chưa được hỗ trợ.</li>
-<li>Đòi hỏi thư mục khóa chứng minh ở biến <code>ZK_PROVING_KEY_PATH</code> và khóa xác minh ở <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
-<li>Các method production hiện gây <code>NotImplementedError</code>; cấu hình đường dẫn khóa không kích hoạt proving service bên ngoài.</li>
+<li>Đòi hỏi thư mục khóa chứng minh ở biến <code>HRC_ZK_PROVING_KEY</code> và khóa xác minh ở <code>HRC_ZK_VERIFICATION_KEY</code>.</li>
+<li>Các hook production nội bộ <code>_generate_production_proof()</code> và <code>_verify_production()</code> gây <code>NotImplementedError</code>. <code>ZKProver.generate_proof()</code> công khai bắt lỗi tạo proof và trả <code>ZKProofResult</code> không thành công; <code>generate_proof_bytes()</code> gây <code>ZKProvingError</code>, còn <code>ZKVerifier.verify()</code> bọc lỗi backend thành <code>ZKVerificationError</code>.</li>
 </ul>
 <h3 id="3-public-inputs-au-vao-cong-khai">3. Public Inputs (Đầu vào Công khai)</h3>
 <p>Theo định nghĩa của <code>ZKPublicInputs</code>, các đối số đầu vào (được cả Prover và Verifier đồng bộ thống nhất) bao gồm:</p>
@@ -4412,7 +4411,7 @@
 <li><strong><code>sub_chain_name</code> (str)</strong>: ID hoặc tên định danh đầy đủ của Sub-chain đẩy Proof.</li>
 </ul>
 <p>Các tham số này đều được serialize định dạng JSON bytes chuẩn hóa chặt chẽ (sử dụng <code>sort_keys=True</code>) trước khi đem đi hash sinh Proof.</p>
-<p><code>WorldState.get_state_root()</code> băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Proving và verification production hiện gây <code>NotImplementedError</code>; việc làm rõ root không triển khai circuit ZK production.</p>
+<p><code>WorldState.get_state_root()</code> băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Các hook production chưa được triển khai; API công khai báo việc này qua kết quả và exception nêu trên. Việc làm rõ root không triển khai circuit ZK production.</p>
 
 
 

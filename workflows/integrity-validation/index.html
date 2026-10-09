@@ -1630,10 +1630,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tamper-detection-flow" class="md-nav__link">
+  <a href="#health-report" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tamper detection flow
+        Health report
       </span>
     </span>
   </a>
@@ -1641,10 +1641,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integrity-report-structure" class="md-nav__link">
+  <a href="#cross-chain-consistency-report" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integrity report structure
+        Cross-chain consistency report
       </span>
     </span>
   </a>
@@ -1652,21 +1652,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#caller-responsibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Caller responsibilities
       </span>
     </span>
   </a>
@@ -4324,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tamper-detection-flow" class="md-nav__link">
+  <a href="#health-report" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tamper detection flow
+        Health report
       </span>
     </span>
   </a>
@@ -4335,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integrity-report-structure" class="md-nav__link">
+  <a href="#cross-chain-consistency-report" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integrity report structure
+        Cross-chain consistency report
       </span>
     </span>
   </a>
@@ -4346,21 +4335,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#caller-responsibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Caller responsibilities
       </span>
     </span>
   </a>
@@ -4422,213 +4400,116 @@
 
 <h1 id="system-integrity-validation">System integrity validation</h1>
 <h2 id="overview">Overview</h2>
-<p>This workflow checks cryptographic consistency across all chains. It verifies that every block links correctly and that proofs stored on the Main Chain match the latest blocks on each Sub-Chain. It is the main way the system detects tampering and stays audit ready.</p>
-<p>The check runs three layers in parallel: Main Chain validity, Sub-Chain validity and proof consistency between the two tiers.</p>
-<hr />
+<p><code>HierarchyManager</code> exposes two Python methods with different results. <code>get_system_integrity_report()</code> summarizes chain validity and system statistics. <code>validate_cross_chain_consistency()</code> verifies blocks with trusted signing keys and compares each Sub-Chain tip with its latest MainChain proof.</p>
+<p>Both methods inspect registered chains sequentially. The caller decides when to run them and how to handle failures. Neither method invokes <code>CrossChainValidator</code>, schedules recovery or sends Risk Alerts. The API has no <code>/api/ledger/system/integrity</code> endpoint.</p>
 <h2 id="flow-diagram">Flow diagram</h2>
-<pre class="mermaid"><code>flowchart TB
-    TRIGGER["🔍 Trigger\nvalidate_cross_chain_consistency()\nor get_system_integrity_report()"]
-
-    subgraph Validation["Validation Layers (parallel)"]
-        direction TB
-        MC_VAL["🔗 Main Chain\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        SC_VAL["📦 All Sub-Chains\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        PROOF["📋 Proof Consistency\n_compute_proof_consistency()\nLatest SubChain block.hash\n== MainChain latest_proofs[name]"]
-    end
-
-    REPORT["📊 System Integrity Report"]
-    HEALTHY["✅ HEALTHY\nAll chains valid\nAll proofs consistent"]
-    DEGRADED["⚠️ DEGRADED\nChain invalid OR\nProof missing/mismatch"]
-    ALERT["🚨 Alert via Risk Alerts"]
-
-    TRIGGER --&gt; MC_VAL
-    TRIGGER --&gt; SC_VAL
-    TRIGGER --&gt; PROOF
-
-    MC_VAL --&gt; REPORT
-    SC_VAL --&gt; REPORT
-    PROOF --&gt; REPORT
-
-    REPORT --&gt; HEALTHY
-    REPORT --&gt; DEGRADED --&gt; ALERT</code></pre>
-<hr />
-<h2 id="tamper-detection-flow">Tamper detection flow</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant OP as 👤 Operator / Monitor
-    participant HM as 🏛️ HierarchyManager
-    participant BV as 🔍 BlockVerifier
-    participant CCV as 🛡️ CrossChainValidator
-
-    OP-&gt;&gt;HM: validate_cross_chain_consistency()
-    HM-&gt;&gt;BV: verify_chain(main_chain.chain)
-    BV-&gt;&gt;BV: For each block: hash(prev_block) == block.previous_hash?
-    BV--&gt;&gt;HM: { valid: True/False, tampered_blocks: [] }
-
-    loop Each Sub-Chain
-        HM-&gt;&gt;BV: verify_chain(sub_chain.chain)
-        BV--&gt;&gt;HM: { valid: True/False }
-        HM-&gt;&gt;HM: _compute_proof_consistency(sub_chain_name)
-        Note right of HM: sub_chain.latest_block.hash == main_chain.proofs[name]
-    end
-
-    HM-&gt;&gt;CCV: validate_system_integrity()
-    CCV-&gt;&gt;CCV: Scan all events for forbidden crypto terms
-    CCV--&gt;&gt;HM: { issues: [], forbidden_found: [] }
-
-    HM--&gt;&gt;OP: IntegrityReport { overall_status, per_chain, proof_consistency, issues }</code></pre>
-<hr />
-<h2 id="integrity-report-structure">Integrity report structure</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714000000.0</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"overall_status"</span><span class="p">:</span> <span class="s2">"HEALTHY"</span><span class="p">,</span>          <span class="c1"># or "DEGRADED"</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"system_overview"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">"total_sub_chains"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">"total_sub_chain_blocks"</span><span class="p">:</span> <span class="mi">142</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">"total_sub_chain_events"</span><span class="p">:</span> <span class="mi">3580</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">"system_uptime"</span><span class="p">:</span> <span class="mf">86400.0</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">},</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="s2">"main_chain"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="s2">"height"</span><span class="p">:</span> <span class="mi">47</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">},</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="s2">"sub_chains"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="s2">"supply_chain"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">61</span><span class="p">},</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="s2">"logistics"</span><span class="p">:</span>    <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">48</span><span class="p">},</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="s2">"finance"</span><span class="p">:</span>      <span class="p">{</span><span class="s2">"valid"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="mi">33</span><span class="p">}</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="p">},</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="s2">"proof_consistency"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="s2">"supply_chain"</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            <span class="s2">"consistent"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>            <span class="s2">"latest_proof_hash"</span><span class="p">:</span> <span class="s2">"a3f8b2..."</span><span class="p">,</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>            <span class="s2">"chain_height"</span><span class="p">:</span> <span class="mi">61</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        <span class="p">}</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    <span class="p">},</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="s2">"issues"</span><span class="p">:</span> <span class="p">[]</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="p">}</span>
+<pre class="mermaid"><code>flowchart TD
+    Caller[Operator or application] --&gt; Health[get_system_integrity_report]
+    Health --&gt; Validity[MainChain and SubChain is_chain_valid checks]
+    Validity --&gt; Summary[Health summary and statistics]
+    Caller --&gt; Consistency[validate_cross_chain_consistency]
+    Consistency --&gt; Verify[BlockVerifier with trusted keys, sequentially]
+    Verify --&gt; Proofs[Compare current tips with latest MainChain proofs]
+    Proofs --&gt; Report[Block and proof consistency report]
+    Summary --&gt; Handle[Caller handles results]
+    Report --&gt; Handle</code></pre>
+<h2 id="health-report">Health report</h2>
+<p><code>get_system_integrity_report()</code> returns:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Field</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>timestamp</code></td>
+<td style="text-align: left;">Report time</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>overall_status</code>, <code>integrity_status</code></td>
+<td style="text-align: left;"><code>HEALTHY</code> or <code>DEGRADED</code> based on chain validity</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>system_overview</code></td>
+<td style="text-align: left;">Sub-Chain totals and system uptime</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>main_chain</code></td>
+<td style="text-align: left;">MainChain validity and height</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sub_chains</code></td>
+<td style="text-align: left;">Per-chain validity and height</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sub_chain_details</code></td>
+<td style="text-align: left;">Domain type, blocks, events, entities, operations and validity</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>issues</code></td>
+<td style="text-align: left;">Chain validation failure descriptions</td>
+</tr>
+</tbody>
+</table>
+<p>This result has no <code>proof_consistency</code> field. A healthy chain report does not establish that every current Sub-Chain tip has a matching MainChain anchor.</p>
+<h2 id="cross-chain-consistency-report">Cross-chain consistency report</h2>
+<p><code>validate_cross_chain_consistency()</code> returns <code>timestamp</code>, <code>main_chain_valid</code>, <code>overall_consistent</code>, <code>sub_chain_validation</code>, <code>block_verification</code> and <code>proof_consistency</code>. Block verification uses <code>BlockVerifier.verify_chain(chain.chain, chain.trusted_public_keys)</code> for the MainChain and each registered Sub-Chain.</p>
+<p>Each proof result contains <code>consistent</code>, <code>pending</code>, <code>reason</code>, <code>chain_height</code> and <code>last_block_index</code>. When a proof exists, it also reports <code>latest_proof_hash</code>, <code>latest_block_hash</code> and <code>latest_proof_block_index</code>. Consistency means the stored proof hash equals the current Sub-Chain tip hash.</p>
+<p><code>pending=True</code> explains a missing or older anchor when the next submission is not due under the chain's configured proof schedule. It still sets <code>consistent=False</code> and makes <code>overall_consistent=False</code>. A scheduled delay is not, by itself, evidence of tampering.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># manager is the application's configured HierarchyManager.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">health</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_system_integrity_report</span><span class="p">()</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">consistency</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">validate_cross_chain_consistency</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">proof</span> <span class="ow">in</span> <span class="n">consistency</span><span class="p">[</span><span class="s2">"proof_consistency"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"consistent"</span><span class="p">]:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="nb">print</span><span class="p">(</span><span class="n">chain_name</span><span class="p">,</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"pending"</span><span class="p">],</span> <span class="n">proof</span><span class="p">[</span><span class="s2">"reason"</span><span class="p">])</span>
 </code></pre></div>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Trigger</strong></td>
-<td style="text-align: left;">Periodic timer, operator call, or Risk Alerts anomaly detection</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Main Chain verify</strong></td>
-<td style="text-align: left;"><code>BlockVerifier.verify_chain()</code> recomputes every block hash and checks <code>previous_hash</code> linkage</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Sub-Chain verify</strong></td>
-<td style="text-align: left;">Same verification applied to all registered Sub-Chains in parallel</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Proof consistency</strong></td>
-<td style="text-align: left;">Compares <code>sub_chain.latest_block.hash</code> with <code>main_chain.proofs[chain_name]</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Forbidden term scan</strong></td>
-<td style="text-align: left;"><code>CrossChainValidator</code> scans all event payloads for cryptocurrency terminology</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Report assembly</strong></td>
-<td style="text-align: left;">All results merged into <code>IntegrityReport</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Alert on DEGRADED</strong></td>
-<td style="text-align: left;">If any check fails, Risk Alerts alert triggered with issue details</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Status</th>
-<th style="text-align: left;">Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Block hash mismatch in Main Chain</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Flag tampered block index; alert</td>
-</tr>
-<tr>
-<td style="text-align: left;">Proof missing for Sub-Chain</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Log missing proof; alert</td>
-</tr>
-<tr>
-<td style="text-align: left;">Sub-Chain proof hash ≠ Main Chain proof</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Tamper detected; immediate alert</td>
-</tr>
-<tr>
-<td style="text-align: left;">Forbidden term found in event</td>
-<td style="text-align: left;"><code>DEGRADED</code></td>
-<td style="text-align: left;">Flag event, log with full path</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h2 id="caller-responsibilities">Caller responsibilities</h2>
+<p>Run domain terminology checks separately through <code>CrossChainValidator</code> if the application needs them. Connect report handling to <code>AlertManager</code> or operational recovery explicitly. There is no built-in report-to-alert or report-to-rehydration hook.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Full report</td>
-<td style="text-align: left;"><code>HierarchyManager.get_system_integrity_report()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager.py</code></td>
+<td style="text-align: left;">Public methods</td>
+<td style="text-align: left;"><code>HierarchyManager.get_system_integrity_report()</code> / <code>validate_cross_chain_consistency()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Consistency check</td>
-<td style="text-align: left;"><code>HierarchyManager.validate_cross_chain_consistency()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager.py</code></td>
+<td style="text-align: left;">Report implementation</td>
+<td style="text-align: left;"><code>_compute_system_integrity_report()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/validation.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Chain verify</td>
+<td style="text-align: left;">Consistency implementation</td>
+<td style="text-align: left;"><code>_validate_cross_chain_consistency()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/hierarchy_manager/validation.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Signature/hash verification</td>
 <td style="text-align: left;"><code>BlockVerifier.verify_chain()</code></td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/verify/block_verifier.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Per-block verify</td>
-<td style="text-align: left;"><code>BlockVerifier.verify_block()</code></td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Forbidden scan</td>
+<td style="text-align: left;">Separate domain checks</td>
 <td style="text-align: left;"><code>CrossChainValidator.validate_system_integrity()</code></td>
-<td style="text-align: left;"><code>domains/generic/utils/cross_chain_validator.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">REST API</td>
-<td style="text-align: left;"><code>GET /ledger/system/integrity</code></td>
-<td style="text-align: left;"><code>api/ledger/routes.py</code></td>
+<td style="text-align: left;"><code>hierachain/domains/utils/cross_chain_validator.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././proof-anchoring/">Proof Anchoring</a>: creates the proofs validated here</li>
-<li><a href=".././chain-rehydration/">Chain Rehydration</a>: called if inconsistency triggers rehydration</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: receives DEGRADED alerts from this workflow</li>
+<li><a href=".././proof-anchoring/">Proof Anchoring</a>: creates the stored anchors</li>
+<li><a href=".././chain-rehydration/">Chain Rehydration</a>: explicit chain synchronization</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: caller-managed alert dispatch</li>
 </ul>
 
 

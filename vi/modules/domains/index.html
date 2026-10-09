@@ -4541,7 +4541,7 @@
 <ul>
 <li><code>BaseChain</code>: Lớp cơ sở trừu tượng quản lý trạng thái chuỗi, sổ đăng ký thực thể và quy trình xử lý sự kiện.</li>
 <li><code>DomainChain</code>: Triển khai cụ thể hỗ trợ thao tác nghiệp vụ, kiểm tra tính hợp lệ của thao tác và trình quản lý giao dịch.</li>
-<li><code>chains/metrics.py</code>: Theo dõi chỉ số vận hành như tỷ lệ thành công và độ trễ thực thi.</li>
+<li><code>chains/metrics.py</code>: Theo dõi tổng số thao tác và các tỷ lệ tổng hợp; không ghi nhận độ trễ thực thi.</li>
 </ul>
 <h3 id="22-su-kien-doanh-nghiep-eventsbase_eventpy-eventsevent_creatorspy">2.2 Sự kiện doanh nghiệp (<code>events/base_event.py</code>, <code>events/event_creators.py</code>)</h3>
 <ul>
@@ -4560,7 +4560,7 @@
 <li>Đăng ký: Gắn định danh <code>entity_id</code> duy nhất với loại thực thể và thuộc tính metadata.</li>
 <li>Cập nhật trạng thái: Theo dõi các trạng thái tuần tự (<code>in_progress</code>, <code>quality_approved</code>, <code>completed</code>).</li>
 <li>Phân bổ tài nguyên: Theo dõi tài nguyên đã phân công và đã giữ chỗ. <code>assigned</code> thêm vào <code>allocated_resources</code> (và bỏ giữ chỗ); <code>reserved</code> thêm vào <code>reserved_resources</code>; <code>released</code> xóa khỏi một trong hai danh sách; <code>transferred</code> chuyển tài nguyên đã phân công sang thực thể đã đăng ký khác theo <code>details.target_entity_id</code>. Chuyển trạng thái không hợp lệ bị từ chối trước khi gửi event.</li>
-<li>Chỉ số vận hành: <code>OperationMetricsTracker</code> tính toán các chỉ số thực thi theo từng loại thao tác.</li>
+<li>Chỉ số vận hành: <code>OperationMetricsTracker</code> cung cấp tổng số thao tác và các tỷ lệ tổng hợp, không có độ trễ hoặc phân nhóm theo loại thao tác.</li>
 </ol>
 <p>Sự kiện nghiệp vụ yêu cầu thực thể đã đăng ký. <code>register_entity</code> lưu dữ liệu ban đầu được cung cấp trong event đăng ký của Sub-Chain để có thể dựng lại registry sau khi khởi động lại; dữ liệu này trở thành nội dung sổ cái nên không được chứa bí mật. Event đăng ký cũ không có <code>initial_data</code> chỉ khôi phục metadata đăng ký mà hệ thống hỗ trợ.</p>
 <p>Dữ liệu ban đầu của thực thể dùng JSON chuẩn với số hữu hạn. Giá trị số nguyên Python, kể cả lớn hơn 64 bit, được khôi phục chính xác trong giới hạn chuyển đổi số nguyên đã cấu hình của Python. Định danh số cần đi qua client có khoảng số nguyên nhỏ hơn nên dùng chuỗi. Giá trị không được hỗ trợ khiến <code>register_entity</code> trả về <code>False</code> trước khi ghi event đăng ký.</p>
@@ -4569,21 +4569,32 @@
 <h2 id="4-ieu-phoi-two-phase-commit-2pc">4. Điều phối Two-Phase Commit (2PC)</h2>
 <p>Các thao tác phối hợp giữa nhiều Sub-Chain thực thi qua giao thức Two-Phase Commit:</p>
 <pre class="mermaid"><code>sequenceDiagram
+    participant Coordinator
     participant Source as Source Sub-Chain
     participant Target as Target Sub-Chain
 
-    Note over Source, Target: Phase 1: Prepare
-    Source-&gt;&gt;Target: Prepare transaction (ID, payload)
-    Target--&gt;&gt;Source: Prepared OK or reject
+    Note over Coordinator, Target: Phase 1: Prepare
+    Coordinator-&gt;&gt;Source: Prepare (ID, payload)
+    Source--&gt;&gt;Coordinator: Prepared OK or reject
+    Coordinator-&gt;&gt;Target: Prepare (ID, payload)
+    Target--&gt;&gt;Coordinator: Prepared OK or reject
 
-    Note over Source, Target: Phase 2: Commit or rollback
+    Note over Coordinator, Target: Phase 2: Commit or rollback
     alt All chains prepared
-        Source-&gt;&gt;Target: Commit transaction
-        Target-&gt;&gt;Target: Finalize block
-    else Failure detected
-        Source-&gt;&gt;Target: Rollback transaction
-        Target-&gt;&gt;Target: Discard pending state
+        Coordinator-&gt;&gt;Coordinator: Persist durable COMMIT decision (phase=commit)
+        Coordinator-&gt;&gt;Source: Commit
+        Source--&gt;&gt;Coordinator: ACK after durable event-pair read-back
+        Coordinator-&gt;&gt;Target: Commit
+        Target--&gt;&gt;Coordinator: ACK after durable event-pair read-back
+        Coordinator-&gt;&gt;Coordinator: Persist COMMITTED
+        Note over Source, Target: Block finalization may complete asynchronously
+    else Prepare failed before COMMIT decision
+        Coordinator-&gt;&gt;Source: Rollback
+        Source--&gt;&gt;Coordinator: Rollback result
+        Coordinator-&gt;&gt;Target: Rollback
+        Target--&gt;&gt;Coordinator: Rollback result
     end</code></pre>
+<p>Sau khi ghi bền quyết định COMMIT, nếu thiếu ACK từ participant thì thao tác ở trạng thái <code>IN_DOUBT</code> để forward recovery tiếp tục. Coordinator không rollback quyết định commit đã được lưu bền vững.</p>
 <h2 id="5-tuan-thu-va-truy-vet-lien-chuoi">5. Tuân thủ và truy vết liên chuỗi</h2>
 <h3 id="loc-thuat-ngu-tien-ma-hoa">Lọc thuật ngữ tiền mã hóa</h3>
 <p><code>CrossChainValidator</code> quét dữ liệu sự kiện để đảm bảo quy định về thuật ngữ doanh nghiệp. Nếu phát hiện các từ như <code>coin</code>, <code>token</code>, <code>mining</code> hoặc <code>wallet</code> trong dữ liệu nghiệp vụ, validator sẽ đánh dấu sự kiện vi phạm quy định.</p>
@@ -4595,7 +4606,7 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">trace_results</span> <span class="o">=</span> <span class="n">tracer</span><span class="o">.</span><span class="n">trace_entity</span><span class="p">(</span><span class="s2">"ORDER-789"</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total events found: </span><span class="si">{</span><span class="n">trace_results</span><span class="p">[</span><span class="s1">'total_events'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">summary</span> <span class="ow">in</span> <span class="n">trace_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chain_summaries"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">summary</span> <span class="ow">in</span> <span class="n">trace_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chain_details"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Activity at </span><span class="si">{</span><span class="n">chain_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">'total_events'</span><span class="p">]</span><span class="si">}</span><span class="s2"> events"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="6-cac-loai-thao-tac-chuan-hoa">6. Các loại thao tác chuẩn hóa</h2>

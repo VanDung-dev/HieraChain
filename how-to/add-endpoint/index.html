@@ -4425,7 +4425,7 @@
 </code></pre></div>
 <p>Tip: use existing DI (e.g. <code>Depends(get_hierarchy_manager)</code>) if the endpoint needs chain system access.</p>
 <h2 id="step-3-run-server-and-quick-test">Step 3: Run Server and Quick Test</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
 <p>Open <code>http://localhost:2661/docs</code> to try on Swagger UI or use <code>curl</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/ping<span class="w"> </span><span class="se">\</span>

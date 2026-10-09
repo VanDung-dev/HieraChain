@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#consensus-ordering" class="md-skip">
+        <a href="#consensus-and-ordering" class="md-skip">
           Skip to content
         </a>
       
@@ -4388,14 +4388,14 @@
   
 
 
-<h1 id="consensus-ordering">Consensus &amp; Ordering</h1>
+<h1 id="consensus-and-ordering">Consensus and ordering</h1>
 <h2 id="purpose">Purpose</h2>
 <p>This page describes the consensus mechanisms and the Ordering Service that HieraChain uses to keep blocks and events ordered, intact and verifiable.</p>
 <h2 id="architecture-and-concepts">Architecture and concepts</h2>
 <ul>
-<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> defines the base interface and framework for consensus algorithms.</li>
+<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> defines the base interface for PoA and PoF; BFT uses a separate API.</li>
 <li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> provides intra-organization consensus with a single MainChain that manages internal domain Sub-Chains.</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> provides inter-organization P2P MainChain alliance consensus for a consortium without a central RootChain.</li>
+<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> implements federation membership, rotating leader validation and a leader signature for consortium integration; ordinary block validation does not collect multi-party quorum votes.</li>
 <li>BFT Consensus: <code>hierachain/consensus/bft/</code> contains a separate implementation. The runtime paths for MainChain and SubChain use PoA or PoF.</li>
 <li>Ordering Service: <code>hierachain/consensus/ordering/</code> orders events before block creation and is built from several components (Processor, Certifier, BlockBuilder).</li>
 </ul>
@@ -4408,27 +4408,28 @@
 
     SC-&gt;&gt;OS: 1. Submit Event
     OS-&gt;&gt;OS: Queue &amp; Batch
-    OS-&gt;&gt;OS: 2. Create, store and enqueue block
+    OS-&gt;&gt;OS: 2. Build block and assign index/link
+    OS-&gt;&gt;C: Finalize block
+    C--&gt;&gt;OS: Finalized block
+    OS-&gt;&gt;OS: Sign header, persist and enqueue
     SC-&gt;&gt;OS: get_next_block()
-    OS--&gt;&gt;SC: Block
-    SC-&gt;&gt;C: 3. Finalize block
-    C--&gt;&gt;SC: Finalized block
-    SC-&gt;&gt;SC: Store block and update state
-    SC-&gt;&gt;MC: 4. Submit Proof (Root Hash)
+    OS--&gt;&gt;SC: Persisted block
+    SC-&gt;&gt;SC: 3. Validate/add unchanged block and update state
+    SC-&gt;&gt;MC: 4. Submit proof (Sub-Chain block hash)
     MC--&gt;&gt;SC: Acknowledge</code></pre>
 <ol>
 <li>A Sub-Chain receives an event and pushes it to the Ordering Service queue.</li>
-<li>The Ordering Service batches events by size and time thresholds, creates a block, and places it in the commit queue.</li>
-<li>The Sub-Chain finalizes blocks with PoA by default or PoF when configured.</li>
-<li>If Main Chain anchoring is enabled, the Sub-Chain sends the proof (Merkle root or hash) to the Main Chain for recording.</li>
+<li>The Ordering Service batches events by size and time thresholds, creates a block, runs its configured consensus finalizer, signs the header and persists the block before queueing it.</li>
+<li>The Sub-Chain consumer validates and applies the persisted block without changing its index, hash or signature. Sub-Chain consensus is PoA by default or PoF when configured.</li>
+<li>If Main Chain anchoring is enabled, the Sub-Chain sends a proof containing the latest Sub-Chain block hash to the Main Chain for recording.</li>
 </ol>
 <h2 id="configuration">Configuration</h2>
 <p>Variables in <code>hierachain/config/settings.py</code>:</p>
 <ul>
 <li><code>CONSENSUS_TYPE</code>: <code>proof_of_authority</code> (default) or <code>proof_of_federation</code>.</li>
 <li><code>BFT_ENABLED</code>: the <code>Settings</code> class defines this attribute, but it does not select consensus for MainChain or SubChain. It is not an environment variable.</li>
-<li><code>VALIDATOR_TIMEOUT</code>: timeout between validators.</li>
-<li><code>CONSENSUS_FEDERATION_CONFIG</code>: federation parameters (for example <code>min_validators</code> and <code>block_interval</code>).</li>
+<li><code>VALIDATOR_TIMEOUT</code>: declared validator timeout exposed by the settings helper; it does not configure the BFT view-change timer.</li>
+<li><code>CONSENSUS_FEDERATION_CONFIG</code>: declared federation defaults; current MainChain/SubChain constructors do not apply this dictionary to PoF. Configure the actual consensus instance consistently across nodes.</li>
 </ul>
 <p>Environment example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>HRC_CONSENSUS_TYPE=proof_of_authority
@@ -4436,7 +4437,7 @@
 </code></pre></div>
 <h2 id="features-and-limitations">Features and limitations</h2>
 <ul>
-<li>PoA is simple to deploy and has low latency, but it depends on a central validator for trust.</li>
+<li>PoA trusts registered authorities. Throughput depends on batching, journal synchronization and storage.</li>
 <li>PoF balances trust and distribution, but it requires federation membership to be managed.</li>
 <li>The BFT implementation lives under <code>hierachain/consensus/bft/</code> and is separate from the MainChain and SubChain runtime paths.</li>
 <li>Ordering keeps event order and batching stable before a block is finalized.</li>

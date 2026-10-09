@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Overview of architectural security mechanisms: MSP/Identity, Key/Cert, Policy, API Key, Resource Guard, CORS/HSTS/Rate Limit.">
+        <meta name="description" content="Overview of architectural security mechanisms: MSP/Identity, Key/Cert, Policy, API Key, CORS/HSTS/Rate Limit.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4354,15 +4354,15 @@
   
 
 
-<h1 id="security-architecture">Security Architecture</h1>
-<p>This page describes security mechanisms at the architectural level and how they fit into HieraChain. The system uses a layered defense that covers the whole application lifecycle.</p>
+<h1 id="security-architecture">Security architecture</h1>
+<p>This page describes security mechanisms at the architectural level and how they fit into HieraChain. The scope of each check depends on the runtime path and caller integration.</p>
 <h2 id="main-security-pillars">Main security pillars</h2>
 <p>The defense is organized into six coordinated areas:</p>
 <ul>
 <li>
 <p>Authorization and access control:</p>
 <ul>
-<li><code>hierachain/security/{msp.py, identity.py}</code> manages Organization, User, Role and PKI identity.</li>
+<li><code>hierachain/security/{msp.py, identity.py}</code> manages organizations, users, roles and lightweight internal certificates.</li>
 <li><code>hierachain/security/policy_engine.py</code> handles permission control (ABAC).</li>
 <li><code>hierachain/security/verify/api_key_verifier.py</code> handles API key authentication.</li>
 </ul>
@@ -4370,8 +4370,8 @@
 <li>
 <p>Logging and integrity:</p>
 <ul>
-<li><code>hierachain/security/secure_logging.py</code> provides tamper-evident logs and masks PII.</li>
-<li><code>hierachain/risk_management/audit_logger.py</code> records operational audit events.</li>
+<li><code>hierachain/security/secure_logging.py</code> writes structured JSON logs and masks sensitive named fields; it has no tamper-verification mechanism.</li>
+<li><code>hierachain/risk_management/audit_logger.py</code> records operational audit events and supports verification against a separately trusted manifest.</li>
 </ul>
 </li>
 <li>
@@ -4395,15 +4395,15 @@
 <li>
 <p>Decentralized zero-knowledge proofs:</p>
 <ul>
-<li><code>hierachain/security/zk_prover.py</code> and <code>hierachain/security/verify/zk_verifier.py</code> implement zero-knowledge proofs for anonymous Sub-Chain data verification.</li>
+<li><code>hierachain/security/zk_prover.py</code> and <code>hierachain/security/verify/zk_verifier.py</code> provide development mocks. Production ZK proving/verifying is unimplemented.</li>
 </ul>
 </li>
 </ul>
-<p>System security configuration is toggled in <code>hierachain/config/settings.py</code> (AUTH, CORS, HSTS, rate limit and others).</p>
+<p>Authentication, CORS and rate limits are configured in <code>hierachain/config/settings.py</code>. HSTS settings are declared there but do not add an HTTP header; configure HSTS at the HTTPS reverse proxy.</p>
 <h2 id="system-integration">System integration</h2>
 <ul>
-<li>API Server (<code>hierachain/api/server.py</code>) adds middleware (<code>add_payload_limit</code>, <code>add_rate_limit</code>, <code>add_cors_middleware</code> via <code>CORSMiddleware</code>) and API key authentication (<code>verify/api_key_verifier.py</code>) when <code>HRC_AUTH_ENABLED=true</code>. There is no <code>ResourceGuardMiddleware</code>.</li>
-<li>Sub-Chain/Main Chain: every state-changing operation must pass authentication when AUTH is enabled and is logged for audit.</li>
+<li>API Server (<code>hierachain/api/server.py</code>) uses payload/rate-limit middleware, <code>CORSMiddleware</code> and <code>APIKeyVerifier</code> when authentication is enabled. There is no CPU/RAM guard on every request.</li>
+<li>API-key authentication and scopes apply at HTTP handlers. Direct Python calls require a trusted caller and do not pass through HTTP middleware; domain/channel policies are checked by their respective paths.</li>
 <li>Secure logging: <code>security/secure_logging.py</code> and <code>security/sanitization.py</code> reduce leakage of sensitive data.</li>
 </ul>
 <h2 id="related-configuration-excerpt">Related configuration (excerpt)</h2>
@@ -4412,44 +4412,23 @@
 <li><code>HRC_AUTH_ENABLED</code>, <code>HRC_API_KEY_LOCATION</code>, <code>HRC_API_KEY_NAME</code></li>
 <li><code>HRC_CORS_ALLOW_ALL</code>, <code>HRC_CORS_ORIGINS</code></li>
 <li><code>HRC_HSTS_ENABLED</code>, <code>HRC_HSTS_MAX_AGE</code></li>
-<li><code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code> (there is no <code>RATE_LIMIT_REQUESTS_PER_MINUTE</code>)</li>
+<li><code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code></li>
 </ul>
 <h2 id="typical-flow">Typical flow</h2>
 <pre class="mermaid"><code>sequenceDiagram
     participant Client
-    participant Server as API Server
-    participant Guard as Resource Guard
-    participant Auth as API Key Verifier
-    participant Policy as Policy Engine
-    participant Logic as Business Logic
-    participant Audit as Audit Log
-
-    Client-&gt;&gt;Server: Send Request (with API Key)
-    Server-&gt;&gt;Guard: Check Resources (CPU/RAM)
-    alt Resource Overloaded
-        Guard--&gt;&gt;Server: Deny (503)
-        Server--&gt;&gt;Client: 503 Service Unavailable
-    else Resources OK
-        Server-&gt;&gt;Auth: Authenticate API Key
-        alt Invalid Key
-            Auth--&gt;&gt;Server: Deny (401)
-            Server--&gt;&gt;Client: 401 Unauthorized
-        else Valid Key
-            Server-&gt;&gt;Policy: Check Permissions (Role/Policy)
-            alt Insufficient Permissions
-                Policy--&gt;&gt;Server: Deny (403)
-                Server--&gt;&gt;Client: 403 Forbidden
-            else Sufficient Permissions
-                Server-&gt;&gt;Logic: Execute Business Logic
-                Logic--&gt;&gt;Server: Result
-                Server-&gt;&gt;Audit: Log Access
-                Server--&gt;&gt;Client: Return Result (200/201)
-            end
-        end
-    end</code></pre>
+    participant API as FastAPI
+    participant Auth as APIKeyVerifier
+    participant Handler as Route handler
+    Client-&gt;&gt;API: Request
+    API-&gt;&gt;API: Payload/rate limits and CORS
+    API-&gt;&gt;Auth: Verify API key when authentication enabled
+    Auth--&gt;&gt;API: Verified user or rejection
+    API-&gt;&gt;Handler: Route permission and domain checks
+    Handler--&gt;&gt;Client: Result or error</code></pre>
 <ol>
-<li>Request to API goes through an optional ResourceGuard CPU/RAM check, then API key authentication, then policy and role check, then execution, then audit logging.</li>
-<li>Events and transactions that carry signatures or ZK proofs are verified by <code>verify/*</code> before acceptance.</li>
+<li>Payload/rate limits and API-key verification run at the API; scope/role checks depend on the route. Redis rate-limit errors return 503 for non-exempt requests.</li>
+<li>Signed blocks are verified against trusted keys. ZK checks apply when enabled; mocks do not prove business correctness.</li>
 </ol>
 <h2 id="related">Related</h2>
 <ul>

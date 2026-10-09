@@ -4541,7 +4541,7 @@
 <ul>
 <li><code>BaseChain</code>: Abstract base class managing chain states, entity registries, and event pipelines.</li>
 <li><code>DomainChain</code>: Concrete implementation supporting domain operations, operation validation, and transaction managers.</li>
-<li><code>chains/metrics.py</code>: Tracks operational metrics such as success rates and execution latencies.</li>
+<li><code>chains/metrics.py</code>: Tracks aggregate operation counts and rates; it does not record execution latency.</li>
 </ul>
 <h3 id="22-enterprise-events-eventsbase_eventpy-eventsevent_creatorspy">2.2 Enterprise events (<code>events/base_event.py</code>, <code>events/event_creators.py</code>)</h3>
 <ul>
@@ -4560,7 +4560,7 @@
 <li>Registration: Links a unique <code>entity_id</code> to an entity type and metadata attributes.</li>
 <li>Status updates: Tracks sequential states (<code>in_progress</code>, <code>quality_approved</code>, <code>completed</code>).</li>
 <li>Resource allocation: Tracks assigned and reserved resources. <code>assigned</code> adds a resource to <code>allocated_resources</code> (and removes its reservation); <code>reserved</code> adds it to <code>reserved_resources</code>; <code>released</code> removes it from either list; <code>transferred</code> moves an allocated resource to another registered entity named by <code>details.target_entity_id</code>. Invalid transitions are rejected before the event is submitted.</li>
-<li>Operation metrics: <code>OperationMetricsTracker</code> calculates execution metrics per operation type.</li>
+<li>Operation metrics: <code>OperationMetricsTracker</code> exposes aggregate operation counts and rates, with no latency or per-operation-type breakdown.</li>
 </ol>
 <p>Domain events require a registered entity. <code>register_entity</code> stores the supplied initial data in the Sub-Chain registration event so the registry can be reconstructed after restart; that data is ledger content and must not contain secrets. Older registration events without <code>initial_data</code> restore the supported registration metadata only.</p>
 <p>Initial entity data uses standard-library JSON with finite numbers. Python integer values, including values larger than 64 bits, are restored exactly within Python's configured integer conversion limit. Use strings for numeric identifiers that must also pass through clients with smaller integer ranges. Unsupported values make <code>register_entity</code> return <code>False</code> before appending the registration event.</p>
@@ -4569,21 +4569,32 @@
 <h2 id="4-two-phase-commit-2pc-coordination">4. Two-Phase Commit (2PC) coordination</h2>
 <p>Cross-chain operations coordinating multiple Sub-Chains execute through the Two-Phase Commit protocol:</p>
 <pre class="mermaid"><code>sequenceDiagram
+    participant Coordinator
     participant Source as Source Sub-Chain
     participant Target as Target Sub-Chain
 
-    Note over Source, Target: Phase 1: Prepare
-    Source-&gt;&gt;Target: Prepare transaction (ID, payload)
-    Target--&gt;&gt;Source: Prepared OK or reject
+    Note over Coordinator, Target: Phase 1: Prepare
+    Coordinator-&gt;&gt;Source: Prepare (ID, payload)
+    Source--&gt;&gt;Coordinator: Prepared OK or reject
+    Coordinator-&gt;&gt;Target: Prepare (ID, payload)
+    Target--&gt;&gt;Coordinator: Prepared OK or reject
 
-    Note over Source, Target: Phase 2: Commit or rollback
+    Note over Coordinator, Target: Phase 2: Commit or rollback
     alt All chains prepared
-        Source-&gt;&gt;Target: Commit transaction
-        Target-&gt;&gt;Target: Finalize block
-    else Failure detected
-        Source-&gt;&gt;Target: Rollback transaction
-        Target-&gt;&gt;Target: Discard pending state
+        Coordinator-&gt;&gt;Coordinator: Persist durable COMMIT decision (phase=commit)
+        Coordinator-&gt;&gt;Source: Commit
+        Source--&gt;&gt;Coordinator: ACK after durable event-pair read-back
+        Coordinator-&gt;&gt;Target: Commit
+        Target--&gt;&gt;Coordinator: ACK after durable event-pair read-back
+        Coordinator-&gt;&gt;Coordinator: Persist COMMITTED
+        Note over Source, Target: Block finalization may complete asynchronously
+    else Prepare failed before COMMIT decision
+        Coordinator-&gt;&gt;Source: Rollback
+        Source--&gt;&gt;Coordinator: Rollback result
+        Coordinator-&gt;&gt;Target: Rollback
+        Target--&gt;&gt;Coordinator: Rollback result
     end</code></pre>
+<p>After the durable COMMIT decision, a missing participant ACK leaves the operation <code>IN_DOUBT</code> for forward recovery. The coordinator does not roll back a commit decision that has already been persisted.</p>
 <h2 id="5-compliance-and-cross-chain-tracing">5. Compliance and cross-chain tracing</h2>
 <h3 id="cryptocurrency-term-filtration">Cryptocurrency term filtration</h3>
 <p><code>CrossChainValidator</code> scans event payloads to enforce enterprise terminology rules. If terms such as <code>coin</code>, <code>token</code>, <code>mining</code>, or <code>wallet</code> appear in business payloads, the validator flags the event as non-compliant.</p>
@@ -4595,7 +4606,7 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">trace_results</span> <span class="o">=</span> <span class="n">tracer</span><span class="o">.</span><span class="n">trace_entity</span><span class="p">(</span><span class="s2">"ORDER-789"</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total events found: </span><span class="si">{</span><span class="n">trace_results</span><span class="p">[</span><span class="s1">'total_events'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">summary</span> <span class="ow">in</span> <span class="n">trace_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chain_summaries"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">summary</span> <span class="ow">in</span> <span class="n">trace_results</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chain_details"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Activity at </span><span class="si">{</span><span class="n">chain_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">'total_events'</span><span class="p">]</span><span class="si">}</span><span class="s2"> events"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="6-standardized-operation-types">6. Standardized operation types</h2>

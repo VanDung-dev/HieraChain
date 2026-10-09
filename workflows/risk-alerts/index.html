@@ -1724,10 +1724,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -1746,10 +1746,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#alert-severity-levels" class="md-nav__link">
+  <a href="#default-metric-rules" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Alert severity levels
+        Default metric rules
       </span>
     </span>
   </a>
@@ -1757,32 +1757,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#risk-domains" class="md-nav__link">
+  <a href="#notification-failures" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Risk domains
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Notification failures
       </span>
     </span>
   </a>
@@ -4302,10 +4280,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4324,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#alert-severity-levels" class="md-nav__link">
+  <a href="#default-metric-rules" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Alert severity levels
+        Default metric rules
       </span>
     </span>
   </a>
@@ -4335,32 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#risk-domains" class="md-nav__link">
+  <a href="#notification-failures" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Risk domains
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Notification failures
       </span>
     </span>
   </a>
@@ -4421,173 +4377,79 @@
 
 
 <h1 id="risk-alerts">Risk alerts</h1>
-<h2 id="overview">Overview</h2>
-<p>HieraChain monitors health across four risk domains: consensus, security, performance and storage. When a metric crosses its threshold, <code>AlertManager</code> creates an alert, suppresses duplicates during cooldown, sends notifications by email or webhook, and escalates alerts that stay unacknowledged past the timeout.</p>
-<hr />
+<h2 id="scope">Scope</h2>
+<p><code>AlertManager</code> in <code>hierachain/monitoring/alert_system.py</code> evaluates metric values supplied through <code>check_metric()</code>. The host application connects its metric collectors to this method. It does not automatically receive every consensus, certificate, storage or integrity-report failure.</p>
+<p>The manager keeps active alerts and bounded history in memory. Rule settings control cooldown, duplicate suppression and escalation. Notifications use one worker with a queue of at most 128 alerts; that worker calls configured notifiers sequentially.</p>
 <h2 id="flow-diagram">Flow diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant PM as 📊 PerformanceMonitor
-    participant AM as 🚨 AlertManager
-    participant AD as 📈 AnomalyDetector
-    participant NTF as 📧 Email / Webhook Notifier
-
-    PM-&gt;&gt;AM: check_metric(metric_name, value, source)
-    AM-&gt;&gt;AD: add_data_point(metric_name, value)
-    AM-&gt;&gt;AM: _evaluate_rule_condition(rule, value)
-    AM-&gt;&gt;AM: _is_in_cooldown(rule)
-
-    alt Threshold breached AND not in cooldown
-        AM-&gt;&gt;AM: _create_alert(rule, value, source)
-        AM-&gt;&gt;AM: _is_duplicate_alert() → suppress if duplicate
-        AM-&gt;&gt;AM: active_alerts[alert_id] = Alert
-        AM-&gt;&gt;NTF: _send_notifications(alert)
-        NTF--&gt;&gt;AM: sent / failed
-
-        Note over AM: Escalation timer starts (default 30 min)
-
-        alt Alert not acknowledged within escalation_time
-            AM-&gt;&gt;AM: _escalate_alert(alert_id)&lt;br/&gt;alert.escalation_level += 1
-            AM-&gt;&gt;NTF: Re-notify with ESCALATED prefix
-        end
+    participant App as Application metric source
+    participant AM as AlertManager
+    participant Worker as Notification worker
+    participant Notifier as Email or webhook
+    App-&gt;&gt;AM: check_metric(metric_name, value, source_component)
+    AM-&gt;&gt;AM: Record anomaly baseline data
+    AM-&gt;&gt;AM: Evaluate matching enabled rules and cooldown
+    opt Rule condition passes and not suppressed
+        AM-&gt;&gt;AM: create_alert(rule, value, source_component)
+        AM-&gt;&gt;AM: Store alert and queue notification
+        Worker-&gt;&gt;Notifier: send_alert(), one notifier at a time
+        Notifier--&gt;&gt;Worker: Success or failure
+        Worker-&gt;&gt;AM: Update notification statistics
+        AM-&gt;&gt;AM: Schedule escalation if escalation_time &gt; 0
     end
-
-    Note over AM: Operator acknowledges or system auto-resolves
-
-    AM-&gt;&gt;AM: acknowledge_alert(alert_id) → ACKNOWLEDGED
-    AM-&gt;&gt;AM: resolve_alert(alert_id) → RESOLVED + remove from active_alerts</code></pre>
-<hr />
-<h2 id="alert-severity-levels">Alert severity levels</h2>
+    opt Timer fires while alert remains ACTIVE
+        AM-&gt;&gt;AM: Increment escalation level
+        AM-&gt;&gt;Worker: Queue critical escalation notification
+    end
+    App-&gt;&gt;AM: acknowledge_alert() or resolve_alert()</code></pre>
+<h2 id="default-metric-rules">Default metric rules</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Severity</th>
-<th style="text-align: left;">Trigger Example</th>
-<th style="text-align: left;">Auto-Escalate After</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>INFO</code></td>
-<td style="text-align: left;">Normal metric fluctuation</td>
-<td style="text-align: left;">Never</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>WARNING</code></td>
-<td style="text-align: left;">CPU &gt; 85%, minor risk detected</td>
-<td style="text-align: left;">30 minutes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>CRITICAL</code></td>
-<td style="text-align: left;">CPU &gt; 95%, consensus success &lt; 95%</td>
-<td style="text-align: left;">Immediate (5 min)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>EMERGENCY</code></td>
-<td style="text-align: left;">Manual declaration or compound failure</td>
-<td style="text-align: left;">Immediate</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="risk-domains">Risk domains</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Domain</th>
-<th style="text-align: left;">Key Metrics Checked</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>Consensus</strong></td>
-<td style="text-align: left;"><code>node_count &gt;= 3f+1</code>, leader election time, message verification rate</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Security</strong></td>
-<td style="text-align: left;">Certificate expiry (days remaining), failed authentication rate, encryption algorithm strength</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Performance</strong></td>
-<td style="text-align: left;">CPU %, memory %, event pool queue size, block finalization latency</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Storage</strong></td>
-<td style="text-align: left;">World state DB size, backup staleness (hours since last backup)</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Metric check</strong></td>
-<td style="text-align: left;"><code>AlertManager.check_metric()</code> evaluates each incoming metric against defined rules</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Anomaly detection</strong></td>
-<td style="text-align: left;"><code>AnomalyDetector</code> uses statistical baseline to flag outliers</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Cooldown check</strong></td>
-<td style="text-align: left;">Rules have configurable cooldown period to suppress alert storms</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Duplicate check</strong></td>
-<td style="text-align: left;"><code>_is_duplicate_alert()</code> suppresses if same rule + same source already active</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Notification</strong></td>
-<td style="text-align: left;">Email and/or Webhook notifiers dispatch concurrently</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Escalation</strong></td>
-<td style="text-align: left;">Unacknowledged alerts auto-escalate: <code>escalation_level += 1</code>, re-notified</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Lifecycle end</strong></td>
-<td style="text-align: left;">Operator acknowledges → <code>ACKNOWLEDGED</code>; metric recovers → <code>RESOLVED</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
+<th style="text-align: left;">Rule</th>
 <th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Behavior</th>
+<th style="text-align: left;">Severity</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Email notification fails</td>
-<td style="text-align: left;">Logged as warning; Webhook notifier still attempted</td>
+<td style="text-align: left;"><code>CPU_HIGH</code></td>
+<td style="text-align: left;"><code>cpu_usage &gt; 85</code></td>
+<td style="text-align: left;"><code>WARNING</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Webhook endpoint unreachable</td>
-<td style="text-align: left;">Retry once; log failure; alert marked <code>notification_failed</code></td>
+<td style="text-align: left;"><code>CPU_CRITICAL</code></td>
+<td style="text-align: left;"><code>cpu_usage &gt; 95</code></td>
+<td style="text-align: left;"><code>CRITICAL</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Alert storm (too many duplicates)</td>
-<td style="text-align: left;">Cooldown mechanism suppresses duplicates per rule</td>
+<td style="text-align: left;"><code>MEMORY_HIGH</code></td>
+<td style="text-align: left;"><code>memory_usage &gt; 85</code></td>
+<td style="text-align: left;"><code>WARNING</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>CONSENSUS_FAILURE</code></td>
+<td style="text-align: left;"><code>consensus_success_rate &lt; 95</code></td>
+<td style="text-align: left;"><code>CRITICAL</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>RISK_DETECTED</code></td>
+<td style="text-align: left;"><code>risk_count &gt; 0</code></td>
+<td style="text-align: left;"><code>WARNING</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p>These values must be supplied by the application. Add rules for other metrics through <code>add_alert_rule()</code>. <code>check_metric()</code> records each value as anomaly baseline data before evaluating matching enabled rules and cooldown. Default rules do not use anomaly detection as a trigger. A rule explicitly configured with <code>condition="anomaly"</code> can call <code>AnomalyDetector.is_anomaly()</code> through <code>check_metric()</code> and trigger an alert when its condition passes.</p>
+<p><code>AlertRule</code> defaults to a 300-second cooldown, 1,800-second escalation time, duplicate suppression enabled and <code>auto_resolve=False</code>. Severity alone does not select a five-minute or immediate escalation. Acknowledgement or resolution cancels the pending timer. Metric recovery does not automatically resolve a default alert.</p>
+<h2 id="notification-failures">Notification failures</h2>
+<p>Email and webhook operations have a 10-second timeout. The webhook notifier makes one request; there is no built-in retry. A failed notifier increments <code>notifications_failed</code>, and the next configured notifier is still attempted. There is no <code>notification_failed</code> alert status.</p>
+<p>If the notification queue is full, the manager records a failed notification while retaining the alert in history. Call <code>AlertManager.close()</code> to stop accepting new notifications and wait for bounded delivery work. Abrupt process exit can lose queued notifications and in-memory alert state.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
@@ -4595,44 +4457,39 @@
 <tr>
 <td style="text-align: left;">Metric check</td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Anomaly detection</td>
+<td style="text-align: left;">Baseline query</td>
 <td style="text-align: left;"><code>AnomalyDetector.is_anomaly()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Create alert</td>
-<td style="text-align: left;"><code>AlertManager._create_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>AlertManager.create_alert()</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Email notify</td>
-<td style="text-align: left;"><code>EmailNotifier.send_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;">Notification</td>
+<td style="text-align: left;"><code>EmailNotifier.send_alert()</code> / <code>WebhookNotifier.send_alert()</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Webhook notify</td>
-<td style="text-align: left;"><code>WebhookNotifier.send_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Escalate</td>
+<td style="text-align: left;">Escalation</td>
 <td style="text-align: left;"><code>AlertManager._escalate_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Acknowledge</td>
-<td style="text-align: left;"><code>AlertManager.acknowledge_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;">Rule defaults</td>
+<td style="text-align: left;"><code>AlertRule</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/types.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././integrity-validation/">System Integrity Validation</a>: DEGRADED integrity status triggers alerts here</li>
+<li><a href=".././integrity-validation/">System Integrity Validation</a>: reports the application can route to alerts</li>
+<li><a href="../../modules/monitoring/">Monitoring</a>: metric collectors and callback integration</li>
 </ul>
 
 

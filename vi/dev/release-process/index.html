@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quy trình phát hành phiên bản và tài liệu: versioning bằng setuptools_scm, chuẩn bị gói, ghi chú phát hành.">
+        <meta name="description" content="Chuẩn bị phát hành, quản lý phiên bản từ hierachain/config/version.py, đóng gói và build tài liệu.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4010,10 +4010,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
+  <a href="#quan-ly-phien-ban" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Versioning
+        Quản lý phiên bản
       </span>
     </span>
   </a>
@@ -4021,10 +4021,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
+  <a href="#chuan-bi-va-ong-goi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Chuẩn bị phát hành
+        Chuẩn bị và đóng gói
       </span>
     </span>
   </a>
@@ -4032,32 +4032,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
+  <a href="#tai-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Đóng gói
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Phát hành tài liệu
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ghi chú phát hành
+        Tài liệu
       </span>
     </span>
   </a>
@@ -4269,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
+  <a href="#quan-ly-phien-ban" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Versioning
+        Quản lý phiên bản
       </span>
     </span>
   </a>
@@ -4280,10 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
+  <a href="#chuan-bi-va-ong-goi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Chuẩn bị phát hành
+        Chuẩn bị và đóng gói
       </span>
     </span>
   </a>
@@ -4291,32 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
+  <a href="#tai-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Đóng gói
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Phát hành tài liệu
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ghi chú phát hành
+        Tài liệu
       </span>
     </span>
   </a>
@@ -4355,32 +4311,24 @@
 
 
 <h1 id="quy-trinh-phat-hanh">Quy trình phát hành</h1>
-<h2 id="versioning">Versioning</h2>
-<ul>
-<li>Dùng <code>setuptools_scm</code> (xem <code>pyproject.toml</code>) để suy luận phiên bản từ thẻ Git.</li>
-<li>Tạo thẻ theo mẫu: <code>vX.Y.Z</code> hoặc <code>vX.Y.Z.devN</code> cho bản phát triển.</li>
-</ul>
-<h2 id="chuan-bi-phat-hanh">Chuẩn bị phát hành</h2>
+<h2 id="quan-ly-phien-ban">Quản lý phiên bản</h2>
+<p><code>pyproject.toml</code> đọc <code>hierachain.config.version.__version__</code>, được tính từ tuple <code>VERSION</code> trong <code>hierachain/config/version.py</code>. Chỉ tạo Git tag không đổi version package; dự án không dùng <code>setuptools_scm</code>.</p>
+<h2 id="chuan-bi-va-ong-goi">Chuẩn bị và đóng gói</h2>
 <ol>
-<li>Đảm bảo test xanh: <code>pytest -v</code>.</li>
-<li>Soát tài liệu: liên kết/chỉ mục/nav cập nhật.</li>
-<li>Cập nhật <code>docs/vi/changelog.md</code> với nội dung phát hành.</li>
+<li>Chạy từng file test liên quan, cùng các kiểm tra CI bắt buộc về static analysis và backend thật.</li>
+<li>Đồng bộ tài liệu Anh/Việt tương ứng. Changelog mô tả thay đổi thư viện cốt lõi, không ghi riêng chỉnh sửa tài liệu.</li>
+<li>Cập nhật tuple version Python và tag phát hành thống nhất.</li>
 </ol>
-<h2 id="ong-goi">Đóng gói</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>build
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>twine<span class="w"> </span>check<span class="w"> </span>dist/*
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># (tuỳ chọn) twine upload dist/*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>build
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>twine<span class="w"> </span>check<span class="w"> </span>dist/*
 </code></pre></div>
-<h2 id="phat-hanh-tai-lieu">Phát hành tài liệu</h2>
-<ul>
-<li>Build site tĩnh bằng MkDocs (thực hiện sau khi nội dung ổn định).</li>
-<li>CI (sau): build preview trên PR, publish khi merge <code>main</code>.</li>
-</ul>
-<h2 id="ghi-chu-phat-hanh">Ghi chú phát hành</h2>
-<ul>
-<li>Tóm tắt thay đổi chính của mã và tài liệu.</li>
-<li>Link tới các PR liên quan; liệt kê điểm phá vỡ (breaking changes) nếu có.</li>
-</ul>
+<p>Xuất bản là bước phát hành riêng. Xem <code>.github/workflows/</code> về yêu cầu workflow đã cấu hình.</p>
+<h2 id="tai-lieu">Tài liệu</h2>
+<p>Build bằng Zensical, tiếng Anh trước và tiếng Việt sau:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.toml
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.vi.toml
+</code></pre></div>
+<p><code>.github/workflows/docs.yml</code> build cả hai ngôn ngữ với pull request khớp bộ lọc và deploy GitHub Pages khi push khớp bộ lọc lên <code>main</code>.</p>
 
 
 

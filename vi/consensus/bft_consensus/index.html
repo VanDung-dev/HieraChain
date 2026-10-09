@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Đồng thuận PBFT chịu lỗi Byzantine với cơ chế View Change.">
+        <meta name="description" content="Thư viện PBFT riêng: phiếu các pha có chữ ký, thay đổi view và thử lại việc áp dụng trong bộ nhớ.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>BFT Consensus - HieraChain Docs</title>
+        <title>Đồng thuận BFT - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#bft-consensus-hierachainconsensusbft" class="md-skip">
+        <a href="#ong-thuan-bft-hierachainconsensusbft" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              BFT Consensus
+              Đồng thuận BFT
             
           </span>
         </div>
@@ -2852,10 +2852,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -2863,10 +2863,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-module-bft" class="md-nav__link">
+  <a href="#thanh-phan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiến trúc Module BFT
+        Thành phần
       </span>
     </span>
   </a>
@@ -2874,10 +2874,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quy-trinh-ong-thuan-pbft-protocol-flow" class="md-nav__link">
+  <a href="#cac-pha-pbft" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quy trình Đồng thuận PBFT (Protocol Flow)
+        Các pha PBFT
       </span>
     </span>
   </a>
@@ -2885,60 +2885,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-co-che-bao-ve-nang-cao" class="md-nav__link">
+  <a href="#ap-dung-va-thu-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các cơ chế Bảo vệ Nâng cao
+        Áp dụng và thử lại
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Các cơ chế Bảo vệ Nâng cao">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-view-change-proof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. View Change Proof
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-sequence-number-nonce" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Sequence Number &amp; Nonce
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. ZK Integration
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-bft" class="md-nav__link">
+  <a href="#thay-oi-view-va-gioi-han-chong-phat-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấu hình BFT
+        Thay đổi view và giới hạn chống phát lại
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kiem-tra-zk-tuy-chon" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm tra ZK tùy chọn
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cấu hình
       </span>
     </span>
   </a>
@@ -4319,10 +4302,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -4330,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-module-bft" class="md-nav__link">
+  <a href="#thanh-phan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiến trúc Module BFT
+        Thành phần
       </span>
     </span>
   </a>
@@ -4341,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quy-trinh-ong-thuan-pbft-protocol-flow" class="md-nav__link">
+  <a href="#cac-pha-pbft" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quy trình Đồng thuận PBFT (Protocol Flow)
+        Các pha PBFT
       </span>
     </span>
   </a>
@@ -4352,60 +4335,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-co-che-bao-ve-nang-cao" class="md-nav__link">
+  <a href="#ap-dung-va-thu-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các cơ chế Bảo vệ Nâng cao
+        Áp dụng và thử lại
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Các cơ chế Bảo vệ Nâng cao">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-view-change-proof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. View Change Proof
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-sequence-number-nonce" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Sequence Number &amp; Nonce
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. ZK Integration
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-bft" class="md-nav__link">
+  <a href="#thay-oi-view-va-gioi-han-chong-phat-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấu hình BFT
+        Thay đổi view và giới hạn chống phát lại
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kiem-tra-zk-tuy-chon" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm tra ZK tùy chọn
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cấu hình
       </span>
     </span>
   </a>
@@ -4454,44 +4420,51 @@
   
 
 
-<h1 id="bft-consensus-hierachainconsensusbft">BFT Consensus (<code>hierachain/consensus/bft/*</code>)</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p><strong>BFT Consensus</strong> là cơ chế đồng thuận chịu lỗi Byzantine của HieraChain. Giao thức dùng công thức <code>n &gt;= 3f + 1</code> để chịu được tối đa <code>f</code> nút lỗi hoặc có hành vi độc hại như làm sai lệch dữ liệu hay từ chối dịch vụ. Triển khai này tách khỏi luồng runtime của MainChain và SubChain.</p>
-<hr />
-<h2 id="kien-truc-module-bft">Kiến trúc Module BFT</h2>
-<p>Module gồm các thành phần sau:</p>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>BFT Engine</strong></p>
-<hr />
-<p><strong>Files</strong>: <code>consensus.py</code>, <code>engine.py</code></p>
-<p><code>BFTConsensus.request()</code> khởi chạy các pha <strong>PBFT</strong>. <code>BFTConsensusEngine</code> xác thực PRE-PREPARE, ghi nhận phiếu bầu và áp dụng hoạt động đã cam kết khi thao tác ghi ứng dụng thành công.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m6 9h-5l1.81-1.81A3.94 3.94 0 0 0 12 8a4 4 0 1 0 3.86 5h2.05A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L18 6Z"/></svg></span> <strong>View Manager</strong></p>
-<hr />
-<p><strong>File</strong>: <code>view_change.py</code></p>
-<p>Phát hiện khi nút Primary không phản hồi và kích hoạt <strong>View Change</strong> để bầu chọn Leader mới.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 10v3h6v5H8v3l-6-5.5zm14-1.5L16 3v3h-6v5h6v3z"/></svg></span> <strong>BFT Network</strong></p>
-<hr />
-<p><strong>File</strong>: <code>dispatcher.py</code></p>
-<p>Dùng <strong>ZeroMQ</strong> để quảng bá và định tuyến thông điệp đồng thuận.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 18v4h-4v-3h-3v-3h-3l-2.26-2.26c-.55.17-1.13.26-1.74.26a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6c0 .61-.09 1.19-.26 1.74zM7 5a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2"/></svg></span> <strong>BFT Crypto</strong></p>
-<hr />
-<p><strong>Files</strong>: <code>helpers.py</code>, <code>types.py</code></p>
-<p>Xử lý ký số Ed25519, băm (Hashing) và xác thực bằng chứng <strong>Zero-Knowledge (ZK)</strong> cho từng thông điệp đồng thuận.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="quy-trinh-ong-thuan-pbft-protocol-flow">Quy trình Đồng thuận PBFT (Protocol Flow)</h2>
-<p>Thành phần BFT độc lập với luồng runtime MainChain và SubChain hiện tại. Demo và API thư viện sử dụng <code>BFTConsensus</code> một cách tường minh.</p>
-<p>JSON chuẩn hóa của request dùng <code>json</code> chuẩn của Python thông qua <code>hierachain.serialization.dumps_canonical_json</code>. Định dạng digest BFT hiện có được giữ: sắp xếp trường, dấu phân cách gọn, văn bản UTF-8 không escape Unicode và cách biểu diễn số hữu hạn của Python. Số không hữu hạn, dữ liệu vòng lặp và kiểu không được JSON hỗ trợ bị từ chối.</p>
+<h1 id="ong-thuan-bft-hierachainconsensusbft">Đồng thuận BFT (<code>hierachain/consensus/bft/*</code>)</h1>
+<h2 id="pham-vi">Phạm vi</h2>
+<p><code>BFTConsensus</code> là thành phần thư viện riêng. MainChain và SubChain không khởi tạo nó; chạy nhiều nút API hoặc đặt <code>BFT_ENABLED</code> không nối PBFT vào các chuỗi đó. Bên gọi cung cấp khóa ký hoặc danh tính nút, khóa công khai nút đã được phê duyệt, truyền tải và tích hợp ứng dụng.</p>
+<p>Hàm khởi tạo yêu cầu <code>n &gt;= 3f + 1</code>, trong đó <code>n</code> là độ dài <code>all_nodes</code>. Khi <code>f=1</code>, cần bốn nút. Mọi nút phải thống nhất danh sách thành viên có thứ tự vì primary là <code>all_nodes[view % n]</code>.</p>
+<h2 id="thanh-phan">Thành phần</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Thành phần</th>
+<th style="text-align: left;">Tệp</th>
+<th style="text-align: left;">Trách nhiệm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>BFTConsensus</code></td>
+<td style="text-align: left;"><code>consensus.py</code></td>
+<td style="text-align: left;">Tiếp nhận yêu cầu, phân phối thông điệp và trạng thái đồng thuận</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTConsensusEngine</code></td>
+<td style="text-align: left;"><code>engine.py</code></td>
+<td style="text-align: left;">Xác thực PRE-PREPARE, phiếu các pha và ghi ứng dụng</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTViewChangeManager</code></td>
+<td style="text-align: left;"><code>view_change.py</code></td>
+<td style="text-align: left;">Thời gian chờ, phiếu VIEW-CHANGE và xác thực bằng chứng NEW-VIEW</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTMessageDispatcher</code></td>
+<td style="text-align: left;"><code>dispatcher.py</code></td>
+<td style="text-align: left;">Gửi qua nút ZeroMQ được cung cấp hoặc hàm gửi của bên gọi</td>
+</tr>
+<tr>
+<td style="text-align: left;">Helper chữ ký và yêu cầu</td>
+<td style="text-align: left;"><code>helpers.py</code>, <code>types.py</code></td>
+<td style="text-align: left;">Payload thông điệp có chữ ký, hash yêu cầu chuẩn hóa và kiểm tra ZK tùy chọn</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cac-pha-pbft">Các pha PBFT</h2>
+<p><code>request()</code> bắt đầu yêu cầu tại primary. Các nút khác chuyển tiếp qua hàm gửi đã cấu hình và trả về <code>False</code>; phản hồi <code>True</code> của primary xác nhận đã tiếp nhận, không xác nhận đã commit theo quorum.</p>
+<p>Primary băm toàn bộ yêu cầu bằng <code>hierachain.serialization.dumps_canonical_json</code>. Replica tính lại digest trước khi chấp nhận PRE-PREPARE. Mã hóa chuẩn hóa sắp xếp trường, dùng dấu phân cách gọn và UTF-8 không escape, đồng thời giữ cách biểu diễn số hữu hạn của Python. Số không hữu hạn, dữ liệu vòng lặp và kiểu không được JSON hỗ trợ bị từ chối.</p>
+<p>Mỗi nút ghi nhận đúng một phiếu PREPARE và COMMIT có chữ ký của mình trước khi phát. Phiếu được đếm theo bên gửi duy nhất, gồm phiếu cục bộ: <code>2f</code> phiếu PREPARE và <code>2f + 1</code> phiếu COMMIT. Phiếu các pha được theo dõi theo từng sequence ngay cả khi sequence khác thay đổi trạng thái đồng thuận hiển thị.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant C as Client
     participant P as Primary
@@ -4501,7 +4474,6 @@
     C-&gt;&gt;P: request(operation)
     P-&gt;&gt;P: Hash canonical request and record local PREPARE
     P-&gt;&gt;R1: PRE-PREPARE(view, seq, digest, request)
-
     P-&gt;&gt;R2: PRE-PREPARE(view, seq, digest, request)
     P-&gt;&gt;R3: PRE-PREPARE(view, seq, digest, request)
     R1-&gt;&gt;R1: Recompute digest, record local PREPARE
@@ -4515,59 +4487,57 @@
     R1-&gt;&gt;P: COMMIT(view, seq, digest)
     R2-&gt;&gt;P: COMMIT(view, seq, digest)
     Note over P,R3: Apply after 2f+1 unique COMMIT votes</code></pre>
-<p>Primary băm toàn bộ request dưới dạng JSON chuẩn. Mỗi replica tính lại digest trước khi chấp nhận PRE-PREPARE, vì vậy thay đổi bất kỳ trường nào trong request mà vẫn giữ digest và chữ ký ban đầu sẽ bị từ chối. Digest được đưa vào thông điệp BFT đã ký.</p>
-<p>Phiếu giai đoạn cục bộ được theo dõi theo từng sequence. Quorum PREPARE của một request đã nhận vẫn tạo được COMMIT cục bộ dù sequence khác đã thay đổi trạng thái consensus hiển thị.</p>
-<p>Mỗi node ghi nhận đúng một phiếu PREPARE và COMMIT có chữ ký của chính mình trước khi phát phiếu. Quorum đếm các sender duy nhất, bao gồm phiếu cục bộ: <code>2f</code> phiếu PREPARE và <code>2f + 1</code> phiếu COMMIT.</p>
-<p>Với node được gắn application chain, nếu <code>chain.add_event()</code> thất bại thì quorum COMMIT và event ổn định trong bộ nhớ, cùng event ID xác định, vẫn sẵn sàng để thử lại. Một COMMIT hợp lệ được gửi lại có thể ghi lại cùng event; node chỉ tăng <code>committed_sequence</code> sau khi ghi thành công. Thành phần không lưu trạng thái thử lại qua lần khởi động lại tiến trình. Các message gần đây được giữ lại; cleanup chỉ xóa message khi sequence cũ hơn committed sequence trên 100.</p>
-<p>Khi không gắn application chain, BFT chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event ứng dụng. Demo độc lập sử dụng chế độ này.</p>
-<p>Request sau không thể nâng committed sequence vượt qua request trước chưa áp dụng hoặc chưa nhận được. Việc áp dụng diễn ra liên tiếp từ sequence 1. Quorum đã nhận cho các request sau được giữ lại và thử áp dụng theo thứ tự sau khi thao tác ghi trước thành công. Trạng thái thử lại vẫn nằm trong bộ nhớ. Nếu backend đã lưu event rồi phát sinh lỗi, retry có thể ghi trùng trừ khi backend khử trùng bằng <code>event_id</code> ổn định; <code>SubChain.add_event()</code> hiện không dùng ID BFT này để khử trùng. Vì vậy thành phần không bảo đảm event được áp dụng đúng một lần khi kết quả ghi không rõ ràng hoặc qua restart.</p>
-<hr />
-<h2 id="cac-co-che-bao-ve-nang-cao">Các cơ chế Bảo vệ Nâng cao</h2>
-<h3 id="1-view-change-proof">1. View Change Proof</h3>
-<p>Khi một nút nhận thấy Leader hiện tại không hoạt động (Timeout), nó yêu cầu thay đổi View. View mới cần bằng chứng có ít nhất <code>2f + 1</code> chữ ký hợp lệ từ các node duy nhất, bao gồm phiếu cục bộ nếu có, nhằm ngăn chặn việc chiếm quyền trái phép.</p>
-<h3 id="2-sequence-number-nonce">2. Sequence Number &amp; Nonce</h3>
-<p>Mỗi thông điệp BFT đều có số thứ tự tăng dần và một giá trị ngẫu nhiên (Nonce) duy nhất để chống lại các cuộc tấn công phát lại (<strong>Replay Attacks</strong>).</p>
-<h3 id="3-zk-integration">3. ZK Integration</h3>
-<p>Hệ thống hỗ trợ xác thực bằng chứng Zero-Knowledge ngay trong pha <code>Pre-prepare</code>, cho phép kiểm tra tính hợp lệ của dữ liệu mà không cần tiết lộ nội dung chi tiết trong quá trình bầu chọn.</p>
-<hr />
-<h2 id="cau-hinh-bft">Cấu hình BFT</h2>
+<h2 id="ap-dung-va-thu-lai">Áp dụng và thử lại</h2>
+<p>Khi có chuỗi ứng dụng được gắn vào, <code>chain.add_event()</code> thất bại sẽ giữ quorum COMMIT và cùng sự kiện trong bộ nhớ với <code>event_id</code> xác định. COMMIT hợp lệ được gửi lại sẽ thử ghi lại; <code>committed_sequence</code> chỉ tăng sau khi thành công. Quorum của yêu cầu sau được giữ và áp dụng liên tiếp từ sequence 1 sau khi các lần ghi trước thành công. Thông điệp gần đây được giữ; bước dọn dẹp loại các sequence cũ hơn committed sequence trên 100.</p>
+<p>Khi không gắn chuỗi, thành phần ghi nhận commit giao thức mà không ghi sự kiện ứng dụng. Demo độc lập dùng chế độ này. Trạng thái thử lại không được lưu qua lần khởi động lại. Nếu backend đã lưu sự kiện rồi phát sinh lỗi, thử lại có thể ghi trùng trừ khi backend khử trùng theo <code>event_id</code>; <code>SubChain.add_event()</code> hiện không khử trùng bằng ID BFT này. Thành phần không bảo đảm áp dụng đúng một lần sau kết quả ghi không rõ ràng hoặc khởi động lại.</p>
+<h2 id="thay-oi-view-va-gioi-han-chong-phat-lai">Thay đổi view và giới hạn chống phát lại</h2>
+<p>Bộ hẹn giờ view change khởi xướng view mới khi hết thời gian. Primary mới được chọn từ danh sách nút có thứ tự, và view mới cần <code>2f + 1</code> chữ ký hợp lệ từ các nút khác nhau, gồm phiếu cục bộ nếu có.</p>
+<p>Sequence theo dõi thứ tự yêu cầu; thông điệp ở các pha khác nhau có thể dùng cùng sequence. Nonce và timestamp của thông điệp được ký, nhưng luồng tiếp nhận không duy trì cache nonce để chống phát lại. Các bước kiểm tra chữ ký, tuổi thông điệp, view, sequence và pha được áp dụng; COMMIT hợp lệ lặp lại có thể chủ động thử áp dụng lại. Chỉ ký nonce không cung cấp cơ chế từ chối phát lại tổng quát.</p>
+<h2 id="kiem-tra-zk-tuy-chon">Kiểm tra ZK tùy chọn</h2>
+<p><code>handle_pre_prepare()</code> gọi <code>verify_operation_zk_proof(message.data)</code> khi bật <code>HRC_ENABLE_ZK_PROOFS</code>. Xử lý bằng chứng thiếu dùng <code>HRC_ZK_REQUIRED_MAINCHAIN</code>. Helper đọc operation ở cấp trên cùng của dữ liệu thông điệp, còn <code>request()</code> đặt operation trong đối tượng request; helper không tự trích operation lồng bên trong. Không nên xem luồng này là bằng chứng mọi thao tác được tiếp nhận đều đã qua xác minh ZK. Mock proof là dữ liệu kiểm thử cho phát triển; tạo/xác minh production chưa được triển khai.</p>
+<h2 id="cau-hinh">Cấu hình</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Tham số</th>
-<th style="text-align: left;">Ý nghĩa</th>
+<th style="text-align: left;">Thiết lập</th>
+<th style="text-align: left;">Vị trí</th>
 <th style="text-align: left;">Mặc định</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><code>f</code></td>
-<td style="text-align: left;">Số lượng lỗi tối đa có thể chịu đựng</td>
-<td style="text-align: left;"><code>1</code> (Yêu cầu ít nhất 4 nodes)</td>
+<td style="text-align: left;">Tham số hàm khởi tạo</td>
+<td style="text-align: left;"><code>1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>view_change_timeout</code></td>
-<td style="text-align: left;">Thời gian chờ Leader phản hồi</td>
+<td style="text-align: left;">Thuộc tính instance; hàm khởi tạo khởi chạy bộ hẹn giờ</td>
 <td style="text-align: left;"><code>30.0</code> giây</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>strictness</code></td>
-<td style="text-align: left;">Mức độ kiểm tra chữ ký</td>
+<td style="text-align: left;"><code>verification_strictness</code></td>
+<td style="text-align: left;"><code>error_config["consensus"]["bft"]["verification_strictness"]</code>; điều khiển việc từ chối thông điệp chậm</td>
 <td style="text-align: left;"><code>high</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>enable_zk_proofs</code></td>
-<td style="text-align: left;">Bật xác thực ZK trong BFT</td>
+<td style="text-align: left;"><code>HRC_ENABLE_ZK_PROOFS</code></td>
+<td style="text-align: left;">Thiết lập môi trường dùng chung với các luồng đồng thuận khác</td>
+<td style="text-align: left;"><code>false</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>HRC_ZK_REQUIRED_MAINCHAIN</code></td>
+<td style="text-align: left;">Chính sách dùng chung cho bằng chứng thiếu</td>
 <td style="text-align: left;"><code>false</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p>Không có tùy chọn hàm khởi tạo BFT tên <code>enable_zk_proofs</code>. Nếu đổi timeout sau khi khởi tạo, hãy đặt lại bộ hẹn giờ view change để dùng khoảng thời gian mới. Gọi <code>shutdown()</code> khi đóng thành phần để hủy bộ hẹn giờ.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href="../../modules/network/">Mạng lưới P2P (Network)</a></li>
-<li><a href="../../security/encryption-keys/">Xác thực chữ ký (Security)</a></li>
-<li><a href=".././ordering/">Dịch vụ sắp xếp (Ordering)</a></li>
+<li><a href="../../modules/network/">Mạng</a></li>
+<li><a href="../../security/encryption-keys/">Khóa và chữ ký</a></li>
+<li><a href=".././ordering/">Dịch vụ ordering</a></li>
 </ul>
 
 

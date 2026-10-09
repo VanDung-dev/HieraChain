@@ -4821,16 +4821,15 @@
 <li>FastAPI server (<code>server.py</code>) is the entry point. It sets up middleware, authentication, and routers.</li>
 <li>Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.</li>
 <li>GraphQL endpoint offers flexible field selection with depth and complexity limits.</li>
-<li>WebSocket gateway streams blocks and events to subscribers using publish/subscribe.</li>
+<li>WebSocket gateway manages subscriptions and broadcast helpers; the application must connect ledger events to those helpers.</li>
 <li>IPFS integration handles off-chain data with AES-256-GCM encryption. Large payloads stay off chain and only the CID is stored on chain.</li>
 </ul>
-<hr />
 <h2 id="architecture-and-security">Architecture and security</h2>
 <p>The API uses layered middleware. Each request passes through the same checks before it reaches a handler.</p>
 <h3 id="http-security">HTTP security</h3>
 <ul>
-<li>Security headers are added to every response, including CSP, HSTS, X-Frame-Options set to DENY, and X-Content-Type-Options set to nosniff.</li>
-<li>Payload limit caps request bodies at 5 MB by default. This helps prevent DoS with large payloads.</li>
+<li>HTTP middleware adds CSP, X-Frame-Options set to DENY and X-Content-Type-Options set to nosniff. It does not add HSTS; configure that header at the HTTPS reverse proxy.</li>
+<li>Payload middleware limits POST/PUT/PATCH bodies to 1 MiB. It checks a supplied Content-Length and reads the stream when that header is absent.</li>
 <li>CORS controls which origins can call the API. Production requires an explicit allow list.</li>
 </ul>
 <h3 id="rate-limiting">Rate limiting</h3>
@@ -4842,7 +4841,6 @@
 <p>The default limit is 100 requests per minute, configured with <code>HRC_RATE_LIMIT_RPM</code>.</p>
 <h3 id="authentication">Authentication</h3>
 <p><code>APIKeyVerifier</code> checks the <code>X-API-Key</code> header for HTTP and WebSocket access. Production requires <code>HRC_AUTH_ENABLED=true</code> and a provisioned <code>HRC_API_KEYS_FILE</code>; dev/test can disable authentication. With authentication enabled, GraphQL checks scopes for every operation: chain and block queries require <code>chains</code>, event queries and <code>addEvent</code> require <code>events</code>, and a block query that selects nested events requires both scopes. WebSocket streams contain both block and event messages, so connecting and subscribing requires <code>chains</code> and <code>events</code> (or <code>all</code>). Production GraphQL and WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.</p>
-<hr />
 <h2 id="rest-api-reference">REST API reference</h2>
 <h3 id="ledger-core-ledger">ledger: core ledger</h3>
 <p>These endpoints interact directly with ledger state:</p>
@@ -4870,10 +4868,9 @@
 <p>These endpoints are for node and system operations:</p>
 <ul>
 <li><code>POST /api/admin/verify-identity</code> lets a node sign a challenge to prove its identity.</li>
-<li><code>GET /api/admin/status</code> returns uptime, chain counts, version, and license status.</li>
-<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> submits high-integrity events requiring synchronous signature verification.</li>
+<li><code>GET /api/admin/status</code> is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.</li>
+<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> checks the signature synchronously, then submits through asynchronous ordering; the response does not establish block commitment.</li>
 </ul>
-<hr />
 <h2 id="graphql-api">GraphQL API</h2>
 <p>Endpoint: <code>/graphql</code></p>
 <p>Use GraphQL when clients need to select specific fields or reduce payload size.</p>
@@ -4893,10 +4890,9 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
 </code></pre></div>
-<hr />
 <h2 id="websocket-real-time-streaming">WebSocket (real-time streaming)</h2>
 <p>Connect to <code>/ws</code>. To select a chain when connecting, pass <code>chain_name</code>, for example <code>/ws?chain_name=supply_chain</code>.</p>
-<p>When authentication is enabled, send the <code>X-API-Key</code> header in the WebSocket handshake. The connection and each subscription require both <code>chains</code> and <code>events</code> permissions because the current stream sends both kinds of messages to chain subscribers. The server pushes data as soon as a block is committed or an event arrives.</p>
+<p>When authentication is enabled, send the <code>X-API-Key</code> header in the WebSocket handshake. The connection and each subscription require both <code>chains</code> and <code>events</code> permissions because the current stream sends both kinds of messages to chain subscribers. The ledger pipeline does not call the broadcast helpers automatically. Subscriptions receive ledger messages only when the application supplies that integration.</p>
 <h3 id="main-message-types">Main message types</h3>
 <ul>
 <li>Client to server<ul>
@@ -4911,7 +4907,6 @@
 </ul>
 </li>
 </ul>
-<hr />
 <h2 id="blockchain-explorer">Blockchain explorer</h2>
 <p>Built in at <code>blockchain_explorer.py</code>, the explorer gives operators a dashboard:</p>
 <ul>
@@ -4919,18 +4914,11 @@
 <li>Visualizer renders the tree between Main Chain and Sub-Chains.</li>
 <li>IPFS decoder lets authorized admins decode CIDs in the browser.</li>
 </ul>
-<hr />
 <h2 id="observability">Observability</h2>
 <ul>
 <li><code>X-Request-ID</code> adds a UUID to each request for log tracing.</li>
-<li><code>/metrics</code> exposes Prometheus metrics, including:<ul>
-<li>Count of successful and failed requests.</li>
-<li>Average response latency.</li>
-<li>Memory and CPU status of the API server.</li>
+<li>With <code>HRC_METRICS_ENABLED=true</code>, <code>/metrics</code> exposes the default <code>prometheus_client</code> registry. Default process/runtime collectors depend on the platform. The API does not register HTTP success/failure counters, latency histograms or ledger throughput collectors; add those through application instrumentation. <code>PerformanceMonitor</code> is a separate component and is not automatically exported here.</li>
 </ul>
-</li>
-</ul>
-<hr />
 <h2 id="quick-usage-guide-curl">Quick usage guide (curl)</h2>
 <h3 id="write-an-event-to-a-chain">Write an event to a chain</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/my_chain/events<span class="w"> </span><span class="se">\</span>
@@ -4945,7 +4933,6 @@
 <h3 id="trace-an-entity">Trace an entity</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"</span>
 </code></pre></div>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././hierarchical/">Hierarchical Structure</a></li>

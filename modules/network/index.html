@@ -4534,10 +4534,10 @@
 
 <h1 id="network-module-hierachainnetwork">Network Module (<code>hierachain/network/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The <strong>Network</strong> module handles communication between HieraChain nodes over <strong>ZeroMQ</strong>. It uses cryptographic checks to encrypt and authenticate network messages.</p>
+<p>The <strong>Network</strong> module handles communication between HieraChain nodes over <strong>ZeroMQ</strong>. <code>SecureConnectionManager</code> provides optional CurveZMQ transport encryption, an MSP handshake, and message-signature checks. The API server's <code>NetworkClient</code> creates <code>ZmqNode</code> directly, so that path does not automatically run the manager's handshake or signature checks.</p>
 <hr />
 <h2 id="layered-security-architecture">Layered Security Architecture</h2>
-<p>HieraChain uses three independent security layers for network communication:</p>
+<p><code>SecureConnectionManager</code> provides these security components when an application uses it; they are not automatically active on every <code>NetworkClient</code> connection:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4545,9 +4545,9 @@
 <hr />
 <p><strong>Technology</strong>: Curve25519</p>
 <ul>
-<li>Encrypts the entire transmission path between ZeroMQ Sockets.</li>
+<li>Encrypts the transmission between ZeroMQ sockets when configured with local transport keys and peer public keys.</li>
 <li>Ensures privacy and prevents eavesdropping on Web2 networks.</li>
-<li>Uses ephemeral keys to guarantee Forward Secrecy.</li>
+<li><code>SecureConnectionManager</code> generates a CurveZMQ keypair for its transport; the API server's separate <code>NetworkClient</code> uses the transport keys configured for its <code>ZmqNode</code>.</li>
 </ul>
 </li>
 <li>
@@ -4555,7 +4555,7 @@
 <hr />
 <p><strong>Technology</strong>: Ed25519 + Certificates</p>
 <ul>
-<li>Authenticates node identity through MSP (Membership Service Provider) certificates.</li>
+<li>Authenticates node identity through MSP (Membership Service Provider) certificates when the handshake is run.</li>
 <li>Only allows nodes from valid organizations to join the network.</li>
 <li>2-step Handshake process: <code>INIT</code> and <code>ACK</code>.</li>
 <li>Binds the active certificate subject and signing key to the ZeroMQ routing ID
@@ -4567,9 +4567,9 @@
 <hr />
 <p><strong>Technology</strong>: Ed25519 + Nonce + Timestamp</p>
 <ul>
-<li>Every P2P message is digitally signed.</li>
+<li>Data-message signature checks are controlled by <code>require_signatures</code>; they default to <code>False</code> in base, development, and test settings, and <code>True</code> in <code>ProductionSettings</code>.</li>
 <li>Prevents replay attacks by checking unique Nonce and Timestamp within the allowed window (60s).</li>
-<li>Both handshake messages carry signed <code>timestamp</code> and <code>nonce</code> fields accepted by the transport replay gate.</li>
+<li>Handshake messages have separate signature checks and carry signed <code>timestamp</code> and <code>nonce</code> fields accepted by the transport replay gate.</li>
 </ul>
 </li>
 </ul>
@@ -4591,11 +4591,13 @@
 <li>Perform Handshake to exchange and verify MSP certificates.</li>
 <li>Manage the list of authenticated peers (<code>authenticated_peers</code>).</li>
 </ol>
+<p>The API server's <code>NetworkClient</code> does not currently wire this manager into its <code>ZmqNode</code> transport.</p>
 <h3 id="3-peer-trust-manager-peer_trust_managerpy">3. Peer Trust Manager (<code>peer_trust_manager.py</code>)</h3>
 <p>Manages the trust level of neighboring nodes:</p>
 <ul>
-<li><strong>Policy Enforcement</strong>: Applies <code>strict</code> (allowlist only) or <code>discovery</code> (auto-discovery) policies.</li>
-<li><strong>Reputation</strong>: Marks and disconnects peers with malicious behavior (wrong signatures, spam messages).</li>
+<li><strong>Policy Enforcement</strong>: Supports <code>open</code> and <code>strict</code>. <code>open</code> trusts peers unless they are blocklisted; <code>strict</code> requires an allowlisted peer.</li>
+<li><strong>Peer lists</strong>: Allowlist and blocklist entries are managed explicitly; the manager does not assign reputation scores or automatically disconnect peers for spam.</li>
+<li><strong>Signed messages</strong>: Invalid data-message signatures are dropped by <code>SecureConnectionManager</code> when signature checks are enabled.</li>
 </ul>
 <hr />
 <h2 id="secure-handshake-process">Secure Handshake Process</h2>
@@ -4632,12 +4634,14 @@ certificate, identity record, organization, or key is rejected.</p>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">identity_mgr</span><span class="o">=</span><span class="n">identity_instance</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_configured_node</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="2-send-a-signed-message">2. Send a Signed Message</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Automatically signs and sends over the encrypted channel</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"block_proposal"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}}</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">"peer_002"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">send_proposal</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"block_proposal"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"block_index"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">return</span> <span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">"peer_002"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="p2p-configuration-environment-variables">P2P Configuration (Environment Variables)</h2>

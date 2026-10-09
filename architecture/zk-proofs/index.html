@@ -1232,10 +1232,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-production-mode-zokrates" class="md-nav__link">
+  <a href="#b-production-mode-unimplemented" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        b. Production Mode (ZoKrates)
+        b. Production Mode (unimplemented)
       </span>
     </span>
   </a>
@@ -4309,10 +4309,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-production-mode-zokrates" class="md-nav__link">
+  <a href="#b-production-mode-unimplemented" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        b. Production Mode (ZoKrates)
+        b. Production Mode (unimplemented)
       </span>
     </span>
   </a>
@@ -4384,24 +4384,23 @@
 <ul>
 <li>Acts as the Verifier.</li>
 <li>For mock proofs, <code>ZKVerifier</code> checks the format and the commitment to the supplied public inputs.</li>
-<li>A rejected proof prevents its MainChain submission. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.</li>
+<li>A rejected proof prevents MainChain submission when <code>HRC_ENABLE_ZK_PROOFS=true</code> and a proof is supplied, or when <code>HRC_ZK_REQUIRED_MAINCHAIN=true</code>; both settings default to <code>false</code>. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.</li>
 </ul>
 </li>
 </ul>
 <h3 id="2-operating-modes">2. Operating Modes</h3>
-<p>Zero-Knowledge Proofs in HieraChain support two running modes depending on the actual deployment environment of the Sub-chain (flexibly configured via <code>ZK_MODE</code> environment variable):</p>
+<p>Zero-Knowledge Proofs in HieraChain support two running modes depending on the actual deployment environment of the Sub-chain (flexibly configured via <code>HRC_ZK_MODE</code> environment variable):</p>
 <h4 id="a-mock-mode-default">a. Mock Mode (Default)</h4>
 <ul>
 <li>This is the Development (Dev) or Testing environment mode.</li>
 <li>Mock mode uses the <code>mock_zkp_v2\x00</code> format with a SHA-256 commitment to public inputs; it does not execute a SNARK circuit.</li>
-<li>Instead of running algorithm circuits, mock mode uses interpolated hash computation (<code>hashlib.sha256</code>) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.</li>
 <li>Supports Main/Sub integrated development without requiring significant hardware resources.</li>
 </ul>
-<h4 id="b-production-mode-zokrates">b. Production Mode (ZoKrates)</h4>
+<h4 id="b-production-mode-unimplemented">b. Production Mode (unimplemented)</h4>
 <ul>
 <li>This is a reserved production interface, currently unsupported.</li>
-<li>Requires the proving key directory at <code>ZK_PROVING_KEY_PATH</code> and verification key at <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
-<li>The current production methods raise <code>NotImplementedError</code>; configuring key paths does not enable an external proving service.</li>
+<li>Requires the proving key directory at <code>HRC_ZK_PROVING_KEY</code> and verification key at <code>HRC_ZK_VERIFICATION_KEY</code>.</li>
+<li>The internal <code>_generate_production_proof()</code> and <code>_verify_production()</code> hooks raise <code>NotImplementedError</code>. Public <code>ZKProver.generate_proof()</code> catches the proving error and returns an unsuccessful <code>ZKProofResult</code>; <code>generate_proof_bytes()</code> raises <code>ZKProvingError</code>, and <code>ZKVerifier.verify()</code> wraps the backend error as <code>ZKVerificationError</code>.</li>
 </ul>
 <h3 id="3-public-inputs">3. Public Inputs</h3>
 <p>As defined by <code>ZKPublicInputs</code>, the input arguments (synchronized between Prover and Verifier) include:</p>
@@ -4412,7 +4411,7 @@
 <li><strong><code>sub_chain_name</code> (str)</strong>: Full identifier or name of the Sub-chain pushing the Proof.</li>
 </ul>
 <p>These parameters are serialized as standardized JSON bytes (using <code>sort_keys=True</code>) before being hashed for Proof generation.</p>
-<p><code>WorldState.get_state_root()</code> hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. Production proving and verification currently raise <code>NotImplementedError</code>; this root clarification does not implement a production ZK circuit.</p>
+<p><code>WorldState.get_state_root()</code> hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. The production hooks remain unimplemented; the public methods report this through the results and exceptions described above. This root clarification does not implement a production ZK circuit.</p>
 
 
 

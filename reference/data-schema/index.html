@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#data-schema-protocol" class="md-skip">
+        <a href="#data-schema-and-protocol" class="md-skip">
           Skip to content
         </a>
       
@@ -3219,18 +3219,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#core-data-structures" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Core Data Structures
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Core Data Structures">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#event" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -3239,24 +3227,14 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Event">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#event-schema-protocol" class="md-nav__link">
+  <a href="#rest-input" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Event Schema Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#block" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block
+        REST input
       </span>
     </span>
   </a>
@@ -3269,10 +3247,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-flow-protocol" class="md-nav__link">
+  <a href="#block" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Flow Protocol
+        Block
       </span>
     </span>
   </a>
@@ -3280,10 +3258,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serialization-standards" class="md-nav__link">
+  <a href="#submission-and-commitment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Serialization Standards
+        Submission and commitment
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serialization-and-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Serialization and transport
       </span>
     </span>
   </a>
@@ -4286,18 +4275,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#core-data-structures" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Core Data Structures
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Core Data Structures">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#event" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4306,24 +4283,14 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Event">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#event-schema-protocol" class="md-nav__link">
+  <a href="#rest-input" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Event Schema Protocol
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#block" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block
+        REST input
       </span>
     </span>
   </a>
@@ -4336,10 +4303,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-flow-protocol" class="md-nav__link">
+  <a href="#block" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Flow Protocol
+        Block
       </span>
     </span>
   </a>
@@ -4347,10 +4314,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serialization-standards" class="md-nav__link">
+  <a href="#submission-and-commitment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Serialization Standards
+        Submission and commitment
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serialization-and-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Serialization and transport
       </span>
     </span>
   </a>
@@ -4388,187 +4366,116 @@
   
 
 
-<h1 id="data-schema-protocol">Data Schema &amp; Protocol</h1>
-<p>This document defines in detail the Data Schema and communication protocols within HieraChain. The system uses <strong>Apache Arrow</strong> as the primary storage and transport format to ensure high performance.</p>
-<h2 id="core-data-structures">Core Data Structures</h2>
-<p>HieraChain strictly adheres to the following Schema definitions to ensure consistency across the entire network (Main Chain &amp; Sub Chains).</p>
-<h3 id="event">Event</h3>
-<p>Event is the smallest data unit, representing a specific business action.</p>
-<p><strong>Schema Definition (<code>hierachain.core.schemas.EVENT_SCHEMA</code>):</strong></p>
+<h1 id="data-schema-and-protocol">Data schema and protocol</h1>
+<p>HieraChain uses JSON for REST requests and Apache Arrow tables for block event storage. The canonical binary event payload preserves typed details; the Arrow metadata columns support filtering and indexing. See <a href=".././data-models/">Data Models</a> for serialization and hash contracts.</p>
+<h2 id="event">Event</h2>
+<p>The Arrow <code>EVENT_SCHEMA</code> is defined in <code>hierachain/core/block.py</code>.</p>
 <table>
 <thead>
 <tr>
-<th>Field Name</th>
-<th>Type (Arrow)</th>
-<th>Description</th>
+<th style="text-align: left;">Field</th>
+<th style="text-align: left;">Arrow type</th>
+<th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>entity_id</code></td>
-<td><code>string</code></td>
-<td><strong>Metadata Field</strong>. Identifier of the affected entity (e.g., ProductID, OrderID). <strong>Note:</strong> Not used as Block identifier.</td>
+<td style="text-align: left;"><code>entity_id</code></td>
+<td style="text-align: left;"><code>string</code></td>
+<td style="text-align: left;">Business entity identifier</td>
 </tr>
 <tr>
-<td><code>event</code></td>
-<td><code>string</code></td>
-<td>Event type (e.g., <code>CREATED</code>, <code>UPDATED</code>, <code>TRANSFERRED</code>).</td>
+<td style="text-align: left;"><code>event</code></td>
+<td style="text-align: left;"><code>string</code></td>
+<td style="text-align: left;">Internal event type</td>
 </tr>
 <tr>
-<td><code>timestamp</code></td>
-<td><code>float64</code></td>
-<td>Time of event occurrence (Unix timestamp).</td>
+<td style="text-align: left;"><code>timestamp</code></td>
+<td style="text-align: left;"><code>float64</code></td>
+<td style="text-align: left;">Unix timestamp</td>
 </tr>
 <tr>
-<td><code>details</code></td>
-<td><code>map&lt;string, string&gt;</code></td>
-<td>Additional Key-Value information (On-chain data).</td>
+<td style="text-align: left;"><code>details</code></td>
+<td style="text-align: left;"><code>map&lt;string, string&gt;</code></td>
+<td style="text-align: left;">String projection of detail values for Arrow metadata</td>
 </tr>
 <tr>
-<td><code>details_cid</code></td>
-<td><code>string</code></td>
-<td><strong>IPFS CID</strong>. Reference to large data stored off-chain.</td>
+<td style="text-align: left;"><code>details_cid</code></td>
+<td style="text-align: left;"><code>string</code></td>
+<td style="text-align: left;">Optional off-chain IPFS reference</td>
 </tr>
 <tr>
-<td><code>details_nonce</code></td>
-<td><code>string</code></td>
-<td><strong>Encryption Nonce</strong>. Decryption key for off-chain data (used for AES-GCM).</td>
+<td style="text-align: left;"><code>details_nonce</code></td>
+<td style="text-align: left;"><code>string</code></td>
+<td style="text-align: left;">Public AES-GCM nonce for an encrypted off-chain object</td>
 </tr>
 <tr>
-<td><code>data</code></td>
-<td><code>binary</code></td>
-<td>Main data payload (internal JSON component, includes both on-chain and off-chain refs).</td>
+<td style="text-align: left;"><code>data</code></td>
+<td style="text-align: left;"><code>binary</code></td>
+<td style="text-align: left;">Canonical JSON event payload preserving JSON fields and typed details; top-level byte fields are omitted</td>
 </tr>
 </tbody>
 </table>
-<h3 id="event-schema-protocol">Event Schema Protocol</h3>
-<p>Events are wrapped with cryptographic digital signatures (Ed25519) and zero-knowledge proofs before submission:</p>
-<p><strong>Event Validation Schema (<code>hierachain.core.schemas.EVENT_SCHEMA</code>):</strong></p>
+<p><code>details_nonce</code> is not a decryption key. Encrypted IPFS retrieval also requires the stable encryption key and any metadata supplied as AAD. See <a href="../../workflows/ipfs-storage/">IPFS Storage</a>.</p>
+<h3 id="rest-input">REST input</h3>
+<p><code>EventRequest</code> in <code>hierachain/api/ledger/schemas.py</code> requires <code>entity_id</code> and <code>event_type</code>. Optional fields are <code>details</code>, <code>details_cid</code>, <code>details_nonce</code>, <code>details_metadata</code>, <code>sender</code> and <code>signature</code>. It has no <code>timestamp</code> field. The Ledger API maps <code>event_type</code> to the internal <code>event</code> field and assigns the current server time.</p>
+<p>The seven-column Arrow schema has no dedicated columns for <code>signature</code>, <code>zk_proof</code> or <code>zk_public_inputs</code>. Additional JSON fields can still be stored in canonical event bytes; their presence alone does not establish cryptographic verification.</p>
+<p>The HTTP SDK sends the caller's event data to the Ledger API as JSON. It does not wrap it in a separate signed object or generate a ZK proof. MainChain proof submissions and signed block headers have separate validation contracts.</p>
+<h2 id="block">Block</h2>
+<p><code>Block.events</code> is a <code>pyarrow.Table</code>. Block serialization includes these header fields:</p>
 <table>
 <thead>
 <tr>
-<th>Field Name</th>
-<th>Type (Arrow)</th>
-<th>Description</th>
+<th style="text-align: left;">Field</th>
+<th style="text-align: left;">Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>entity_id</code></td>
-<td><code>string</code></td>
-<td>Affected entity identifier (e.g., ProductID, OrderID).</td>
+<td style="text-align: left;"><code>index</code></td>
+<td style="text-align: left;">Block position in the chain</td>
 </tr>
 <tr>
-<td><code>event</code></td>
-<td><code>string</code></td>
-<td>Event type name.</td>
+<td style="text-align: left;"><code>timestamp</code></td>
+<td style="text-align: left;">Block creation timestamp</td>
 </tr>
 <tr>
-<td><code>signature</code></td>
-<td><code>string</code></td>
-<td>Digital signature of the event creator.</td>
+<td style="text-align: left;"><code>previous_hash</code></td>
+<td style="text-align: left;">Previous block hash</td>
 </tr>
 <tr>
-<td><code>timestamp</code></td>
-<td><code>float64</code></td>
-<td>Event creation timestamp.</td>
+<td style="text-align: left;"><code>nonce</code></td>
+<td style="text-align: left;">Header field included in serialization and hashing; PoA/PoF do not use it for work-based consensus</td>
 </tr>
 <tr>
-<td><code>zk_proof</code></td>
-<td><code>binary</code></td>
-<td>(Optional) Zero-Knowledge proof payload.</td>
+<td style="text-align: left;"><code>merkle_root</code></td>
+<td style="text-align: left;">Root derived from the block's events</td>
 </tr>
 <tr>
-<td><code>zk_public_inputs</code></td>
-<td><code>binary</code></td>
-<td>(Optional) Public inputs for ZK Proof verification.</td>
+<td style="text-align: left;"><code>hash</code></td>
+<td style="text-align: left;">Calculated block hash</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>creator_id</code></td>
+<td style="text-align: left;">Node identity of the block signer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>signature</code></td>
+<td style="text-align: left;">Ed25519 signature of the canonical block header</td>
 </tr>
 </tbody>
 </table>
-<h3 id="block">Block</h3>
-<p>Block is a collection of ordered and packaged Events.</p>
-<p><strong>Block Header Schema:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Field Name</th>
-<th>Type (Arrow)</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>index</code></td>
-<td><code>int64</code></td>
-<td>Block sequence number in the chain (Height).</td>
-</tr>
-<tr>
-<td><code>timestamp</code></td>
-<td><code>float64</code></td>
-<td>Block creation time.</td>
-</tr>
-<tr>
-<td><code>previous_hash</code></td>
-<td><code>string</code></td>
-<td>SHA-256 hash of the previous block (creates chain link).</td>
-</tr>
-<tr>
-<td><code>nonce</code></td>
-<td><code>int64</code></td>
-<td>Random number used in Proof-of-Work (if applicable) or to ensure uniqueness.</td>
-</tr>
-<tr>
-<td><code>merkle_root</code></td>
-<td><code>string</code></td>
-<td>Root hash of the Merkle tree, representing all Events in the Block.</td>
-</tr>
-<tr>
-<td><code>hash</code></td>
-<td><code>string</code></td>
-<td>Identifier hash of this Block.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Block Body:</strong></p>
-<ul>
-<li>Contains a list of <strong>Events</strong> (stored as <code>pyarrow.Table</code> for optimized access).</li>
-</ul>
-<h2 id="data-flow-protocol">Data Flow Protocol</h2>
-<p>Data processing flow from Client to Chain storage:</p>
+<p>Header fields are not an additional Arrow event schema. Verifiers use the operator-approved creator-to-public-key map to validate signatures.</p>
+<h2 id="submission-and-commitment">Submission and commitment</h2>
 <ol>
-<li>
-<p><strong>Submission</strong>:</p>
-<ul>
-<li>Client creates an <code>Event</code>.</li>
-<li>SDK wraps the Event into a <code>Transaction</code>, signs it (<code>signature</code>), and optionally generates <code>zk_proof</code>.</li>
-<li>Sends <code>Transaction</code> to the <strong>Ordering Service</strong>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Ordering</strong>:</p>
-<ul>
-<li><strong>Ordering Service</strong> receives the Transaction, verifies signature and basic validity.</li>
-<li>Places the Transaction in a queue to ensure consistent ordering.</li>
-<li>Groups Transactions into a Batch for Block creation.</li>
-</ul>
-</li>
-<li>
-<p><strong>Consensus &amp; Commit</strong>:</p>
-<ul>
-<li>Node creates a new Block from the ordered Transaction batch.</li>
-<li>Computes <code>Merkle Root</code> and <code>Block Hash</code>.</li>
-<li>Executes consensus algorithm (PoA/PoF/BFT) to confirm the Block.</li>
-<li>After consensus, the Block is added to <code>MainChain</code> or <code>SubChain</code>.</li>
-<li><code>World State</code> is updated.</li>
-</ul>
-</li>
+<li>The Ledger API validates JSON input and calls <code>SubChain.add_event()</code>.</li>
+<li>The ordering service journals and queues the event. The returned event ID confirms acceptance; commitment follows asynchronously.</li>
+<li>The background processor certifies events and batches them. The block manager assigns the block index and link, runs consensus finalization, signs the header and persists the block before queueing it for the Sub-Chain consumer.</li>
+<li>The consumer validates and applies the persisted block unchanged, updates WorldState, and checks whether proof submission is due.</li>
 </ol>
-<h2 id="serialization-standards">Serialization Standards</h2>
-<ul>
-<li><strong>Apache Arrow</strong>: Used for internal storage and inter-Node transport (Performance).</li>
-<li><strong>JSON</strong>: Used for Client API (REST) for easy integration with Web/Mobile Apps.</li>
-<li><strong>Protobuf/gRPC</strong>: (Optional) Used for high-performance internal communication between microservices.</li>
-</ul>
+<p>See <a href="../../workflows/event-submission/">Event Submission</a> for failure handling. BFT is a separate library implementation; MainChain/SubChain runtime selection uses PoA or PoF.</p>
+<h2 id="serialization-and-transport">Serialization and transport</h2>
+<p>REST uses JSON. Internal event tables and the event journal use Arrow representations with canonical event bytes for integrity checks. Network messaging is implemented under <code>hierachain/network/</code>; the package does not provide a Protobuf/gRPC transport. Do not infer a transport protocol from the event table format.</p>
 
 
 

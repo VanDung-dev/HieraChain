@@ -4491,7 +4491,7 @@
 <hr />
 <ul>
 <li><strong>Entity Tracing</strong>: Trace entity lifecycle across Sub-Chains.</li>
-<li><strong>CID Resolution</strong>: Automatically decrypts data from IPFS when querying blocks.</li>
+<li><strong>CID Resolution</strong>: Block queries default to <code>resolve_cid=False</code>; with <code>resolve_cid=True</code>, the SDK asks the API to resolve CID data. The API resolves and decrypts details when IPFS is enabled. <code>trace_entity()</code> supports the same option.</li>
 </ul>
 </li>
 </ul>
@@ -4527,7 +4527,7 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="n">chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="n">event_data</span><span class="o">=</span><span class="p">{</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PRODUCT-123"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="s2">"event_type"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"passed"</span><span class="p">,</span> <span class="s2">"inspector"</span><span class="p">:</span> <span class="s2">"QA-01"</span><span class="p">}</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="p">}</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="p">)</span>

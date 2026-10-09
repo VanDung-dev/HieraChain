@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Guide to configuring PoA/PoF or adding new consensus mechanisms; reference core/consensus/* and hierarchical/consensus/bft_consensus.py.">
+        <meta name="description" content="Guide to configuring PoA/PoF or adding new consensus mechanisms; reference hierachain/consensus/base_consensus.py and hierachain/consensus/bft/.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -3474,10 +3474,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-only-no-coding-required" class="md-nav__link">
+  <a href="#configure-poa-or-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration Only (No Coding Required)
+        Configure PoA or PoF
       </span>
     </span>
   </a>
@@ -3485,10 +3485,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-new-consensus-mechanism-coding-required" class="md-nav__link">
+  <a href="#add-a-consensus-implementation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Adding New Consensus Mechanism (Coding Required)
+        Add a consensus implementation
       </span>
     </span>
   </a>
@@ -4247,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-only-no-coding-required" class="md-nav__link">
+  <a href="#configure-poa-or-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration Only (No Coding Required)
+        Configure PoA or PoF
       </span>
     </span>
   </a>
@@ -4258,10 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-new-consensus-mechanism-coding-required" class="md-nav__link">
+  <a href="#add-a-consensus-implementation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Adding New Consensus Mechanism (Coding Required)
+        Add a consensus implementation
       </span>
     </span>
   </a>
@@ -4312,7 +4312,7 @@
 
 <h1 id="addcustomize-consensus">Add/Customize Consensus</h1>
 <p>Use this guide to configure PoA or PoF for MainChain and SubChain, or to integrate another consensus mechanism through <code>BaseConsensus</code>.</p>
-<h2 id="configuration-only-no-coding-required">Configuration Only (No Coding Required)</h2>
+<h2 id="configure-poa-or-pof">Configure PoA or PoF</h2>
 <ol>
 <li>
 <p>Choose PoA or PoF for MainChain. The example uses <code>HRC_CONSENSUS_TYPE</code>; <code>HRC_MAINCHAIN_CONSENSUS</code> is also supported:</p>
@@ -4322,24 +4322,27 @@
 </code></pre></div>
 </li>
 </ol>
-<p>MainChain and SubChain use PoA or PoF in the current runtime flow. BFT has a separate implementation under <code>hierachain/consensus/bft/</code>; the API Ledger does not select it, and there is no <code>HRC_BFT_ENABLED</code> environment variable. SubChain uses PoA by default; pass <code>consensus_type="proof_of_federation"</code> when initializing it to use PoF.</p>
+<p>MainChain and SubChain use PoA or PoF in the current runtime flow. BFT has a separate implementation under <code>hierachain/consensus/bft/</code>; the API Ledger does not select it, and there is no <code>HRC_BFT_ENABLED</code> environment variable. SubChain uses PoA by default; pass <code>config={"consensus_type": "proof_of_federation"}</code> when initializing it to use PoF.</p>
 <ol>
 <li>
 <p>Start API server and verify basic flow works:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
 </li>
 <li>
-<p>Send a test request through API Ledger:</p>
+<p>Provision the signing identity, trusted keys and any API key as described in <a href="../../getting-started/quickstart/">Quickstart</a>. The example below assumes authentication is disabled in dev/test. Submit an event, then read blocks to confirm commitment before submitting its proof:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"entity_id":"PROD-001","event_type":"production_complete","details":{"quantity":100}}'</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/blocks
 </code></pre></div>
 </li>
 </ol>
-<h2 id="adding-new-consensus-mechanism-coding-required">Adding New Consensus Mechanism (Coding Required)</h2>
+<p>After the event appears in a persisted block, submit the proof:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
+</code></pre></div>
+<h2 id="add-a-consensus-implementation">Add a consensus implementation</h2>
 <ol>
 <li>
 <p>Review the standard interface and existing implementations:</p>
@@ -4352,34 +4355,32 @@
 </li>
 <li>
 <p>Create new class extending <code>BaseConsensus</code> (example):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyConsensus</span><span class="p">(</span><span class="n">BaseConsensus</span><span class="p">):</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">validate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">previous_block</span><span class="p">):</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="c1"># validate signature/merkle/consistency</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="o">...</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">return</span> <span class="kc">True</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">finalize_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">):</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="c1"># close block/apply signature/consensus metadata</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="o">...</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">return</span> <span class="n">block</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  <span class="k">def</span><span class="w"> </span><span class="nf">can_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">authority_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="c1"># check block creation permission</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="o">...</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="k">return</span> <span class="kc">True</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.base_consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConsensus</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.block</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyConsensus</span><span class="p">(</span><span class="n">BaseConsensus</span><span class="p">):</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">Block</span><span class="p">,</span> <span class="n">previous_block</span><span class="p">:</span> <span class="n">Block</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Implement trusted validation"</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">finalize_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">Block</span><span class="p">,</span> <span class="n">authority_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Block</span><span class="p">:</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Implement signed finalization"</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">can_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">authority_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Implement proposer authorization"</span><span class="p">)</span>
 </code></pre></div>
 </li>
 <li>
 <p>Wiring at initialization point (factory/integration point):</p>
 <ul>
-<li>At chain initialization (Sub-Chain/DomainChain) or Ordering service, reference the new mechanism when <code>HRC_CONSENSUS_TYPE=my_consensus</code>.</li>
+<li>Update the chain initialization or integration point to construct the new class. <code>HRC_CONSENSUS_TYPE</code> currently supports PoA/PoF; a new name also requires configuration validation and selector support.</li>
 <li>If a factory exists, add the mapping case <code>my_consensus</code> → <code>MyConsensus</code>.</li>
 </ul>
 </li>
 <li>
-<p>Test with API Ledger as in part A (add event → finalize → submit proof). Monitor logs to confirm the new <code>propose/validate/commit</code> methods are called.</p>
+<p>Test the implemented <code>can_create_block()</code>, <code>finalize_block()</code> and <code>validate_block()</code> methods, including invalid signatures and unauthorized proposers. Then verify the API integration: submit an event, wait for its persisted Sub-Chain block, and submit its proof. The base interface has no <code>propose</code> or <code>commit</code> methods.</p>
 </li>
 </ol>
+<p>The abstract-method stubs above are intentionally incomplete and cannot finalize valid blocks. Merely defining the class does not install it into MainChain, SubChain or the API.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li>Architecture/Consensus: <a href="../../architecture/consensus/">Consensus &amp; Ordering</a></li>

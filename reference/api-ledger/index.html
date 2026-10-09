@@ -4685,7 +4685,8 @@
     Main--&gt;&gt;Sub: Confirm
     API--&gt;&gt;Client: 200 OK (Proof ID)</code></pre>
 <ul>
-<li>GET <code>/api/ledger/health</code>: Health check.</li>
+<li>GET <code>/api/ledger/health</code>: Liveness.</li>
+<li>GET <code>/api/ledger/ready</code>: Hierarchy initialization/recovery readiness; HTTP 503 while unavailable.</li>
 <li>GET <code>/api/ledger/chains</code>: List Main Chain and all Sub-Chains.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Create a new Sub-Chain (auto-creates Main Chain if not exists).</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Add an event to a Sub-Chain.</li>
@@ -4707,7 +4708,7 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s1">       "details": {"batch": "BATCH-001"}</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">     }'</span>
 </code></pre></div>
-<p>Unknown channels return <code>404</code>; an absent authenticated user or a user outside the organization's allowed write role returns <code>403</code>. API-key authentication must be enabled and the key must have <code>events</code> permission. The active <code>HierarchyManager</code> must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Channel event ledger data remains in memory across manager restarts.</p>
+<p>Unknown channels return <code>404</code>; an absent authenticated user or a user outside the organization's allowed write role returns <code>403</code>. API-key authentication must be enabled and the key must have <code>events</code> permission. The active <code>HierarchyManager</code> must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Managed SQLite/PostgreSQL channels persist event and signed-block records in a separate append-only stream, refreshed by sequence on restart or across workers. Event writes do not rewrite the full registry. The memory backend is process-local.</p>
 <h2 id="main-schemas-from-hierachainapiledgerschemaspy">Main Schemas (from <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
 <li>
@@ -4719,6 +4720,8 @@
 <li><code>details_cid: str | None</code> (Off-chain CID reference)</li>
 <li><code>details_nonce: str | None</code> (Encryption nonce)</li>
 <li><code>details_metadata: dict[str, Any] | None</code></li>
+<li><code>sender: str | None</code></li>
+<li><code>signature: str | None</code></li>
 </ul>
 </li>
 <li>
@@ -4790,10 +4793,11 @@
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">      }'</span>
 </code></pre></div>
 <p>Response:</p>
+<p>The event ID below is illustrative; generated IDs are 16-character lowercase hexadecimal strings.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a1b2c3d4e5f67890"</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </code></pre></div>
 <p>The response acknowledges that the event was journaled and queued for ordering; block creation and persistence happen asynchronously.</p>
@@ -4801,10 +4805,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 <p>Response:</p>
+<p>This response example assumes a chain length of two; the proof ID suffix is the chain length.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_2"</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="5-get-block-details">5. Get block details</h3>

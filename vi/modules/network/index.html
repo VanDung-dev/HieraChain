@@ -4534,10 +4534,10 @@
 
 <h1 id="network-module-hierachainnetwork">Network Module (<code>hierachain/network/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Network</strong> quản lý giao tiếp giữa các node HieraChain qua <strong>ZeroMQ</strong>. Module dùng các cơ chế mật mã để mã hóa và xác thực thông điệp.</p>
+<p>Module <strong>Network</strong> quản lý giao tiếp giữa các node HieraChain qua <strong>ZeroMQ</strong>. <code>SecureConnectionManager</code> cung cấp tùy chọn mã hóa transport bằng CurveZMQ, MSP handshake và kiểm tra chữ ký thông điệp. <code>NetworkClient</code> của API server tạo trực tiếp <code>ZmqNode</code>, nên luồng này không tự chạy handshake hoặc kiểm tra chữ ký của manager.</p>
 <hr />
 <h2 id="kien-truc-bao-mat-a-tang-layered-security">Kiến trúc Bảo mật Đa tầng (Layered Security)</h2>
-<p>HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:</p>
+<p><code>SecureConnectionManager</code> cung cấp các thành phần bảo mật này khi ứng dụng sử dụng nó; chúng không tự động hoạt động trên mọi kết nối <code>NetworkClient</code>:</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -4545,9 +4545,9 @@
 <hr />
 <p><strong>Công nghệ</strong>: Curve25519</p>
 <ul>
-<li>Mã hóa toàn bộ đường truyền giữa các Socket ZeroMQ.</li>
+<li>Mã hóa đường truyền giữa các socket ZeroMQ khi được cấu hình với transport key cục bộ và public key của peer.</li>
 <li>Đảm bảo tính riêng tư (Privacy) và chống nghe lén trên mạng Web2.</li>
-<li>Sử dụng khóa ephemeral để đảm bảo Forward Secrecy.</li>
+<li><code>SecureConnectionManager</code> tạo CurveZMQ keypair cho transport; <code>NetworkClient</code> riêng của API server dùng các transport key được cấu hình cho <code>ZmqNode</code>.</li>
 </ul>
 </li>
 <li>
@@ -4555,7 +4555,7 @@
 <hr />
 <p><strong>Công nghệ</strong>: Ed25519 + Certificates</p>
 <ul>
-<li>Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).</li>
+<li>Xác thực danh tính nút qua chứng chỉ MSP (Membership Service Provider) khi handshake được chạy.</li>
 <li>Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.</li>
 <li>Quy trình Handshake 2 bước: <code>INIT</code> và <code>ACK</code>.</li>
 <li>Ràng buộc subject và khóa ký của chứng chỉ còn hiệu lực với routing ID
@@ -4567,9 +4567,9 @@
 <hr />
 <p><strong>Công nghệ</strong>: Ed25519 + Nonce + Timestamp</p>
 <ul>
-<li>Mọi thông điệp P2P đều được ký số (Digital Signature).</li>
+<li>Kiểm tra chữ ký thông điệp dữ liệu do <code>require_signatures</code> điều khiển; mặc định là <code>False</code> trong base, development và test settings, và <code>True</code> trong <code>ProductionSettings</code>.</li>
 <li>Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).</li>
-<li>Cả hai thông điệp handshake đều có <code>timestamp</code> và <code>nonce</code> đã ký, được replay gate của transport chấp nhận.</li>
+<li>Chữ ký handshake được kiểm tra riêng; các thông điệp này có <code>timestamp</code> và <code>nonce</code> đã ký, được replay gate của transport chấp nhận.</li>
 </ul>
 </li>
 </ul>
@@ -4591,11 +4591,13 @@
 <li>Thực hiện Handshake để trao đổi và xác thực chứng chỉ MSP.</li>
 <li>Quản lý danh sách các Peer đã được xác thực (<code>authenticated_peers</code>).</li>
 </ol>
+<p><code>NetworkClient</code> của API server hiện không nối manager này vào transport <code>ZmqNode</code>.</p>
 <h3 id="3-peer-trust-manager-peer_trust_managerpy">3. Peer Trust Manager (<code>peer_trust_manager.py</code>)</h3>
 <p>Quản lý độ tin cậy của các nút lân cận:</p>
 <ul>
-<li><strong>Policy Enforcement</strong>: Áp dụng các chính sách <code>strict</code> (chỉ cho phép allowlist) hoặc <code>discovery</code> (cho phép tự động khám phá).</li>
-<li><strong>Reputation</strong>: Đánh dấu và ngắt kết nối với các Peer có hành vi xấu (sai chữ ký, gửi thông điệp rác).</li>
+<li><strong>Policy Enforcement</strong>: Hỗ trợ <code>open</code> và <code>strict</code>. <code>open</code> tin cậy peer trừ khi peer nằm trong blocklist; <code>strict</code> yêu cầu peer có trong allowlist.</li>
+<li><strong>Peer lists</strong>: Allowlist và blocklist được quản lý tường minh; manager không chấm điểm reputation hay tự ngắt kết nối peer vì spam.</li>
+<li><strong>Signed messages</strong>: <code>SecureConnectionManager</code> loại bỏ chữ ký thông điệp dữ liệu không hợp lệ khi bật kiểm tra chữ ký.</li>
 </ul>
 <hr />
 <h2 id="quy-trinh-thiet-lap-ket-noi-an-toan-secure-handshake">Quy trình Thiết lập Kết nối An toàn (Secure Handshake)</h2>
@@ -4624,7 +4626,7 @@ thiếu hay không khớp đều bị từ chối.</p>
 <h3 id="1-khoi-tao-node-bao-mat">1. Khởi tạo Node Bảo mật</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.network.secure_connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecureConnectionManager</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Khởi tạo manager tích hợp MSP</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Initialize manager with MSP integration</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">secure_node</span> <span class="o">=</span> <span class="n">SecureConnectionManager</span><span class="p">(</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">"node_001"</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">5001</span><span class="p">,</span>
@@ -4632,12 +4634,14 @@ thiếu hay không khớp đều bị từ chối.</p>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">identity_mgr</span><span class="o">=</span><span class="n">identity_instance</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_configured_node</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="2-gui-thong-iep-co-ky-so">2. Gửi thông điệp có ký số</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Tự động ký và gửi qua kênh đã mã hóa</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"block_proposal"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}}</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">"peer_002"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Automatically signs and sends over the encrypted channel</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">send_proposal</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"block_proposal"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"block_index"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">return</span> <span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">"peer_002"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="cau-hinh-p2p-environment-variables">Cấu hình P2P (Environment Variables)</h2>

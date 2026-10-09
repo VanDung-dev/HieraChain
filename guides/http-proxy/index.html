@@ -4460,7 +4460,7 @@
 <p>Even though it only runs HTTP/1.1, HieraChain maintains internal security layers:</p>
 <ul>
 <li><strong>API Key Verification</strong>: Application-level access authentication.</li>
-<li><strong>Trusted Proxies</strong>: Only accepts requests from predefined Load Balancer IPs (via <code>HRC_TRUSTED_PROXIES</code> variable).</li>
+<li><strong>Trusted Proxies</strong>: <code>HRC_TRUSTED_PROXIES</code> controls which peer IPs may supply trusted <code>X-Forwarded-For</code> headers; it does not reject requests from other IPs. Enforce network access restrictions at the proxy, firewall, or network-policy layer.</li>
 <li><strong>Payload Sanitization</strong>: Cleans input data to prevent application-layer attacks.</li>
 </ul>
 

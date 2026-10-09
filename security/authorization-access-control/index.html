@@ -4413,8 +4413,8 @@
 <p>Manages detailed information about users and organizations:</p>
 <ul>
 <li><strong>Organization Management</strong>: Defines member organizations.</li>
-<li><strong>User Profiles</strong>: Stores identity information, roles, and Ed25519 digital signatures of users.</li>
-<li><strong>Signature Verification</strong>: Verifies user signatures on requests and events.</li>
+<li><strong>User Profiles</strong>: Stores identity information, roles, and an optional Ed25519 public key.</li>
+<li><strong>Signature Verification</strong>: <code>verify_user_signature()</code> checks a supplied message and signature against the registered public key when a caller invokes it. Request and event handlers do not call it automatically.</li>
 </ul>
 <h2 id="3-policy-engine-abac">3. Policy Engine (ABAC)</h2>
 <p><strong>File</strong>: <code>hierachain/security/policy_engine.py</code></p>
@@ -4427,8 +4427,8 @@
 <p><strong>File</strong>: <code>hierachain/security/verify/api_key_verifier.py</code></p>
 <p>Fast authentication layer for API requests:</p>
 <ul>
-<li><strong>API Key Management</strong>: Creates, revokes, and validates API Keys.</li>
-<li><strong>Integrated Middleware</strong>: Automatically authenticates API Keys for every HTTP request to the server.</li>
+<li><strong>API Key Lifecycle</strong>: <code>KeyManager</code> in <code>hierachain/security/key_manager.py</code> creates and revokes keys. <code>APIKeyVerifier</code> validates them at request time.</li>
+<li><strong>Global HTTP Authentication</strong>: The server installs the API-key dependency only when <code>AUTH_ENABLED</code> is true. Paths in <code>EXEMPT_PATHS</code>, including health, status, and docs routes, bypass this global key check; route-specific authentication or permission checks can still apply. Production startup refuses to run with authentication disabled.</li>
 <li><strong>Permission Mapping</strong>: Maps API Keys to specific permissions within the system.</li>
 </ul>
 <h2 id="authorization-checks">Authorization checks</h2>
@@ -4440,14 +4440,19 @@
 <hr />
 <h2 id="authentication-authorization-flow">Authentication &amp; Authorization Flow</h2>
 <pre class="mermaid"><code>graph TD
-    A[Request with API Key] --&gt; B[API Key Verifier]
-    B -- Valid --&gt; C[Identity Manager]
-    C --&gt; D[Identify Organization &amp; Role]
-    D --&gt; E[Policy Engine]
-    E -- Check Rules --&gt; F{Authorized?}
-    F -- Yes --&gt; G[Execute Business Logic]
-    F -- No --&gt; H[403 Forbidden]
-    B -- Invalid --&gt; I[401 Unauthorized]</code></pre>
+    Request[HTTP request] --&gt; Auth{AUTH_ENABLED?}
+    Auth -- No --&gt; Route[Route handler]
+    Auth -- Yes --&gt; Exempt{Exempt path?}
+    Exempt -- Yes --&gt; Route
+    Exempt -- No --&gt; Verify[APIKeyVerifier]
+    Verify -- Invalid --&gt; Error401[401 Unauthorized]
+    Verify -- Valid --&gt; Route
+    Route --&gt; Permission[Route-specific checks, where required]
+    Permission --&gt; Business[Business logic]
+    PythonApp[Python application] --&gt;|explicit call| MSP["HierarchicalMSP.authorize_action()"]
+    MSP --&gt; OrgPolicies[OrganizationPolicies]
+    PythonApp --&gt;|explicit call| Signature["IdentityManager.verify_user_signature()"]
+    PythonApp --&gt;|explicit call| Policy[Typed PolicyEngine]</code></pre>
 <hr />
 <h2 id="related">Related</h2>
 <ul>

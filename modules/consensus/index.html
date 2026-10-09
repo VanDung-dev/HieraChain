@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Multi-protocol consensus system: Ordering Service (CFT) and BFT Consensus (PBFT).">
+        <meta name="description" content="PoA/PoF block finalization, local event ordering and the separate PBFT component.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1991,10 +1991,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -2002,10 +2002,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-consensus-protocols" class="md-nav__link">
+  <a href="#components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Supported Consensus Protocols
+        Components
       </span>
     </span>
   </a>
@@ -2013,10 +2013,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#overall-architecture" class="md-nav__link">
+  <a href="#ordering-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overall Architecture
+        Ordering path
       </span>
     </span>
   </a>
@@ -2024,10 +2024,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integration-into-hierarchy" class="md-nav__link">
+  <a href="#hierarchy-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integration into Hierarchy
+        Hierarchy configuration
       </span>
     </span>
   </a>
@@ -4269,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4280,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-consensus-protocols" class="md-nav__link">
+  <a href="#components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Supported Consensus Protocols
+        Components
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#overall-architecture" class="md-nav__link">
+  <a href="#ordering-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overall Architecture
+        Ordering path
       </span>
     </span>
   </a>
@@ -4302,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integration-into-hierarchy" class="md-nav__link">
+  <a href="#hierarchy-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integration into Hierarchy
+        Hierarchy configuration
       </span>
     </span>
   </a>
@@ -4354,67 +4354,60 @@
   
 
 
-<h1 id="consensus-module-hierachainconsensus">Consensus Module (<code>hierachain/consensus/*</code>)</h1>
-<h2 id="overview">Overview</h2>
-<p>The <strong>Consensus</strong> module is responsible for ensuring consistency and deterministic ordering of data across the entire HieraChain network. The system provides flexible consensus mechanisms, allowing enterprises to choose between extreme performance in trusted environments or absolute security in environments at risk of attack.</p>
-<hr />
-<h2 id="supported-consensus-protocols">Supported Consensus Protocols</h2>
-<p>The Ordering Service batches events, while PoA and PoF finalize Sub-Chain blocks. The repository also contains a separate BFT component. <code>HRC_CONSENSUS_TYPE</code> selects <code>proof_of_authority</code> or <code>proof_of_federation</code>; it does not select BFT:</p>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 3C3.79 3 2 4.79 2 7s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4m0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2m0 4c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4m6-8h10v2H12zm0 14v-2h10v2zm0-8h10v2H12z"/></svg></span> <strong>Ordering Service (CFT)</strong></p>
-<hr />
-<ul>
-<li>Suitable for Consortium or Single-org networks.</li>
-<li>Crash Fault Tolerance.</li>
-<li>High performance with batching mechanism.</li>
-<li><a href="../../consensus/ordering/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m9 3c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4 9 4zm-9-5a3 3 0 0 0-3 3c0 1.31.83 2.42 2 2.83V18h2v-2h2v-2h-2v-2.17c1.17-.41 2-1.52 2-2.83a3 3 0 0 0-3-3"/></svg></span> <strong>BFT Consensus (PBFT)</strong></p>
-<hr />
-<ul>
-<li>Suitable for untrusted environments.</li>
-<li>Byzantine Fault Tolerance with condition <code>n &gt;= 3f + 1</code>.</li>
-<li>Ensures integrity even when nodes are compromised.</li>
-<li><a href="../../consensus/bft_consensus/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4m4 10.54c0 1.06-.28 3.53-2.19 6.29L13 15l.94-1.88c-.62-.07-1.27-.12-1.94-.12s-1.32.05-1.94.12L11 15l-.81 4.83C8.28 17.07 8 14.6 8 13.54c-2.39.7-4 1.96-4 3.46v4h16v-4c0-1.5-1.6-2.76-4-3.46"/></svg></span> <strong>Proof of Authority / Federation</strong></p>
-<hr />
-<ul>
-<li><strong>PoA</strong>: Authorized nodes sign blocks.</li>
-<li><strong>PoF</strong>: Rotating leader mechanism within a consortium.</li>
-<li>Suitable for Sub-Chains requiring fast processing.</li>
-</ul>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="overall-architecture">Overall Architecture</h2>
+<h1 id="consensus-module-hierachainconsensus">Consensus module (<code>hierachain/consensus/*</code>)</h1>
+<h2 id="scope">Scope</h2>
+<p>The module provides PoA and PoF block finalization, an event ordering service, and a separate BFT library. Their validation rules and integration requirements differ.</p>
+<h2 id="components">Components</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Component</th>
+<th style="text-align: left;">Behavior</th>
+<th style="text-align: left;">Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Ordering Service</td>
+<td style="text-align: left;">Journals, queues, certifies and batches local events; signs and persists blocks before queueing them for the consumer</td>
+<td style="text-align: left;"><a href="../../consensus/ordering/">Ordering</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">PoA</td>
+<td style="text-align: left;">Checks registered authority membership, block signatures and optional timestamp spacing</td>
+<td style="text-align: left;"><a href="../../consensus/poa/">PoA</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">PoF</td>
+<td style="text-align: left;">Checks federation membership, scheduled leader and its finalization signature; quorum signature verification is a separate helper</td>
+<td style="text-align: left;"><a href="../../consensus/pof/">PoF</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">BFT</td>
+<td style="text-align: left;">Runs PBFT phases with <code>n &gt;= 3f + 1</code>; callers supply signing keys, transport and application integration</td>
+<td style="text-align: left;"><a href="../../consensus/bft_consensus/">BFT</a></td>
+</tr>
+</tbody>
+</table>
+<p>Ordering recovery uses a local durable journal. It does not elect a replicated orderer cluster or provide automatic service failover. BFT is not selected by the MainChain/Sub-Chain consensus settings.</p>
+<h2 id="ordering-path">Ordering path</h2>
 <pre class="mermaid"><code>graph TD
-    A[Event Submission] --&gt; B[Ordering Service]
-    B --&gt; C[Block Building]
-    C --&gt; D[Sub-Chain finalization: PoA or PoF]
-    D --&gt; E[Storage Commitment]
-    E --&gt; F[(Ledger Persistence)]
-    G[BFT Consensus component] -. separate component .-&gt; H[Consensus workflows]</code></pre>
-<hr />
-<h2 id="integration-into-hierarchy">Integration into Hierarchy</h2>
-<p>In HieraChain's hierarchical model:</p>
-<ol>
-<li><strong>Main Chain</strong>: Uses <strong>PoA</strong> by default and can be configured for <strong>PoF</strong> through <code>HRC_MAINCHAIN_CONSENSUS</code>. The BFT implementation is a separate consensus component; <code>MainChain</code> does not select it as its default.</li>
-<li><strong>Sub-Chains</strong>: Use the <strong>Ordering Service</strong> for batching and can finalize blocks with the configured Sub-Chain consensus (PoA by default). Proofs can then be submitted to the Main Chain.</li>
-</ol>
-<hr />
+    A[Event Submission] --&gt; B[Journal and Queue]
+    B --&gt; C[Certification and Batching]
+    C --&gt; D[Configured PoA or PoF Finalizer]
+    D --&gt; E[Sign Header and Persist Block]
+    E --&gt; F[Commit Queue]
+    F --&gt; G[Sub-Chain Consumer and WorldState]
+    H[Explicit BFT Caller] --&gt; I[Separate PBFT Component]</code></pre>
+<p>The submission ID acknowledges journal/queue acceptance. The consumer validates and applies the persisted block later; an acceptance response is not block finality.</p>
+<h2 id="hierarchy-configuration">Hierarchy configuration</h2>
+<p>MainChain defaults to PoA. <code>HRC_MAINCHAIN_CONSENSUS</code> selects PoA or PoF and falls back to <code>HRC_CONSENSUS_TYPE</code>. Sub-Chains default to PoA and use their Python <code>config</code> to select PoF. <code>BFT_ENABLED</code> does not connect BFT to either chain path.</p>
+<p>Provision a complete signing identity and approved trusted block keys before creating chains. PoF also needs matching federation membership and validator public keys across nodes. See <a href="../../workflows/consensus_mechanisms/">Consensus mechanisms</a> and <a href="../../getting-started/quickstart/">Quickstart</a>.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././hierarchical/">Hierarchical Model</a></li>
-<li><a href=".././network/">Network System</a></li>
-<li><a href=".././error-mitigation/">Error Mitigation</a></li>
+<li><a href=".././hierarchical/">Hierarchical module</a></li>
+<li><a href=".././network/">Network</a></li>
+<li><a href=".././error-mitigation/">Error mitigation</a></li>
 </ul>
 
 

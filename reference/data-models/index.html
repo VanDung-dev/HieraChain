@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Describes Event/Block schemas based on hierachain/core/block.py; examples and invariants.">
+        <meta name="description" content="Internal event schemas, REST/SDK input and serialized block representations in HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Data Models - HieraChain Docs</title>
+        <title>Data models - HieraChain Docs</title>
       
     
     
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Data Models
+              Data models
             
           </span>
         </div>
@@ -3190,10 +3190,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#internal-event-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        Internal event schema
       </span>
     </span>
   </a>
@@ -3201,10 +3201,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
+  <a href="#rest-and-sdk-input" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Scope
+        REST and SDK input
       </span>
     </span>
   </a>
@@ -3212,88 +3212,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#main-schemas" class="md-nav__link">
+  <a href="#block-representation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Main schemas
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Main schemas">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#event" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Event
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#block-header-and-block" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block header and block
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic-mapping-api-ledger" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pydantic mapping (API ledger)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Serialization
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Serialization">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#working-with-binary-data-data-field" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Working with binary data (<code>data</code> field)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-operations" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Example operations
+        Block representation
       </span>
     </span>
   </a>
@@ -4336,10 +4258,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#internal-event-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        Internal event schema
       </span>
     </span>
   </a>
@@ -4347,10 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
+  <a href="#rest-and-sdk-input" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Scope
+        REST and SDK input
       </span>
     </span>
   </a>
@@ -4358,88 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#main-schemas" class="md-nav__link">
+  <a href="#block-representation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Main schemas
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Main schemas">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#event" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Event
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#block-header-and-block" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block header and block
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic-mapping-api-ledger" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pydantic mapping (API ledger)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Serialization
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Serialization">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#working-with-binary-data-data-field" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Working with binary data (<code>data</code> field)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-operations" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Example operations
+        Block representation
       </span>
     </span>
   </a>
@@ -4488,100 +4332,90 @@
   
 
 
-<h1 id="data-models">Data Models</h1>
-<h2 id="purpose">Purpose</h2>
-<p>This page defines the core data shapes (Event, Block header, and full Block) so clients in different languages can read and write the same data and checks stay consistent.</p>
-<h2 id="scope">Scope</h2>
-<ul>
-<li>Based on Arrow schema <code>EVENT_SCHEMA</code> in <code>hierachain/core/block.py:261</code>. This is the only Arrow schema in core. There is no separate <code>schemas.py</code>.</li>
-<li>Applies to core, Sub-Chain/Main Chain, and the API layer where data is serialized.</li>
-</ul>
-<h2 id="main-schemas">Main schemas</h2>
-<h3 id="event">Event</h3>
-<p>An event is a domain fact about an entity.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">EVENT_SCHEMA</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="p">(</span><span class="s1">'entity_id'</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>          <span class="c1"># Entity ID</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="p">(</span><span class="s1">'event'</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>              <span class="c1"># Event type</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="p">(</span><span class="s1">'timestamp'</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>         <span class="c1"># epoch seconds (float)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="p">(</span><span class="s1">'details'</span><span class="p">,</span> <span class="nb">map</span><span class="o">&lt;</span><span class="n">string</span><span class="p">,</span><span class="n">string</span><span class="o">&gt;</span><span class="p">),</span><span class="c1"># metadata key-&gt;string (On-chain)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  <span class="p">(</span><span class="s1">'details_cid'</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>        <span class="c1"># IPFS CID (Off-chain reference)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  <span class="p">(</span><span class="s1">'details_nonce'</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>      <span class="c1"># Encryption nonce</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  <span class="p">(</span><span class="s1">'data'</span><span class="p">,</span> <span class="n">binary</span><span class="p">),</span>               <span class="c1"># optional binary payload</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">])</span>
+<h1 id="data-models">Data models</h1>
+<h2 id="internal-event-schema">Internal event schema</h2>
+<p><code>EVENT_SCHEMA</code> in <code>hierachain/core/block.py</code> defines the Arrow representation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.block</span><span class="w"> </span><span class="kn">import</span> <span class="n">EVENT_SCHEMA</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">EVENT_SCHEMA</span><span class="p">)</span>
 </code></pre></div>
-<p>Example JSON as returned by the API:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PROD-001"</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"production_complete"</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mf">1703088000.0</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">"details_cid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">"details_nonce"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a1b2c3d4e5f6..."</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Arrow type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>entity_id</code></td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>double</code></td>
+</tr>
+<tr>
+<td><code>details</code></td>
+<td><code>map&lt;string, string&gt;</code></td>
+</tr>
+<tr>
+<td><code>details_cid</code></td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>details_nonce</code></td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>binary</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>data</code> column stores canonical JSON event bytes generated by block conversion. Arrow detail values are strings, while <code>Block.to_event_list()</code> recovers JSON types and nested details from those bytes. Additional JSON fields are preserved in the payload even if they have no dedicated Arrow column. Top-level fields containing <code>bytes</code> or <code>bytearray</code> are omitted by <code>serialize_event_payload()</code>; nested values must be JSON-serializable. <code>data</code> is an internal payload column, not a REST file-upload field.</p>
+<h2 id="rest-and-sdk-input">REST and SDK input</h2>
+<p><code>EventRequest</code> in <code>hierachain/api/ledger/schemas.py</code> uses <code>event_type</code>; the server constructs an internal event with <code>event</code> and a server timestamp. <code>entity_id</code> and <code>event_type</code> are required. Optional fields are <code>details</code>, <code>details_cid</code>, <code>details_nonce</code>, <code>details_metadata</code>, <code>sender</code> and <code>signature</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.api.ledger.schemas</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventRequest</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">request</span> <span class="o">=</span> <span class="n">EventRequest</span><span class="p">(</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">entity_id</span><span class="o">=</span><span class="s2">"PROD-001"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">event_type</span><span class="o">=</span><span class="s2">"production_complete"</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 </code></pre></div>
-<h3 id="block-header-and-block">Block header and block</h3>
-<p>There is no <code>BLOCK_HEADER_SCHEMA</code> or <code>TRANSACTION_SCHEMA</code> in code. <code>Block</code> is a plain Python class in <code>hierachain/core/block.py</code> with <code>index</code>, <code>timestamp</code>, <code>previous_hash</code>, <code>merkle_root</code>, <code>hash</code>, <code>events: pa.Table</code> (using <code>EVENT_SCHEMA</code>), and <code>data</code>. Helpers include <code>calculate_merkle_root()</code> and <code>to_event_list()</code>. <code>Block.events</code> is the only Arrow payload. The block has no separate transaction table and no <code>zk_proof</code> column.</p>
-<h2 id="pydantic-mapping-api-ledger">Pydantic mapping (API ledger)</h2>
-<p>The API uses Pydantic models in <code>hierachain/api/ledger/schemas.py</code> for validation. They map to the core structures:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">EventRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">details</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">details_cid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">details_nonce</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">details_metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="k">class</span><span class="w"> </span><span class="nc">ProofSubmissionRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">sub_chain_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">proof_hash</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<p>Details are limited to approximately 1 MiB of serialized JSON and nesting depth 10. A supplied nonce must be 24 hexadecimal characters (12 bytes). Use the nonce and authenticated metadata returned by encrypted IPFS upload; a sample CID/nonce is not a decryptable fixture. Cryptographic fields are validated when provided.</p>
+<p>The proof endpoint uses the chain name in the URL and returns <code>ProofSubmissionResponse</code>. There is no <code>ProofSubmissionRequest</code> class in the ledger schema module.</p>
+<h2 id="block-representation">Block representation</h2>
+<p><code>Block</code> is a Python class with an Arrow <code>events</code> table. <code>to_dict()</code> emits <code>index</code>, <code>events</code>, <code>timestamp</code>, <code>previous_hash</code>, <code>nonce</code>, <code>merkle_root</code>, <code>hash</code>, <code>creator_id</code> and <code>signature</code>. There is no separate <code>BLOCK_HEADER_SCHEMA</code> or event table for another operation type.</p>
+<p>This construction example demonstrates payload conversion only:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.block</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">block</span> <span class="o">=</span> <span class="n">Block</span><span class="p">(</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">previous_hash</span><span class="o">=</span><span class="s2">"previous-block-hash"</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">events</span><span class="o">=</span><span class="p">[{</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PROD-001"</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"production_complete"</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="p">}],</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="p">)</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="k">assert</span> <span class="n">block</span><span class="o">.</span><span class="n">to_event_list</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"details"</span><span class="p">][</span><span class="s2">"quantity"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">100</span>
 </code></pre></div>
-<p><strong>Conversion rules:</strong></p>
-<ul>
-<li><code>EventRequest.details</code> (dict) becomes <code>EVENT_SCHEMA.details</code> (Map<String, String>).</li>
-<li><code>ProofSubmissionRequest</code> is stored as an <code>Event</code> on Main Chain with type <code>proof_submission</code>.</li>
-</ul>
-<h2 id="serialization">Serialization</h2>
-<ul>
-<li><code>Block.events</code> is a <code>pyarrow.Table</code> in memory. The API can return it as a list of dicts via <code>to_event_list()</code> or <code>to_pylist()</code>.</li>
-<li><code>details</code> is always map<string,string>. Non-string inputs are coerced to strings.</li>
-<li><code>data</code> is binary. Over JSON you must base64-encode it, or omit it.</li>
-</ul>
-<h3 id="working-with-binary-data-data-field">Working with binary data (<code>data</code> field)</h3>
-<p>The <code>data</code> field is <code>binary</code> in the Arrow schema. Encode small payloads such as PDFs, certificates, or serialized objects to base64 when sending JSON, and decode on receipt.</p>
-<p><strong>Python example:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># 1. Preparing binary data to send via Event</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">raw_data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">"Enterprise visual quality report content"</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">encoded_data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">)</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">event_payload</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PROD-001"</span><span class="p">,</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_inspection"</span><span class="p">,</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="s2">"data"</span><span class="p">:</span> <span class="n">encoded_data</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># 2. Reading and decoding binary data from a Block or Event Response</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">received_encoded_data</span> <span class="o">=</span> <span class="n">event_payload</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">decoded_data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">received_encoded_data</span><span class="p">)</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="nb">print</span><span class="p">(</span><span class="n">decoded_data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>  <span class="c1"># "Enterprise visual quality report content"</span>
-</code></pre></div></p>
-<h2 id="example-operations">Example operations</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Create Block from event list (dict)</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">blk</span> <span class="o">=</span> <span class="n">Block</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="p">[{</span><span class="o">...</span><span class="p">},</span> <span class="p">{</span><span class="o">...</span><span class="p">}],</span> <span class="n">previous_hash</span><span class="o">=</span><span class="s2">"&lt;hash&gt;"</span><span class="p">)</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Get event list as dict</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">events</span> <span class="o">=</span> <span class="n">blk</span><span class="o">.</span><span class="n">to_event_list</span><span class="p">()</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Check chain validity</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">blockchain</span><span class="o">.</span><span class="n">is_chain_valid</span><span class="p">()</span>
-</code></pre></div>
+<p>A constructed block is not yet an accepted ledger block. The base <code>Blockchain.add_block()</code> requires trusted signatures, valid linkage and Merkle/hash integrity; MainChain/SubChain add their consensus checks. Genesis also needs a trusted signature.</p>
+<p><code>Block.from_dict()</code> reconstructs data and compares a supplied string <code>hash</code> with the recalculated header hash. It accepts a supplied <code>merkle_root</code> without recomputing it, so changed event bytes can pass this header-only check. Use <code>BlockVerifier</code> with a trusted public key, or the chain's validation methods, to check event integrity and signatures. <code>Block.validate_structure()</code> checks that the event table contains <code>entity_id</code>, <code>event</code> and <code>timestamp</code>; it does not validate every Arrow type or event value.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li>Core module: <a href="../../modules/core/">Core</a></li>
-<li>API Ledger: <a href="../api-ledger/">API Ledger</a></li>
+<li><a href="../data-schema/">Data schema</a></li>
+<li><a href="../api-ledger/">Ledger API</a></li>
+<li><a href="../../modules/core/">Core module</a></li>
 </ul>
 
 

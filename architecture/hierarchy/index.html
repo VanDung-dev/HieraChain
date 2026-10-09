@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hierarchical-architecture-detailed" class="md-skip">
+        <a href="#hierarchical-architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -4388,7 +4388,7 @@
   
 
 
-<h1 id="hierarchical-architecture-detailed">Hierarchical Architecture (Detailed)</h1>
+<h1 id="hierarchical-architecture">Hierarchical architecture</h1>
 <h2 id="purpose">Purpose</h2>
 <p>This page explains how HieraChain organizes its hierarchy. It covers how Sub-Chains interact with the Main Chain through <code>HierarchyManager</code>, how channels and the multi-org model work, how private data is handled, how cross-chain transactions use 2PC, how proofs are anchored, and how Sub-Chains are rebalanced.</p>
 <h2 id="components-and-concepts">Components and concepts</h2>
@@ -4398,25 +4398,26 @@
 <li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code> coordinates the chain system, manages Sub-Chain lifecycle, cross-chain transactions and system statistics.</li>
 <li>Channel: <code>hierachain/hierarchical/channel/channel.py</code> provides a private communication space for groups of organizations and holds channel creation policies.</li>
 <li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> handles organization initialization, the multi-org network, and the relationship between channels and organizations.</li>
-<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> holds private data collections at the Sub-Chain level.</li>
+<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> provides collection objects and access checks with in-memory library storage. The manager does not persist these collections, and the REST private-data write route returns HTTP 501.</li>
 <li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> coordinates 2PC transactions between Sub-Chains.</li>
 </ul>
 <h3 id="typical-flow">Typical flow</h3>
 <pre class="mermaid"><code>graph TD
     User[Client/User] --&gt;|Submit Event| SubChain
     SubChain --&gt;|1. Ordering| Orderer[Ordering Service]
-    Orderer --&gt;|2. Batch| Consensus[Consensus Layer]
-    Consensus --&gt;|3. Validate| SubChain
-    SubChain --&gt;|4. Finalize Block| SubChain
+    Orderer --&gt;|2. Finalize| Consensus[Consensus Layer]
+    Consensus --&gt;|Finalized block| Orderer
+    Orderer --&gt;|3. Sign and persist| Blocks[Block Storage]
+    Blocks --&gt;|4. Queue and apply unchanged block| SubChain
     SubChain --&gt;|5. Submit Proof| MainChain[Main Chain]
     MainChain --&gt;|6. Persist Proof Anchor| Storage[Proof Storage]
     SubChain --&gt;|Apply Finalized Events| Projection[WorldState Projection]</code></pre>
 <ol>
 <li>Create a Sub-Chain with <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code>. This initializes a DomainChain and connects it to the Main Chain.</li>
-<li>Write an event and close a block with <code>SubChain.add_event()</code>, which goes through ordering and consensus to <code>finalize_block()</code>.</li>
+<li>Submit an event with <code>SubChain.add_event()</code>. It acknowledges journal/queue acceptance; ordering later finalizes, signs and persists a block before the consumer applies it.</li>
 <li>Anchor the proof to the Main Chain with <code>SubChain.submit_proof_to_main(main_chain, ...)</code> or <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
 <li>Run cross-chain transactions (2PC) with <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code>, which handles prepare, commit and rollback.</li>
-<li>Channels and private data: create a channel between organizations. Private collections are stored at the Sub-Chain according to the channel policy.</li>
+<li>Channels: create a channel between organizations. Private-data collection objects need application-managed persistence; REST private-data writes are unimplemented (HTTP 501).</li>
 </ol>
 <h2 id="related-configuration-settingspy-actual-hrc_">Related configuration (settings.py, actual <code>HRC_*</code>)</h2>
 <ul>
@@ -4424,8 +4425,8 @@
 </ul>
 <h2 id="features-and-limitations">Features and limitations</h2>
 <ul>
-<li>Features: domain data separation, centralized proof anchoring on the Main Chain, 2PC support, channels and multi-org, and private data.</li>
-<li>Limitations: channel and multi-org operations need clear policies, and 2PC needs good synchronization.</li>
+<li>Features: domain data separation, signed proof anchoring, durable 2PC journal decisions, and channel/multi-org registries on supported storage backends.</li>
+<li>Limitations: direct Python channel/private-data calls require a trusted caller; private-data storage is not supplied by the REST API. 2PC journal acknowledgement is separate from asynchronous block commitment. See <a href="../../modules/hierarchical/">Hierarchical module</a>.</li>
 </ul>
 <h2 id="related">Related</h2>
 <ul>

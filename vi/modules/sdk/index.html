@@ -4491,7 +4491,7 @@
 <hr />
 <ul>
 <li><strong>Entity Tracing</strong>: Truy vết vòng đời thực thể xuyên suốt các chuỗi con.</li>
-<li><strong>CID Resolution</strong>: Tự động giải mã dữ liệu từ IPFS khi truy vấn khối.</li>
+<li><strong>CID Resolution</strong>: Truy vấn block mặc định dùng <code>resolve_cid=False</code>; với <code>resolve_cid=True</code>, SDK yêu cầu API giải quyết CID. API giải quyết và giải mã details khi IPFS được bật. <code>trace_entity()</code> cũng hỗ trợ tùy chọn này.</li>
 </ul>
 </li>
 </ul>
@@ -4522,12 +4522,12 @@
 </code></pre></div>
 <h3 id="2-su-dung-synchronous-client-danh-cho-scriptcli">2. Sử dụng Synchronous Client (Dành cho Script/CLI)</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">with</span> <span class="n">HieraChainClient</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="c1"># Ghi sự kiện vào chuỗi cung ứng</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="c1"># Write event to supply chain</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">submit_event</span><span class="p">(</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="n">chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="n">event_data</span><span class="o">=</span><span class="p">{</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"PRODUCT-123"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="s2">"event_type"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"passed"</span><span class="p">,</span> <span class="s2">"inspector"</span><span class="p">:</span> <span class="s2">"QA-01"</span><span class="p">}</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="p">}</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="p">)</span>
@@ -4538,7 +4538,7 @@
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">track_product</span><span class="p">():</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">HieraChainAsyncClient</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="c1"># Truy vết thực thể xuyên chuỗi</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="c1"># Trace entity across chains</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">trace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">trace_entity</span><span class="p">(</span><span class="s2">"PRODUCT-123"</span><span class="p">)</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Timestamp: </span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">]</span><span class="si">}</span><span class="s2"> - Action: </span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">'event'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>

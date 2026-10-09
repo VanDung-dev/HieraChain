@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quản lý vòng đời khóa mã hóa, chứng chỉ X.509 và bảo mật lưu trữ chìa khóa.">
+        <meta name="description" content="Khóa ký, API key, chứng chỉ MSP nội bộ và kho khóa do operator quản lý.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Encryption & Keys - HieraChain Docs</title>
+        <title>Mã hóa và khóa - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#encryption-keys" class="md-skip">
+        <a href="#ma-hoa-va-khoa" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Encryption & Keys
+              Mã hóa và khóa
             
           </span>
         </div>
@@ -2673,10 +2673,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pham-vi-khoa-thuc-te" class="md-nav__link">
+  <a href="#pham-vi-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Phạm vi khóa (thực tế)
+        Phạm vi khóa
       </span>
     </span>
   </a>
@@ -2684,10 +2684,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luong-khoi-tao-chung-chi-thuc-te" class="md-nav__link">
+  <a href="#luong-khoi-tao-chung-chi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Luồng khởi tạo chứng chỉ (thực tế)
+        Luồng khởi tạo chứng chỉ
       </span>
     </span>
   </a>
@@ -4313,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pham-vi-khoa-thuc-te" class="md-nav__link">
+  <a href="#pham-vi-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Phạm vi khóa (thực tế)
+        Phạm vi khóa
       </span>
     </span>
   </a>
@@ -4324,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luong-khoi-tao-chung-chi-thuc-te" class="md-nav__link">
+  <a href="#luong-khoi-tao-chung-chi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Luồng khởi tạo chứng chỉ (thực tế)
+        Luồng khởi tạo chứng chỉ
       </span>
     </span>
   </a>
@@ -4376,13 +4376,13 @@
   
 
 
-<h1 id="encryption-keys">Encryption &amp; Keys</h1>
+<h1 id="ma-hoa-va-khoa">Mã hóa và khóa</h1>
 <p>Lớp bảo mật này quản lý secret của hệ thống. Bao gồm khóa mã hóa, cặp khóa ký và chứng chỉ định danh.</p>
 <h2 id="key-manager-va-key-provider">Key manager và key provider</h2>
 <p>File: <code>hierachain/security/key_manager.py</code>, <code>key_provider.py</code></p>
 <p>Đoạn code này tạo và sử dụng cặp khóa:</p>
 <ul>
-<li>Hỗ trợ Ed25519 dùng Ed25519 cho chữ ký số nhanh và an toàn.</li>
+<li>Hỗ trợ Ed25519 cho chữ ký số nhanh và an toàn.</li>
 <li>
 <p>Provider có thể thay thế hỗ trợ nhiều nguồn khóa:</p>
 <ul>
@@ -4399,32 +4399,29 @@
 <p>Đoạn code này quản lý định danh nội bộ nhẹ, không phải X.509:</p>
 <ul>
 <li>Chứng chỉ nội bộ là dataclass <code>Certificate</code> với <code>cert_id</code>, <code>subject</code>, <code>public_key</code>, <code>signature</code> (ký Ed25519 qua <code>_sign_certificate</code>) và kiểm tra thời hạn <code>is_valid()</code>. Không có ASN.1 X.509 và không có mTLS.</li>
-<li>Vận hành CA gồm <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> và <code>verify_certificate()</code> với tập <code>issued_certificates</code> và <code>revoked_certificates</code> lưu trong bộ nhớ. <code>HierarchicalMSP</code> dùng cơ chế này để đăng ký org và entity.</li>
+<li>CA có các thao tác <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> và <code>verify_certificate()</code>, với dictionary <code>issued_certificates</code> và set <code>revoked_certificates</code> trong bộ nhớ. <code>HierarchicalMSP</code> dùng chúng khi đăng ký tổ chức và thực thể.</li>
 <li>Hạn chế: thu hồi chứng chỉ MSP chỉ tồn tại trong bộ nhớ. Không có phân phối CRL, không có xác thực chuỗi X.509 và không có mutual TLS giữa các component. TLS được đặt ở reverse proxy theo quy tắc kiến trúc.</li>
 </ul>
 <h2 id="sao-luu-va-khoi-phuc-khoa">Sao lưu và khôi phục khóa</h2>
 <p>File: <code>hierachain/cli/key.py</code>, <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
-<p>Không có <code>key_backup_manager.py</code> riêng. Cơ chế thực tế tối giản:</p>
+<p>Operator quản lý sao lưu bằng công cụ bên ngoài. Các cơ chế file khóa hiện có gồm:</p>
 <ul>
-<li>Tạo khóa chạy <code>python -m hierachain key generate --output validator_key.json</code> (CLI) để tạo cặp Ed25519 qua <code>Ed25519PrivateKey.generate()</code> và ghi JSON <code>{private_key, public_key}</code> dạng hex. File mới có mode <code>0600</code> trên hệ POSIX; lệnh từ chối ghi đè file đã có. Lệnh <code>show</code> và <code>verify</code> dùng để kiểm tra kết quả.</li>
+<li>Chạy <code>hrc key generate --output validator_key.json</code> (CLI) để tạo cặp Ed25519 bằng <code>Ed25519PrivateKey.generate()</code> và ghi JSON hex <code>{private_key, public_key}</code>. File mới có mode <code>0600</code> trên POSIX; lệnh từ chối ghi đè file đã tồn tại. Các lệnh <code>show</code> và <code>verify</code> kiểm tra kết quả.</li>
 <li>Vault mã hóa (chỉ cho dev và test) dùng <code>FileVaultProvider</code> để mã hóa file vault bằng <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> và <code>Fernet(AES-128-CBC+HMAC)</code>. Password được truyền vào constructor. Hỗ trợ HSM hoặc KMS ở production cần một <code>KeyProvider</code> riêng cho ứng dụng; runtime không có master-key provider dựng sẵn. <code>HRC_VAULT_TOKEN</code> và <code>HRC_VAULT_PATH</code> cấu hình backend Vault riêng của <code>SecretManager</code>.</li>
 <li>Không có sao lưu đa vị trí, không có kiểm tra toàn vẹn SHA-512 và không có tự động phân phối hay dọn dẹp. Operator phải tự sao chép <code>validator_key.json</code> hoặc <code>.vault</code> bằng công cụ sao lưu ngoài.</li>
 </ul>
-<hr />
-<h2 id="pham-vi-khoa-thuc-te">Phạm vi khóa (thực tế)</h2>
+<h2 id="pham-vi-khoa">Phạm vi khóa</h2>
 <ul>
-<li>Khóa validator và node là một <code>KeyPair</code> Ed25519 cho mỗi node (qua <code>LocalKeyProvider</code> hoặc <code>FileVaultProvider</code>), được tham chiếu bởi <code>HRC_VALIDATOR_IDENTITY</code>. <code>HRC_MASTER_KEY_SOURCE=env</code> chỉ là alias tương thích; giá trị khác và <code>HRC_MASTER_KEY_FILE</code> không rỗng sẽ bị từ chối vì chưa có master-key provider.</li>
+<li>Việc ký block nạp node identity đầy đủ qua <code>HRC_VALIDATOR_IDENTITY</code>, gồm cặp khóa ký Ed25519 và khóa transport. File CLI chỉ chứa <code>private_key</code> và <code>public_key</code> là file provider, không phải identity đầy đủ này. Sao lưu identity cùng <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code>; xem <a href="../../workflows/key-backup/">Sao lưu khóa</a>. <code>HRC_MASTER_KEY_SOURCE=env</code> chỉ là alias tương thích; giá trị khác và <code>HRC_MASTER_KEY_FILE</code> không rỗng bị từ chối vì chưa có master-key provider.</li>
 <li>API key được quản lý bởi <code>KeyManager</code> (tạo, thu hồi, phân quyền, cache qua <code>KeyStorage</code>/<code>KeyCacheManager</code>), không phải khóa ký cho từng entity.</li>
 <li>Không có phân cấp sẵn như Master tới Domain tới Entity. Cách ly domain dựa trên việc tách Sub-Chain và role của MSP.</li>
 </ul>
-<hr />
-<h2 id="luong-khoi-tao-chung-chi-thuc-te">Luồng khởi tạo chứng chỉ (thực tế)</h2>
+<h2 id="luong-khoi-tao-chung-chi">Luồng khởi tạo chứng chỉ</h2>
 <pre class="mermaid"><code>graph LR
     A[Generate Ed25519 Key Pair&lt;br/&gt;cli/key.py] --&gt; B[HierarchicalMSP.register_entity&lt;br/&gt;msp.py]
     B --&gt; C[CA.issue_certificate&lt;br/&gt;Ed25519 sign]
     C --&gt; D[Store in issued_certificates]
     D --&gt; E[verify_certificate / revoke_certificate]</code></pre>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href=".././authorization-access-control/">Authorization &amp; Access Control</a></li>

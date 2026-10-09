@@ -4371,16 +4371,16 @@
 <p>HieraChain dùng kiến trúc phân cấp. Main Chain là gốc và chỉ giữ proof từ Sub-Chain. Sub-Chain xử lý dữ liệu nghiệp vụ (event) theo từng domain. Phần này mô tả từng thành phần làm gì và các luồng chính vận hành thế nào.</p>
 <h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
 <pre class="mermaid"><code>graph BT
-    Main[Main Chain - Giám sát viên]
-    subgraph SubChains [Các Sub-Chain Domain]
+    Main[Main Chain - Supervisor]
+    subgraph SubChains [Domain Sub-Chains]
         SC_A[Sub-Chain A - Domain A]
         SC_B[Sub-Chain B - Domain B]
         SC_C[Sub-Chain C - Domain C]
     end
 
-    SC_A --&gt;|Gửi Proof| Main
-    SC_B --&gt;|Gửi Proof| Main
-    SC_C --&gt;|Gửi Proof| Main</code></pre>
+    SC_A --&gt;|Submit Proof| Main
+    SC_B --&gt;|Submit Proof| Main
+    SC_C --&gt;|Submit Proof| Main</code></pre>
 <ul>
 <li>Sub-Chain ghi nhận event theo domain, sắp xếp thành block và giữ world state riêng.</li>
 <li>Main Chain không giữ dữ liệu domain chi tiết. Nó chỉ giữ proof mật mã để bảo đảm tính toàn vẹn toàn hệ thống.</li>
@@ -4391,7 +4391,7 @@
 <li><code>hierachain/hierarchical/main_chain/base.py</code> là Main Chain. Nó lưu và xác minh proof từ Sub-Chain và tổng hợp báo cáo toàn vẹn.</li>
 <li><code>hierachain/hierarchical/sub_chain/base.py</code> là Sub-Chain. Nó ghi nhận event theo domain, sắp xếp thành block, tạo proof và gửi lên Main Chain.</li>
 <li><code>hierachain/hierarchical/hierarchy_manager/base.py</code> là HierarchyManager. Nó điều phối hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, gửi proof tự động và kiểm tra tính nhất quán liên chuỗi.</li>
-<li><code>hierachain/api/storage/ipfs_client.py</code> là lưu trữ IPFS off-chain. Nó giữ dữ liệu nghiệp vụ lớn hoặc nhạy cảm ngoài chuỗi và chỉ neo CID trên blockchain.</li>
+<li><code>hierachain/api/storage/ipfs_client.py</code> cung cấp lưu trữ IPFS off-chain. Chi tiết nghiệp vụ lớn hoặc nhạy cảm được giữ ngoài chuỗi; event trong sổ cái lưu <code>details_cid</code>, <code>details_nonce</code>, <code>details_metadata</code> tùy chọn và các trường event thông thường.</li>
 <li><code>hierachain/consensus/ordering/service.py</code> là Ordering Service. Nó sắp xếp event trước khi tạo block và được Sub-Chain khởi tạo.</li>
 </ul>
 <h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
@@ -4401,12 +4401,12 @@
     participant Order as Ordering Service
     participant Main as Main Chain
 
-    Event-&gt;&gt;Sub: Ghi nhận sự kiện (add_event)
-    Sub-&gt;&gt;Order: Sắp xếp sự kiện
-    Order--&gt;&gt;Sub: Sự kiện đã sắp xếp
-    Sub-&gt;&gt;Sub: Đóng gói Block (finalize_block)
-    Sub-&gt;&gt;Main: Gửi Proof (submit_proof_to_main)
-    Main-&gt;&gt;Main: Xác minh &amp; Lưu Proof
+    Event-&gt;&gt;Sub: Record event (add_event)
+    Sub-&gt;&gt;Order: Order events
+    Order--&gt;&gt;Sub: Ordered events
+    Sub-&gt;&gt;Sub: Package Block (finalize_block)
+    Sub-&gt;&gt;Main: Submit Proof (submit_proof_to_main)
+    Main-&gt;&gt;Main: Verify &amp; Store Proof
     Main--&gt;&gt;Sub: Acknowledge</code></pre>
 <ol>
 <li>Ghi event và tạo block trên Sub-Chain. <code>SubChain.add_event()</code> nhận event và đưa qua khâu sắp xếp nội bộ. Event được gom thành block và <code>finalize_block()</code> chạy khi đủ điều kiện.</li>

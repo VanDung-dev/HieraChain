@@ -3583,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-demo-sao-luu-va-khoi-phuc-khoa" class="md-nav__link">
+  <a href="#3-sao-luu-va-khoi-phuc-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Demo Sao lưu và Khôi phục Khóa
+        3. Sao lưu và khôi phục khóa
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-demo-sao-luu-va-khoi-phuc-khoa" class="md-nav__link">
+  <a href="#3-sao-luu-va-khoi-phuc-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Demo Sao lưu và Khôi phục Khóa
+        3. Sao lưu và khôi phục khóa
       </span>
     </span>
   </a>
@@ -4355,47 +4355,38 @@
 
 
 <h1 id="huong-dan-chay-demo-demo">Hướng dẫn chạy Demo (<code>demo/*</code>)</h1>
-<p>Thư mục <code>demo/</code> chứa các script mẫu giúp bạn nhanh chóng làm quen với các tính năng quan trọng của hệ thống.</p>
+<p>Thư mục <code>demo/</code> chứa ví dụ thư viện và giao diện. Kích hoạt môi trường repository và cấp signing identity/bản đồ khóa đáng tin cậy theo <a href="../../getting-started/quickstart/">Quickstart</a> trước khi chạy script tạo chain. Kết quả demo và mock không bảo đảm lưu bền hay bảo mật cho production.</p>
 <h2 id="1-demo-tinh-nang-cot-loi-core-features">1. Demo tính năng cốt lõi (Core Features)</h2>
 <p>Script này trình diễn luồng tạo Sub-chain, gửi Event, và cơ chế Channel/Private Data.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Chạy demo cơ bản</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Run the basic demo</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>demo/demo.py
 </code></pre></div>
-<p><strong>Các bước diễn ra trong demo:</strong></p>
+<p>Các bước diễn ra trong demo:</p>
 <ul>
 <li>Khởi tạo Main Chain và Sub-Chain (<code>supply_chain</code>).</li>
 <li>Đăng ký tổ chức (Organization) và người dùng (User).</li>
 <li>Gửi các sự kiện (Events) nghiệp vụ.</li>
 <li>Tạo Private Data Collection chỉ chia sẻ giữa hai bên.</li>
 </ul>
-<hr />
 <h2 id="2-demo-ong-thuan-bft-qua-zeromq">2. Demo Đồng thuận BFT qua ZeroMQ</h2>
 <p>Trình diễn khả năng đồng thuận của 4 node sử dụng giao thức BFT qua mạng ZeroMQ.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Chạy demo BFT</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Run the BFT demo</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>demo/demo_zmq_consensus.py
 </code></pre></div>
-<hr />
-<h2 id="3-demo-sao-luu-va-khoi-phuc-khoa">3. Demo Sao lưu và Khôi phục Khóa</h2>
-<p>Hướng dẫn cách sử dụng <code>KeyBackupManager</code> để bảo vệ khóa cá nhân của người dùng.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chạy demo backup</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>demo/demo_key_backup.py
-</code></pre></div>
-<hr />
+<h2 id="3-sao-luu-va-khoi-phuc-khoa">3. Sao lưu và khôi phục khóa</h2>
+<p>Xem <a href="../../workflows/key-backup/">Sao lưu khóa</a> để biết file khóa CLI, node identity đầy đủ và vault mã hóa cho phát triển. Repository không có <code>demo_key_backup.py</code> hay <code>KeyBackupManager</code>.</p>
 <h2 id="4-demo-tich-hop-ipfs">4. Demo Tích hợp IPFS</h2>
 <p>Minh họa cách lưu trữ dữ liệu lớn/tài liệu lên IPFS với mã hóa AES-256.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Chạy demo IPFS</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>demo/demo_ipfs.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Run the IPFS demo</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>demo/demo_ipfs.py
 </code></pre></div>
-<blockquote>
-<p><strong>Lưu ý</strong>: Yêu cầu daemon IPFS phải đang chạy (mặc định tại port 5001).</p>
-</blockquote>
-<hr />
+<p>Script thử kết nối IPFS daemon cục bộ trên cổng 5001 và có thể chuyển sang mock trong bộ nhớ. CID của mock không chứng minh dữ liệu được lưu mã hóa hay truy xuất được từ daemon thật.</p>
 <h2 id="5-trinh-kham-pha-blockchain-explorer">5. Trình khám phá Blockchain (Explorer)</h2>
 <p>Giao diện web đơn giản để xem danh sách block và sự kiện.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Chạy explorer demo</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>python<span class="w"> </span>demo/demo_explorer.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Run the explorer demo</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>demo/demo_explorer.py
 </code></pre></div>
-<p>Sau đó truy cập <a href="http://localhost:2661/explorer">http://localhost:2661/explorer</a> (yêu cầu server API đang chạy).</p>
+<p>Demo phục vụ JSON đã tạo và dashboard riêng tại <a href="http://127.0.0.1:8000/explorer">http://127.0.0.1:8000/explorer</a>. Chạy <code>demo/demo.py</code> trước để tạo dữ liệu. Server này tách biệt với ledger API trên cổng 2661.</p>
 
 
 

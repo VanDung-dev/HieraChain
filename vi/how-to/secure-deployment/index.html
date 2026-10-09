@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bật xác thực, CORS/HSTS, Rate Limit, API Key và Resource Guard; hướng dẫn cấu hình môi trường sản xuất cho HieraChain.">
+        <meta name="description" content="Bật xác thực, CORS/HSTS, Rate Limit, API Key và ordering limits; hướng dẫn cấu hình môi trường sản xuất cho HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -3604,7 +3604,7 @@
   <a href="#bat-xac-thuc-api-key" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bật xác thực API Key
+        Bật xác thực API key
       </span>
     </span>
   </a>
@@ -3623,10 +3623,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bat-hsts-https" class="md-nav__link">
+  <a href="#cau-hinh-hsts-tai-proxy-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bật HSTS (HTTPS)
+        Cấu hình HSTS tại proxy HTTPS
       </span>
     </span>
   </a>
@@ -3645,10 +3645,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-ve-tai-nguyen-luu-y" class="md-nav__link">
+  <a href="#gioi-han-ordering" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bảo vệ tài nguyên (Lưu ý)
+        Giới hạn ordering
       </span>
     </span>
   </a>
@@ -3667,10 +3667,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kiem-chung-nhanh" class="md-nav__link">
+  <a href="#kiem-tra" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiểm chứng nhanh
+        Kiểm tra
       </span>
     </span>
   </a>
@@ -3678,10 +3678,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#secrets-cau-hinh-an-toan" class="md-nav__link">
+  <a href="#bi-mat-va-cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Secrets &amp; cấu hình an toàn
+        Bí mật và cấu hình
       </span>
     </span>
   </a>
@@ -3689,15 +3689,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#production-checklist" class="md-nav__link">
+  <a href="#danh-sach-kiem-tra-production" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Production Checklist
+        Danh sách kiểm tra production
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Production Checklist">
+    <nav class="md-nav" aria-label="Danh sách kiểm tra production">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3723,10 +3723,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#optional-enterprise" class="md-nav__link">
+  <a href="#tich-hop-doanh-nghiep-tuy-chon" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Optional (Enterprise)
+        Tích hợp doanh nghiệp tùy chọn
       </span>
     </span>
   </a>
@@ -4399,7 +4399,7 @@
   <a href="#bat-xac-thuc-api-key" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bật xác thực API Key
+        Bật xác thực API key
       </span>
     </span>
   </a>
@@ -4418,10 +4418,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bat-hsts-https" class="md-nav__link">
+  <a href="#cau-hinh-hsts-tai-proxy-https" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bật HSTS (HTTPS)
+        Cấu hình HSTS tại proxy HTTPS
       </span>
     </span>
   </a>
@@ -4440,10 +4440,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-ve-tai-nguyen-luu-y" class="md-nav__link">
+  <a href="#gioi-han-ordering" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bảo vệ tài nguyên (Lưu ý)
+        Giới hạn ordering
       </span>
     </span>
   </a>
@@ -4462,10 +4462,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kiem-chung-nhanh" class="md-nav__link">
+  <a href="#kiem-tra" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiểm chứng nhanh
+        Kiểm tra
       </span>
     </span>
   </a>
@@ -4473,10 +4473,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#secrets-cau-hinh-an-toan" class="md-nav__link">
+  <a href="#bi-mat-va-cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Secrets &amp; cấu hình an toàn
+        Bí mật và cấu hình
       </span>
     </span>
   </a>
@@ -4484,15 +4484,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#production-checklist" class="md-nav__link">
+  <a href="#danh-sach-kiem-tra-production" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Production Checklist
+        Danh sách kiểm tra production
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Production Checklist">
+    <nav class="md-nav" aria-label="Danh sách kiểm tra production">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4518,10 +4518,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#optional-enterprise" class="md-nav__link">
+  <a href="#tich-hop-doanh-nghiep-tuy-chon" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Optional (Enterprise)
+        Tích hợp doanh nghiệp tùy chọn
       </span>
     </span>
   </a>
@@ -4587,13 +4587,13 @@
 
 
 <h1 id="trien-khai-an-toan">Triển khai an toàn</h1>
-<p>Cấu hình HieraChain ở môi trường production với các biện pháp bảo vệ cơ bản (AUTH, CORS/HSTS, Rate Limit, API key) và bảo vệ tài nguyên (Resource Guard).</p>
+<p>Cấu hình xác thực API key, CORS, giới hạn tốc độ và giới hạn ordering trong HieraChain. Kết thúc HTTPS và cấu hình HSTS tại reverse proxy hoặc API gateway doanh nghiệp. Cấp signing identity và bản đồ khóa đáng tin cậy theo <a href="../../getting-started/quickstart/">Quickstart</a> trước khi khởi tạo chain.</p>
 <h2 id="chuan-bi-moi-truong">Chuẩn bị môi trường</h2>
 <ul>
 <li>Quản lý secrets bằng biến môi trường/secret manager (không commit .env lên VCS).</li>
 <li>Bật logging phù hợp (<code>LOG_LEVEL=INFO</code> hoặc <code>WARNING</code>).</li>
 </ul>
-<h2 id="bat-xac-thuc-api-key">Bật xác thực API Key</h2>
+<h2 id="bat-xac-thuc-api-key">Bật xác thực API key</h2>
 <p>Trong production, xác thực API key là bắt buộc. <code>HRC_AUTH_ENABLED=false</code>, thiếu file key hoặc file key không hợp lệ đều chặn khởi động. Cấu hình:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># .env
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>HRC_AUTH_ENABLED=true
@@ -4638,8 +4638,8 @@ Profile Compose <code>stress-test</code> tùy chọn cũng cần đặt <code>HR
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>HRC_CORS_ALLOW_ALL=false
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>HRC_CORS_ORIGINS=https://admin.example.com,https://console.example.com
 </code></pre></div>
-<h2 id="bat-hsts-https">Bật HSTS (HTTPS)</h2>
-<p>Thêm header HSTS để trình duyệt cưỡng bức HTTPS:</p>
+<h2 id="cau-hinh-hsts-tai-proxy-https">Cấu hình HSTS tại proxy HTTPS</h2>
+<p>Đặt <code>Strict-Transport-Security</code> trên response HTTPS tại reverse proxy hoặc API gateway. HieraChain khai báo các cấu hình sau, nhưng HTTP middleware không dùng chúng để thêm header này:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># .env
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>HRC_HSTS_ENABLED=true
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>HRC_HSTS_MAX_AGE=31536000
@@ -4651,13 +4651,13 @@ Profile Compose <code>stress-test</code> tùy chọn cũng cần đặt <code>HR
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>HRC_RATE_LIMIT_RPM=100
 </code></pre></div>
 <p>Lưu ý: triển khai thực tế nên kết hợp rate limit ở reverse proxy (Nginx/Envoy/API Gateway).</p>
-<h2 id="bao-ve-tai-nguyen-luu-y">Bảo vệ tài nguyên (Lưu ý)</h2>
+<h2 id="gioi-han-ordering">Giới hạn ordering</h2>
 <p>Không có <code>ResourceGuardMiddleware</code> hay <code>security/resource_guard.py</code> trong code. Bảo vệ DoS/limit thực tế là: <code>api/middleware.py:add_rate_limit</code> / <code>add_payload_limit</code>, và kiểm tra <code>HRC_RAM_CRITICAL_THRESHOLD</code> / <code>HRC_EVENT_POOL_MAX_SIZE</code> trong ordering/storage. Đừng import <code>ResourceGuardMiddleware</code> không tồn tại; hãy kết hợp rate limiting ở app với reverse-proxy.</p>
 <h2 id="khoi-ong-dich-vu">Khởi động dịch vụ</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
 <p>Mặc định phục vụ tại <code>http://localhost:2661</code>. Đặt <code>HRC_API_HOST</code>/<code>HRC_API_PORT</code> nếu cần.</p>
-<h2 id="kiem-chung-nhanh">Kiểm chứng nhanh</h2>
+<h2 id="kiem-tra">Kiểm tra</h2>
 <ol>
 <li>
 <p>Thiếu API key → kỳ vọng 401:</p>
@@ -4670,50 +4670,55 @@ Profile Compose <code>stress-test</code> tùy chọn cũng cần đặt <code>HR
 </code></pre></div>
 </li>
 <li>
-<p>Tải nặng → ResourceGuard có thể trả 503 (nếu ngưỡng vượt quá).</p>
+<p>Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có <code>ResourceGuardMiddleware</code> CPU/RAM ở API.</p>
 </li>
 </ol>
-<h2 id="secrets-cau-hinh-an-toan">Secrets &amp; cấu hình an toàn</h2>
+<h2 id="bi-mat-va-cau-hinh">Bí mật và cấu hình</h2>
 <ul>
 <li>Không ghi secret vào log của dịch vụ hoặc CI. Lệnh cấp key in key ban đầu một lần trên terminal của operator; lưu key vào kho secret của client.</li>
 <li>Dùng <code>python-dotenv</code> chỉ trong dev; production dùng hệ thống secrets (K8s Secret, Vault…).</li>
 <li>Kiểm tra <code>hierachain/security/secure_logging.py</code> và <code>security/sanitization.py</code> để tránh rò rỉ dữ liệu nhạy cảm.</li>
 </ul>
-<h2 id="production-checklist">Production Checklist</h2>
+<h2 id="danh-sach-kiem-tra-production">Danh sách kiểm tra production</h2>
 <p>Dưới đây là checklist nhanh để triển khai HieraChain trong production:</p>
 <h3 id="bat-buoc">Bắt buộc</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Thiết lập môi trường production</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Set production environment</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV</span><span class="o">=</span>production
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Cấu hình PostgreSQL tường minh khi dùng backend PostgreSQL</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Configure PostgreSQL explicitly when using the PostgreSQL storage backend</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>postgres
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql+psycopg://user:password@db:5432/hierachain
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Có thể dùng HRC_DATABASE_URL thay cho DATABASE_URL</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># HRC_DATABASE_URL may be used instead of DATABASE_URL</span>
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># Bật xác thực</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># Enable authentication</span>
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_AUTH_ENABLED</span><span class="o">=</span><span class="nb">true</span>
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_API_KEYS_FILE</span><span class="o">=</span>/absolute/path/to/api-keys.json
 <a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="c1"># Chính sách tin cậy P2P nghiêm ngặt</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_P2P_TRUST_POLICY</span><span class="o">=</span>strict
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="c1"># Provisioned signing identity and trusted block keys</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VALIDATOR_IDENTITY</span><span class="o">=</span>/absolute/path/to/identity.json
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_BLOCK_TRUSTED_KEYS_FILE</span><span class="o">=</span>/absolute/path/to/trusted-block-keys.json
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="c1"># Strict P2P trust policy</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_P2P_TRUST_POLICY</span><span class="o">=</span>strict
 </code></pre></div>
 <h3 id="khuyen-nghi">Khuyến nghị</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Sử dụng biến môi trường cho master key</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Use environment variable for master key</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_MASTER_KEY_SOURCE</span><span class="o">=</span>env
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Bật rate limiting</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Enable rate limiting</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_RATE_LIMIT</span><span class="o">=</span><span class="nb">true</span>
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_RATE_LIMIT_RPM</span><span class="o">=</span><span class="m">100</span>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># Bật HSTS</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_HSTS_ENABLED</span><span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># HSTS header must be configured at the HTTPS reverse proxy.</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="c1"># This declared setting does not add the header in HieraChain.</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_HSTS_ENABLED</span><span class="o">=</span><span class="nb">true</span>
 </code></pre></div>
-<h3 id="optional-enterprise">Optional (Enterprise)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Sử dụng Vault bên ngoài (biến thực tế là HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, không phải HRC_VAULT_ADDR)</span>
+<h3 id="tich-hop-doanh-nghiep-tuy-chon">Tích hợp doanh nghiệp tùy chọn</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Use external Vault (actual envs are HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, not HRC_VAULT_ADDR)</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VAULT_TOKEN</span><span class="o">=</span>your_token
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VAULT_PATH</span><span class="o">=</span>/path/to/vault
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="c1"># HSM không có cờ boolean HRC_HSM_ENABLED trong code; dùng interface KeyProvider + HRC_VAULT_* / tích hợp HSM bên ngoài</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="c1"># HSM is not a boolean HRC_HSM_ENABLED flag in code; use KeyProvider interface + HRC_VAULT_* / HSM integration externally</span>
 </code></pre></div>
 <h3 id="kiem-tra-cau-hinh">Kiểm tra cấu hình</h3>
 <p>Sau khi cấu hình, bạn có thể kiểm tra cấu hình bảo mật bằng cách:</p>
@@ -4723,13 +4728,7 @@ Profile Compose <code>stress-test</code> tùy chọn cũng cần đặt <code>HR
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"WARNING: </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Mẹo</p>
-<ul>
-<li>Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)</li>
-<li>Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài</li>
-</ul>
-</div>
+<p><code>check_security_config()</code> trả cảnh báo cấu hình; nó không kiểm tra header proxy hay kết nối backend. Khi khởi động production, ứng dụng kiểm tra riêng và từ chối cấu hình tắt xác thực hoặc thiếu/sai API key. Cấu hình tích hợp LDAP, HSM và SIEM tại ứng dụng chủ hoặc môi trường triển khai.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li>Mô‑đun Security: <a href="../../modules/security/">Security</a></li>

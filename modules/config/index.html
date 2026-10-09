@@ -4456,8 +4456,7 @@
 
 <h1 id="config-module-hierachainconfig">Config Module (<code>hierachain/config/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The <strong>Config</strong> module manages HieraChain's operational settings, secret keys, and logging configuration for development and production.</p>
-<hr />
+<p>The Config module manages HieraChain's operational settings, secret keys, and logging configuration for development and production.</p>
 <h2 id="core-components">Core Components</h2>
 <div class="grid cards">
 <ul>
@@ -4467,7 +4466,7 @@
 <p><strong>File</strong>: <code>settings.py</code></p>
 <ul>
 <li>Environment-based configuration system (<code>HRC_ENV</code>).</li>
-<li>Automatic parameter validation.</li>
+<li>Explicit helpers for parameter validation and security warnings.</li>
 <li>Configuration separated by group: Blockchain, Consensus, Storage, P2P, etc.</li>
 </ul>
 </li>
@@ -4486,14 +4485,13 @@
 <hr />
 <p><strong>File</strong>: <code>logging.py</code></p>
 <ul>
-<li><strong>Text</strong> format for developers (colored, readable).</li>
-<li><strong>JSON</strong> format for Production environments (compatible with ELK, Cloud Logging).</li>
+<li>Text format for developers (colored, readable).</li>
+<li>JSON format for Production environments (compatible with ELK, Cloud Logging).</li>
 <li>Supports embedding Request ID for error tracing.</li>
 </ul>
 </li>
 </ul>
 </div>
-<hr />
 <h2 id="environment-based-configuration">Environment-based Configuration</h2>
 <p>HieraChain uses <code>HRC_ENV</code> to switch configurations and falls back to <code>ENV</code> when <code>HRC_ENV</code> is unset or blank. <code>HRC_ENV</code> takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace:</p>
 <table>
@@ -4506,17 +4504,17 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Development</strong></td>
+<td style="text-align: left;">Development</td>
 <td style="text-align: left;"><code>dev</code>, <code>development</code> (default)</td>
 <td style="text-align: left;">DEBUG log level, PostgreSQL storage by default, CORS allowed from everywhere.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Production</strong></td>
+<td style="text-align: left;">Production</td>
 <td style="text-align: left;"><code>production</code>, <code>prod</code>, <code>product</code></td>
-<td style="text-align: left;">Authentication enabled by default, HSTS, P2P Strict Trust.</td>
+<td style="text-align: left;">Authentication required; P2P trust and signature settings fixed to strict and enabled. HSTS is declared as enabled; configure its HTTP header at the reverse proxy.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Testing</strong></td>
+<td style="text-align: left;">Testing</td>
 <td style="text-align: left;"><code>test</code>, <code>testing</code></td>
 <td style="text-align: left;">Fast configuration, small block size, Memory storage by default.</td>
 </tr>
@@ -4524,7 +4522,6 @@
 </table>
 <p>An unknown nonblank environment value raises an error instead of selecting development.</p>
 <p>The settings module loads <code>.env</code> before it defines environment-backed settings. Set <code>HRC_ENV_FILE</code> to load another dotenv file; values already present in the process environment take precedence.</p>
-<hr />
 <h2 id="secret-manager">Secret Manager</h2>
 <p>This is a critical component for protecting sensitive keys such as <code>HRC_CLUSTER_SECRET</code> or <code>IPFS_ENCRYPTION_KEY</code>.</p>
 <h3 id="usage-example-in-code">Usage Example in Code:</h3>
@@ -4544,7 +4541,6 @@
 <p>Missing configuration, missing fields, non-string fields, malformed JSON, <code>SecretBinary</code>, and backend errors return <code>default</code> (or <code>None</code>). AWS does not fall back to environment variables or return the whole JSON object. Logs omit secret contents and exception messages. Existing AWS secrets stored as plain strings must be migrated to JSON objects with named string fields.</p>
 <p>Vault returns <code>default</code> (or <code>None</code>) when its URL or credential is missing; it never reads the same key from environment variables in that case. An unsupported backend raises <code>ValueError</code>. Callers must invoke <code>SecretManager</code> explicitly: configuring its backend does not replace every <code>os.getenv()</code> call in the application.</p>
 <p><code>SecretManager</code> is independent of master-key handling. <code>HRC_MASTER_KEY_SOURCE=env</code> remains accepted for compatibility with the existing environment-secret behavior. Other source values and any nonempty <code>HRC_MASTER_KEY_FILE</code> raise a configuration error because the runtime has no alternate master-key provider. Remove those unsupported settings before startup.</p>
-<hr />
 <h2 id="standardized-logging-observability">Standardized Logging (Observability)</h2>
 <p>You can change the log format via the <code>HRC_LOG_FORMAT</code> environment variable:</p>
 <ul>
@@ -4559,14 +4555,13 @@
 </code></pre></div></p>
 </li>
 </ul>
-<hr />
 <h2 id="configuration-validation">Configuration Validation</h2>
-<p>HieraChain validates configuration at startup to prevent potential operational errors:</p>
+<p>The settings module provides helpers that callers can invoke explicitly:</p>
 <ul>
-<li><strong><code>validate_config()</code></strong>: Checks logical values (e.g., Port must be 1-65535, Block size &gt; 0).</li>
-<li><strong><code>check_security_config()</code></strong>: Warns if security settings in Production are insufficient (e.g., Auth disabled or CORS-all enabled).</li>
+<li><code>settings.validate_config()</code> returns a list of errors for invalid values, including ports outside 1-65535 and nonpositive block sizes.</li>
+<li><code>check_security_config()</code> returns a list of security warnings for the selected configuration.</li>
 </ul>
-<hr />
+<p>The API and CLI startup paths do not call these helpers or act on their returned lists. Separate checks still reject unknown environments, unsupported master-key sources and invalid production authentication or storage configuration. The API's P2P client does not apply the strict trust/signature settings automatically; see <a href="../network/">Network</a>.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><a href="../../reference/config/">Environment Variables (Reference)</a></li>

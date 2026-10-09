@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-chain entity auditing and tracking utility to reconstruct complete event lineages.">
+        <meta name="description" content="Query finalized entity histories across registered Sub-Chains, assemble timelines and understand query costs.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Entity Tracing - HieraChain Docs</title>
+        <title>Entity tracing - HieraChain Docs</title>
       
     
     
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Entity Tracing
+              Entity tracing
             
           </span>
         </div>
@@ -1550,10 +1550,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#query-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Query path
       </span>
     </span>
   </a>
@@ -1561,10 +1561,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram
+        Example
       </span>
     </span>
   </a>
@@ -1572,54 +1572,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#real-world-example" class="md-nav__link">
+  <a href="#errors-and-http-interface" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Real-world example
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#entity-index-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Entity index structure
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Errors and HTTP interface
       </span>
     </span>
   </a>
@@ -4302,10 +4258,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#query-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Query path
       </span>
     </span>
   </a>
@@ -4313,10 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram
+        Example
       </span>
     </span>
   </a>
@@ -4324,54 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#real-world-example" class="md-nav__link">
+  <a href="#errors-and-http-interface" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Real-world example
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#entity-index-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Entity index structure
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-classes-and-methods" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes and methods
+        Errors and HTTP interface
       </span>
     </span>
   </a>
@@ -4421,164 +4333,29 @@
 
 
 <h1 id="entity-tracing">Entity tracing</h1>
-<h2 id="overview">Overview</h2>
-<p>The same physical entity (for example product <code>SKU-001</code> or contract <code>C-2024</code>) can produce events on several Sub-Chains during its lifecycle. HieraChain provides cross-chain tracing to rebuild a complete and immutable audit trail for any <code>entity_id</code>.</p>
-<p>Each Sub-Chain keeps an in-memory <code>entity_event_index</code> keyed by <code>entity_id</code>, so lookup is O(1) without scanning the whole chain.</p>
-<hr />
-<h2 id="flow-diagram">Flow diagram</h2>
-<pre class="mermaid"><code>flowchart TB
-    CLIENT["🖥️ Client / Auditor\ntrace_entity_across_chains(entity_id)"]
-    HM["🏛️ HierarchyManager"]
-
-    subgraph SubChains["All Registered Sub-Chains (parallel query)"]
-        SC1["📦 supply_chain\nget_entity_history(entity_id)"]
-        SC2["📦 logistics\nget_entity_history(entity_id)"]
-        SC3["📦 finance\nget_entity_history(entity_id)"]
-        SCN["📦 ..."]
-    end
-
-    AGG["🔀 Aggregate Results\n{ chain_name: [events] }"]
-    SORT["🕒 Sort by timestamp\nacross all chains"]
-    OUT["📋 Complete Entity Timeline"]
-
-    CLIENT --&gt; HM
-    HM --&gt; SC1
-    HM --&gt; SC2
-    HM --&gt; SC3
-    HM --&gt; SCN
-    SC1 --&gt; AGG
-    SC2 --&gt; AGG
-    SC3 --&gt; AGG
-    SCN --&gt; AGG
-    AGG --&gt; SORT --&gt; OUT</code></pre>
-<hr />
-<h2 id="real-world-example">Real-world example</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Entity: product-SKU-001 (Industrial sensor batch)
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Timeline reconstructed across chains:
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>────────────────────────────────────────────────────────
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>[supply_chain]  block 3   quality_check      → passed
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>[supply_chain]  block 7   packaging_complete → confirmed
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>[logistics]     block 2   shipment_dispatch  → warehouse A → B
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>[logistics]     block 9   customs_cleared    → port XYZ
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>[finance]       block 4   invoice_issued     → INV-2024-0471
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>[finance]       block 12  payment_confirmed  → ref: WIRE-9821
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>────────────────────────────────────────────────────────
+<h2 id="query-path">Query path</h2>
+<p><code>HierarchyManager.trace_entity_across_chains(entity_id)</code> delegates to <code>_trace_entity_history()</code> in <code>hierachain/hierarchical/hierarchy_manager/organization.py</code>. It visits registered Sub-Chains sequentially and returns a dictionary containing chains with nonempty histories. It does not merge or sort a global timeline itself.</p>
+<p><code>SubChain.get_entity_history()</code> retrieves finalized events and sorts that chain's result by timestamp. Native <code>Blockchain</code> stores entity-index entries containing block/row positions and cached event payloads. The index avoids a full block scan, but copying m matching events costs O(m), and per-chain sorting costs O(m log m). Cross-chain lookup also visits each registered chain. Indexes are rebuilt during recovery.</p>
+<h2 id="example">Example</h2>
+<p>After <a href="../../getting-started/quickstart/">Quickstart</a>, the application can merge results:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># manager is the configured HierarchyManager from the quickstart.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">history_by_chain</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">trace_entity_across_chains</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">timeline</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="p">{</span><span class="s2">"chain"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">event</span><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">events</span> <span class="ow">in</span> <span class="n">history_by_chain</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">),</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">event</span><span class="p">:</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"timestamp"</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </code></pre></div>
-<hr />
-<h2 id="entity-index-structure">Entity index structure</h2>
-<p>Each Sub-Chain keeps an in-memory <code>entity_event_index</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">entity_event_index</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">"product-SKU-001"</span><span class="p">:</span> <span class="p">[</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="p">{</span><span class="s2">"block_index"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"quality_check"</span><span class="p">,</span> <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714000000.0</span><span class="p">,</span> <span class="o">...</span><span class="p">}},</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="p">{</span><span class="s2">"block_index"</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"packaging_complete"</span><span class="p">,</span> <span class="s2">"timestamp"</span><span class="p">:</span> <span class="mf">1714003600.0</span><span class="p">,</span> <span class="o">...</span><span class="p">}},</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="p">]</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
-</code></pre></div>
-<p>Events are indexed on write in <code>add_block()</code>, so reads are O(1) per chain. Aggregation across n chains is O(n).</p>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Call</strong></td>
-<td style="text-align: left;">Client calls <code>HierarchyManager.trace_entity_across_chains(entity_id)</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Fan-out</strong></td>
-<td style="text-align: left;">HierarchyManager queries all registered Sub-Chains in parallel</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Per-chain lookup</strong></td>
-<td style="text-align: left;">Each Sub-Chain calls <code>get_entity_history(entity_id)</code> → O(1) index lookup</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Aggregate</strong></td>
-<td style="text-align: left;">Results collected as <code>{ chain_name: [event_list] }</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Sort</strong></td>
-<td style="text-align: left;">Events sorted by <code>timestamp</code> across all chains to form chronological timeline</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Return</strong></td>
-<td style="text-align: left;">Full timeline returned to caller</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Behavior</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Entity not found in any chain</td>
-<td style="text-align: left;">Returns empty dict <code>{}</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Sub-Chain unavailable</td>
-<td style="text-align: left;">That chain's result is <code>[]</code>; other chains still queried</td>
-</tr>
-<tr>
-<td style="text-align: left;">Entity index not yet built (startup)</td>
-<td style="text-align: left;">Falls back to full chain scan; logs warning</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="key-classes-and-methods">Key classes and methods</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
-<th style="text-align: left;">File</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Entry point</td>
-<td style="text-align: left;"><code>HierarchyManager.trace_entity_across_chains()</code></td>
-<td style="text-align: left;"><code>hierarchical/hierarchy_manager.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Per-chain trace</td>
-<td style="text-align: left;"><code>SubChain.get_entity_history()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Advanced trace</td>
-<td style="text-align: left;"><code>EntityTracer.trace_entity()</code></td>
-<td style="text-align: left;"><code>domains/generic/utils/entity_tracer.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Index update</td>
-<td style="text-align: left;"><code>SubChain._update_event_statistics()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">REST API</td>
-<td style="text-align: left;"><code>GET /ledger/entities/{entity_id}/trace</code></td>
-<td style="text-align: left;"><code>api/ledger/routes.py</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h2 id="errors-and-http-interface">Errors and HTTP interface</h2>
+<p>An unknown entity produces an empty dictionary. The manager ignores a chain lacking the history API (<code>AttributeError</code>); it does not catch every storage or query error and promise partial success.</p>
+<p><code>EntityTracer</code> in <code>hierachain/domains/utils/entity_tracer.py</code> provides richer tracing and timeline aggregation. REST uses <code>GET /api/ledger/entities/{entity_id}/trace</code>, optionally with <code>chain_name</code> and <code>resolve_cid</code>. Pending Sub-Chain events are not finalized history. See <a href="../../reference/api-ledger/">Ledger API</a>.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././integrity-validation/">System Integrity Validation</a>: validates the chains being traced</li>
-<li><a href=".././erp-integration/">ERP Integration Sync</a>: ERP events are what gets traced</li>
+<li><a href="../integrity-validation/">Integrity validation</a></li>
+<li><a href="../erp-integration/">ERP integration</a></li>
 </ul>
 
 

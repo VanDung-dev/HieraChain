@@ -4366,21 +4366,21 @@
 </ul>
 </li>
 <li>
-<p><strong>Tải dữ liệu</strong>: Nút <strong>"Load Details"</strong> tải dữ liệu từ IPFS qua API Server mà không cần tải lại trang.</p>
+<p><strong>Tải dữ liệu</strong>: Handler <strong>"Load Details"</strong> hiện yêu cầu dữ liệu block với <code>resolve_cid=true</code>, nhưng đọc trường <code>details</code> ở cấp cao nhất. Endpoint blocks trả các bản ghi đã giải quyết bên trong <code>blocks</code>, vì vậy handler này không hiển thị details của event.</p>
 </li>
-<li><strong>Giải mã</strong>: Server giải mã dữ liệu trước khi hiển thị trên giao diện.</li>
+<li><strong>Giải mã</strong>: Khi bật IPFS, API có thể giải quyết và giải mã details trong phản hồi block. Handler Explorer hiện không render các details đã giải quyết đó.</li>
 </ul>
 <h3 id="2-render-dashboard-qua-api">2. Render Dashboard qua API</h3>
 <p>Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của họ:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.api.blockchain_explorer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockchainExplorer</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Gắn module với cấu trúc Core hiện hữu</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Attach the module to the existing Core structure</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">explorer</span> <span class="o">=</span> <span class="n">BlockchainExplorer</span><span class="p">(</span><span class="n">chain</span><span class="o">=</span><span class="n">my_hierarchy_manager_instance</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Render Full trang chủ chứa Chain Overview, Entity Tracer, Event Analytics</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Render a full dashboard page containing Chain Overview, Entity Tracer, Event Analytics</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">dashboard_data</span> <span class="o">=</span> <span class="n">explorer</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Hoặc Render riêng mục "Truy vết Entity"</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Or render just the "Entity Tracer" section</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">tracer_form_ui</span> <span class="o">=</span> <span class="n">explorer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">component_id</span><span class="o">=</span><span class="s2">"entity_tracer"</span><span class="p">)</span>
 </code></pre></div>
 <p>Dữ liệu JSON trả về cho phép lập trình viên front-end (React/Vue/HTML5) tạo các card hiển thị chỉ số và block liên quan.</p>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Actual key backup/restore paths in HieraChain: CLI-generated Ed25519 keys and FileVaultProvider.">
+        <meta name="description" content="Các luồng sao lưu và khôi phục khóa hiện có trong HieraChain: khóa Ed25519 tạo bằng CLI và FileVaultProvider.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Key Backup & Restoration - HieraChain Docs</title>
+        <title>Sao lưu và khôi phục khóa - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#key-backup-restoration" class="md-skip">
+        <a href="#sao-luu-va-khoi-phuc-khoa" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Key Backup & Restoration
+              Sao lưu và khôi phục khóa
             
           </span>
         </div>
@@ -1811,10 +1811,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#sao-luu-danh-tinh-nut" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Sao lưu danh tính nút
       </span>
     </span>
   </a>
@@ -1822,49 +1822,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#actual-paths" class="md-nav__link">
+  <a href="#tep-cap-khoa-cli" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Actual Paths
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Actual Paths">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-cli-plain-backup-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. CLI Plain Backup (default)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-encrypted-vault-devtest" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Encrypted Vault (dev/test)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-not-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What Is NOT Implemented
+        Tệp cặp khóa CLI
       </span>
     </span>
   </a>
@@ -1872,10 +1833,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-checklist" class="md-nav__link">
+  <a href="#kho-khoa-ma-hoa-cho-phat-trien-va-kiem-thu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operator Checklist
+        Kho khóa mã hóa cho phát triển và kiểm thử
       </span>
     </span>
   </a>
@@ -1883,10 +1844,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#related" class="md-nav__link">
+  <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related
+        Liên quan
       </span>
     </span>
   </a>
@@ -4297,10 +4258,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#sao-luu-danh-tinh-nut" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Sao lưu danh tính nút
       </span>
     </span>
   </a>
@@ -4308,49 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#actual-paths" class="md-nav__link">
+  <a href="#tep-cap-khoa-cli" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Actual Paths
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Actual Paths">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-cli-plain-backup-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. CLI Plain Backup (default)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-encrypted-vault-devtest" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Encrypted Vault (dev/test)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-not-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What Is NOT Implemented
+        Tệp cặp khóa CLI
       </span>
     </span>
   </a>
@@ -4358,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-checklist" class="md-nav__link">
+  <a href="#kho-khoa-ma-hoa-cho-phat-trien-va-kiem-thu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operator Checklist
+        Kho khóa mã hóa cho phát triển và kiểm thử
       </span>
     </span>
   </a>
@@ -4369,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#related" class="md-nav__link">
+  <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related
+        Liên quan
       </span>
     </span>
   </a>
@@ -4410,79 +4332,28 @@
   
 
 
-<h1 id="key-backup-restoration">Key Backup &amp; Restoration</h1>
-<h2 id="overview">Overview</h2>
-<p>HieraChain does <strong>not</strong> have a <code>security/key_backup_manager.py</code> or <code>MasterKeyProvider</code>. Key backup is operator-managed via two real paths: plain JSON key files produced by the CLI and the optional encrypted <code>FileVaultProvider</code> vault. No automatic AES-256-GCM multi-vault distribution or SHA-512 integrity chain exists in code.</p>
-<hr />
-<h2 id="actual-paths">Actual Paths</h2>
-<h3 id="1-cli-plain-backup-default">1. CLI Plain Backup (default)</h3>
-<p><strong>File</strong>: <code>hierachain/cli/key.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>generate<span class="w"> </span>--output<span class="w"> </span>validator_key.json<span class="w">  </span><span class="c1"># Ed25519 hex JSON</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>show<span class="w"> </span>--input<span class="w"> </span>validator_key.json
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>verify<span class="w"> </span>--input<span class="w"> </span>validator_key.json
+<h1 id="sao-luu-va-khoi-phuc-khoa">Sao lưu và khôi phục khóa</h1>
+<h2 id="sao-luu-danh-tinh-nut">Sao lưu danh tính nút</h2>
+<p>Việc ký khối yêu cầu danh tính nút cố định và bảng khóa khối tin cậy được người vận hành phê duyệt. <code>HRC_VALIDATOR_IDENTITY</code> trỏ đến JSON danh tính; <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> trỏ đến bảng khóa công khai tin cậy. Làm theo <a href="../../getting-started/quickstart/">Khởi động nhanh</a> để chuẩn bị cả hai tệp.</p>
+<p>Danh tính chứa <code>node_id</code>, <code>msp_id</code>, <code>signing_key</code>, <code>signing_public_key</code>, <code>transport_secret_key</code> và <code>transport_public_key</code>. Dùng công cụ bên ngoài để sao lưu đầy đủ danh tính và bảng khóa tin cậy với quyền truy cập hạn chế. Khôi phục chúng về đường dẫn đã cấu hình trước khi khởi chạy nút. Khóa ký riêng/công khai phải khớp nhau, và bảng tin cậy phải chứa khóa ký công khai đã được phê duyệt của nút đó.</p>
+<p>Tạo khóa mới sẽ thay đổi khóa có thẩm quyền ký của danh tính. Cập nhật bảng tin cậy của mọi bộ xác minh bị ảnh hưởng qua quy trình cấp phát của hệ thống triển khai; chỉ sao chép khóa riêng mới không cấp quyền sử dụng khóa đó.</p>
+<h2 id="tep-cap-khoa-cli">Tệp cặp khóa CLI</h2>
+<p><code>hierachain/cli/key.py</code> cung cấp các lệnh sau qua <code>hrc</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hrc<span class="w"> </span>key<span class="w"> </span>generate<span class="w"> </span>--output<span class="w"> </span>validator_key.json
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>hrc<span class="w"> </span>key<span class="w"> </span>show<span class="w"> </span>--input<span class="w"> </span>validator_key.json
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>hrc<span class="w"> </span>key<span class="w"> </span>verify<span class="w"> </span>--input<span class="w"> </span>validator_key.json
 </code></pre></div>
+<p>JSON đầu ra mặc định chứa <code>private_key</code> và <code>public_key</code> dưới dạng chuỗi thập lục phân. Tệp được tạo với quyền <code>0600</code> trên hệ thống POSIX, và lệnh tạo khóa từ chối ghi đè tệp đã tồn tại. <code>show</code> che khóa riêng; <code>verify</code> kiểm tra khóa công khai có khớp với khóa riêng hay không.</p>
+<p>Tệp hai trường này được <code>LocalKeyProvider.from_file()</code> chấp nhận. Nó không phải danh tính nút đầy đủ và không thể dùng trực tiếp làm <code>HRC_VALIDATOR_IDENTITY</code>. <code>python -m hierachain</code> khởi chạy API server; dùng <code>hrc</code> cho các lệnh khóa.</p>
+<p>Sao lưu và khôi phục tệp khóa CLI là thao tác thủ công. Sau khi khôi phục tệp, chạy <code>hrc key verify --input validator_key.json</code>. CLI không cung cấp mã hóa, luân chuyển khóa tự động hay phân phối bản sao lưu.</p>
+<h2 id="kho-khoa-ma-hoa-cho-phat-trien-va-kiem-thu">Kho khóa mã hóa cho phát triển và kiểm thử</h2>
+<p><code>FileVaultProvider</code> trong <code>hierachain/security/key_provider.py</code> lưu cặp khóa trong kho được bảo vệ bằng mật khẩu. Nó dẫn xuất khóa Fernet bằng <code>PBKDF2HMAC(SHA256, 310_000 iterations)</code>; Fernet dùng AES-128-CBC và HMAC. Cấp mật khẩu cho hàm khởi tạo provider và giữ bản sao có thể khôi phục trong hệ thống quản lý bí mật của ứng dụng.</p>
+<p>Provider này dùng mã hóa dẫn xuất từ mật khẩu cho tệp vault cục bộ. Phát triển và kiểm thử là phạm vi sử dụng được tài liệu nguồn nêu, nhưng mã không có điều kiện môi trường để chặn sử dụng trong production; mức độ phù hợp phụ thuộc vào biện pháp kiểm soát và yêu cầu của hệ thống triển khai. Tích hợp HSM hoặc KMS trong production cần <code>KeyProvider</code> riêng của ứng dụng. Kho khóa là một key provider, không thay thế JSON danh tính nút đầy đủ.</p>
+<p><code>HRC_VAULT_TOKEN</code> và <code>HRC_VAULT_PATH</code> cấu hình backend Vault riêng của <code>SecretManager</code>. Chúng không cung cấp mật khẩu cho <code>FileVaultProvider</code>. Việc cấp chứng chỉ MSP và thay đổi đồng thuận không kích hoạt sao lưu tự động.</p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Output is <code>{private_key, public_key}</code> hex. Backup = copy <code>validator_key.json</code> to secure external storage. Restore = copy back and set <code>HRC_VALIDATOR_IDENTITY=validator_key.json</code>.</li>
-<li>No encryption, no hash, no auto-rotation. Operator handles rotation by re-running <code>generate</code>.</li>
-</ul>
-<h3 id="2-encrypted-vault-devtest">2. Encrypted Vault (dev/test)</h3>
-<p><strong>File</strong>: <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
-<ul>
-<li>Tạo file <code>.vault</code> mã hóa bằng <code>PBKDF2HMAC(SHA256, 310k iter)</code> rồi dùng <code>Fernet</code> (AES-128-CBC với HMAC, không phải AES-256-GCM). Password được truyền vào constructor của <code>FileVaultProvider</code>.</li>
-<li>Explicitly documented as <em>dev/test only</em>, production should implement <code>KeyProvider</code> via HSM/KMS.</li>
-<li>No distribution to multiple vaults, no <code>metadata.json</code>, no <code>retention_period</code>, no <code>auto_restore_threshold</code>.</li>
-<li><code>HRC_VAULT_TOKEN</code> và <code>HRC_VAULT_PATH</code> cấu hình backend Vault riêng của <code>SecretManager</code>; chúng không cung cấp password cho <code>FileVaultProvider</code>.</li>
-</ul>
-<pre class="mermaid"><code>sequenceDiagram
-    participant CLI as CLI generate
-    participant File as validator_key.json / .vault
-    participant Op as Operator / HSM
-
-    CLI-&gt;&gt;File: write private_key/public_key hex
-    File-&gt;&gt;Op: manual copy to backup / KMS
-    Op--&gt;&gt;File: restore copy back
-    File-&gt;&gt;CLI: verify / LocalKeyProvider.from_file()</code></pre>
-<hr />
-<h2 id="what-is-not-implemented">What Is NOT Implemented</h2>
-<table>
-<thead>
-<tr>
-<th>Documented claim (removed)</th>
-<th>Reality</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>KeyBackupManager.backup_keys()</code> / <code>_encrypt_backup_data()</code> / <code>SHA-512</code> / <code>_distribute_to_locations()</code></td>
-<td>No such class/methods exist</td>
-</tr>
-<tr>
-<td>AES-256-GCM + nonce||ciphertext + 3-vault failover</td>
-<td>Vault uses <code>Fernet</code>; multi-location is manual copy</td>
-</tr>
-<tr>
-<td><code>MasterKeyProvider.get_master_key()</code></td>
-<td>Không có provider này; chỉ <code>HRC_MASTER_KEY_SOURCE=env</code> được chấp nhận làm alias tương thích, còn giá trị nguồn khác và <code>HRC_MASTER_KEY_FILE</code> không rỗng sẽ dừng nạp cấu hình</td>
-</tr>
-<tr>
-<td>Auto backup on MSP cert issue or consensus rotation</td>
-<td>No hook; certs in <code>security/msp.py</code> are in-memory only</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="operator-checklist">Operator Checklist</h2>
-<ol>
-<li>Generate: <code>python -m hierachain key generate -o validator_key.json</code></li>
-<li>Backup: <code>cp validator_key.json /secure/backup/</code> (+ encrypt externally if needed)</li>
-<li>Restore: <code>cp /secure/backup/validator_key.json ./ &amp;&amp; python -m hierachain key verify</code></li>
-<li>Với vault mã hóa: <code>FileVaultProvider.create_vault(vault_path, password)</code> và truyền password qua luồng quản lý secret của ứng dụng. <code>HRC_VAULT_TOKEN</code> là credential của dịch vụ Vault, không phải password của file vault.</li>
-</ol>
-<hr />
-<h2 id="related">Related</h2>
-<ul>
-<li><a href=".././msp-identity/">MSP Identity</a>: <code>security/msp.py</code> issues in-memory certs; no trigger to key backup</li>
-<li><a href="../../security/encryption-keys/">Encryption &amp; Keys</a>: corrected description of <code>msp.py</code>/<code>key_provider.py</code></li>
+<li><a href=".././msp-identity/">Danh tính MSP</a>: vòng đời chứng chỉ nội bộ</li>
+<li><a href="../../security/encryption-keys/">Mã hóa và khóa</a>: provider và phạm vi sử dụng khóa</li>
 </ul>
 
 

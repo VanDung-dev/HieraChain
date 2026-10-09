@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="X.509 certificate lifecycle, enrollment, and MSP authentication for system participants.">
+        <meta name="description" content="Internal certificate enrollment, MSP identity checks and organization role policies.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1782,10 +1782,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -1793,32 +1793,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-entity-onboarding-enterprise-msp" class="md-nav__link">
+  <a href="#enrollment-and-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: entity onboarding (enterprise MSP)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flow-diagram-runtime-authorization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Flow diagram: runtime authorization
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flow-diagram-certificate-revocation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Flow diagram: certificate revocation
+        Enrollment and authorization
       </span>
     </span>
   </a>
@@ -1837,21 +1815,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#revocation-and-failures" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Revocation and failures
       </span>
     </span>
   </a>
@@ -4313,10 +4280,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4324,32 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram-entity-onboarding-enterprise-msp" class="md-nav__link">
+  <a href="#enrollment-and-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram: entity onboarding (enterprise MSP)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flow-diagram-runtime-authorization" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Flow diagram: runtime authorization
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flow-diagram-certificate-revocation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Flow diagram: certificate revocation
+        Enrollment and authorization
       </span>
     </span>
   </a>
@@ -4368,21 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#revocation-and-failures" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Revocation and failures
       </span>
     </span>
   </a>
@@ -4443,105 +4377,35 @@
 
 
 <h1 id="msp-identity-and-authorization">MSP identity and authorization</h1>
-<h2 id="overview">Overview</h2>
-<p>HieraChain uses two identity layers:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Layer</th>
-<th style="text-align: left;">Class</th>
-<th style="text-align: left;">Use Case</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>Simple RBAC</strong></td>
-<td style="text-align: left;"><code>IdentityManager</code></td>
-<td style="text-align: left;">Single-org deployments; role-based permission checks</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Enterprise MSP</strong></td>
-<td style="text-align: left;"><code>HierarchicalMSP</code></td>
-<td style="text-align: left;">Multi-org consortiums; X.509 certificate hierarchy with <code>CertificateAuthority</code></td>
-</tr>
-</tbody>
-</table>
-<p>Every entity must be registered and have its identity validated before the system allows it to call <code>PolicyEngine</code> or submit events.</p>
-<hr />
-<h2 id="flow-diagram-entity-onboarding-enterprise-msp">Flow diagram: entity onboarding (enterprise MSP)</h2>
+<h2 id="scope">Scope</h2>
+<p><code>IdentityManager</code> in <code>hierachain/security/identity.py</code> provides user registration, role permissions and signature helpers. <code>HierarchicalMSP</code> in <code>hierachain/security/msp.py</code> manages organization entities, internal certificates and role-linked <code>OrganizationPolicies</code>.</p>
+<p>The MSP certificate is a Python <code>Certificate</code> dataclass, not an X.509 certificate. Its CA creates an Ed25519 signature over certificate ID, subject and public key. <code>verify_certificate()</code> checks the stored certificate's status and validity window; it does not validate an X.509 chain or establish possession of the entity's private key. CA keys, registrations and revocations are held in memory.</p>
+<p>Generic Ledger event routes check API-key scopes and submit to the Sub-Chain. They do not automatically call MSP or <code>PolicyEngine</code>. Channel paths apply their own membership and role checks. Applications using the Python interfaces must call the checks required for their operation.</p>
+<h2 id="enrollment-and-authorization">Enrollment and authorization</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Enterprise Admin
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Phase 1 — Define roles
-
-        Admin-&gt;&gt;MSP: define_role(role_name, permissions, policy_ids)
-        MSP-&gt;&gt;MSP: OrganizationPolicies.assign_role_permissions(role, perms)
+    participant App as Application
+    participant MSP as HierarchicalMSP
+    participant CA as CertificateAuthority
+    participant Policies as OrganizationPolicies
+    App-&gt;&gt;MSP: define_role(role_name, permissions, policy_ids)
+    MSP-&gt;&gt;Policies: assign_role_permissions(role, permissions)
+    App-&gt;&gt;MSP: register_entity(entity_id, credentials, role, attributes)
+    MSP-&gt;&gt;CA: issue_certificate(subject, public_key, attributes, valid_days)
+    CA--&gt;&gt;MSP: Internal Certificate
+    MSP--&gt;&gt;App: Registration success or failure
+    App-&gt;&gt;MSP: validate_identity(entity_id, credentials)
+    MSP-&gt;&gt;CA: verify_certificate(cert_id)
+    MSP-&gt;&gt;MSP: Compare supplied and registered public keys
+    MSP--&gt;&gt;App: True or False
+    App-&gt;&gt;MSP: authorize_action(entity_id, action, resource)
+    MSP-&gt;&gt;CA: Verify active certificate
+    MSP-&gt;&gt;Policies: check_permission(role, action)
+    loop Role-linked policy IDs
+        MSP-&gt;&gt;Policies: evaluate_policy(policy_id, context)
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Phase 2 — Register entity
-
-        Admin-&gt;&gt;MSP: register_entity(entity_id, credentials, role, attributes)
-        MSP-&gt;&gt;CA: issue_certificate(entity_id, public_key, attributes, valid_days)
-        CA-&gt;&gt;CA: _generate_cert_id(entity_id, public_key)
-        CA-&gt;&gt;CA: _sign_certificate(cert_id, subject, public_key, ca_key)
-        CA--&gt;&gt;MSP: Certificate { cert_id, valid_until, status=ACTIVE }
-        MSP-&gt;&gt;MSP: entities[entity_id] = { certificate, role, status: active }
-        MSP--&gt;&gt;Admin: True ✅
-    end</code></pre>
-<hr />
-<h2 id="flow-diagram-runtime-authorization">Flow diagram: runtime authorization</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API Client
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,CA: Phase 1 — Validate Identity
-        Caller-&gt;&gt;MSP: validate_identity(entity_id, credentials)
-        MSP-&gt;&gt;CA: verify_certificate(cert_id)
-        CA-&gt;&gt;CA: Check: cert not revoked AND is_valid() (within time window)
-        CA--&gt;&gt;MSP: True / False
-        MSP-&gt;&gt;MSP: Match credentials.public_key vs stored certificate
-        MSP--&gt;&gt;Caller: True ✅ (identity confirmed)
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,PE: Phase 2 — Authorize Action
-        Caller-&gt;&gt;MSP: authorize_action(entity_id, action, resource)
-        MSP-&gt;&gt;MSP: check_permission(role, action)
-        MSP-&gt;&gt;MSP: evaluate_policy(policy_id, context) for each role policy
-        MSP--&gt;&gt;Caller: True / False
-    end
-
-    alt Action authorized
-        Caller-&gt;&gt;PE: evaluate_policy(policy_id, context_with_role)
-        Note right of PE: Policy Enforcement flow continues here
-    end</code></pre>
-<hr />
-<h2 id="flow-diagram-certificate-revocation">Flow diagram: certificate revocation</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Enterprise Admin
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-
-    Admin-&gt;&gt;MSP: revoke_entity(entity_id, reason)
-    MSP-&gt;&gt;CA: revoke_certificate(cert_id, reason)
-    CA-&gt;&gt;CA: revoked_certificates.add(cert_id)
-    CA-&gt;&gt;CA: cert.status = REVOKED
-    MSP-&gt;&gt;MSP: entity[status] = revoked
-    MSP--&gt;&gt;Admin: True ✅
-
-    Note over CA: All future validate_identity() calls for this entity&lt;br/&gt;will fail at CA.verify_certificate()</code></pre>
-<hr />
+    MSP--&gt;&gt;App: True only if all required checks pass</code></pre>
+<p><code>credentials</code> must include <code>public_key</code>. Registration returns <code>False</code> on failure, including an undefined role. <code>validate_identity()</code> checks registration, certificate validity and the supplied public key; it does not verify a fresh challenge signature. Use a separate signature verification flow when proof of key possession is required.</p>
+<p><code>authorize_action()</code> requires an active entity and valid stored certificate, checks role permissions, then evaluates every linked organization policy. These are <code>OrganizationPolicies</code>, whose evaluation checks configured required context attributes. They are separate from the typed rules in <code>security/policy_engine.py</code>.</p>
 <h2 id="default-roles">Default roles</h2>
 <table>
 <thead>
@@ -4553,7 +4417,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>admin</code></td>
-<td style="text-align: left;">manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data</td>
+<td style="text-align: left;">manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data, view_data</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>operator</code></td>
@@ -4565,141 +4429,56 @@
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Define role</strong></td>
-<td style="text-align: left;">Admin defines role + permission set + linked policy IDs</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Register entity</strong></td>
-<td style="text-align: left;">MSP requests X.509 certificate from CA for the entity's public key</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. CA issue</strong></td>
-<td style="text-align: left;">CA generates <code>cert_id</code>, signs certificate, stores with <code>status=ACTIVE</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Validate identity</strong></td>
-<td style="text-align: left;">CA checks: cert not revoked AND current time within <code>[issued_at, valid_until]</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Credential match</strong></td>
-<td style="text-align: left;">MSP verifies <code>credentials.public_key == certificate.public_key</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Authorize action</strong></td>
-<td style="text-align: left;"><code>check_permission(role, action)</code> + evaluate all role-linked policies</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Policy gate</strong></td>
-<td style="text-align: left;">If authorized, PolicyEngine (Policy Enforcement) evaluates further context-based rules</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>8. Revoke</strong></td>
-<td style="text-align: left;">Sets <code>cert.status = REVOKED</code>; all future <code>validate_identity()</code> calls fail at step 4</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Behavior</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Entity not registered</td>
-<td style="text-align: left;"><code>validate_identity()</code> returns <code>False</code> immediately</td>
-</tr>
-<tr>
-<td style="text-align: left;">Certificate expired</td>
-<td style="text-align: left;"><code>CA.is_valid()</code> returns <code>False</code>; identity rejected</td>
-</tr>
-<tr>
-<td style="text-align: left;">Certificate revoked</td>
-<td style="text-align: left;"><code>CA.verify_certificate()</code> fails; identity rejected</td>
-</tr>
-<tr>
-<td style="text-align: left;">Public key mismatch</td>
-<td style="text-align: left;"><code>validate_identity()</code> returns <code>False</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Role has no matching permission</td>
-<td style="text-align: left;"><code>authorize_action()</code> returns <code>False</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h2 id="revocation-and-failures">Revocation and failures</h2>
+<p><code>revoke_entity(entity_id, reason)</code> revokes the stored certificate and marks the entity revoked. Later identity validation and action authorization fail. Expired or revoked certificates, unknown entities, mismatched public keys and missing permissions also fail their respective checks.</p>
+<p>This lifecycle has no CRL distribution, persistent certificate registry, mTLS or automatic key-backup hook. Provision transport security at the reverse proxy and manage identity backups separately.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Simple RBAC register</td>
+<td style="text-align: left;">User registration</td>
 <td style="text-align: left;"><code>IdentityManager.register_user()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Simple RBAC validate</td>
+<td style="text-align: left;">User validation</td>
 <td style="text-align: left;"><code>IdentityManager.validate_identity()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Signature verify</td>
+<td style="text-align: left;">User signature verification</td>
 <td style="text-align: left;"><code>IdentityManager.verify_user_signature()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Enterprise register</td>
+<td style="text-align: left;">Entity registration</td>
 <td style="text-align: left;"><code>HierarchicalMSP.register_entity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Issue certificate</td>
-<td style="text-align: left;"><code>CertificateAuthority.issue_certificate()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;">Certificate issue/verify/revoke</td>
+<td style="text-align: left;"><code>CertificateAuthority</code> methods</td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Validate identity</td>
-<td style="text-align: left;"><code>HierarchicalMSP.validate_identity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Authorize action</td>
+<td style="text-align: left;">Entity authorization</td>
 <td style="text-align: left;"><code>HierarchicalMSP.authorize_action()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Revoke entity</td>
-<td style="text-align: left;"><code>HierarchicalMSP.revoke_entity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a>: called after MSP authorization succeeds</li>
-<li><a href=".././event-submission/">Event Submission</a>: <code>authorize_action()</code> gates access before <code>add_event()</code></li>
-<li><a href=".././key-backup/">Key Backup</a>: new certificate issuance triggers key backup</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: separate typed ABAC policies</li>
+<li><a href=".././event-submission/">Event Submission</a>: generic ledger ingestion</li>
+<li><a href=".././key-backup/">Key Backup</a>: operator-managed identity backups</li>
 </ul>
 
 

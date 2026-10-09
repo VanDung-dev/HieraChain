@@ -1811,10 +1811,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#node-identity-backup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Node identity backup
       </span>
     </span>
   </a>
@@ -1822,49 +1822,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#actual-paths" class="md-nav__link">
+  <a href="#cli-key-pair-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Actual paths
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Actual paths">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-cli-plain-backup-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. CLI plain backup (default)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-encrypted-vault-devtest" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Encrypted vault (dev/test)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-not-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What is not implemented
+        CLI key pair files
       </span>
     </span>
   </a>
@@ -1872,10 +1833,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-checklist" class="md-nav__link">
+  <a href="#encrypted-vault-for-development-and-tests" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operator checklist
+        Encrypted vault for development and tests
       </span>
     </span>
   </a>
@@ -4297,10 +4258,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#node-identity-backup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Node identity backup
       </span>
     </span>
   </a>
@@ -4308,49 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#actual-paths" class="md-nav__link">
+  <a href="#cli-key-pair-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Actual paths
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Actual paths">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-cli-plain-backup-default" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. CLI plain backup (default)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-encrypted-vault-devtest" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Encrypted vault (dev/test)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-not-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What is not implemented
+        CLI key pair files
       </span>
     </span>
   </a>
@@ -4358,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-checklist" class="md-nav__link">
+  <a href="#encrypted-vault-for-development-and-tests" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Operator checklist
+        Encrypted vault for development and tests
       </span>
     </span>
   </a>
@@ -4411,78 +4333,27 @@
 
 
 <h1 id="key-backup-and-restoration">Key backup and restoration</h1>
-<h2 id="overview">Overview</h2>
-<p>HieraChain does not have a <code>security/key_backup_manager.py</code> or <code>MasterKeyProvider</code>. Key backup is operator managed and has two real paths: plain JSON key files created by the CLI and the optional encrypted <code>FileVaultProvider</code> vault. There is no automatic AES-256-GCM multi-vault distribution or SHA-512 integrity chain in the code.</p>
-<hr />
-<h2 id="actual-paths">Actual paths</h2>
-<h3 id="1-cli-plain-backup-default">1. CLI plain backup (default)</h3>
-<p><strong>File</strong>: <code>hierachain/cli/key.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>generate<span class="w"> </span>--output<span class="w"> </span>validator_key.json<span class="w">  </span><span class="c1"># Ed25519 hex JSON</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>show<span class="w"> </span>--input<span class="w"> </span>validator_key.json
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain<span class="w"> </span>key<span class="w"> </span>verify<span class="w"> </span>--input<span class="w"> </span>validator_key.json
+<h2 id="node-identity-backup">Node identity backup</h2>
+<p>Block signing requires a fixed node identity and an operator-approved trusted block key map. <code>HRC_VALIDATOR_IDENTITY</code> points to the identity JSON; <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> points to the trusted public key map. Follow <a href="../../getting-started/quickstart/">Quickstart</a> to provision both files.</p>
+<p>The identity contains <code>node_id</code>, <code>msp_id</code>, <code>signing_key</code>, <code>signing_public_key</code>, <code>transport_secret_key</code> and <code>transport_public_key</code>. Back up the complete identity and the trusted key map using external tooling with restricted access. Restore them to the configured paths before starting the node. The signing private/public keys must match, and the trusted map must contain that node's approved signing public key.</p>
+<p>Generating a new key changes the identity's signing authority. Update the trusted maps of every affected verifier through the deployment's provisioning process; copying a new private key alone does not authorize it.</p>
+<h2 id="cli-key-pair-files">CLI key pair files</h2>
+<p><code>hierachain/cli/key.py</code> provides these commands through <code>hrc</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hrc<span class="w"> </span>key<span class="w"> </span>generate<span class="w"> </span>--output<span class="w"> </span>validator_key.json
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>hrc<span class="w"> </span>key<span class="w"> </span>show<span class="w"> </span>--input<span class="w"> </span>validator_key.json
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>hrc<span class="w"> </span>key<span class="w"> </span>verify<span class="w"> </span>--input<span class="w"> </span>validator_key.json
 </code></pre></div>
-<ul>
-<li>Output is <code>{private_key, public_key}</code> hex. Backup means copying <code>validator_key.json</code> to secure external storage. Restore means copying it back and setting <code>HRC_VALIDATOR_IDENTITY=validator_key.json</code>.</li>
-<li>No encryption, no hash, no auto-rotation. The operator handles rotation by running <code>generate</code> again.</li>
-</ul>
-<h3 id="2-encrypted-vault-devtest">2. Encrypted vault (dev/test)</h3>
-<p><strong>File</strong>: <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
-<ul>
-<li>Creates a <code>.vault</code> file encrypted with <code>PBKDF2HMAC(SHA256, 310k iter)</code> that leads to <code>Fernet</code> (AES-128-CBC with HMAC, not AES-256-GCM). The password is supplied to the <code>FileVaultProvider</code> constructor.</li>
-<li>This provider is documented as dev/test only. Production should implement <code>KeyProvider</code> with HSM or KMS.</li>
-<li>There is no distribution to multiple vaults, no <code>metadata.json</code>, no <code>retention_period</code> and no <code>auto_restore_threshold</code>.</li>
-<li><code>HRC_VAULT_TOKEN</code> and <code>HRC_VAULT_PATH</code> configure the separate <code>SecretManager</code> Vault backend; they do not supply the <code>FileVaultProvider</code> password.</li>
-</ul>
-<pre class="mermaid"><code>sequenceDiagram
-    participant CLI as CLI generate
-    participant File as validator_key.json / .vault
-    participant Op as Operator / HSM
-
-    CLI-&gt;&gt;File: write private_key/public_key hex
-    File-&gt;&gt;Op: manual copy to backup / KMS
-    Op--&gt;&gt;File: restore copy back
-    File-&gt;&gt;CLI: verify / LocalKeyProvider.from_file()</code></pre>
-<hr />
-<h2 id="what-is-not-implemented">What is not implemented</h2>
-<table>
-<thead>
-<tr>
-<th>Documented claim (removed)</th>
-<th>Reality</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>KeyBackupManager.backup_keys()</code> / <code>_encrypt_backup_data()</code> / <code>SHA-512</code> / <code>_distribute_to_locations()</code></td>
-<td>No such class/methods exist</td>
-</tr>
-<tr>
-<td>AES-256-GCM + nonce||ciphertext + 3-vault failover</td>
-<td>Vault uses <code>Fernet</code>; multi-location is manual copy</td>
-</tr>
-<tr>
-<td><code>MasterKeyProvider.get_master_key()</code></td>
-<td>No such provider; <code>HRC_MASTER_KEY_SOURCE=env</code> is only a compatibility alias, while other source values and nonempty <code>HRC_MASTER_KEY_FILE</code> stop configuration loading</td>
-</tr>
-<tr>
-<td>Auto backup on MSP cert issue or consensus rotation</td>
-<td>No hook; certs in <code>security/msp.py</code> are in-memory only</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="operator-checklist">Operator checklist</h2>
-<ol>
-<li>Generate: <code>python -m hierachain key generate -o validator_key.json</code></li>
-<li>Backup: <code>cp validator_key.json /secure/backup/</code> (encrypt externally if needed)</li>
-<li>Restore: <code>cp /secure/backup/validator_key.json ./ &amp;&amp; python -m hierachain key verify</code></li>
-<li>For encrypted vault: <code>FileVaultProvider.create_vault(vault_path, password)</code> and supply the password through the application's secret-management flow. <code>HRC_VAULT_TOKEN</code> is a Vault service credential, not the vault password.</li>
-</ol>
-<hr />
+<p>The default JSON output contains <code>private_key</code> and <code>public_key</code> as hexadecimal strings. The file is created with mode <code>0600</code> on POSIX systems, and generation refuses to overwrite an existing file. <code>show</code> masks the private key; <code>verify</code> checks whether the public key matches the private key.</p>
+<p>This two-field file is accepted by <code>LocalKeyProvider.from_file()</code>. It is not a complete node identity and cannot be used directly as <code>HRC_VALIDATOR_IDENTITY</code>. <code>python -m hierachain</code> starts the API server; use <code>hrc</code> for key commands.</p>
+<p>Backup and restore of CLI key files are manual. After restoring a file, run <code>hrc key verify --input validator_key.json</code>. The CLI supplies no encryption, automatic rotation or backup distribution.</p>
+<h2 id="encrypted-vault-for-development-and-tests">Encrypted vault for development and tests</h2>
+<p><code>FileVaultProvider</code> in <code>hierachain/security/key_provider.py</code> stores a key pair in a password-protected vault. It derives a Fernet key using <code>PBKDF2HMAC(SHA256, 310_000 iterations)</code>; Fernet uses AES-128-CBC and HMAC. Supply the password to the provider constructor and keep a recoverable copy in the application's secret-management system.</p>
+<p>The provider uses password-derived encryption for a local vault file. Development and tests are its documented target, but the code has no environment gate that blocks production use; suitability depends on deployment controls and requirements. Production HSM or KMS integration requires an application-specific <code>KeyProvider</code>. The vault is a key provider, not a replacement for the complete node identity JSON.</p>
+<p><code>HRC_VAULT_TOKEN</code> and <code>HRC_VAULT_PATH</code> configure the separate <code>SecretManager</code> Vault backend. They do not supply the <code>FileVaultProvider</code> password. MSP certificate issuance and consensus changes do not trigger automatic backups.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././msp-identity/">MSP Identity</a>: <code>security/msp.py</code> issues in-memory certs; no trigger to key backup</li>
-<li><a href="../../security/encryption-keys/">Encryption &amp; Keys</a>: corrected description of <code>msp.py</code>/<code>key_provider.py</code></li>
+<li><a href=".././msp-identity/">MSP Identity</a>: internal certificate lifecycle</li>
+<li><a href="../../security/encryption-keys/">Encryption &amp; Keys</a>: providers and key scope</li>
 </ul>
 
 

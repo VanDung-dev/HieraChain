@@ -4409,7 +4409,7 @@
 <h2 id="quan-sat-he-thong">Quan sát hệ thống</h2>
 <ul>
 <li>Dùng <code>monitoring/performance_monitor.py</code> để lấy metrics CPU/RAM.</li>
-<li>Bật <code>ResourceGuardMiddleware</code> để shed load trong đỉnh tải.</li>
+<li>Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có <code>ResourceGuardMiddleware</code> CPU/RAM ở API.</li>
 </ul>
 
 

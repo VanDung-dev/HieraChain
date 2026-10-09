@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Main Chain/Sub-Chain/HierarchyManager relationships, channels/multi-org, private data, cross-chain transactions, proof anchoring, and rebalancing.">
+        <meta name="description" content="Quan hệ Main Chain/Sub-Chain/HierarchyManager, channel/đa tổ chức, dữ liệu riêng tư, giao dịch liên chuỗi, neo bằng chứng và cân bằng lại.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Hierarchical Architecture (Detailed) - HieraChain Docs</title>
+        <title>Kiến trúc phân cấp (chi tiết) - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hierarchical-architecture-detailed" class="md-skip">
+        <a href="#kien-truc-phan-cap" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Hierarchical Architecture (Detailed)
+              Kiến trúc phân cấp (chi tiết)
             
           </span>
         </div>
@@ -4388,7 +4388,7 @@
   
 
 
-<h1 id="hierarchical-architecture-detailed">Hierarchical Architecture (Detailed)</h1>
+<h1 id="kien-truc-phan-cap">Kiến trúc phân cấp</h1>
 <h2 id="muc-ich">Mục đích</h2>
 <p>Phần này giải thích cách HieraChain tổ chức phân cấp. Nó bao gồm cách Sub-Chain tương tác với Main Chain qua <code>HierarchyManager</code>, cách channel và mô hình multi-org vận hành, cách xử lý private data, cách giao dịch liên chuỗi dùng 2PC, cách neo proof và cách cân bằng lại Sub-Chain.</p>
 <h2 id="thanh-phan-va-khai-niem">Thành phần và khái niệm</h2>
@@ -4398,25 +4398,26 @@
 <li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code> điều phối hệ thống chuỗi, quản lý vòng đời Sub-Chain, giao dịch liên chuỗi và thống kê hệ thống.</li>
 <li>Channel: <code>hierachain/hierarchical/channel/channel.py</code> cung cấp không gian giao tiếp riêng cho nhóm organization và giữ policy tạo channel.</li>
 <li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> xử lý khởi tạo organization, mạng multi-org và quan hệ giữa channel với organization.</li>
-<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> giữ collection dữ liệu riêng ở tầng Sub-Chain.</li>
+<li>Dữ liệu riêng tư: <code>hierachain/hierarchical/private_data.py</code> cung cấp đối tượng collection và kiểm tra truy cập, với kho dữ liệu trong bộ nhớ ở cấp thư viện. Manager không lưu bền các collection này; API REST ghi dữ liệu riêng tư trả HTTP 501.</li>
 <li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> điều phối giao dịch 2PC giữa các Sub-Chain.</li>
 </ul>
 <h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
 <pre class="mermaid"><code>graph TD
     User[Client/User] --&gt;|Submit Event| SubChain
     SubChain --&gt;|1. Ordering| Orderer[Ordering Service]
-    Orderer --&gt;|2. Batch| Consensus[Consensus Layer]
-    Consensus --&gt;|3. Validate| SubChain
-    SubChain --&gt;|4. Finalize Block| SubChain
+    Orderer --&gt;|2. Finalize| Consensus[Consensus Layer]
+    Consensus --&gt;|Finalized block| Orderer
+    Orderer --&gt;|3. Sign and persist| Blocks[Block Storage]
+    Blocks --&gt;|4. Queue and apply unchanged block| SubChain
     SubChain --&gt;|5. Submit Proof| MainChain[Main Chain]
     MainChain --&gt;|6. Persist Proof Anchor| Storage[Proof Storage]
     SubChain --&gt;|Apply Finalized Events| Projection[WorldState Projection]</code></pre>
 <ol>
 <li>Tạo Sub-Chain bằng <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code>. Lệnh này khởi tạo DomainChain và nối vào Main Chain.</li>
-<li>Ghi event và đóng block bằng <code>SubChain.add_event()</code>, đi qua ordering và consensus rồi tới <code>finalize_block()</code>.</li>
+<li>Gửi sự kiện bằng <code>SubChain.add_event()</code>. Kết quả xác nhận sự kiện đã được journal/hàng đợi tiếp nhận; orderer sau đó hoàn tất, ký và lưu block trước khi consumer áp dụng nó.</li>
 <li>Neo proof lên Main Chain bằng <code>SubChain.submit_proof_to_main(main_chain, ...)</code> hoặc <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
 <li>Chạy giao dịch liên chuỗi (2PC) bằng <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code>, xử lý prepare, commit và rollback.</li>
-<li>Channel và private data: tạo channel giữa các organization. Collection private được lưu ở Sub-Chain theo policy của channel.</li>
+<li>Channel: tạo channel giữa các tổ chức. Ứng dụng phải quản lý việc lưu bền đối tượng collection dữ liệu riêng tư; API REST ghi dữ liệu riêng tư chưa được triển khai (HTTP 501).</li>
 </ol>
 <h2 id="cau-hinh-lien-quan-settingspy-thuc-te-hrc_">Cấu hình liên quan (settings.py, thực tế <code>HRC_*</code>)</h2>
 <ul>
@@ -4424,8 +4425,8 @@
 </ul>
 <h2 id="tinh-nang-va-han-che">Tính năng và hạn chế</h2>
 <ul>
-<li>Tính năng: tách dữ liệu theo domain, neo proof tập trung trên Main Chain, hỗ trợ 2PC, channel và multi-org và private data.</li>
-<li>Hạn chế: vận hành channel và multi-org cần policy rõ ràng và 2PC cần đồng bộ tốt.</li>
+<li>Chức năng: tách dữ liệu theo domain, neo bằng chứng có chữ ký, quyết định 2PC được lưu bền trong journal, cùng registry channel/đa tổ chức trên các backend hỗ trợ.</li>
+<li>Giới hạn: lời gọi Python trực tiếp tới channel/dữ liệu riêng tư cần caller đáng tin cậy; API REST không cung cấp kho dữ liệu riêng tư. Xác nhận journal của 2PC tách biệt với việc commit block bất đồng bộ. Xem <a href="../../modules/hierarchical/">Module phân cấp</a>.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

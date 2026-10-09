@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fault-tolerance-integrity" class="md-skip">
+        <a href="#fault-tolerance-and-integrity" class="md-skip">
           Skip to content
         </a>
       
@@ -2582,10 +2582,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#resource-protection-actual" class="md-nav__link">
+  <a href="#resource-protection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Resource protection (actual)
+        Resource protection
       </span>
     </span>
   </a>
@@ -2593,10 +2593,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integrity-checks-actual" class="md-nav__link">
+  <a href="#integrity-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integrity checks (actual)
+        Integrity checks
       </span>
     </span>
   </a>
@@ -4247,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#resource-protection-actual" class="md-nav__link">
+  <a href="#resource-protection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Resource protection (actual)
+        Resource protection
       </span>
     </span>
   </a>
@@ -4258,10 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#integrity-checks-actual" class="md-nav__link">
+  <a href="#integrity-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integrity checks (actual)
+        Integrity checks
       </span>
     </span>
   </a>
@@ -4310,28 +4310,27 @@
   
 
 
-<h1 id="fault-tolerance-integrity">Fault-tolerance &amp; Integrity</h1>
-<p>This page previously described <code>security/resource_guard.py</code> and <code>security/integrity.py</code>, which do not exist in <code>hierachain/</code>. Fault tolerance in the codebase is distributed instead.</p>
-<h2 id="resource-protection-actual">Resource protection (actual)</h2>
+<h1 id="fault-tolerance-and-integrity">Fault tolerance and integrity</h1>
+<p>Resource limits and ledger integrity checks run in the API middleware, ordering service and block verifier.</p>
+<h2 id="resource-protection">Resource protection</h2>
 <ul>
-<li>Rate and payload limits live in <code>hierachain/api/middleware.py</code> (<code>add_rate_limit</code>, <code>add_payload_limit</code> with <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code>; payload is checked via <code>request.stream()</code> with a 1MB limit).</li>
-<li>Event pool and RAM guards are <code>HRC_EVENT_POOL_MAX_SIZE</code> (10k) and <code>HRC_RAM_CRITICAL_THRESHOLD</code> (95%), checked in ordering and storage paths.</li>
-<li>There is no <code>ResourceGuardMiddleware</code>. The 70%/90% threshold table and the load shedding in <code>monitoring/performance_monitor.py</code> described earlier were fabricated. Use app middleware together with reverse proxy limits.</li>
+<li>Rate and payload limits live in <code>hierachain/api/middleware.py</code> (<code>add_rate_limit</code>, <code>add_payload_limit</code> with <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code>). For POST, PUT, and PATCH requests, a parseable <code>Content-Length</code> is checked against 1 MiB; <code>request.stream()</code> byte counting runs only when the header is absent.</li>
+<li><code>HRC_EVENT_POOL_MAX_SIZE</code> defaults to 10,000 and bounds the ordering queue. <code>HRC_RAM_CRITICAL_THRESHOLD</code> is declared with a 95% default but has no runtime consumer under <code>hierachain/</code>. <code>ResourceValidator</code> reports its separately configured CPU, memory, and disk thresholds when called; it does not enforce this RAM setting in ordering or storage.</li>
+<li>Use app middleware together with reverse proxy limits. <code>PerformanceMonitor</code> reports metrics; it does not install a per-request CPU/RAM guard.</li>
 </ul>
-<h2 id="integrity-checks-actual">Integrity checks (actual)</h2>
-<p>There is no startup signature scan in <code>security/integrity.py</code>. The actual integrity mechanisms are:</p>
+<h2 id="integrity-checks">Integrity checks</h2>
+<p>Ledger loading and verification use the following mechanisms:</p>
 <ul>
 <li>Merkle and chain links in <code>hierachain/core/block.py</code> and <code>core/merkle_tree.py</code> (domain-separated <code>0x01</code> prefix) and <code>consensus/ordering/storage.py:_verify_chain_links()</code> (<code>previous_hash</code> chain).</li>
 <li>Proof verification in <code>hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain</code> (fallback chain scan) and <code>security/verify/block_verifier.py</code>.</li>
 <li>Runtime integrity checks use chain links, Merkle roots, proof verification, and consensus validation. State snapshots and rollback are deployment responsibilities.</li>
-<li><code>BlockVerifier.verify_chain()</code> verifies a complete chain: its first block must be genesis at index <code>0</code> with <code>previous_hash</code> equal to <code>"0"</code>. This API does not accept partial histories; callers must supply the full chain.</li>
+<li><code>BlockVerifier.verify_chain()</code> checks the sequence supplied. For a nonempty sequence, the first block must be genesis at index <code>0</code> with <code>previous_hash</code> equal to <code>"0"</code>, and links among supplied blocks are checked. An empty sequence returns <code>VALID</code>. The API has no expected tip height or hash, so a valid prefix that omits later blocks can pass.</li>
 </ul>
 <pre class="mermaid"><code>graph LR
     A[Block finalize] --&gt; B[previous_hash check]
     B --&gt; C[Merkle root verify]
     C --&gt; D[Proof verify on MainChain]
     D --&gt; E[Operational recovery if needed]</code></pre>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href="../../modules/error-mitigation/">Error Mitigation</a></li>

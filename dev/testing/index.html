@@ -4749,20 +4749,22 @@
 <p>Running all tests simultaneously may cause errors due to resource constraints. It is recommended to run per file or small groups.</p>
 </div>
 <h3 id="running-unit-tests">Running Unit Tests</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit/core/test_block.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="running-integration-tests">Running Integration Tests</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="running-scenario-tests">Running Scenario Tests</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/scenarios<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/scenarios/test_recovery.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="running-benchmark-tests">Running Benchmark Tests</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>--benchmark-only<span class="w"> </span>-v<span class="w"> </span>--benchmark-save<span class="o">=</span>benchmark_report
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>--benchmark-only<span class="w"> </span>-v<span class="w"> </span>--benchmark-histogram<span class="o">=</span>benchmark_report
 </code></pre></div>
 <h3 id="running-all-tests">Running All Tests</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">for</span><span class="w"> </span>test_file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>tests/unit<span class="w"> </span>tests/integration<span class="w"> </span>tests/scenarios<span class="w"> </span>-name<span class="w"> </span><span class="s1">'test_*.py'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span><span class="s2">"</span><span class="nv">$test_file</span><span class="s2">"</span><span class="w"> </span>-v<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">break</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">done</span>
 </code></pre></div>
 <p>Consensus integration, 2PC, data-flow and recovery tests use per-case temporary SQLite databases and journals. They do not require the PostgreSQL service from the application's <code>.env</code>; dedicated live-backend tests exercise PostgreSQL.</p>
 <h3 id="required-ci-gates">Required CI gates</h3>
@@ -4860,7 +4862,7 @@ journal under <code>/app/data</code>. Journal fsync is always enabled. Override
 <a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="c1"># Expose the API to local host</span>
 <a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/hierachain-api<span class="w"> </span><span class="m">2661</span>:2661<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--address<span class="w"> </span><span class="m">0</span>.0.0.0
 <a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>
-<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1"># Test API  </span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1"># Test API</span>
 <a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>curl<span class="w"> </span>http://localhost:2661/api/ledger/health
 <a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>
 <a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1"># Run stress test</span>
@@ -4946,8 +4948,8 @@ journal under <code>/app/data</code>. Journal fsync is always enabled. Override
 </li>
 </ul>
 <h2 id="running-by-marker-example">Running by Marker Example</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="testing-principles">Testing Principles</h2>
 <ul>

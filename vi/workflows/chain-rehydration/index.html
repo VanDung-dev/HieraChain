@@ -1601,10 +1601,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-kich-ban-lech-trang-thai" class="md-nav__link">
+  <a href="#so-sanh-va-dung-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các kịch bản lệch trạng thái
+        So sánh và dựng lại
       </span>
     </span>
   </a>
@@ -1612,21 +1612,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#loi-va-gioi-han-van-hanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Lỗi và giới hạn vận hành
       </span>
     </span>
   </a>
@@ -4313,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-kich-ban-lech-trang-thai" class="md-nav__link">
+  <a href="#so-sanh-va-dung-lai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các kịch bản lệch trạng thái
+        So sánh và dựng lại
       </span>
     </span>
   </a>
@@ -4324,21 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#loi-va-gioi-han-van-hanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Lỗi và giới hạn vận hành
       </span>
     </span>
   </a>
@@ -4400,205 +4378,113 @@
 
 <h1 id="nap-lai-trang-thai-chuoi">Nạp lại trạng thái chuỗi</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Khi node Sub-Chain khởi động lại hoặc phát hiện lệch trạng thái (hash cục bộ không khớp hash trong DB), node nạp lại chuỗi trong bộ nhớ từ backend lưu trữ. Cơ chế này giữ sổ cái nhất quán sau crash, restart hoặc chia mạng.</p>
-<p>DB là nguồn chân lý có thẩm quyền. Nếu trạng thái cục bộ lệch, nó bị bỏ và dựng lại hoàn toàn từ DB.</p>
-<hr />
+<p><code>SubChain.sync_chain()</code> dựng lại ledger cục bộ từ các khối do dịch vụ ordering cung cấp. Quá trình khởi động chạy bước đồng bộ này trước khi đăng ký chuỗi hoặc khởi chạy commit consumer. Quy trình không có bộ hẹn giờ <code>auto_sync</code> định kỳ; ứng dụng gọi <code>sync_chain()</code> sau đó phải phối hợp với các bên đang ghi dữ liệu.</p>
+<p>Orderer cung cấp danh sách khối bootstrap một lần. Sau đó, quá trình đồng bộ đọc toàn bộ khối qua <code>storage_handler.get_blocks_from_db(start_index=0)</code>. Nó so sánh khối cuối cục bộ với khối cuối được cung cấp để quyết định có dựng lại hay không. Nó không chỉ lấy phần dữ liệu còn thiếu.</p>
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant SC as 📦 SubChain
-    participant OS as ⚙️ OrderingService
-    participant DB as 💾 Storage Backend
-
-    Note over SC: Khởi động nút HOẶC phát hiện lệch trạng thái
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 1 — Phát hiện Sai lệch
-        SC-&gt;&gt;SC: sync_chain()
-        SC-&gt;&gt;OS: get_latest_block()
-        OS-&gt;&gt;DB: Truy vấn khối mới nhất đã ghi
-        DB--&gt;&gt;OS: Khối mới nhất (index, hash)
-        OS--&gt;&gt;SC: Khối mới nhất từ hệ thống
+    participant SC as SubChain
+    participant OS as OrderingService
+    participant DB as Storage handler
+    SC-&gt;&gt;OS: take_bootstrap_blocks()
+    alt Bootstrap already consumed
+        SC-&gt;&gt;DB: get_blocks_from_db(start_index=0)
+        DB--&gt;&gt;SC: All stored blocks
+    else Bootstrap available
+        OS--&gt;&gt;SC: Bootstrap blocks
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 2 — So đối &amp; Nạp lại trạng thái
-        SC-&gt;&gt;SC: So đối: local_latest.index vs db_latest.index
-
-        alt Cục bộ == DB (cùng chỉ số index + trùng khớp mã băm hash)
-            SC-&gt;&gt;SC: Đã đồng bộ mới nhất. Không xử lý thêm (No-op).
-        else Cục bộ &lt; DB (nút bị lỡ các khối trong thời gian offline)
-            SC-&gt;&gt;DB: get_blocks_from_db(start_index=0)
-            DB--&gt;&gt;SC: Toàn bộ danh sách khối []
-            SC-&gt;&gt;SC: Yêu cầu khóa ghi (Write Lock)
-            SC-&gt;&gt;SC: Xóa chuỗi cục bộ cũ, đặt lại các bộ đếm
-            loop Duyệt qua từng khối nhận từ DB
-                SC-&gt;&gt;SC: chain.append(block)
-                SC-&gt;&gt;SC: _update_event_statistics(block)
-            end
-            SC-&gt;&gt;SC: Giải phóng khóa ghi
-            SC-&gt;&gt;OS: Đặt lại block_history &amp; blocks_created
-        else Cục bộ &gt; DB HOẶC lệch mã băm hash
-            SC-&gt;&gt;SC: Ghi log CẢNH BÁO: phát hiện trạng thái sai lệch
-            SC-&gt;&gt;DB: Ép buộc nạp lại toàn bộ chuỗi từ DB
-        end
+    SC-&gt;&gt;SC: Compare local tip index/hash with supplied tip
+    opt Rebuild required
+        SC-&gt;&gt;SC: Lock, clear chain and WorldState
+        SC-&gt;&gt;SC: Append all supplied blocks and apply WorldState
+        SC-&gt;&gt;SC: Blockchain._rebuild_event_indexes()
+        SC-&gt;&gt;SC: Validate rebuilt chain
     end
-
-    SC-&gt;&gt;SC: _reset_ordering_service_state()
-    Note over SC: Trạng thái chuỗi đã nhất quán với DB lưu trữ</code></pre>
-<hr />
-<h2 id="cac-kich-ban-lech-trang-thai">Các kịch bản lệch trạng thái</h2>
+    SC-&gt;&gt;SC: Reconcile commit queue against local index/hash</code></pre>
+<h2 id="so-sanh-va-dung-lai">So sánh và dựng lại</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Kịch bản</th>
-<th style="text-align: left;">Cách phát hiện</th>
-<th style="text-align: left;">Hành động khắc phục</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>Khởi động lạnh</strong></td>
-<td style="text-align: left;"><code>local.index == 0</code></td>
-<td style="text-align: left;">Nạp toàn bộ danh sách khối từ DB</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Phục hồi sau crash</strong></td>
-<td style="text-align: left;"><code>local.index &lt; db.index</code></td>
-<td style="text-align: left;">Chỉ lấy và ghép thêm khối thiếu</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Lệch hash</strong></td>
-<td style="text-align: left;"><code>local.hash != db.hash</code> (cùng index)</td>
-<td style="text-align: left;">Buộc nạp lại toàn bộ từ DB</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Đã đồng bộ</strong></td>
-<td style="text-align: left;">Cùng index và hash khớp</td>
-<td style="text-align: left;">Không làm gì (No-op)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Cục bộ chạy trước DB</strong></td>
-<td style="text-align: left;"><code>local.index &gt; db.index</code></td>
-<td style="text-align: left;">Cảnh báo: DB là chuẩn; buộc nạp lại từ DB</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Kích hoạt</strong></td>
-<td style="text-align: left;">Node khởi động gọi <code>sync_chain()</code>, hoặc timer <code>auto_sync</code> tự kích hoạt.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Truy vấn DB</strong></td>
-<td style="text-align: left;"><code>OrderingService.get_latest_block()</code> lấy khối mới nhất từ DB.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. So sánh</strong></td>
-<td style="text-align: left;">So sánh cặp <code>(index, hash)</code> của chuỗi cục bộ với DB.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Đã đồng bộ</strong></td>
-<td style="text-align: left;">Nếu khớp hoàn toàn: bỏ qua và tiếp tục hoạt động bình thường.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Đồng bộ một phần</strong></td>
-<td style="text-align: left;">Nếu <code>local &lt; db</code>: chỉ tải khối thiếu. Lấy khóa ghi để tránh xung đột luồng.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Nạp lại toàn bộ</strong></td>
-<td style="text-align: left;">Nếu lệch hash hoặc local lớn hơn DB: xóa bộ nhớ cục bộ, dựng lại toàn bộ từ DB.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Đặt lại chỉ mục</strong></td>
-<td style="text-align: left;"><code>_update_event_statistics()</code> dựng lại <code>entity_event_index</code> từ khối vừa nạp.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>8. Đồng bộ bộ đếm</strong></td>
-<td style="text-align: left;">Đồng bộ lại bộ đếm khối giữa chuỗi và ordering service.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tình huống</th>
+<th style="text-align: left;">Trạng thái</th>
 <th style="text-align: left;">Hành vi</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Lỗi đọc DB khi nạp lại</td>
-<td style="text-align: left;">Ghi log exception, thử lại ở chu kỳ đồng bộ tiếp theo</td>
+<td style="text-align: left;">Không có khối được cung cấp</td>
+<td style="text-align: left;">Quá trình khôi phục trả về mà không xóa chuỗi cục bộ</td>
 </tr>
 <tr>
-<td style="text-align: left;">Khóa ghi giữ quá lâu</td>
-<td style="text-align: left;">Tự hết hạn sau <code>lock_timeout</code> giây; gửi cảnh báo qua Risk Alerts</td>
+<td style="text-align: left;">Khối cuối cục bộ đứng sau khối cuối được cung cấp</td>
+<td style="text-align: left;">Dựng lại từ toàn bộ danh sách khối được cung cấp</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>entity_event_index</code> không nhất quán sau nạp</td>
-<td style="text-align: left;">Kích hoạt dựng lại chỉ mục toàn phần</td>
+<td style="text-align: left;">Cùng chỉ số và cùng hash</td>
+<td style="text-align: left;">Giữ chuỗi cục bộ</td>
 </tr>
 <tr>
-<td style="text-align: left;">DB không kết nối được</td>
-<td style="text-align: left;">Node chuyển sang chỉ đọc; sự kiện mới vào hàng đợi nhưng không ghi xuống đĩa</td>
+<td style="text-align: left;">Cùng chỉ số nhưng khác hash</td>
+<td style="text-align: left;">Dựng lại từ các khối được cung cấp</td>
+</tr>
+<tr>
+<td style="text-align: left;">Chỉ số cục bộ cao hơn, hash khối cuối khác</td>
+<td style="text-align: left;">Ghi log phân kỳ và dựng lại</td>
+</tr>
+<tr>
+<td style="text-align: left;">Chỉ số cục bộ cao hơn, hash khối cuối giống nhau</td>
+<td style="text-align: left;">Giữ chuỗi cục bộ</td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p><code>_apply_rehydrated_blocks()</code> giữ khóa chuỗi trong khi xóa và dựng lại chuỗi, WorldState và chỉ mục sự kiện. Sau đó, nó gọi <code>is_chain_valid()</code> và phát sinh <code>ValueError</code> nếu xác thực thất bại. Nó không đặt lại bộ đếm khối của orderer đang hoạt động.</p>
+<p>Bước đối soát lúc khởi động loại bỏ các khối trong hàng đợi có chỉ số và hash đã trùng với chuỗi vừa dựng lại. Các khối chưa có trong chuỗi vẫn ở hàng đợi. Khối có hash xung đột được giữ lại và gây <code>ValueError</code>, ngăn quá trình khởi động chấp nhận lịch sử xung đột.</p>
+<h2 id="loi-va-gioi-han-van-hanh">Lỗi và giới hạn vận hành</h2>
+<p>Lỗi đọc storage được truyền đến bên gọi. Lịch sử dựng lại không hợp lệ và xung đột hàng đợi cũng gây lỗi. Luồng này không có lịch thử lại, cảnh báo hết thời gian chờ khóa hay tự động chuyển sang chế độ chỉ đọc. Khôi phục quyền truy cập storage và cấu hình danh tính/tin cậy đã được phê duyệt trước khi khởi động lại; kiểm tra lỗi trước khi gửi thêm sự kiện.</p>
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
+<th style="text-align: left;">Thao tác</th>
+<th style="text-align: left;">Phương thức</th>
 <th style="text-align: left;">Tệp</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Hàm khởi tạo</td>
+<td style="text-align: left;">Điểm vào công khai</td>
 <td style="text-align: left;"><code>SubChain.sync_chain()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Đọc khối mới nhất từ DB</td>
-<td style="text-align: left;"><code>OrderingService.get_latest_block()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/service.py</code></td>
+<td style="text-align: left;">Đồng bộ</td>
+<td style="text-align: left;"><code>_sync_chain_for_sub_chain()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Tải toàn bộ khối</td>
-<td style="text-align: left;"><code>storage.get_blocks_from_db()</code></td>
-<td style="text-align: left;"><code>adapters/database/sqlite_adapter.py</code></td>
+<td style="text-align: left;">Nạp và so sánh</td>
+<td style="text-align: left;"><code>_rehydrate_chain_from_ordering_service()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Cập nhật chỉ mục</td>
-<td style="text-align: left;"><code>SubChain._update_event_statistics()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;">Dựng lại</td>
+<td style="text-align: left;"><code>_apply_rehydrated_blocks()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Đặt lại bộ đếm OS</td>
-<td style="text-align: left;"><code>SubChain._reset_ordering_service_state()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code></td>
+<td style="text-align: left;">Đối soát hàng đợi</td>
+<td style="text-align: left;"><code>_discard_rehydrated_blocks_from_queue()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Chỉ mục sự kiện</td>
+<td style="text-align: left;"><code>Blockchain._rebuild_event_indexes()</code></td>
+<td style="text-align: left;"><code>hierachain/core/blockchain.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a>: khôi phục snapshot lỗi kích hoạt nạp lại chuỗi</li>
-<li><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a>: kiểm tra nhất quán chuỗi sau khi nạp lại</li>
+<li><a href=".././error-recovery/">Giảm thiểu lỗi</a>: các cơ chế khôi phục riêng</li>
+<li><a href=".././integrity-validation/">Kiểm tra tính toàn vẹn hệ thống</a>: báo cáo tính toàn vẹn do bên gọi chủ động yêu cầu</li>
 </ul>
 
 

@@ -4391,7 +4391,7 @@
 <li><code>hierachain/hierarchical/main_chain/base.py</code> is the Main Chain. It stores and verifies proofs from Sub-Chains and aggregates integrity reports.</li>
 <li><code>hierachain/hierarchical/sub_chain/base.py</code> is the Sub-Chain. It records domain events, orders them into blocks, generates proofs and sends them to the Main Chain.</li>
 <li><code>hierachain/hierarchical/hierarchy_manager/base.py</code> is the HierarchyManager. It coordinates the multi-chain system, manages the Sub-Chain lifecycle, handles automatic proof submission and cross-chain verification.</li>
-<li><code>hierachain/api/storage/ipfs_client.py</code> provides off-chain IPFS storage. It keeps large or sensitive business data off chain and anchors only the CID on the blockchain.</li>
+<li><code>hierachain/api/storage/ipfs_client.py</code> provides off-chain IPFS storage. Large or sensitive business details stay off chain; the ledger event stores <code>details_cid</code>, <code>details_nonce</code>, optional <code>details_metadata</code>, and its normal event fields.</li>
 <li><code>hierachain/consensus/ordering/service.py</code> is the Ordering Service. It orders events before block creation and is initialized by the Sub-Chain.</li>
 </ul>
 <h3 id="typical-flow">Typical Flow</h3>

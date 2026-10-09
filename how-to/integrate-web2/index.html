@@ -3430,10 +3430,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#method-2-integration-sdk-python-backend" class="md-nav__link">
+  <a href="#method-2-direct-in-process-library-integration-python-backend" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Method 2: Integration SDK (Python Backend)
+        Method 2: Direct in-process library integration (Python Backend)
       </span>
     </span>
   </a>
@@ -4402,10 +4402,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#method-2-integration-sdk-python-backend" class="md-nav__link">
+  <a href="#method-2-direct-in-process-library-integration-python-backend" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Method 2: Integration SDK (Python Backend)
+        Method 2: Direct in-process library integration (Python Backend)
       </span>
     </span>
   </a>
@@ -4536,8 +4536,8 @@
 <a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
 <a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="k">try</span><span class="p">:</span>
 <a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">API_URL</span><span class="si">}</span><span class="s2">/chains/orders/events"</span><span class="p">,</span> 
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>            <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> 
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">API_URL</span><span class="si">}</span><span class="s2">/chains/orders/events"</span><span class="p">,</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>            <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
 <a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
 <a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>            <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span>
 <a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="p">)</span>
@@ -4576,8 +4576,9 @@
 <a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="method-2-integration-sdk-python-backend">Method 2: Integration SDK (Python Backend)</h2>
-<p>If you are building a Python service within the same internal network or cluster, using the SDK directly provides higher performance (bypasses HTTP overhead).</p>
+<p>Configure a signing identity and SQL storage using <a href="../../getting-started/quickstart/">Quickstart</a> before using <code>HierarchyManager</code>. The HTTP SDK in <code>hierachain/sdk/</code> is distinct from the direct library call below.</p>
+<h2 id="method-2-direct-in-process-library-integration-python-backend">Method 2: Direct in-process library integration (Python Backend)</h2>
+<p>This example imports and calls <code>HierarchyManager</code> directly in the service process. Use <code>HieraChainClient</code> when your service should call the API through the HTTP SDK.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant Service as Python Service
     participant Manager as HierarchyManager
@@ -4585,31 +4586,32 @@
     participant Main as Main Chain
 
     Service-&gt;&gt;Manager: start_operation(sub_chain, data)
-    Manager-&gt;&gt;Sub: Record Event &amp; Close Block
+    Manager-&gt;&gt;Sub: Journal and queue event
     Service-&gt;&gt;Manager: submit_proof_to_main_chain()
     Manager-&gt;&gt;Sub: Get Proof
     Manager-&gt;&gt;Main: Submit Proof (Anchor Data)
     Main--&gt;&gt;Manager: Acknowledge (Ack)</code></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Initialize manager (connects directly to DB or via internal ZMQ)</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">process_batch_data</span><span class="p">(</span><span class="n">batch_items</span><span class="p">):</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="c1"># Write directly to processing queue</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">batch_items</span><span class="p">:</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>            <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>            <span class="n">entity_id</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>            <span class="n">operation_type</span><span class="o">=</span><span class="s2">"ingest"</span><span class="p">,</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>            <span class="n">details</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"metadata"</span><span class="p">]</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="p">)</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="c1"># Trigger immediate proof submission (optional)</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">chain</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">assert</span> <span class="n">chain</span><span class="o">.</span><span class="n">register_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"product"</span><span class="p">:</span> <span class="s2">"sample"</span><span class="p">})</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"PROD-001"</span><span class="p">,</span> <span class="s2">"production_start"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">chain</span><span class="o">.</span><span class="n">flush_pending_and_finalize</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        <span class="n">event</span><span class="p">[</span><span class="s2">"event"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"operation_start"</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">chain</span><span class="o">.</span><span class="n">get_events_by_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">)</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="p">)</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="method-3-erp-adapter">Method 3: ERP Adapter</h2>
-<p>Use the <code>hierachain/integration</code> ledger to build bidirectional data sync adapters.</p>
+<p>Use the mapping/scheduler library with an application-provided ERP adapter. Built-in vendor connectors are simulation-only.</p>
 <p>See details at: <a href="../../modules/integration/">Integration Module</a>.</p>
 <h2 id="important-notes">Important Notes</h2>
 <ol>

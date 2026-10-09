@@ -3583,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-key-backup-and-recovery-demo" class="md-nav__link">
+  <a href="#3-key-backup-and-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Key Backup and Recovery Demo
+        3. Key backup and recovery
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-key-backup-and-recovery-demo" class="md-nav__link">
+  <a href="#3-key-backup-and-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Key Backup and Recovery Demo
+        3. Key backup and recovery
       </span>
     </span>
   </a>
@@ -4355,47 +4355,38 @@
 
 
 <h1 id="how-to-run-demos-demo">How to Run Demos (<code>demo/*</code>)</h1>
-<p>The <code>demo/</code> directory contains sample scripts to help you quickly get familiar with the system's key features.</p>
+<p>The <code>demo/</code> directory contains library and UI demonstrations. Activate the repository environment and provision the signing identity/trusted key map from <a href="../../getting-started/quickstart/">Quickstart</a> before scripts that create chains. Demo output and mocks are not production persistence or security guarantees.</p>
 <h2 id="1-core-features-demo">1. Core Features Demo</h2>
 <p>This script demonstrates the flow of creating Sub-chains, sending Events, and the Channel/Private Data mechanism.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Run the basic demo</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>demo/demo.py
 </code></pre></div>
-<p><strong>Steps performed in the demo:</strong></p>
+<p>Steps performed in the demo:</p>
 <ul>
 <li>Initialize Main Chain and Sub-Chain (<code>supply_chain</code>).</li>
 <li>Register organizations and users.</li>
 <li>Send business events.</li>
 <li>Create a Private Data Collection shared only between two parties.</li>
 </ul>
-<hr />
 <h2 id="2-bft-consensus-over-zeromq-demo">2. BFT Consensus over ZeroMQ Demo</h2>
 <p>Demonstrates the consensus capability of 4 nodes using the BFT protocol over a ZeroMQ network.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Run the BFT demo</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>demo/demo_zmq_consensus.py
 </code></pre></div>
-<hr />
-<h2 id="3-key-backup-and-recovery-demo">3. Key Backup and Recovery Demo</h2>
-<p>Shows how to use <code>KeyBackupManager</code> to protect user private keys.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Run the backup demo</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>demo/demo_key_backup.py
-</code></pre></div>
-<hr />
+<h2 id="3-key-backup-and-recovery">3. Key backup and recovery</h2>
+<p>Follow <a href="../../workflows/key-backup/">Key Backup</a> for CLI key files, complete node identities and encrypted development vaults. The repository has no <code>demo_key_backup.py</code> or <code>KeyBackupManager</code>.</p>
 <h2 id="4-ipfs-integration-demo">4. IPFS Integration Demo</h2>
 <p>Illustrates how to store large data/documents on IPFS with AES-256 encryption.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Run the IPFS demo</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>demo/demo_ipfs.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Run the IPFS demo</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>demo/demo_ipfs.py
 </code></pre></div>
-<blockquote>
-<p><strong>Note</strong>: Requires the IPFS daemon to be running (default on port 5001).</p>
-</blockquote>
-<hr />
+<p>The script tries the local IPFS daemon on port 5001 and can fall back to an in-memory mock. Mock CIDs do not prove encrypted persistence or retrieval from a real daemon.</p>
 <h2 id="5-blockchain-explorer-demo">5. Blockchain Explorer Demo</h2>
 <p>A simple web interface for viewing blocks and events.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Run the explorer demo</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>python<span class="w"> </span>demo/demo_explorer.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Run the explorer demo</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>demo/demo_explorer.py
 </code></pre></div>
-<p>Then visit <a href="http://localhost:2661/explorer">http://localhost:2661/explorer</a> (requires the API server to be running).</p>
+<p>The demo serves generated JSON and its dashboard separately at <a href="http://127.0.0.1:8000/explorer">http://127.0.0.1:8000/explorer</a>. Run <code>demo/demo.py</code> first to generate the data. This server is separate from the ledger API on port 2661.</p>
 
 
 

@@ -4470,7 +4470,7 @@
 <ul>
 <li>
 <p>Kiểm tra tiến trình server:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
 </li>
 <li>
@@ -4481,8 +4481,8 @@
 <h2 id="401403-khi-goi-api">401/403 khi gọi API</h2>
 <ul>
 <li>
-<p>Production có thể bật AUTH: <code>settings.AUTH_ENABLED</code>. Khi đó cần gửi API key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-API-Key: &lt;your-key&gt;"</span><span class="w"> </span>http://localhost:2661/api/ledger/health
+<p>Production yêu cầu <code>settings.AUTH_ENABLED=True</code>. Route được bảo vệ cần API key có scope phù hợp; route health/status có thể được miễn. Kiểm tra một route được bảo vệ:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-API-Key: &lt;your-key&gt;"</span><span class="w"> </span>http://localhost:2661/api/ledger/chains
 </code></pre></div>
 </li>
 <li>
@@ -4501,9 +4501,9 @@
 </code></pre></div>
 </li>
 <li>
-<p><code>details</code> là map<string,string>. Giá trị không phải chuỗi sẽ bị chuyển sang chuỗi.</p>
+<p>REST <code>details</code> là đối tượng JSON và giữ nguyên kiểu dữ liệu được hỗ trợ trong payload sự kiện canonical. Cột metadata <code>details</code> của Arrow là bản biểu diễn chuỗi; nó không thay thế payload gốc.</p>
 </li>
-<li>Timestamp do server sinh; không cần gửi từ client.</li>
+<li>Request model của API không có trường timestamp và event builder lấy thời gian từ server. Timestamp do client gửi không được sử dụng.</li>
 </ul>
 <h2 id="khong-tao-uoc-sub-chain">Không tạo được Sub-Chain</h2>
 <ul>
@@ -4513,7 +4513,7 @@
 </code></pre></div>
 </li>
 <li>
-<p>Tên chuỗi phải khớp regex <code>[a-zA-Z0-9_\-]+</code> (xem kiểm tra trong <code>api/ledger/endpoints.py</code>).</p>
+<p>Tên chain phải khớp regex <code>[a-zA-Z0-9_\-]+</code> (xem xác minh trong <code>hierachain/api/ledger/chains.py</code>).</p>
 </li>
 </ul>
 <h2 id="su-kien-khong-xuat-hien-trong-block-tra-ve">Sự kiện không xuất hiện trong block trả về</h2>
@@ -4524,15 +4524,13 @@
 </code></pre></div>
 </li>
 <li>
-<p>Một số chuỗi cần gọi finalize/submit proof để thấy block mới. Thử submit proof:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
-</code></pre></div>
+<p>Kết quả gửi sự kiện xác nhận ordering đã tiếp nhận. Đợi batch đạt kích thước/timeout và consumer xử lý commit rồi đọc block lại. Nếu sự kiện vẫn thiếu, kiểm tra trạng thái orderer và lỗi lưu trữ/hoàn tất block. Gửi bằng chứng lên MainChain là thao tác riêng; nó không buộc batch đang chờ của Sub-Chain phải commit.</p>
 </li>
 </ul>
 <h2 id="hieu-nang-kem503-service-unavailable">Hiệu năng kém/503 Service Unavailable</h2>
 <ul>
-<li>Nếu tích hợp <code>ResourceGuardMiddleware</code>, 503 có thể do CPU/RAM vượt ngưỡng.</li>
-<li>Kiểm tra cấu hình rate limit/HSTS/CORS trong <code>settings.py</code>.</li>
+<li>Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có <code>ResourceGuardMiddleware</code> CPU/RAM ở API.</li>
+<li>Kiểm tra giới hạn tốc độ API và CORS trong <code>settings.py</code>; cấu hình HSTS tại proxy HTTPS.</li>
 <li>Giảm kích thước lô sự kiện; chỉ điều chỉnh instance cache hiện có sau khi đo việc sử dụng chúng.</li>
 </ul>
 <h2 id="redissqlite-khong-ket-noi">Redis/SQLite không kết nối</h2>
@@ -4547,7 +4545,7 @@
 <p><code>REDIS_HOST</code>, <code>REDIS_PORT</code>, <code>REDIS_DB</code></p>
 </li>
 <li>
-<p>Đổi <code>DEFAULT_STORAGE_BACKEND</code> về <code>memory</code> để cô lập sự cố lưu trữ.</p>
+<p>Chỉ đặt <code>HRC_STORAGE_BACKEND=memory</code> cho test biệt lập; backend này không giữ dữ liệu ledger sau khi process kết thúc. Dùng <code>sqlite</code> hoặc <code>postgres</code> để lưu bền block có chữ ký.</p>
 </li>
 </ul>
 <h2 id="business-endpoints-tra-loi">business endpoints trả lỗi</h2>
@@ -4555,7 +4553,7 @@
 <li>Xác minh API business đã được nạp (xem <code>hierachain/api/server.py</code> và <code>hierachain/api/business/router.py</code>).</li>
 <li>
 <p>Thử health business:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
 </code></pre></div>
 </li>
 </ul>

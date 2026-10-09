@@ -4471,7 +4471,7 @@
 <li>Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.</li>
 <li>Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.</li>
 </ul>
-<p><code>read_since(cursor=None)</code> flush và fsync writer đang hoạt động, đọc frame bền vững và trả <code>(records, (inode, byte_offset))</code>. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.</p>
+<p><code>read_since(cursor=None)</code> flush writer đang hoạt động và chỉ fsync khi trạng thái tệp chưa xác định hoặc đã thay đổi. Append thành công đã fsync trước khi <code>log_event()</code> trả về. Phương thức đọc frame bền vững và trả <code>(records, (inode, byte_offset))</code>. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khi cần đồng bộ khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.</p>
 <p>Mỗi lần ghi lưu offset bắt đầu. Nếu ghi hoặc fsync frame thất bại, journal cắt file về offset đó và fsync phần cắt trước khi cho phép lần ghi tiếp theo. Nếu thao tác cắt hoặc fsync phần cắt thất bại, writer bị vô hiệu hóa và từ chối ghi cho đến khi được đóng rồi mở lại thành instance mới; khi khởi động, journal sửa phần cuối chưa hoàn chỉnh của file đang hoạt động.</p>
 <h3 id="23-ma-hoa-co-the-khoi-phuc-encryption_validatorpy">2.3 Mã hóa có thể khôi phục (<code>encryption_validator.py</code>)</h3>
 <p><code>EncryptionValidator(config, key_resolver)</code> dùng AES-256-GCM. Mã hóa yêu cầu <code>config["key_id"]</code> và <code>key_resolver(key_id)</code> do caller cung cấp, trả đúng 32 byte cho khóa đã được cho phép và giữ lại. ID thiếu, khóa không khả dụng hoặc dữ liệu khóa không hợp lệ gây <code>SecurityError</code>; validator không tạo khóa mã hóa dùng xong rồi bỏ.</p>
@@ -4496,38 +4496,7 @@
 <p><code>EncryptionValidator.validate_config()</code> cảnh báo khi <code>key_rotation_interval</code> dưới <code>min_key_rotation_interval</code> hiện có (2.592.000 giây). Đây là so sánh cấu hình để tham khảo, không đánh giá tuổi khóa hay áp dụng chính sách hết hạn. Nó không tạo lịch, deadline hoặc khóa thay thế. Ứng dụng host quản lý việc xoay khóa và giữ khóa cũ.</p>
 <p>Bên đọc log cần cập nhật bộ lọc sự kiện: <code>auto_scaling_triggered</code> và wrapper <code>consensus_scaling</code> đổi thành <code>consensus_capacity_recommendation</code>; <code>resource_scaling_triggered</code> đổi thành <code>resource_capacity_recommendation</code>. Các đường dẫn Parquet legacy <code>log/error_mitigation/consensus_scaling.parquet</code> và <code>log/error_mitigation/resource_scaling.parquet</code>, field payload (gồm <code>auto_scale_enabled</code>) và record hiện có vẫn tương thích. Log gây hiểu nhầm <code>key_rotation_scheduled</code> và field <code>next_rotation</code> được bỏ; cảnh báo về interval vẫn còn.</p>
 <h2 id="3-chien-luoc-phan-loai-loi">3. Chiến lược phân loại lỗi</h2>
-<p><code>ErrorClassifier</code> trong <code>error_classifier.py</code> phân loại lỗi theo mức độ nghiêm trọng và đề xuất hành động xử lý:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Mức độ nghiêm trọng</th>
-<th style="text-align: left;">Ý nghĩa</th>
-<th style="text-align: left;">Hành động xử lý</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">INFO / WARNING</td>
-<td style="text-align: left;">Bất thường vận hành nhỏ</td>
-<td style="text-align: left;">Ghi log và tiếp tục</td>
-</tr>
-<tr>
-<td style="text-align: left;">ERROR</td>
-<td style="text-align: left;">Lỗi xác thực sự kiện hoặc lỗi xử lý tạm thời</td>
-<td style="text-align: left;">Thử lại kèm giãn cách hoặc từ chối</td>
-</tr>
-<tr>
-<td style="text-align: left;">CRITICAL</td>
-<td style="text-align: left;">Hỏng trạng thái hoặc không khớp Merkle root</td>
-<td style="text-align: left;">Từ chối, ghi log và yêu cầu khôi phục vận hành</td>
-</tr>
-<tr>
-<td style="text-align: left;">FATAL</td>
-<td style="text-align: left;">Lỗi phần cứng hoặc lỗi đồng thuận không thể phục hồi</td>
-<td style="text-align: left;">Khóa hệ thống khẩn cấp</td>
-</tr>
-</tbody>
-</table>
+<p><code>classify_error()</code> trả về <code>ErrorInfo</code> gồm category, <code>PriorityLevel</code> và mitigation strategy. Priority được tính từ impact và likelihood. <code>PriorityLevel</code> có các giá trị <code>CRITICAL</code>, <code>HIGH</code>, <code>MEDIUM</code> và <code>LOW</code>.</p>
 <h2 id="4-nhat-ky-su-kien">4. Nhật ký sự kiện</h2>
 <p><code>TransactionJournal</code> cung cấp khả năng lưu trữ ghi trước:</p>
 <ol>
@@ -4547,7 +4516,7 @@
 <li><a href=".././cluster/">Khóa cụm khẩn cấp</a></li>
 </ul>
 <p><code>ErrorClassifier</code> gọi callback lockdown được cung cấp cho lỗi security mức HIGH hoặc CRITICAL và lỗi performance mức CRITICAL. <code>DataValidator.validate_table()</code> kiểm tra kiểu Arrow bắt buộc ở mọi mức; strict kiểm tra thêm null. Kiểm tra consistency so sánh từng hàng theo thứ tự, gồm details JSON đã giải mã. Journal duyệt thư mục và mở tệp qua descriptor với cờ no-follow để từ chối symlink.</p>
-<p>Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của <code>details</code> và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem <a href="../../consensus/ordering/#quyền-sở-hữu-journal-cục-bộ">quyền sở hữu journal cục bộ</a>.</p>
+<p>Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của <code>details</code> và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem <a href="../../consensus/ordering/#local-journal-ownership">quyền sở hữu journal cục bộ</a>.</p>
 
 
 

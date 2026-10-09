@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Standard interface (Abstract Base Class) defining consensus rules and enterprise content filtering.">
+        <meta name="description" content="Abstract PoA/PoF interface, event content checks and shared optional ZK verification.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2765,10 +2765,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -2776,10 +2776,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-responsibilities" class="md-nav__link">
+  <a href="#abstract-methods" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Responsibilities
+        Abstract methods
       </span>
     </span>
   </a>
@@ -2787,10 +2787,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#abstract-api-methods" class="md-nav__link">
+  <a href="#event-content-validation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Abstract API Methods
+        Event content validation
       </span>
     </span>
   </a>
@@ -2798,21 +2798,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#event-validation-rules" class="md-nav__link">
+  <a href="#shared-zk-helper" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Event Validation Rules
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zero-knowledge-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Zero-Knowledge (ZK) Integration
+        Shared ZK helper
       </span>
     </span>
   </a>
@@ -4280,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4291,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-responsibilities" class="md-nav__link">
+  <a href="#abstract-methods" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Responsibilities
+        Abstract methods
       </span>
     </span>
   </a>
@@ -4302,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#abstract-api-methods" class="md-nav__link">
+  <a href="#event-content-validation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Abstract API Methods
+        Event content validation
       </span>
     </span>
   </a>
@@ -4313,21 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#event-validation-rules" class="md-nav__link">
+  <a href="#shared-zk-helper" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Event Validation Rules
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zero-knowledge-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Zero-Knowledge (ZK) Integration
+        Shared ZK helper
       </span>
     </span>
   </a>
@@ -4377,72 +4355,43 @@
 
 
 <h1 id="base-consensus-hierachainconsensusbase_consensuspy">Base Consensus (<code>hierachain/consensus/base_consensus.py</code>)</h1>
-<h2 id="overview">Overview</h2>
-<p><code>BaseConsensus</code> is the abstract base class defining the standard framework for all consensus algorithms in the HieraChain system. It ensures consistency between different protocols (PoA, PoF, BFT) and enforces the core business rules of an enterprise blockchain platform.</p>
-<hr />
-<h2 id="core-responsibilities">Core Responsibilities</h2>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>Protocol Definition</strong></p>
-<hr />
-<p>Defines mandatory methods like <code>validate_block</code>, <code>finalize_block</code>, and <code>can_create_block</code> so upper-layer modules (such as Ordering Service) can interact uniformly.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12v7.88c.04.3-.06.62-.29.83a.996.996 0 0 1-1.41 0L8.29 18.7a.99.99 0 0 1-.29-.83V12h-.03L2.21 4.62a1 1 0 0 1 .17-1.4c.19-.14.4-.22.62-.22h14c.22 0 .43.08.62.22a1 1 0 0 1 .17 1.4L12.03 12zm5.75 9L15 18l1.16-1.16 1.59 1.59 3.59-3.59 1.16 1.41z"/></svg></span> <strong>Content Filtering (Enterprise Filtering)</strong></p>
-<hr />
-<p>Automatically scans and rejects events containing forbidden cryptocurrency terms (<code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>). This is a critical protection layer to maintain HieraChain's enterprise purpose.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm2.28 13.08-2.02 2.02c-.6.6-1.39.9-2.18.9s-1.58-.3-2.18-.9a3.09 3.09 0 0 1 0-4.36l1.25-1.24-.01.56c0 .44.07.89.22 1.31l.05.13-.37.37c-.28.28-.44.66-.44 1.05 0 .4.16.77.44 1.05.56.56 1.53.56 2.09 0l2.01-2.01c.29-.29.44-.66.44-1.05 0-.41-.15-.77-.43-1.05a.83.83 0 0 1-.25-.57c0-.21.1-.41.25-.56.3-.31.85-.3 1.13 0 .58.58.9 1.35.9 2.17 0 .83-.32 1.6-.9 2.18m2.82-2.82-1.25 1.24.01-.56c0-.44-.07-.88-.22-1.3l-.04-.14.36-.37c.29-.28.44-.63.44-1.05 0-.39-.15-.76-.43-1.04-.57-.57-1.54-.57-2.1 0l-2.01 2.01c-.28.28-.44.65-.44 1.05s.15.76.44 1.04c.14.15.24.36.24.57 0 .22-.1.42-.25.57-.15.16-.35.22-.56.22-.2 0-.41-.07-.57-.22a3.054 3.054 0 0 1 0-4.36l2.02-2.02a3.09 3.09 0 0 1 4.36 0c.58.6.9 1.36.9 2.18s-.32 1.6-.9 2.18"/></svg></span> <strong>Integrity Verification</strong></p>
-<hr />
-<p>Integrates hash verification mechanisms, digital signatures, and Zero-Knowledge (ZK) Proof support to ensure block data cannot be altered.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="abstract-api-methods">Abstract API Methods</h2>
-<p>Every consensus algorithm inheriting from <code>BaseConsensus</code> must implement the following methods:</p>
+<h2 id="scope">Scope</h2>
+<p><code>BaseConsensus</code> defines the interface implemented by PoA and PoF. <code>BFTConsensus</code> is a separate class and does not inherit this interface. The base class stores <code>name</code> and <code>config</code>; concrete implementations supply block validation and finalization.</p>
+<h2 id="abstract-methods">Abstract methods</h2>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Method</th>
-<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Contract</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>validate_block(block, prev_block)</code></td>
-<td style="text-align: left;">Validates the new block against the previous block.</td>
+<td style="text-align: left;"><code>validate_block(block, previous_block)</code></td>
+<td style="text-align: left;">Return whether a block satisfies the concrete protocol's rules</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>finalize_block(block)</code></td>
-<td style="text-align: left;">Performs final steps (signing, nonce assignment) before saving the block.</td>
+<td style="text-align: left;">Return the block after protocol-specific finalization</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>can_create_block(node_id)</code></td>
-<td style="text-align: left;">Checks whether the current node has permission to create a block.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>get_consensus_info()</code></td>
-<td style="text-align: left;">Returns current status and configuration information of the protocol.</td>
+<td style="text-align: left;"><code>can_create_block(authority_id=None)</code></td>
+<td style="text-align: left;">Return whether block creation is allowed</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="event-validation-rules">Event Validation Rules</h2>
-<p>The system enforces strict forbidden keyword filtering:
-*   <strong>Checked data</strong>: All fields in <code>details</code> and event content.
-*   <strong>Excluded fields</strong>: Cryptographic fields such as <code>signature</code>, <code>hash</code>, <code>merkle_root</code>, and <code>zk_proof</code> are ignored to avoid false identification of random strings.
-*   <strong>Action</strong>: If a violation keyword is detected, <code>validate_event_for_consensus</code> returns <code>False</code>, causing the block to be rejected.</p>
-<hr />
-<h2 id="zero-knowledge-zk-integration">Zero-Knowledge (ZK) Integration</h2>
-<p><code>BaseConsensus</code> provides helper functions for ZK proof verification (<code>_verify_block_zk_proof</code>). When <code>settings.ENABLE_ZK_PROOFS</code> is enabled, every consensus block must carry a valid proof to demonstrate the correctness of state changes without revealing raw data.</p>
-<hr />
+<p>PoA and PoF extend <code>finalize_block()</code> with an optional <code>authority_id</code>. The orderer's configured finalizer connects consensus to block creation; the ordering block manager signs and persists the finalized header separately.</p>
+<p><code>get_validator_count()</code> is a concrete helper that returns zero in the base class and is overridden by PoA/PoF. There is no <code>get_consensus_info()</code> method in this interface.</p>
+<h2 id="event-content-validation">Event content validation</h2>
+<p><code>validate_event_for_consensus()</code> accepts a dictionary with <code>event</code> and <code>timestamp</code>. It checks the event name and selected content values against <code>FORBIDDEN_TERMS</code>: <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code> and <code>fee</code>. Matching is case-insensitive and uses word boundaries.</p>
+<p><code>EXCLUDED_CONTENT_FIELDS</code> skips <code>authority_signature</code>, <code>signature</code>, <code>hash</code>, <code>proof_hash</code>, <code>zk_proof</code>, <code>merkle_root</code>, <code>previous_state</code>, <code>current_state</code>, <code>details</code>, <code>event</code> and <code>timestamp</code> in the generic field pass. The event name and details receive separate checks. Dictionary details use the same exclusion set; string details are checked directly. This is not recursive schema or permission validation. Arrow Table and RecordBatch input returns <code>True</code> without these content checks.</p>
+<p>A failed check returns <code>False</code>. Callers must use that result; calling this helper does not itself reject or remove a queued event.</p>
+<h2 id="shared-zk-helper">Shared ZK helper</h2>
+<p>The module-level <code>_verify_block_zk_proof()</code> is called by PoA and PoF block validation. <code>HRC_ENABLE_ZK_PROOFS</code> enables it, while missing-proof handling depends on <code>HRC_ZK_REQUIRED_MAINCHAIN</code>. Development mocks check a public-input commitment; production proving/verifying is unimplemented. Hash and signature checks belong to the concrete protocols and block verifier.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././poa/">Proof of Authority (PoA)</a></li>
-<li><a href=".././pof/">Proof of Federation (PoF)</a></li>
+<li><a href=".././poa/">PoA</a></li>
+<li><a href=".././pof/">PoF</a></li>
 <li><a href=".././ordering/">Ordering Service</a></li>
 </ul>
 

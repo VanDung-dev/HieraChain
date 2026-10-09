@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Mô hình triển khai HieraChain, cấu hình mạng ZMQ, và hướng dẫn vận hành Kubernetes để đảm bảo High Availability.">
+        <meta name="description" content="Mô hình triển khai HieraChain, cấu hình mạng ZMQ, tài nguyên Kubernetes và giới hạn vận hành hiện tại.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1169,38 +1169,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-mo-hinh-trien-khai-multi-node-bft-topology" class="md-nav__link">
+  <a href="#gioi-han-runtime" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Mô hình triển khai Multi-Node (BFT Topology)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="1. Mô hình triển khai Multi-Node (BFT Topology)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-bft-tieu-chuan-vi-du-4-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình BFT Tiêu chuẩn (Ví dụ: 4 Nodes)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-cau-hinh-mang-network-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Cấu hình Mạng (Network Configuration)
+        Giới hạn runtime
       </span>
     </span>
   </a>
@@ -1208,30 +1180,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-trien-khai-qua-kubernetes-k8s-orchestration" class="md-nav__link">
+  <a href="#mang-va-cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Triển khai qua Kubernetes (K8s Orchestration)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="3. Triển khai qua Kubernetes (K8s Orchestration)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quan-ly-namespace-resource-limits" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quản lý Namespace &amp; Resource Limits
+        Mạng và cấu hình
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#tai-nguyen-kubernetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tài nguyên Kubernetes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Liên quan
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4281,38 +4258,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-mo-hinh-trien-khai-multi-node-bft-topology" class="md-nav__link">
+  <a href="#gioi-han-runtime" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Mô hình triển khai Multi-Node (BFT Topology)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="1. Mô hình triển khai Multi-Node (BFT Topology)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cau-hinh-bft-tieu-chuan-vi-du-4-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Cấu hình BFT Tiêu chuẩn (Ví dụ: 4 Nodes)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-cau-hinh-mang-network-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Cấu hình Mạng (Network Configuration)
+        Giới hạn runtime
       </span>
     </span>
   </a>
@@ -4320,30 +4269,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-trien-khai-qua-kubernetes-k8s-orchestration" class="md-nav__link">
+  <a href="#mang-va-cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Triển khai qua Kubernetes (K8s Orchestration)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="3. Triển khai qua Kubernetes (K8s Orchestration)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quan-ly-namespace-resource-limits" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quản lý Namespace &amp; Resource Limits
+        Mạng và cấu hình
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#tai-nguyen-kubernetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tài nguyên Kubernetes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Liên quan
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4379,62 +4333,50 @@
 
 
 <h1 id="kien-truc-trien-khai-deployment-architecture">Kiến trúc Triển khai (Deployment Architecture)</h1>
-<p>Tài liệu này mô tả chi tiết các mô hình triển khai của HieraChain, cách cấu hình mạng, và hướng dẫn vận hành hệ thống trên môi trường Kubernetes để đảm bảo tính sẵn sàng cao (High Availability) cũng như khả năng mở rộng ở cấp độ doanh nghiệp (Enterprise-ready).</p>
-<hr />
-<h2 id="1-mo-hinh-trien-khai-multi-node-bft-topology">1. Mô hình triển khai Multi-Node (BFT Topology)</h2>
-<p>HieraChain hỗ trợ giao thức đồng thuận BFT (Byzantine Fault Tolerance) nhằm đảm bảo hệ thống vẫn hoạt động chính xác ngay cả khi có một số node bị lỗi hoặc có hành vi gian lận.</p>
-<h3 id="cau-hinh-bft-tieu-chuan-vi-du-4-nodes">Cấu hình BFT Tiêu chuẩn (Ví dụ: 4 Nodes)</h3>
-<p>Mô hình triển khai tối thiểu để BFT có thể chống chịu được 1 node lỗi (<strong><em>f=1</em></strong>) yêu cầu ít nhất <strong><em>3f + 1 = 4</em></strong> nodes.</p>
-<p>Cấu trúc Topology cho một Sub-Chain:</p>
+<h2 id="gioi-han-runtime">Giới hạn runtime</h2>
+<p>Một process API khởi tạo <code>HierarchyManager</code> gồm MainChain và các Sub-Chain đã đăng ký. MainChain/Sub-Chain dùng PoA hoặc PoF; engine BFT là thành phần riêng cần tích hợp rõ ràng. Chỉ triển khai bốn replica API không tạo PBFT finality hoặc failover leader. Xem <a href="../../workflows/consensus_mechanisms/">Phạm vi đồng thuận</a>.</p>
+<h2 id="mang-va-cau-hinh">Mạng và cấu hình</h2>
+<table>
+<thead>
+<tr>
+<th>Cấu hình</th>
+<th>Mặc định runtime</th>
+<th>Mục đích</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HRC_API_PORT</code></td>
+<td><code>2661</code></td>
+<td>API REST, GraphQL và WebSocket</td>
+</tr>
+<tr>
+<td><code>HRC_P2P_PORT</code></td>
+<td><code>5555</code></td>
+<td>Transport ZeroMQ; manifest container ghi đè</td>
+</tr>
+<tr>
+<td><code>HRC_PEERS</code></td>
+<td>Rỗng</td>
+<td>Seed peer phân tách dấu phẩy; <code>peer-id@host:port</code> định danh peer</td>
+</tr>
+<tr>
+<td><code>HRC_P2P_ENABLED</code></td>
+<td><code>true</code></td>
+<td>Khởi động lớp mạng trong lifecycle API</td>
+</tr>
+</tbody>
+</table>
+<p>Dùng <code>python -m hierachain</code> hoặc <code>hrc node start</code>. Cấp identity riêng, trusted block key, API key production và credential SQL trước khi khởi động. Phản hồi health là liveness; readiness dùng <code>/api/ledger/ready</code>. Lưu bền database và journal <code>data/</code> từng node. Registry SQL dùng chung không loại bỏ yêu cầu quyền sở hữu writer của journal ordering.</p>
+<p>Terminate HTTPS và cấu hình giới hạn truy cập công khai ở gateway. Giới hạn P2P trong mạng dự kiến. <code>ProductionSettings</code> đặt <code>P2P_TRUST_POLICY = "strict"</code> và <code>P2P_REQUIRE_SIGNATURES = True</code>, nhưng luồng khởi động P2P hiện tại của API chỉ truyền seed node và transport key vào <code>NetworkClient</code>, không nối hai cấu hình này vào runtime đó. Chỉ đặt các giá trị này không kích hoạt strict peer trust hoặc xác minh chữ ký message trong runtime API. IPFS tùy chọn cần daemon và encryption key thật dài 32 byte. Xem <a href="../../how-to/secure-deployment/">Triển khai an toàn</a> và <a href="../../reference/config/">Cấu hình</a>.</p>
+<h2 id="tai-nguyen-kubernetes">Tài nguyên Kubernetes</h2>
+<p><code>docker/k8s/</code> có ví dụ Deployment/StatefulSet, service, storage và cấu hình. Kustomization cơ bản dùng namespace <code>hierachain</code>; <code>templates/</code> có template Sub-Chain riêng. <code>HierarchyManager</code> không tạo namespace hoặc pod khi tạo Sub-Chain Python. Namespace riêng không tự cô lập CPU, bộ nhớ hay mạng; cần cấu hình requests/limits và network policy ở deployment.</p>
+<p>Tài nguyên phụ thuộc manifest: <code>node-deployment.yaml</code> dùng requests và limits 1 CPU/1 GiB; <code>node-statefulset.yaml</code> request 500m CPU/1 GiB và limit 2 CPU/2 GiB. Đây là giá trị manifest, không phải yêu cầu runtime hoặc bảo đảm capacity đã kiểm thử.</p>
+<p>Đọc manifest được chọn trước khi triển khai. Ví dụ <code>node-deployment.yaml</code> hiện gọi <code>hrc start</code>, trong khi CLI cung cấp <code>hrc node start</code>; file cũng có placeholder encryption key IPFS. StatefulSet có mount identity secret riêng. Các file là ví dụ triển khai, chưa phải môi trường production đã cấp đủ cấu hình. Lần sửa tài liệu này không sửa hoặc xác minh chạy cluster manifest.</p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><strong>Node 0 (Leader ban đầu)</strong>: Nhận transaction, đóng block và khởi tạo các bước đồng thuận (Pre-prepare).</li>
-<li><strong>Node 1, Node 2, Node 3 (Validators)</strong>: Tham gia vào các vòng Prepare và Commit để xác thực block.</li>
-</ul>
-<p>Trong quá trình triển khai, cần thiết lập danh sách các peer (thông qua biến môi trường <code>PEERS</code>) trên mỗi node để chúng tạo thành một mạng liên kết ngang hàng (P2P Mesh Network).</p>
-<hr />
-<h2 id="2-cau-hinh-mang-network-configuration">2. Cấu hình Mạng (Network Configuration)</h2>
-<p>Để các node trong mạng có thể giao tiếp, hệ thống sử dụng <strong>ZeroMQ TCP transport</strong> và giao thức <strong>HTTP REST API</strong> qua <code>FastAPI</code> (hoặc cấu hình thủ công cổng riêng biệt cho API).</p>
-<ul>
-<li>
-<p><strong>Cổng (Ports) tiêu chuẩn mặc định</strong>:</p>
-<ul>
-<li><strong>API Port</strong> (<code>2661</code>): Dùng cho GraphQL API, REST API, và cho các external client (SDK/CLI) gửi sự kiện vào chuỗi. (Tham chiếu <code>api_port: int = 2661</code>).</li>
-<li><strong>Node Port</strong> (<code>5001</code> - <code>50xx</code>): Cổng ZeroMQ (ZMQ) nội bộ dành cho việc đồng thuận (Consensus P2P), trao đổi tin nhắn chữ ký và block giữa các validator. (Tham chiếu <code>node_port: int = 5001</code>).</li>
-</ul>
-</li>
-<li>
-<p><strong>Quy tắc Ingress / Egress (Firewall Rules)</strong>:</p>
-</li>
-<li>
-<p><strong>Ingress</strong>: Chỉ mở port <code>2661</code> ra Internet hoặc Load Balancer nếu cần public API. Cổng <code>5001</code> chỉ nên được cấu hình chặn nội bộ lưới mạng đám mây (VPC/Subnet).</p>
-</li>
-<li><strong>Egress</strong>: Cần cho phép các node gọi ra HTTP(s) (port <code>443/80</code>) nếu có tích hợp ERP, và gọi port ZeroMQ nội bộ (<code>5001</code> - <code>50xx</code>) của các Node khác.</li>
-</ul>
-<hr />
-<h2 id="3-trien-khai-qua-kubernetes-k8s-orchestration">3. Triển khai qua Kubernetes (K8s Orchestration)</h2>
-<p>Repository cung cấp các manifest triển khai Kubernetes trong <code>docker/k8s/</code>. Vòng đời namespace và workload do quy trình triển khai Kubernetes quản lý, không do namespace manager trong runtime:</p>
-<ul>
-<li><strong>Nguyên lý Cách ly (Isolation)</strong>: Mỗi Sub-chain được cấp phát một <strong>Namespace</strong> riêng biệt. Sự cố rò rỉ bộ nhớ, quá tải tài nguyên ở một Sub-chain sẽ không lây lan sang Sub-chain khác.</li>
-<li><strong>Microservice Lifecycle</strong>: Sử dụng K8s Deployment để quản lý Pods.</li>
-<li><strong>Cô lập tài nguyên</strong>: Namespace, resource request, limit và network policy được định nghĩa trong manifest triển khai.</li>
-</ul>
-<h3 id="quan-ly-namespace-resource-limits">Quản lý Namespace &amp; Resource Limits</h3>
-<p>Resource request và limit được định nghĩa trong các manifest Kubernetes và áp dụng bởi quy trình triển khai. <code>HierarchyManager</code> không cấp phát namespace Kubernetes trong runtime.</p>
-<ul>
-<li>
-<p><strong>Tài nguyên Yêu cầu (Requests):</strong></p>
-<ul>
-<li><strong>CPU:</strong> <code>500m</code> (Đảm bảo số lượng core tối thiểu cần thiết để Arrow xử lý event).</li>
-<li><strong>Memory:</strong> <code>512Mi</code>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Tài nguyên Giới hạn (Limits):</strong></p>
-<ul>
-<li><strong>CPU:</strong> <code>1000m</code> (1 vCPU). Tận dụng module <code>parallel_engine.py</code> cho đa luồng.</li>
-<li><strong>Memory:</strong> <code>1Gi</code> (Tránh Out-of-Memory do In-memory Storage tràn ngập).</li>
-</ul>
-</li>
+<li><a href="../../how-to/disaster-recovery/">Phục hồi</a></li>
+<li><a href="../../dev/testing/">Kiểm thử và workload triển khai biệt lập</a></li>
 </ul>
 
 

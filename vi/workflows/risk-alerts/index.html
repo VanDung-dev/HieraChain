@@ -1724,10 +1724,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -1746,10 +1746,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cap-o-nghiem-trong" class="md-nav__link">
+  <a href="#quy-tac-metric-mac-inh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấp độ nghiêm trọng
+        Quy tắc metric mặc định
       </span>
     </span>
   </a>
@@ -1757,32 +1757,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#linh-vuc-giam-sat-rui-ro" class="md-nav__link">
+  <a href="#loi-thong-bao" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Lĩnh vực giám sát rủi ro
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Lỗi thông báo
       </span>
     </span>
   </a>
@@ -4302,10 +4280,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -4324,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cap-o-nghiem-trong" class="md-nav__link">
+  <a href="#quy-tac-metric-mac-inh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cấp độ nghiêm trọng
+        Quy tắc metric mặc định
       </span>
     </span>
   </a>
@@ -4335,32 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#linh-vuc-giam-sat-rui-ro" class="md-nav__link">
+  <a href="#loi-thong-bao" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Lĩnh vực giám sát rủi ro
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Lỗi thông báo
       </span>
     </span>
   </a>
@@ -4421,218 +4377,119 @@
 
 
 <h1 id="canh-bao-rui-ro">Cảnh báo rủi ro</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain theo dõi sức khỏe hệ thống trên 4 lĩnh vực rủi ro (đồng thuận, bảo mật, hiệu năng, lưu trữ). Khi chỉ số vượt ngưỡng, <code>AlertManager</code> tạo cảnh báo, áp dụng cooldown để chống lặp, gửi qua Email/Webhook và tự leo thang nếu không được xác nhận sau thời gian cấu hình.</p>
-<hr />
+<h2 id="pham-vi">Phạm vi</h2>
+<p><code>AlertManager</code> trong <code>hierachain/monitoring/alert_system.py</code> đánh giá giá trị metric được cung cấp qua <code>check_metric()</code>. Ứng dụng chủ kết nối các bộ thu thập metric với phương thức này. Manager không tự động nhận mọi lỗi đồng thuận, chứng chỉ, storage hay báo cáo tính toàn vẹn.</p>
+<p>Manager giữ các cảnh báo đang hoạt động và lịch sử có giới hạn trong bộ nhớ. Thiết lập quy tắc điều khiển thời gian chờ giữa các cảnh báo, loại bỏ trùng lặp và nâng cấp. Thông báo dùng một worker với hàng đợi tối đa 128 cảnh báo; worker gọi tuần tự các notifier đã cấu hình.</p>
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant PM as 📊 PerformanceMonitor
-    participant AM as 🚨 AlertManager
-    participant AD as 📈 AnomalyDetector
-    participant NTF as 📧 Email / Webhook Notifier
-
-    PM-&gt;&gt;AM: check_metric(metric_name, value, source)
-    AM-&gt;&gt;AD: add_data_point(metric_name, value)
-    AM-&gt;&gt;AM: _evaluate_rule_condition(rule, value)
-    AM-&gt;&gt;AM: _is_in_cooldown(rule)
-
-    alt Vượt ngưỡng quy định VÀ không trong cooldown
-        AM-&gt;&gt;AM: _create_alert(rule, value, source)
-        AM-&gt;&gt;AM: _is_duplicate_alert() → triệt tiêu nếu trùng lặp
-        AM-&gt;&gt;AM: active_alerts[alert_id] = Alert
-        AM-&gt;&gt;NTF: _send_notifications(alert)
-        NTF--&gt;&gt;AM: Thành công / Thất bại
-
-        Note over AM: Kích hoạt bộ đếm thời gian leo thang (mặc định 30 phút)
-
-        alt Cảnh báo không được xác nhận trong thời gian chờ
-            AM-&gt;&gt;AM: _escalate_alert(alert_id)&lt;br/&gt;alert.escalation_level += 1
-            AM-&gt;&gt;NTF: Gửi lại thông báo với tiền tố ESCALATED
-        end
+    participant App as Application metric source
+    participant AM as AlertManager
+    participant Worker as Notification worker
+    participant Notifier as Email or webhook
+    App-&gt;&gt;AM: check_metric(metric_name, value, source_component)
+    AM-&gt;&gt;AM: Record anomaly baseline data
+    AM-&gt;&gt;AM: Evaluate matching enabled rules and cooldown
+    opt Rule condition passes and not suppressed
+        AM-&gt;&gt;AM: create_alert(rule, value, source_component)
+        AM-&gt;&gt;AM: Store alert and queue notification
+        Worker-&gt;&gt;Notifier: send_alert(), one notifier at a time
+        Notifier--&gt;&gt;Worker: Success or failure
+        Worker-&gt;&gt;AM: Update notification statistics
+        AM-&gt;&gt;AM: Schedule escalation if escalation_time &gt; 0
     end
-
-    Note over AM: Người vận hành xác nhận hoặc hệ thống tự động giải quyết
-
-    AM-&gt;&gt;AM: acknowledge_alert(alert_id) → ACKNOWLEDGED (Đã xác nhận)
-    AM-&gt;&gt;AM: resolve_alert(alert_id) → RESOLVED (Đã xử lý) + xóa khỏi active_alerts</code></pre>
-<hr />
-<h2 id="cap-o-nghiem-trong">Cấp độ nghiêm trọng</h2>
+    opt Timer fires while alert remains ACTIVE
+        AM-&gt;&gt;AM: Increment escalation level
+        AM-&gt;&gt;Worker: Queue critical escalation notification
+    end
+    App-&gt;&gt;AM: acknowledge_alert() or resolve_alert()</code></pre>
+<h2 id="quy-tac-metric-mac-inh">Quy tắc metric mặc định</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Cấp độ</th>
-<th style="text-align: left;">Ví dụ chỉ số</th>
-<th style="text-align: left;">Tự leo thang sau</th>
+<th style="text-align: left;">Quy tắc</th>
+<th style="text-align: left;">Điều kiện</th>
+<th style="text-align: left;">Mức độ</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>INFO</code></td>
-<td style="text-align: left;">Chỉ số dao động bình thường</td>
-<td style="text-align: left;">Không</td>
-</tr>
-<tr>
+<td style="text-align: left;"><code>CPU_HIGH</code></td>
+<td style="text-align: left;"><code>cpu_usage &gt; 85</code></td>
 <td style="text-align: left;"><code>WARNING</code></td>
-<td style="text-align: left;">CPU &gt; 85%, rủi ro nhỏ</td>
-<td style="text-align: left;">30 phút</td>
 </tr>
 <tr>
+<td style="text-align: left;"><code>CPU_CRITICAL</code></td>
+<td style="text-align: left;"><code>cpu_usage &gt; 95</code></td>
 <td style="text-align: left;"><code>CRITICAL</code></td>
-<td style="text-align: left;">CPU &gt; 95%, tỷ lệ đồng thuận &lt; 95%</td>
-<td style="text-align: left;">5 phút</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>EMERGENCY</code></td>
-<td style="text-align: left;">Khai báo thủ công hoặc lỗi kép</td>
-<td style="text-align: left;">Ngay</td>
+<td style="text-align: left;"><code>MEMORY_HIGH</code></td>
+<td style="text-align: left;"><code>memory_usage &gt; 85</code></td>
+<td style="text-align: left;"><code>WARNING</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>CONSENSUS_FAILURE</code></td>
+<td style="text-align: left;"><code>consensus_success_rate &lt; 95</code></td>
+<td style="text-align: left;"><code>CRITICAL</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>RISK_DETECTED</code></td>
+<td style="text-align: left;"><code>risk_count &gt; 0</code></td>
+<td style="text-align: left;"><code>WARNING</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="linh-vuc-giam-sat-rui-ro">Lĩnh vực giám sát rủi ro</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Lĩnh vực</th>
-<th style="text-align: left;">Chỉ số chính</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>Đồng thuận</strong></td>
-<td style="text-align: left;"><code>node_count &gt;= 3f+1</code>, thời gian bầu leader, tỷ lệ xác thực thông điệp</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Bảo mật</strong></td>
-<td style="text-align: left;">Thời hạn chứng chỉ (ngày còn lại), tỷ lệ xác thực lỗi, độ mạnh mã hóa</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Hiệu năng</strong></td>
-<td style="text-align: left;">CPU %, RAM %, kích thước hàng đợi sự kiện, độ trễ hoàn tất khối</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Lưu trữ</strong></td>
-<td style="text-align: left;">Kích thước DB sổ cái, tuổi bản sao lưu (giờ kể từ lần cuối)</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Kiểm tra chỉ số</strong></td>
-<td style="text-align: left;"><code>AlertManager.check_metric()</code> so sánh từng chỉ số với quy tắc.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Phát hiện bất thường</strong></td>
-<td style="text-align: left;"><code>AnomalyDetector</code> dùng baseline thống kê để gắn cờ điểm bất thường.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Kiểm tra cooldown</strong></td>
-<td style="text-align: left;">Quy tắc có cooldown để tránh bão cảnh báo.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Kiểm tra trùng lặp</strong></td>
-<td style="text-align: left;"><code>_is_duplicate_alert()</code> loại bỏ nếu cùng quy tắc và cùng nguồn đã có cảnh báo đang hoạt động.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Gửi thông báo</strong></td>
-<td style="text-align: left;">Gửi đồng thời tới Email và/hoặc Webhook đã cấu hình.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Leo thang</strong></td>
-<td style="text-align: left;">Cảnh báo không xác nhận sẽ tăng <code>escalation_level += 1</code> và gửi lại.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Hoàn tất vòng đời</strong></td>
-<td style="text-align: left;">Vận hành xác nhận thành <code>ACKNOWLEDGED</code>; chỉ số về mức an toàn thành <code>RESOLVED</code>.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Tình huống</th>
-<th style="text-align: left;">Hành vi</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Lỗi gửi Email</td>
-<td style="text-align: left;">Ghi log; vẫn cố gửi qua Webhook</td>
-</tr>
-<tr>
-<td style="text-align: left;">Webhook offline</td>
-<td style="text-align: left;">Thử lại 1 lần; ghi log; đánh dấu <code>notification_failed</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Bão cảnh báo (quá nhiều trùng lặp)</td>
-<td style="text-align: left;">Cooldown tự loại bỏ cảnh báo trùng từ cùng quy tắc</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<p>Ứng dụng phải cung cấp các giá trị này. Thêm quy tắc cho metric khác bằng <code>add_alert_rule()</code>. <code>check_metric()</code> ghi mỗi giá trị làm dữ liệu đường cơ sở cho phát hiện bất thường trước khi đánh giá các quy tắc đang bật khớp metric và thời gian chờ. Quy tắc mặc định không dùng phát hiện bất thường làm điều kiện kích hoạt. Quy tắc được cấu hình rõ với <code>condition="anomaly"</code> có thể gọi <code>AnomalyDetector.is_anomaly()</code> qua <code>check_metric()</code> và kích hoạt cảnh báo khi điều kiện được thỏa mãn.</p>
+<p><code>AlertRule</code> mặc định có thời gian chờ 300 giây, thời gian nâng cấp 1.800 giây, bật loại bỏ trùng lặp và <code>auto_resolve=False</code>. Chỉ mức độ cảnh báo không quyết định nâng cấp sau năm phút hay ngay lập tức. Xác nhận hoặc giải quyết cảnh báo hủy bộ hẹn giờ đang chờ. Metric trở lại bình thường không tự động giải quyết cảnh báo mặc định.</p>
+<h2 id="loi-thong-bao">Lỗi thông báo</h2>
+<p>Thao tác email và webhook có thời gian chờ 10 giây. Webhook notifier gửi một yêu cầu; không có cơ chế thử lại tích hợp sẵn. Notifier thất bại làm tăng <code>notifications_failed</code>, và notifier tiếp theo đã cấu hình vẫn được thử. Không có trạng thái cảnh báo <code>notification_failed</code>.</p>
+<p>Nếu hàng đợi thông báo đầy, manager ghi nhận một thông báo thất bại nhưng vẫn giữ cảnh báo trong lịch sử. Gọi <code>AlertManager.close()</code> để ngừng tiếp nhận thông báo mới và chờ hoàn tất công việc gửi trong giới hạn đã đặt. Tiến trình thoát đột ngột có thể làm mất thông báo trong hàng đợi và trạng thái cảnh báo trong bộ nhớ.</p>
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
+<th style="text-align: left;">Thao tác</th>
+<th style="text-align: left;">Phương thức</th>
 <th style="text-align: left;">Tệp</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Kiểm tra chỉ số</td>
+<td style="text-align: left;">Kiểm tra metric</td>
 <td style="text-align: left;"><code>AlertManager.check_metric()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Phát hiện bất thường</td>
+<td style="text-align: left;">Truy vấn đường cơ sở</td>
 <td style="text-align: left;"><code>AnomalyDetector.is_anomaly()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Tạo cảnh báo</td>
-<td style="text-align: left;"><code>AlertManager._create_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>AlertManager.create_alert()</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Gửi Email</td>
-<td style="text-align: left;"><code>EmailNotifier.send_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;">Thông báo</td>
+<td style="text-align: left;"><code>EmailNotifier.send_alert()</code> / <code>WebhookNotifier.send_alert()</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Gửi Webhook</td>
-<td style="text-align: left;"><code>WebhookNotifier.send_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Leo thang</td>
+<td style="text-align: left;">Nâng cấp</td>
 <td style="text-align: left;"><code>AlertManager._escalate_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/alert_system.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác nhận</td>
-<td style="text-align: left;"><code>AlertManager.acknowledge_alert()</code></td>
-<td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
+<td style="text-align: left;">Mặc định quy tắc</td>
+<td style="text-align: left;"><code>AlertRule</code></td>
+<td style="text-align: left;"><code>hierachain/monitoring/types.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a>: trạng thái DEGRADED kích hoạt cảnh báo tại đây</li>
+<li><a href=".././integrity-validation/">Kiểm tra tính toàn vẹn hệ thống</a>: báo cáo mà ứng dụng có thể chuyển thành cảnh báo</li>
+<li><a href="../../modules/monitoring/">Giám sát</a>: bộ thu thập metric và tích hợp callback</li>
 </ul>
 
 

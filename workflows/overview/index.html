@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Comprehensive guide and developer reference for HieraChain's 16 system workflows across core operations, security, consensus, and recovery.">
+        <meta name="description" content="Comprehensive guide and developer reference for HieraChain system workflows across core operations, security, consensus, and recovery.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4446,25 +4446,23 @@
 
 <h1 id="workflows-overview-and-developer-guide">Workflows overview and developer guide</h1>
 <p>HieraChain is a pure Python hierarchical ledger that works as a plugin layer for existing Web2 infrastructure. It does not replace the enterprise network stack, which already handles TLS/SSL, firewalls and WAF at the API gateway. HieraChain is focused on immutability, distributed trust, tamper evidence and non-repudiation.</p>
-<p>This document is the central reference for 16 system workflows in 6 functional groups. It describes how they interact at runtime and how to read, maintain or add workflows.</p>
-<hr />
+<p>This document lists workflows in six functional groups. It describes how they interact at runtime and how to read, maintain or add workflows.</p>
 <h2 id="1-core-development-guardrails">1. Core development guardrails</h2>
 <p>When you work on HieraChain workflows, follow these guardrails:</p>
 <ul>
 <li>
-<p><strong>Strict term censorship</strong>: HieraChain tracks business process ledgers, not cryptocurrency. Do not use crypto terms in event payloads, variable names, database keys or comments.</p>
+<p>Strict term censorship: HieraChain tracks business process ledgers, not cryptocurrency. Do not use crypto terms in event payloads, variable names, database keys or comments.</p>
 <ul>
 <li>Forbidden terms: <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>, <code>address</code>, <code>sender</code>, <code>receiver</code>, <code>amount</code>, <code>fee</code>.</li>
 <li>Required terms: <code>event</code> for ledger entries, <code>node</code> for peers, <code>msp_id</code> for identity, <code>entity_id</code> for domain assets.</li>
-<li>Note: <code>CrossChainValidator</code> scans commits and rejects code that contains forbidden terms.</li>
+<li><code>CrossChainValidator</code> checks supplied ledger/domain data; it is not a source-code commit hook.</li>
 </ul>
 </li>
 <li>
-<p><strong>Minimal latency constraint</strong>: HieraChain keeps base latency at 10 to 20ms. Keep workflow code short and fast. Do not add transport level encryption or extra wrappers that add CPU overhead.</p>
+<p>Minimal latency constraint: The architecture targets low latency; actual latency depends on batching, durability and deployment. Keep workflow code short and fast. Do not add transport level encryption or extra wrappers that add CPU overhead.</p>
 </li>
-<li><strong>No direct storage access</strong>: Do not query SQL or Redis directly. Use storage adapters under <code>adapters/database/</code> (for example <code>adapters/database/sqlite_adapter.py</code>).</li>
+<li>No direct storage access: Do not query SQL or Redis directly. Use storage adapters under <code>adapters/database/</code> (for example <code>adapters/database/sqlite_adapter.py</code>).</li>
 </ul>
-<hr />
 <h2 id="2-all-workflows-quick-reference">2. All workflows: quick reference</h2>
 <p>This table lists all workflows for quick lookup:</p>
 <table>
@@ -4530,14 +4528,14 @@
 <tr>
 <td style="text-align: left;"><a href=".././integrity-validation/">Integrity Validation</a></td>
 <td style="text-align: left;">D</td>
-<td style="text-align: left;">Periodic / manual / Risk Alerts anomaly</td>
-<td style="text-align: left;"><code>IntegrityReport</code> (HEALTHY / DEGRADED)</td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
+<td style="text-align: left;">Explicit application call</td>
+<td style="text-align: left;">Health summary or block/proof consistency report</td>
+<td style="text-align: left;"><code>hierarchical/hierarchy_manager/validation.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././policy-enforcement/">Policy Enforcement</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Any access-sensitive operation</td>
+<td style="text-align: left;">Explicit <code>PolicyEngine</code> call</td>
 <td style="text-align: left;"><code>allow</code> or <code>deny</code> with decision path</td>
 <td style="text-align: left;"><code>security/policy_engine.py</code></td>
 </tr>
@@ -4545,7 +4543,7 @@
 <td style="text-align: left;"><a href=".././websocket-streaming/">WebSocket Streaming</a></td>
 <td style="text-align: left;">E</td>
 <td style="text-align: left;">Client connects to <code>/ws</code>, optionally passing <code>chain_name</code> as a query parameter</td>
-<td style="text-align: left;">Real-time block/event push</td>
+<td style="text-align: left;">Subscriptions; notifications require application broadcast calls</td>
 <td style="text-align: left;"><code>api/websocket/manager.py</code></td>
 </tr>
 <tr>
@@ -4558,8 +4556,8 @@
 <tr>
 <td style="text-align: left;"><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;"><code>PerformanceMonitor</code> schedule</td>
-<td style="text-align: left;">Alerts dispatched; escalation on no-ack</td>
+<td style="text-align: left;">Application calls <code>AlertManager.check_metric()</code></td>
+<td style="text-align: left;">Queued notifications and rule-configured escalation</td>
 <td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
 </tr>
 <tr>
@@ -4572,20 +4570,19 @@
 <tr>
 <td style="text-align: left;"><a href=".././msp-identity/">MSP Identity &amp; Auth</a></td>
 <td style="text-align: left;">F</td>
-<td style="text-align: left;">Entity registration / API auth</td>
+<td style="text-align: left;">Explicit MSP registration/validation calls</td>
 <td style="text-align: left;">Identity confirmed + action authorized</td>
 <td style="text-align: left;"><code>security/msp.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href=".././key-backup/">Key Backup &amp; Restoration</a></td>
 <td style="text-align: left;">F</td>
-<td style="text-align: left;">Key generation (<code>cli/key.py</code>)</td>
-<td style="text-align: left;">Key file / vault backed up; restored via CLI</td>
+<td style="text-align: left;">Operator-managed file/vault backup</td>
+<td style="text-align: left;">Restored identity/provider files</td>
 <td style="text-align: left;"><code>cli/key.py</code> + <code>security/key_provider.py</code> (no <code>key_backup_manager.py</code>)</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="3-functional-groups-and-subsystems">3. Functional groups and subsystems</h2>
 <p>Workflows are grouped into six areas. Use the dashboard to find the group that matches the subsystem you are debugging or changing:</p>
 <div class="grid cards">
@@ -4649,37 +4646,26 @@
 </li>
 </ul>
 </div>
-<hr />
 <h2 id="4-how-workflows-interact">4. How workflows interact</h2>
-<p>The diagram shows runtime relationships and triggers between workflows. Solid lines are synchronous or blocking operations. Dashed lines are asynchronous or event driven.</p>
+<p>The diagram separates runtime paths from integrations supplied by the application. Dashed lines identify caller-managed connections.</p>
 <pre class="mermaid"><code>flowchart TD
-    ERP["🏢 ERP System\n(SAP / Oracle)"]
-    CLIENT["🖥️ Client / SDK"]
-
-    WF14["ERP Sync"] --&gt;|add_event| WF1
-    CLIENT --&gt;|POST /events| WF1
-
-    WF15["🪪 MSP Identity"] --&gt;|authorize_action| WF1
-    WF15 --&gt;|validate_identity| WF10["⚖️ Policy Enforcement"]
-    WF10 --&gt;|allow/deny gate| WF1
-
-    WF1["📦 Event Submission"] --&gt;|block finalized| WF2["Proof Anchoring"]
-    WF1 --&gt;|broadcast_new_block| WF11["🔌 WebSocket"]
-    WF1 --&gt;|upload large data| WF12["🗄️ IPFS Storage"]
-
-    WF1 --&gt;|cross-chain op| WF3["2PC Cross-Chain"]
-    WF1 --&gt;|BFT mode| WF4["👑 BFT Consensus"]
-
-    WF9["🔍 Integrity Scan"] --&gt;|DEGRADED| WF13["🚨 Risk &amp; Alerts"]
-    WF13 --&gt;|critical alert| WF6["🔧 Error Recovery"]
-    WF6 -.-&gt;|snapshot fail| WF8["♻️ Rehydration"]
-    WF8 -.-&gt;|restore state| WF1
-
-    WF15 -.-&gt;|cert issued| WF16
-
-    WF7["🗂️ Entity Tracing"] -.-&gt;|reads| WF1
-
-    ERP --&gt; WF14</code></pre>
+    CLIENT[Client or SDK] --&gt;|Ledger API| WF1[Event submission]
+    ERP[Application ERP sink] --&gt;|add_event| WF1
+    WF1 --&gt;|Apply committed block, proof due| WF2[Proof anchoring]
+    App -.-&gt;|Upload via IPFSClient.upload_json()| WF12[IPFS storage]
+    WF12 -.-&gt;|Return CID to caller| App
+    App -.-&gt;|Submit event with details_cid| WF1
+    App[Application integration] -.-&gt; MSP[MSP checks]
+    App -.-&gt; Policy[PolicyEngine checks]
+    App -.-&gt; WS[WebSocket broadcast helpers]
+    App -.-&gt; Integrity[Integrity reports]
+    Integrity -.-&gt;|Caller handles report| Alerts[AlertManager]
+    App -.-&gt; Backup[Identity backup]
+    App --&gt; Rehydrate[Explicit sync_chain]
+    Rehydrate --&gt;|Rebuild chain and indexes| WF1
+    Trace[Entity tracing] --&gt;|Read finalized history| WF1
+    App --&gt; BFT[Separate BFT library]
+    App --&gt; TwoPC[Cross-chain 2PC coordinator]</code></pre>
 <h3 id="core-developer-integration-paths">Core developer integration paths</h3>
 <table>
 <thead>
@@ -4690,45 +4676,44 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>ERP → ERP Sync → Event Submission → Proof Anchoring</strong></td>
+<td style="text-align: left;">ERP → ERP Sync → Event Submission → Proof Anchoring</td>
 <td style="text-align: left;">Ingestion pipeline: business change → local event → Sub-Chain block → proof hash anchored to root chain.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>MSP Identity → Policy Enforcement → Event Submission</strong></td>
-<td style="text-align: left;">Security validation path: verify internal cert (<code>msp.py:verify_certificate</code>) → check ABAC policies → accept/reject event.</td>
+<td style="text-align: left;">MSP Identity → Policy Enforcement → Event Submission</td>
+<td style="text-align: left;">Caller-managed integration: MSP checks organization roles/policies; a separate <code>PolicyEngine</code> check may be added by the application before submission.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Integrity Scan → Risk &amp; Alerts → Error Recovery</strong></td>
-<td style="text-align: left;">Anomaly detection path: <code>block_verifier</code> → alert dispatch → operational recovery.</td>
+<td style="text-align: left;">Integrity Scan → Risk &amp; Alerts → Error Recovery</td>
+<td style="text-align: left;">Caller-managed integration: inspect integrity results, supply an alert metric or rule, then choose an operational recovery action.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Error Recovery → Rehydration</strong></td>
-<td style="text-align: left;">State sync fallback: journal replay and chain reload rebuild in-memory state from durable storage.</td>
+<td style="text-align: left;">Error Recovery → Rehydration</td>
+<td style="text-align: left;">Ordering startup replay and Sub-Chain synchronization restore local state; there is no automatic snapshot-failure-to-rehydration hook.</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="5-developer-guide-how-to-maintain-workflows">5. Developer guide: how to maintain workflows</h2>
 <p>Keep workflow documentation in sync with the code when you add features or fix behavior:</p>
 <h3 id="anatomy-of-a-workflow-document">Anatomy of a workflow document</h3>
 <p>Each workflow page (for example <code>event-submission.md</code>) has this layout. It must contain:</p>
 <ol>
-<li><strong>Zensical front-matter</strong>: YAML metadata with <code>title</code>, <code>description</code> and <code>icon</code>. No WF-number prefixes.</li>
-<li><strong>Clean H1 header</strong>: <code># [Title]</code> that matches front-matter.</li>
-<li><strong>Overview</strong>: What the workflow does and when it is used.</li>
-<li><strong>Flow diagram</strong>: Mermaid sequence or flowchart that shows runtime interactions.</li>
-<li><strong>Step-by-step breakdown</strong>: Table that maps sequence numbers to developer actions.</li>
-<li><strong>Error handling</strong>: Table that maps failures (node offline, verification failure) to mitigations.</li>
-<li><strong>Key classes and methods</strong>: Pointers from workflow steps to code (for example <code>SubChain.add_event()</code>).</li>
-<li><strong>Related</strong>: Links to sibling or downstream workflows.</li>
+<li>Zensical front-matter: YAML metadata with <code>title</code>, <code>description</code> and <code>icon</code>. No WF-number prefixes.</li>
+<li>Clean H1 header: <code># [Title]</code> that matches front-matter.</li>
+<li>Overview: What the workflow does and when it is used.</li>
+<li>Flow diagram: Mermaid sequence or flowchart that shows runtime interactions.</li>
+<li>Step-by-step breakdown: Table that maps sequence numbers to developer actions.</li>
+<li>Error handling: Table that maps failures (node offline, verification failure) to mitigations.</li>
+<li>Key classes and methods: Pointers from workflow steps to code (for example <code>SubChain.add_event()</code>).</li>
+<li>Related: Links to sibling or downstream workflows.</li>
 </ol>
 <h3 id="process-for-adding-or-modifying-a-workflow">Process for adding or modifying a workflow</h3>
 <ol>
-<li><strong>Write clean Markdown</strong>: Save new flows under <code>docs/en/workflows/name.md</code> using the design system.</li>
-<li><strong>Register in zensical.toml</strong>: Add the workflow to the <code>Workflows</code> tree in <a href="../../../zensical.toml">zensical.toml</a> with a clean name.</li>
-<li><strong>Run term scanner</strong>: Check that no forbidden cryptocurrency vocabulary was added.</li>
+<li>Write clean Markdown: Save new flows under <code>docs/en/workflows/name.md</code> using the design system.</li>
+<li>Register in zensical.toml: Add the workflow to the <code>Workflows</code> tree in <a href="https://github.com/VanDung-dev/HieraChain/blob/main/zensical.toml">zensical.toml</a> with a clean name.</li>
+<li>Run term scanner: Check that no forbidden cryptocurrency vocabulary was added.</li>
 <li>
-<p><strong>Compile and verify</strong>: Run the Zensical build in the HieraChain environment to check formatting and links:</p>
+<p>Compile and verify: Run the Zensical build in the HieraChain environment to check formatting and links:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.toml
 </code></pre></div>
 </li>

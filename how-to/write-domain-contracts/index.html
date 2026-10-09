@@ -4443,7 +4443,7 @@
 <ol>
 <li>Registration: Register a new tracked entity on the chain.</li>
 <li>Status updates: Record transition states such as <code>in_progress</code>, <code>quality_approved</code>, and <code>completed</code>.</li>
-<li>Metrics: <code>OperationMetricsTracker</code> records execution latencies and success rates for audit reporting.</li>
+<li>Metrics: <code>OperationMetricsTracker</code> records aggregate operation counts and success rates. It does not record execution latency or break results down by operation type.</li>
 </ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Register an entity</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">chain</span><span class="o">.</span><span class="n">register_entity</span><span class="p">(</span>

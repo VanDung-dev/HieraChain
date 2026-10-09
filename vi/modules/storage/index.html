@@ -4497,12 +4497,10 @@
 <hr />
 <h2 id="luong-cap-nhat-trang-thai">Luồng cập nhật trạng thái</h2>
 <pre class="mermaid"><code>graph TD
-    A[New Block Committed] --&gt; B[World State Manager]
-    B --&gt; C{Extract Events}
-    C --&gt; D[Apply Business Logic]
-    D --&gt; E[Update State Cache]
-    E --&gt; F[Persist to Backend]
-    F --&gt; G[(SQL / Redis / Memory)]</code></pre>
+    A[Verified finalized block] --&gt; B[WorldState.apply_block]
+    B --&gt; C[In-memory entity projection]
+    D[Recovered signed blocks] --&gt; B
+    C --&gt; E[Diagnostic projection root]</code></pre>
 <hr />
 <h2 id="mo-hinh-du-lieu-cot-loi">Mô hình dữ liệu cốt lõi</h2>
 <p>Không có <code>models.py</code> hay <code>BlockModel</code>/<code>EventModel</code> kiểu SQLAlchemy. Bảng được tạo bằng SQL thuần trong <code>sqlite_schema.py</code>/<code>postgres_schema.py:init_database_schema()</code> với <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>. <code>Block</code> và <code>Blockchain</code> là class Python thuần trong <code>hierachain/core/</code>.</p>
@@ -4534,7 +4532,7 @@
 <h3 id="tinh-toan-ven-va-idempotency">Tính toàn vẹn và idempotency</h3>
 <p><code>SQLiteAdapter</code> và <code>PostgresAdapter</code> (qua <code>SQLBase</code>) xử lý <code>save_block</code> có kiểm tra trùng <code>hash</code>/<code>block_hash</code> và xác thực liên kết <code>previous_hash</code> (<code>consensus/ordering/storage.py:_verify_chain_links</code>). <code>SqlStorageBackend</code> không tồn tại trong code hiện tại.</p>
 <h3 id="index-va-truy-van">Index và truy vấn</h3>
-<p>World State index mọi entity theo <code>entity_id</code> và <code>timestamp</code>. Với Redis adapter, các index này được lưu dạng Sorted Set, nên truy vấn lịch sử của một entity chạy nhanh.</p>
+<p><code>WorldState</code> giữ projection entity mới nhất trong bộ nhớ và dựng lại từ block đã xác minh. Nó không tự ghi SQL hoặc Redis. Index event của chain và Redis adapter riêng hỗ trợ truy vấn lịch sử, tách biệt với projection này.</p>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

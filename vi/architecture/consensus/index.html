@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ong-thuan-sap-xep-consensus-ordering" class="md-skip">
+        <a href="#ong-thuan-va-sap-thu-tu" class="md-skip">
           Bỏ qua
         </a>
       
@@ -4388,14 +4388,14 @@
   
 
 
-<h1 id="ong-thuan-sap-xep-consensus-ordering">Đồng thuận &amp; Sắp xếp (Consensus &amp; Ordering)</h1>
+<h1 id="ong-thuan-va-sap-thu-tu">Đồng thuận và sắp thứ tự</h1>
 <h2 id="muc-ich">Mục đích</h2>
 <p>Phần này mô tả cơ chế consensus và Ordering Service mà HieraChain dùng để giữ block và event được sắp xếp, toàn vẹn và có thể xác minh.</p>
 <h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
 <ul>
-<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> định nghĩa interface và khung chung cho các thuật toán đồng thuận.</li>
+<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> định nghĩa giao diện cơ sở cho PoA và PoF; BFT dùng API riêng.</li>
 <li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> xử lý đồng thuận trong một organization, một MainChain quản lý các Sub-Chain nội bộ.</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> xử lý đồng thuận liên minh P2P giữa các MainChain độc lập, không cần RootChain trung tâm.</li>
+<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> triển khai thành viên liên minh, xác thực leader luân phiên và chữ ký leader để tích hợp trong consortium; xác thực khối thông thường không thu thập phiếu quorum nhiều bên.</li>
 <li>BFT Consensus: <code>hierachain/consensus/bft/</code> chứa triển khai riêng. Luồng runtime của MainChain và SubChain dùng PoA hoặc PoF.</li>
 <li>Ordering Service: <code>hierachain/consensus/ordering/</code> sắp xếp event trước khi tạo block và gồm nhiều thành phần (Processor, Certifier, BlockBuilder).</li>
 </ul>
@@ -4408,27 +4408,28 @@
 
     SC-&gt;&gt;OS: 1. Submit Event
     OS-&gt;&gt;OS: Queue &amp; Batch
-    OS-&gt;&gt;OS: 2. Tạo block, lưu và đưa vào commit_queue
+    OS-&gt;&gt;OS: 2. Build block and assign index/link
+    OS-&gt;&gt;C: Finalize block
+    C--&gt;&gt;OS: Finalized block
+    OS-&gt;&gt;OS: Sign header, persist and enqueue
     SC-&gt;&gt;OS: get_next_block()
-    OS--&gt;&gt;SC: Block
-    SC-&gt;&gt;C: 3. Finalize block
-    C--&gt;&gt;SC: Block đã finalize
-    SC-&gt;&gt;SC: Lưu block và cập nhật trạng thái
-    SC-&gt;&gt;MC: 4. Submit Proof (Root Hash)
+    OS--&gt;&gt;SC: Persisted block
+    SC-&gt;&gt;SC: 3. Validate/add unchanged block and update state
+    SC-&gt;&gt;MC: 4. Submit proof (Sub-Chain block hash)
     MC--&gt;&gt;SC: Acknowledge</code></pre>
 <ol>
 <li>Sub-Chain nhận event và đẩy vào hàng đợi của Ordering Service.</li>
-<li>Ordering Service gom batch theo ngưỡng kích thước và thời gian, tạo block rồi đưa vào hàng đợi commit.</li>
-<li>Sub-Chain finalize block bằng PoA mặc định hoặc PoF nếu được cấu hình.</li>
-<li>Nếu bật neo lên Main Chain, Sub-Chain gửi proof (Merkle root hoặc hash) để Main Chain ghi nhận.</li>
+<li>Ordering Service gom sự kiện theo ngưỡng kích thước và thời gian, tạo block, gọi bộ hoàn tất đồng thuận đã cấu hình, ký header và lưu block trước khi đưa vào hàng đợi.</li>
+<li>Consumer của Sub-Chain xác minh và áp dụng block đã lưu, giữ nguyên index, hash và chữ ký. Sub-Chain mặc định dùng PoA, hoặc PoF khi được cấu hình.</li>
+<li>Khi bật neo bằng chứng lên Main Chain, Sub-Chain gửi bằng chứng chứa hash của block mới nhất để Main Chain ghi nhận.</li>
 </ol>
 <h2 id="cau-hinh">Cấu hình</h2>
 <p>Các biến trong <code>hierachain/config/settings.py</code>:</p>
 <ul>
 <li><code>CONSENSUS_TYPE</code>: <code>proof_of_authority</code> (mặc định) hoặc <code>proof_of_federation</code>.</li>
-<li>Lớp <code>Settings</code> có thuộc tính <code>BFT_ENABLED</code>, nhưng thuộc tính này không chọn consensus cho MainChain hoặc SubChain. Không có biến môi trường <code>HRC_BFT_ENABLED</code>.</li>
-<li><code>VALIDATOR_TIMEOUT</code>: timeout giữa các validator.</li>
-<li><code>CONSENSUS_FEDERATION_CONFIG</code>: tham số liên minh (ví dụ <code>min_validators</code> và <code>block_interval</code>).</li>
+<li><code>BFT_ENABLED</code>: lớp <code>Settings</code> khai báo thuộc tính này, nhưng nó không chọn cơ chế đồng thuận cho MainChain hay SubChain. Đây không phải biến môi trường.</li>
+<li><code>VALIDATOR_TIMEOUT</code>: timeout validator được khai báo và xuất qua helper settings; nó không cấu hình bộ hẹn giờ view change của BFT.</li>
+<li><code>CONSENSUS_FEDERATION_CONFIG</code>: các mặc định liên minh được khai báo; hàm khởi tạo MainChain/SubChain hiện không áp dụng dictionary này vào PoF. Cấu hình instance đồng thuận thực tế nhất quán giữa các nút.</li>
 </ul>
 <p>Ví dụ môi trường:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>HRC_CONSENSUS_TYPE=proof_of_authority
@@ -4436,7 +4437,7 @@
 </code></pre></div>
 <h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
 <ul>
-<li>PoA triển khai đơn giản và độ trễ thấp, nhưng phụ thuộc vào validator tập trung để bảo đảm tin cậy.</li>
+<li>PoA tin cậy các authority đã đăng ký. Throughput phụ thuộc vào gom lô, đồng bộ journal và storage.</li>
 <li>PoF cân bằng giữa tin cậy và phân tán, nhưng cần quản lý thành viên liên minh.</li>
 <li>Triển khai BFT nằm trong <code>hierachain/consensus/bft/</code> và tách khỏi luồng runtime của MainChain và SubChain.</li>
 <li>Ordering giữ thứ tự event và việc gom batch ổn định trước khi đóng block.</li>

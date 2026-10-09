@@ -4437,7 +4437,7 @@
 
     alt ZK Proofs Enabled (HRC_ENABLE_ZK_PROOFS=true)
         SC-&gt;&gt;ZKP: generate_proof(old_state_root, new_state_root, block_index, events)
-        ZKP-&gt;&gt;ZKP: Compute proof (Mock SHA-256 or ZoKrates circuit)
+        ZKP-&gt;&gt;ZKP: Compute proof (Mock SHA-256; production backend unavailable)
         ZKP--&gt;&gt;SC: ProofResult { proof: bytes, success: bool }
         SC-&gt;&gt;SC: Retry up to 3× with exponential backoff on failure
     else ZK Proofs Disabled
@@ -4503,8 +4503,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>production</code></td>
-<td style="text-align: left;">ZoKrates ZK-SNARKs circuits</td>
-<td style="text-align: left;">Production deployment</td>
+<td style="text-align: left;">Unimplemented proving/verifying backend</td>
+<td style="text-align: left;">Unavailable</td>
 </tr>
 </tbody>
 </table>

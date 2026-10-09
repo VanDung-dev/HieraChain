@@ -4311,22 +4311,18 @@
 
 
 <h1 id="input-sanitization">Input Sanitization</h1>
-<p>This security layer validates and sanitizes untrusted input before business logic handles it.</p>
+<p>This module provides context-specific value transformations, not a request-wide validation pipeline. <code>sanitize_string()</code> supports HTML/general, log, and filename contexts; <code>sanitize_dict()</code> and <code>sanitize_list()</code> apply the selected transformation recursively. <code>is_safe_input()</code> checks string length and a short list of script, JavaScript URI, and template patterns. These helpers do not validate an application schema or provide SQL, NoSQL, or command-injection protection. Request-size and route-schema/depth checks are separate, and handlers call sanitizers where needed.</p>
 <h2 id="input-sanitization-validation">Input Sanitization &amp; Validation</h2>
 <p><strong>File</strong>: <code>hierachain/security/sanitization.py</code></p>
-<p>Defense layer against data-level attacks:</p>
-<ul>
-<li><strong>Injection Protection</strong>: Sanitizes input data to prevent SQL Injection, NoSQL Injection, and Command Injection.</li>
-<li><strong>Nested Bomb Protection</strong>: Limits JSON payload depth to prevent denial-of-service attacks through complex nested data structures.</li>
-<li><strong>Type Strictness</strong>: Ensures input data fully matches the defined schema, rejecting any redundant or malformed fields.</li>
-</ul>
+<p>The API uses separate request-size and route-model checks where configured. Sanitizer helpers run only where a route calls them.</p>
 <h2 id="sanitization-flow">Sanitization Flow</h2>
 <pre class="mermaid"><code>graph LR
-    A[Raw Request Body] --&gt; B[Size Limit Check]
-    B --&gt; C[JSON Schema Validation]
-    C --&gt; D[Recursive Type Checking]
-    D --&gt; E[Injection Pattern Scan]
-    E --&gt; F[Sanitized Data for Logic]</code></pre>
+    A[API request] --&gt; B[App middleware: payload-size check]
+    B --&gt; C[Route-specific request validation]
+    C --&gt; D[Route handler]
+    D --&gt;|when called| E[Context-specific sanitizer]
+    D --&gt; F[Business logic]
+    E --&gt; F</code></pre>
 <hr />
 <h2 id="related">Related</h2>
 <ul>

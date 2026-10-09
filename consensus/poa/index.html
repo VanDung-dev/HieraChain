@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Authority-based consensus protocol with node identities, block signatures, and round-robin rotation.">
+        <meta name="description" content="Authority membership, block signatures, optional timing checks and scheduling helpers.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2808,7 +2808,7 @@
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How It Works
+        How it works
       </span>
     </span>
   </a>
@@ -2816,10 +2816,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Features
+        Features
       </span>
     </span>
   </a>
@@ -2827,10 +2827,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#important-configuration-parameters" class="md-nav__link">
+  <a href="#configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Important Configuration Parameters
+        Configuration parameters
       </span>
     </span>
   </a>
@@ -2841,7 +2841,7 @@
   <a href="#deployment-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Deployment Example
+        Deployment example
       </span>
     </span>
   </a>
@@ -2852,7 +2852,7 @@
   <a href="#advantages-and-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Advantages and Limitations
+        Advantages and limitations
       </span>
     </span>
   </a>
@@ -4305,7 +4305,7 @@
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How It Works
+        How it works
       </span>
     </span>
   </a>
@@ -4313,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Features
+        Features
       </span>
     </span>
   </a>
@@ -4324,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#important-configuration-parameters" class="md-nav__link">
+  <a href="#configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Important Configuration Parameters
+        Configuration parameters
       </span>
     </span>
   </a>
@@ -4338,7 +4338,7 @@
   <a href="#deployment-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Deployment Example
+        Deployment example
       </span>
     </span>
   </a>
@@ -4349,7 +4349,7 @@
   <a href="#advantages-and-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Advantages and Limitations
+        Advantages and limitations
       </span>
     </span>
   </a>
@@ -4400,16 +4400,14 @@
 
 <h1 id="proof-of-authority-hierachainconsensusproof_of_authoritypy">Proof of Authority (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>Proof of Authority (PoA)</strong> is an identity-based consensus protocol for <strong>intra-organization enterprise networks</strong>, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, <code>SubChain</code> instances default to PoA for internal events without requiring consensus between organizations.</p>
+<p>Proof of Authority (PoA) is an identity-based consensus protocol for intra-organization enterprise networks, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, <code>SubChain</code> instances default to PoA for internal events without requiring consensus between organizations.</p>
 <p>For cross-organizational inter-MainChain consensus between independent enterprises, see <a href=".././pof/">Proof of Federation (PoF)</a>.</p>
-<hr />
-<h2 id="how-it-works">How It Works</h2>
+<h2 id="how-it-works">How it works</h2>
 <p>The protocol operates based on trust in the identity of participating nodes:
-1.  <strong>Node Identity</strong>: Each Authority is assigned an <code>authority_id</code> and a unique signing key pair.
-2.  <strong>Round-Robin Schedule</strong>: The system uses a sequential algorithm to determine which node has the right to create the next block based on the block index (<code>BlockIndex % TotalAuthorities</code>).
-3.  <strong>Signature Verification</strong>: Each new block must be signed by the designated Authority. Other nodes verify this signature before accepting the block into the ledger.</p>
-<hr />
-<h2 id="key-features">Key Features</h2>
+1. Register an authority ID and its approved signing public key with <code>add_authority()</code>.
+2. <code>can_create_block(authority_id)</code> checks membership. It does not require that the authority be next in a rotation.
+3. <code>validate_block()</code> checks the block structure, timing, events and signature from a registered authority. <code>get_next_authority()</code> supplies a round-robin scheduling helper, but these creation and validation methods do not enforce its result.</p>
+<h2 id="features">Features</h2>
 <div class="grid cards">
 <ul>
 <li>
@@ -4425,12 +4423,11 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Block Signatures</strong></p>
 <hr />
-<p>Each block is signed by its designated Authority. Other nodes verify the signature before accepting the block.</p>
+<p>A block signature must verify against a registered authority key. The validation path does not require the next authority returned by the scheduling helper.</p>
 </li>
 </ul>
 </div>
-<hr />
-<h2 id="important-configuration-parameters">Important Configuration Parameters</h2>
+<h2 id="configuration-parameters">Configuration parameters</h2>
 <table>
 <thead>
 <tr>
@@ -4460,29 +4457,26 @@
 <p>MainChain and SubChain instances using PoA read this value from <code>HRC_BLOCK_INTERVAL</code>, which defaults to <code>0.0</code>. Direct <code>ProofOfAuthority()</code> construction also defaults to <code>0.0</code>. Negative or nonfinite values are rejected when constructing PoA.</p>
 <p>The SubChain orderer still batches events according to <code>block_size</code> and <code>batch_timeout</code> (defaults: 50 events and 1.0 second). Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.</p>
 <p>For an existing deployment, an explicit <code>HRC_BLOCK_INTERVAL=10</code> retains the previous 5-second minimum spacing. Use <code>HRC_BLOCK_INTERVAL=0</code> to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.</p>
-<hr />
-<h2 id="deployment-example">Deployment Example</h2>
+<h2 id="deployment-example">Deployment example</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProofOfAuthority</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Initialize PoA protocol</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">poa</span> <span class="o">=</span> <span class="n">ProofOfAuthority</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Authorize nodes to participate in consensus</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">"node_hq"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"org"</span><span class="p">:</span> <span class="s2">"Headquarters"</span><span class="p">,</span> <span class="s2">"pubkey"</span><span class="p">:</span> <span class="s2">"..."</span><span class="p">})</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">"node_branch_1"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"org"</span><span class="p">:</span> <span class="s2">"Branch 01"</span><span class="p">,</span> <span class="s2">"pubkey"</span><span class="p">:</span> <span class="s2">"..."</span><span class="p">})</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Check block creation permission for current node</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">if</span> <span class="n">poa</span><span class="o">.</span><span class="n">can_create_block</span><span class="p">(</span><span class="s2">"node_hq"</span><span class="p">):</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="c1"># Proceed to close block...</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="k">pass</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.security_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyPair</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Generate temporary keys for this library example.</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Deployments provision stable keys and register approved public keys.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">hq_key</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">branch_key</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">poa</span> <span class="o">=</span> <span class="n">ProofOfAuthority</span><span class="p">()</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">"node_hq"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"public_key"</span><span class="p">:</span> <span class="n">hq_key</span><span class="o">.</span><span class="n">public_key</span><span class="p">})</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">"node_branch_1"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"public_key"</span><span class="p">:</span> <span class="n">branch_key</span><span class="o">.</span><span class="n">public_key</span><span class="p">})</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">assert</span> <span class="n">poa</span><span class="o">.</span><span class="n">can_create_block</span><span class="p">(</span><span class="s2">"node_hq"</span><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="k">assert</span> <span class="n">poa</span><span class="o">.</span><span class="n">can_create_block</span><span class="p">(</span><span class="s2">"node_branch_1"</span><span class="p">)</span>
 </code></pre></div>
-<hr />
-<h2 id="advantages-and-limitations">Advantages and Limitations</h2>
+<h2 id="advantages-and-limitations">Advantages and limitations</h2>
 <ul>
-<li><strong>Advantages</strong>: Resource-efficient (no powerful CPU needed for mining), high throughput, transparent governance.</li>
-<li><strong>Limitations</strong>: Lower decentralization compared to BFT, only suitable for networks with a certain level of trust between members.</li>
+<li>Authority membership and signature checks avoid work-based consensus. Throughput depends on batching, journal synchronization and storage.</li>
+<li>Limitations: Lower decentralization compared to BFT, only suitable for networks with a certain level of trust between members.</li>
 </ul>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././base_consensus/">Base Consensus Interface</a></li>

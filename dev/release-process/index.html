@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Version release and documentation process: versioning with setuptools_scm, packaging, release notes.">
+        <meta name="description" content="Release preparation, versioning from hierachain/config/version.py, packaging and documentation builds.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4021,10 +4021,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#release-preparation" class="md-nav__link">
+  <a href="#preparation-and-packaging" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Release Preparation
+        Preparation and packaging
       </span>
     </span>
   </a>
@@ -4032,32 +4032,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#packaging" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Packaging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Documentation Release
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Release Notes
+        Documentation
       </span>
     </span>
   </a>
@@ -4280,10 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#release-preparation" class="md-nav__link">
+  <a href="#preparation-and-packaging" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Release Preparation
+        Preparation and packaging
       </span>
     </span>
   </a>
@@ -4291,32 +4269,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#packaging" class="md-nav__link">
+  <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Packaging
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Documentation Release
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Release Notes
+        Documentation
       </span>
     </span>
   </a>
@@ -4356,31 +4312,23 @@
 
 <h1 id="release-process">Release Process</h1>
 <h2 id="versioning">Versioning</h2>
-<ul>
-<li>Uses <code>setuptools_scm</code> (see <code>pyproject.toml</code>) to infer version from Git tags.</li>
-<li>Create tags following the pattern: <code>vX.Y.Z</code> or <code>vX.Y.Z.devN</code> for development builds.</li>
-</ul>
-<h2 id="release-preparation">Release Preparation</h2>
+<p><code>pyproject.toml</code> reads <code>hierachain.config.version.__version__</code>, computed from the <code>VERSION</code> tuple in <code>hierachain/config/version.py</code>. Git tags alone do not change the packaged version; this project does not use <code>setuptools_scm</code>.</p>
+<h2 id="preparation-and-packaging">Preparation and packaging</h2>
 <ol>
-<li>Ensure tests pass: <code>pytest -v</code>.</li>
-<li>Review documentation: links/index/nav updated.</li>
-<li>Update <code>docs/en/changelog.md</code> with release content.</li>
+<li>Run relevant test files separately, plus required static-analysis and live-backend CI checks.</li>
+<li>Synchronize corresponding English/Vietnamese docs. Changelogs describe core library changes, not documentation-only edits.</li>
+<li>Update the Python version tuple and release tags consistently.</li>
 </ol>
-<h2 id="packaging">Packaging</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>build
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>twine<span class="w"> </span>check<span class="w"> </span>dist/*
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># (optional) twine upload dist/*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>build
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>twine<span class="w"> </span>check<span class="w"> </span>dist/*
 </code></pre></div>
-<h2 id="documentation-release">Documentation Release</h2>
-<ul>
-<li>Build static site with MkDocs (performed after content stabilizes).</li>
-<li>CI (later): build preview on PR, publish on merge to <code>main</code>.</li>
-</ul>
-<h2 id="release-notes">Release Notes</h2>
-<ul>
-<li>Summarize main changes to code and documentation.</li>
-<li>Link to related PRs; list breaking changes if any.</li>
-</ul>
+<p>Publication is a separate release step. See <code>.github/workflows/</code> for the configured workflow requirements.</p>
+<h2 id="documentation">Documentation</h2>
+<p>Build with Zensical, English first and Vietnamese second:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.toml
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.vi.toml
+</code></pre></div>
+<p><code>.github/workflows/docs.yml</code> builds both languages on matching pull requests and deploys GitHub Pages on matching pushes to <code>main</code>.</p>
 
 
 

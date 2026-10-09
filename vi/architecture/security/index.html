@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Tổng quan cơ chế bảo mật ở cấp kiến trúc: MSP/Identity, Key/Cert, Policy, API Key, Resource Guard, CORS/HSTS/Rate Limit.">
+        <meta name="description" content="Tổng quan cơ chế bảo mật ở cấp kiến trúc: MSP/Identity, Key/Cert, Policy, API Key, CORS/HSTS/Rate Limit.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4355,14 +4355,14 @@
 
 
 <h1 id="kien-truc-bao-mat">Kiến trúc bảo mật</h1>
-<p>Cơ chế bảo mật ở tầng kiến trúc và cách chúng gắn vào HieraChain. Hệ thống dùng phòng thủ phân tầng bao phủ toàn bộ vòng đời ứng dụng.</p>
+<p>Trang này mô tả các cơ chế bảo mật và cách chúng được sử dụng trong kiến trúc HieraChain. Phạm vi của từng kiểm tra phụ thuộc vào luồng thực thi và cách caller tích hợp.</p>
 <h2 id="cac-tru-cot-bao-mat-chinh">Các trụ cột bảo mật chính</h2>
 <p>Phòng thủ được chia thành sáu nhóm phối hợp với nhau:</p>
 <ul>
 <li>
 <p>Authorization và kiểm soát truy cập:</p>
 <ul>
-<li><code>hierachain/security/{msp.py, identity.py}</code> quản lý Organization, User, Role và định danh PKI.</li>
+<li><code>hierachain/security/{msp.py, identity.py}</code> quản lý tổ chức, người dùng, vai trò và chứng chỉ nội bộ đơn giản.</li>
 <li><code>hierachain/security/policy_engine.py</code> xử lý kiểm soát quyền (ABAC).</li>
 <li><code>hierachain/security/verify/api_key_verifier.py</code> xử lý xác thực API key.</li>
 </ul>
@@ -4370,8 +4370,8 @@
 <li>
 <p>Logging và tính toàn vẹn:</p>
 <ul>
-<li><code>hierachain/security/secure_logging.py</code> ghi log có khả năng phát hiện giả mạo và che PII.</li>
-<li><code>hierachain/risk_management/audit_logger.py</code> ghi các sự kiện kiểm toán vận hành.</li>
+<li><code>hierachain/security/secure_logging.py</code> ghi log JSON có cấu trúc và che các trường nhạy cảm theo tên; nó không có cơ chế xác minh log bị sửa.</li>
+<li><code>hierachain/risk_management/audit_logger.py</code> ghi sự kiện kiểm toán vận hành và hỗ trợ xác minh bằng manifest đáng tin cậy được lưu riêng.</li>
 </ul>
 </li>
 <li>
@@ -4395,15 +4395,15 @@
 <li>
 <p>Zero-knowledge proof phi tập trung:</p>
 <ul>
-<li><code>hierachain/security/zk_prover.py</code> và <code>hierachain/security/verify/zk_verifier.py</code> triển khai zero-knowledge proof để xác minh dữ liệu Sub-Chain ẩn danh.</li>
+<li><code>hierachain/security/zk_prover.py</code> và <code>hierachain/security/verify/zk_verifier.py</code> chỉ cung cấp mock phát triển. Tạo/xác minh ZK production chưa triển khai.</li>
 </ul>
 </li>
 </ul>
-<p>Cấu hình bảo mật hệ thống được bật tắt trong <code>hierachain/config/settings.py</code> (AUTH, CORS, HSTS, rate limit và các tùy chọn khác).</p>
+<p>Xác thực, CORS và giới hạn tốc độ được cấu hình trong <code>hierachain/config/settings.py</code>. HSTS được khai báo ở đó nhưng không thêm HTTP header; hãy cấu hình HSTS tại reverse proxy HTTPS.</p>
 <h2 id="tich-hop-vao-he-thong">Tích hợp vào hệ thống</h2>
 <ul>
-<li>API Server (<code>hierachain/api/server.py</code>) thêm middleware (<code>add_payload_limit</code>, <code>add_rate_limit</code>, <code>add_cors_middleware</code> qua <code>CORSMiddleware</code>) và xác thực API key (<code>verify/api_key_verifier.py</code>) khi <code>HRC_AUTH_ENABLED=true</code>. Không có <code>ResourceGuardMiddleware</code>.</li>
-<li>Sub-Chain/Main Chain: mọi thao tác làm thay đổi trạng thái phải qua xác thực khi bật AUTH và được ghi lại để audit.</li>
+<li>API Server (<code>hierachain/api/server.py</code>) dùng payload/rate-limit middleware, <code>CORSMiddleware</code> và <code>APIKeyVerifier</code> khi bật xác thực. Không có middleware kiểm tra CPU/RAM trên mọi request.</li>
+<li>Xác thực API key và scope áp dụng tại HTTP handler. Lời gọi Python trực tiếp cần caller tin cậy và không tự đi qua middleware HTTP; policy domain/channel được kiểm tra tại từng đường xử lý.</li>
 <li>Logging an toàn: <code>security/secure_logging.py</code> và <code>security/sanitization.py</code> giúp giảm rò rỉ dữ liệu nhạy cảm.</li>
 </ul>
 <h2 id="cau-hinh-lien-quan-trich">Cấu hình liên quan (trích)</h2>
@@ -4412,44 +4412,23 @@
 <li><code>HRC_AUTH_ENABLED</code>, <code>HRC_API_KEY_LOCATION</code>, <code>HRC_API_KEY_NAME</code></li>
 <li><code>HRC_CORS_ALLOW_ALL</code>, <code>HRC_CORS_ORIGINS</code></li>
 <li><code>HRC_HSTS_ENABLED</code>, <code>HRC_HSTS_MAX_AGE</code></li>
-<li><code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code> (không có <code>RATE_LIMIT_REQUESTS_PER_MINUTE</code>)</li>
+<li><code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code></li>
 </ul>
 <h2 id="luong-tieu-bieu">Luồng tiêu biểu</h2>
 <pre class="mermaid"><code>sequenceDiagram
     participant Client
-    participant Server as API Server
-    participant Guard as Resource Guard
-    participant Auth as API Key Verifier
-    participant Policy as Policy Engine
-    participant Logic as Business Logic
-    participant Audit as Audit Log
-
-    Client-&gt;&gt;Server: Gửi Request (kèm API Key)
-    Server-&gt;&gt;Guard: Kiểm tra tài nguyên (CPU/RAM)
-    alt Tài nguyên quá tải
-        Guard--&gt;&gt;Server: Từ chối (503)
-        Server--&gt;&gt;Client: 503 Service Unavailable
-    else Tài nguyên OK
-        Server-&gt;&gt;Auth: Xác thực API Key
-        alt Key không hợp lệ
-            Auth--&gt;&gt;Server: Từ chối (401)
-            Server--&gt;&gt;Client: 401 Unauthorized
-        else Key hợp lệ
-            Server-&gt;&gt;Policy: Kiểm tra quyền (Role/Policy)
-            alt Không đủ quyền
-                Policy--&gt;&gt;Server: Từ chối (403)
-                Server--&gt;&gt;Client: 403 Forbidden
-            else Đủ quyền
-                Server-&gt;&gt;Logic: Thực thi nghiệp vụ
-                Logic--&gt;&gt;Server: Kết quả
-                Server-&gt;&gt;Audit: Ghi log truy cập
-                Server--&gt;&gt;Client: Trả về kết quả (200/201)
-            end
-        end
-    end</code></pre>
+    participant API as FastAPI
+    participant Auth as APIKeyVerifier
+    participant Handler as Route handler
+    Client-&gt;&gt;API: Request
+    API-&gt;&gt;API: Payload/rate limits and CORS
+    API-&gt;&gt;Auth: Verify API key when authentication enabled
+    Auth--&gt;&gt;API: Verified user or rejection
+    API-&gt;&gt;Handler: Route permission and domain checks
+    Handler--&gt;&gt;Client: Result or error</code></pre>
 <ol>
-<li>Request tới API đi qua bước kiểm tra CPU/RAM tùy chọn của ResourceGuard, rồi xác thực API key, rồi kiểm tra policy/role, sau đó thực thi và ghi audit.</li>
-<li>Event và giao dịch mang chữ ký hoặc ZK proof được <code>verify/*</code> xác minh trước khi chấp nhận.</li>
+<li>Giới hạn payload/rate và xác thực API key chạy ở API; kiểm tra scope/role phụ thuộc route. Rate-limit Redis lỗi trả 503 cho request không được miễn.</li>
+<li>Block có chữ ký được kiểm tra bằng trusted key. ZK chỉ được kiểm tra khi bật cấu hình; mock không chứng minh tính đúng đắn nghiệp vụ.</li>
 </ol>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

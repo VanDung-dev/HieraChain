@@ -958,19 +958,19 @@
   <a href="#key-concepts" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Concepts
+        Key concepts
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Key Concepts">
+    <nav class="md-nav" aria-label="Key concepts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#data-structure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Structure
+        Data structure
       </span>
     </span>
   </a>
@@ -986,7 +986,7 @@
   <a href="#basic-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Basic Flow
+        Basic flow
       </span>
     </span>
   </a>
@@ -997,7 +997,7 @@
   <a href="#related-source-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related Source Files
+        Related source files
       </span>
     </span>
   </a>
@@ -4278,19 +4278,19 @@
   <a href="#key-concepts" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Concepts
+        Key concepts
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Key Concepts">
+    <nav class="md-nav" aria-label="Key concepts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#data-structure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Structure
+        Data structure
       </span>
     </span>
   </a>
@@ -4306,7 +4306,7 @@
   <a href="#basic-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Basic Flow
+        Basic flow
       </span>
     </span>
   </a>
@@ -4317,7 +4317,7 @@
   <a href="#related-source-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related Source Files
+        Related source files
       </span>
     </span>
   </a>
@@ -4366,15 +4366,15 @@
   
 
 
-<h1 id="core-concepts">Core Concepts</h1>
-<p>This page summarizes the foundational concepts for reading and using HieraChain effectively. When encountering new terms, see the <a href="../../glossary/">Glossary</a>.</p>
-<h2 id="key-concepts">Key Concepts</h2>
+<h1 id="core-concepts">Core concepts</h1>
+<p>These concepts describe the ledger's data and hierarchy. See the <a href="../../glossary/">Glossary</a> for other terms.</p>
+<h2 id="key-concepts">Key concepts</h2>
 <ul>
-<li>Chain: A collection of Blocks linked by <code>previous_hash</code>. HieraChain has two chain layers: <code>Main Chain</code> and domain-specific <code>Sub-Chains</code>.</li>
-<li>Block: A group of Events with metadata (header). See <code>hierachain/core/block.py</code>.</li>
-<li>Event: A business operation (not a cryptocurrency transaction). Stored as Arrow tables per schema in <code>hierachain/core/block.py:261</code> (<code>EVENT_SCHEMA</code>).</li>
-<li>Proof: A cryptographic footprint (e.g. Merkle root/hash) representing Sub-Chain state, anchored to the Main Chain.</li>
-<li>Hierarchy: Architecture where Main Chain supervises multiple Sub-Chains. Managed by <code>HierarchyManager</code>.</li>
+<li>Chain: A sequence of blocks linked by <code>previous_hash</code>. HieraChain has a <code>Main Chain</code> and domain-specific <code>Sub-Chains</code>.</li>
+<li>Block: A group of events stored in an Arrow table, with a header containing the block index, timestamp, previous hash, nonce, Merkle root and creator identity. See <code>hierachain/core/block.py</code>.</li>
+<li>Event: A business record with <code>entity_id</code>, <code>event</code> and <code>timestamp</code>. Details can describe the operation. <code>EVENT_SCHEMA</code> in <code>hierachain/core/block.py</code> defines storage columns; canonical event bytes preserve JSON fields and typed details.</li>
+<li>Proof: An anchor containing a Sub-Chain block hash and summary metadata, including its Merkle root. A ZK proof can be included under the configured proof policy. This anchor is distinct from an individual event inclusion proof.</li>
+<li>Hierarchy: The MainChain and registered SubChains coordinated by <code>HierarchyManager</code>.</li>
 </ul>
 <pre class="mermaid"><code>graph TD
     Main[Main Chain]
@@ -4389,7 +4389,8 @@
 
     note[Main Chain stores Proofs &lt;br/&gt; Sub-Chain stores detailed Events]
     Main -.- note</code></pre>
-<h3 id="data-structure">Data Structure</h3>
+<h3 id="data-structure">Data structure</h3>
+<p>The diagram shows runtime classes and a conceptual event record. <code>Block.events</code> is a <code>pyarrow.Table</code>; exported event snapshots are lists of dictionaries.</p>
 <pre class="mermaid"><code>classDiagram
     direction LR
     class HierarchyManager {
@@ -4405,10 +4406,10 @@
     }
     class Block {
         +int index
-        +hash hash
-        +hash previous_hash
-        +list events
-        +hash merkle_root
+        +string hash
+        +string previous_hash
+        +pyarrow.Table events
+        +string merkle_root
     }
     class Event {
         +string entity_id
@@ -4421,13 +4422,13 @@
     HierarchyManager "1" *-- "many" Blockchain : sub_chains
     Blockchain "1" *-- "many" Block
     Block "1" *-- "many" Event</code></pre>
-<h2 id="basic-flow">Basic Flow</h2>
+<h2 id="basic-flow">Basic flow</h2>
 <ol>
-<li>Write Event to Sub-Chain → batch into Block by conditions (size/time).</li>
-<li>Generate Proof from Block (e.g. Merkle root) → submit to Main Chain for anchoring.</li>
-<li>Trace/Statistics: API allows entity tracking, Block/Chain viewing, and system information aggregation.</li>
+<li>Submit an event to a Sub-Chain. The event ID confirms acceptance into ordering; size and time settings determine when events are batched into a block.</li>
+<li>Ordering finalizes, signs and persists the block. The Sub-Chain consumer validates and applies it. Proof submission anchors a finalized block hash and summary metadata to the MainChain according to the proof schedule or an explicit request.</li>
+<li>Query committed events by entity or inspect blocks and chain statistics through the API.</li>
 </ol>
-<h2 id="related-source-files">Related Source Files</h2>
+<h2 id="related-source-files">Related source files</h2>
 <ul>
 <li>Core: <code>hierachain/core/block.py</code>, <code>hierachain/core/blockchain.py</code></li>
 <li>Hierarchical: <code>hierachain/hierarchical/main_chain/base.py</code>, <code>hierachain/hierarchical/sub_chain/base.py</code>, <code>hierachain/hierarchical/hierarchy_manager/base.py</code></li>

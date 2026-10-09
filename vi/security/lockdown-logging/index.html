@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hệ thống ghi nhật ký an toàn có khả năng phát hiện giả mạo.">
+        <meta name="description" content="Log JSON có cấu trúc, sanitization và che trường nhạy cảm.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2553,17 +2553,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ghi-nhat-ky-an-toan_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ghi nhật ký an toàn
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4236,17 +4225,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ghi-nhat-ky-an-toan_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Ghi nhật ký an toàn
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4289,19 +4267,13 @@
 
 
 <h1 id="ghi-nhat-ky-an-toan">Ghi nhật ký an toàn</h1>
-<p>Lớp bảo mật này cung cấp log có cấu trúc và khả năng phát hiện giả mạo cho các thao tác nhạy cảm.</p>
-<h2 id="ghi-nhat-ky-an-toan_1">Ghi nhật ký an toàn</h2>
-<p><strong>File</strong>: <code>hierachain/security/secure_logging.py</code></p>
-<p>Hệ thống ghi nhật ký được thiết kế chuyên biệt cho an ninh:</p>
-<ul>
-<li><strong>Tamper-evident</strong>: Mỗi bản ghi log có cấu trúc chặt chẽ, hỗ trợ phát hiện các hành vi xóa hoặc sửa đổi nhật ký.</li>
-<li><strong>Structured Logs</strong>: Log được ghi dưới dạng JSON để dễ dàng tích hợp với các hệ thống giám sát tập trung (SIEM).</li>
-<li><strong>Phân quyền Log</strong>: Các module nhạy cảm (như <code>security</code>, <code>consensus</code>) sử dụng <code>SecureLogger</code> riêng biệt với mức độ bảo vệ cao hơn.</li>
-</ul>
+<p><code>SecureLogger</code> trong <code>hierachain/security/secure_logging.py</code> ghi log JSON có cấu trúc cho thao tác nhạy cảm về bảo mật. Nó làm sạch chuỗi và che trường nhạy cảm theo tên, kể cả dữ liệu lồng nhau. Các instance logger riêng cho phép ứng dụng cấu hình handler và level theo module.</p>
+<p>Cấu trúc JSON không tự phát hiện việc sửa hay xóa bản ghi. <code>SecureLogger</code> không có chuỗi hash, chữ ký hay manifest đáng tin cậy. Log tập trung và chính sách lưu giữ thuộc hệ thống log của môi trường triển khai.</p>
+<p>Để xác minh kiểm toán, dùng <code>AuditLogger</code> riêng và workflow manifest đáng tin cậy được mô tả trong <a href="../../modules/risk-management/">Quản lý rủi ro</a>. Lưu manifest độc lập với log cần xác minh.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././risk-analyzer/">Làm sạch input</a></li>
-<li><a href="../../modules/security/">Security module</a></li>
+<li><a href=".././risk-analyzer/">Sanitization đầu vào</a></li>
+<li><a href="../../modules/security/">Module bảo mật</a></li>
 </ul>
 
 

@@ -4359,7 +4359,7 @@
 <p>The versioning module defines the release version for HieraChain. It formats a structured version tuple into a standard string following PEP 440 specifications, keeping Core, API, SDK, and CLI components synchronized on release metadata.</p>
 <h2 id="2-version-tuple-structure">2. Version tuple structure</h2>
 <p>HieraChain defines the current system version as a five-element tuple in <code>hierachain/config/version.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">VERSION</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">VERSION</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 <p>The tuple elements represent:</p>
 <ul>
@@ -4372,9 +4372,9 @@
 <h2 id="3-formatting-functions">3. Formatting functions</h2>
 <p>The module provides formatting helpers to convert the tuple into a standard version string:</p>
 <ul>
-<li><code>final</code> releases omit the suffix, producing clean semantic strings such as <code>0.1.0</code>.</li>
+<li><code>final</code> releases omit the suffix, producing clean semantic strings such as <code>0.2.0</code>.</li>
 <li>Pre-release levels append standard PEP 440 suffixes, such as <code>-alpha1</code> or <code>-beta2</code>.</li>
-<li><code>dev</code> levels format as <code>.devN</code>.</li>
+<li><code>dev</code> levels use <code>.devN</code> when serial is positive, or <code>.dev</code> when serial is zero.</li>
 </ul>
 <h2 id="4-usage-in-code">4. Usage in code</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_version</span><span class="p">,</span> <span class="n">VERSION</span><span class="p">,</span> <span class="n">__version__</span>

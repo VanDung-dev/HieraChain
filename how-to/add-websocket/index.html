@@ -3459,12 +3459,12 @@
   <a href="#websocket-connection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        WebSocket Connection
+        WebSocket connection
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="WebSocket Connection">
+    <nav class="md-nav" aria-label="WebSocket connection">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3482,7 +3482,7 @@
   <a href="#message-format" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Message Format
+        Message format
       </span>
     </span>
   </a>
@@ -3531,7 +3531,7 @@
   <a href="#connection-health" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Connection Health
+        Connection health
       </span>
     </span>
   </a>
@@ -3542,7 +3542,7 @@
   <a href="#common-error-handling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Common Error Handling
+        Common error handling
       </span>
     </span>
   </a>
@@ -4344,12 +4344,12 @@
   <a href="#websocket-connection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        WebSocket Connection
+        WebSocket connection
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="WebSocket Connection">
+    <nav class="md-nav" aria-label="WebSocket connection">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4367,7 +4367,7 @@
   <a href="#message-format" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Message Format
+        Message format
       </span>
     </span>
   </a>
@@ -4416,7 +4416,7 @@
   <a href="#connection-health" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Connection Health
+        Connection health
       </span>
     </span>
   </a>
@@ -4427,7 +4427,7 @@
   <a href="#common-error-handling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Common Error Handling
+        Common error handling
       </span>
     </span>
   </a>
@@ -4478,20 +4478,20 @@
 
 <h1 id="using-websocket">Using WebSocket</h1>
 <h2 id="purpose">Purpose</h2>
-<p>Connect to HieraChain over WebSocket to receive event and new block notifications.</p>
-<h2 id="websocket-connection">WebSocket Connection</h2>
+<p>Connect to HieraChain over WebSocket to register subscriptions and receive messages sent through its broadcast helpers. The ledger commit/event paths do not invoke those helpers automatically; the application must supply that integration. See <a href="../../workflows/websocket-streaming/">WebSocket workflow</a>.</p>
+<h2 id="websocket-connection">WebSocket connection</h2>
 <h3 id="endpoint">Endpoint</h3>
 <p>Connect to <code>/ws</code>; optionally pass <code>chain_name</code> as a query parameter to select a chain when connecting:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ws://localhost:2661/ws?chain_name=supply_chain
 </code></pre></div>
-<p>Omit the query parameter to connect to all chains:</p>
+<p>Without a <code>chain_name</code> query parameter, the connection uses the <code>all</code> subscription. It receives messages sent explicitly with <code>broadcast_to_all()</code>; per-chain block and event helpers require a named chain subscription:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ws://localhost:2661/ws
 </code></pre></div>
 <p>When API-key authentication is enabled, include the configured API-key header (default <code>X-API-Key</code>) in the WebSocket handshake. The key needs both <code>chains</code> and <code>events</code> permissions because the stream delivers both blocks and events. The browser example below applies to dev/test setups with authentication disabled; browser-native <code>WebSocket</code> does not support setting custom handshake headers.</p>
 <p>The HTTP <code>GET /ws/status</code> endpoint requires <code>chains</code> permission when authenticated, because its statistics include chain names and subscriber counts.</p>
-<h3 id="message-format">Message Format</h3>
+<h3 id="message-format">Message format</h3>
 <p>All messages are JSON.</p>
-<p><strong>Client → Server:</strong></p>
+<p>Client → Server:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Subscribe to all events/blocks from a chain</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"subscribe"</span><span class="p">,</span><span class="w"> </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">}</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
@@ -4504,12 +4504,12 @@
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">// Keep-alive ping</span>
 <a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ping"</span><span class="p">,</span><span class="w"> </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mi">1234567890</span><span class="p">}</span>
 </code></pre></div>
-<p><strong>Server → Client:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Block committed</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"block_added"</span><span class="p">,</span><span class="w"> </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"index"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">}}</span>
+<p>Server → Client:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Block added notification (example payload)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"block_added"</span><span class="p">,</span><span class="w"> </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"index"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">},</span><span class="w"> </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span><span class="p">}</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// Event notification</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span><span class="w"> </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"production_complete"</span><span class="p">}}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span><span class="w"> </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span><span class="w"> </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"production_complete"</span><span class="p">},</span><span class="w"> </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span><span class="p">}</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1">// Pong response</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pong"</span><span class="p">,</span><span class="w"> </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mi">1234567890</span><span class="p">}</span>
@@ -4634,22 +4634,25 @@
 <a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">    </span><span class="nb">Ok</span><span class="p">(())</span>
 <a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="connection-health">Connection Health</h2>
+<h2 id="connection-health">Connection health</h2>
 <p>Check connection count:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>http://localhost:2661/ws/status
 </code></pre></div>
 <p>Response:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"total_connections"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"max_connections"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"chains"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">"supply_chain"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">"orders"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="nt">"event_types_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">}</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"running"</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"stats"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">"total_connections"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">"max_connections"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">"chains"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">      </span><span class="nt">"supply_chain"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="nt">"orders"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="nt">"event_types_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="common-error-handling">Common Error Handling</h2>
+<h2 id="common-error-handling">Common error handling</h2>
 <table>
 <thead>
 <tr>
@@ -4662,12 +4665,12 @@
 <tr>
 <td>Connection refused</td>
 <td>Server not running</td>
-<td>Run <code>python -m hierachain.api.server</code></td>
+<td>Run <code>python -m hierachain</code></td>
 </tr>
 <tr>
-<td>No messages received</td>
-<td>Not subscribed</td>
-<td>Send subscribe message first</td>
+<td>No ledger messages received</td>
+<td>Missing subscription or broadcast integration</td>
+<td>Confirm subscription and ensure the application calls the broadcast helpers</td>
 </tr>
 <tr>
 <td>Sudden disconnect</td>

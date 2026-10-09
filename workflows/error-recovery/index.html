@@ -4363,11 +4363,13 @@ are deployment responsibilities, not automatic services in this package.</p>
 <h2 id="runtime-flow">Runtime flow</h2>
 <pre class="mermaid"><code>flowchart TD
     ERR["Error or node failure"] --&gt; CLASS["ErrorClassifier\nclassify and log"]
-    CLASS --&gt;|Pending event| JOURNAL["TransactionJournal\nreplay after restart"]
-    CLASS --&gt;|Consensus failure| VIEW["BFTViewChangeManager\nstart a new view"]
-    CLASS --&gt;|Validation failure| REJECT["Reject and report"]
-    JOURNAL --&gt; VALIDATE["Validate before ordering"]
-    VIEW --&gt; CONSENSUS["Resume BFT phases"]</code></pre>
+    CLASS --&gt;|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
+    EVENT["Pending journal event"] --&gt; JOURNAL["TransactionJournal\nwrite before ordering"]
+    JOURNAL --&gt; RECOVERY["OrderingRecovery\nreplay after restart"]
+    RECOVERY --&gt; VALIDATE["Validate before ordering"]
+    LEADER["Leader unavailable"] --&gt; VIEW["BFTConsensus\nBFTViewChangeManager"]
+    VIEW --&gt; CONSENSUS["Install new view\nresume BFT phases"]</code></pre>
+<p>These are separate component-owned paths, not a dispatch chain from <code>ErrorClassifier</code>. Its <code>classify_error()</code> records and returns an <code>ErrorInfo</code>; it may invoke the optional lockdown callback only for CRITICAL security/performance errors or HIGH security errors, and only when a callback is configured. <code>OrderingRecovery</code> replays journal entries, while <code>BFTConsensus</code> owns leader-failure view changes.</p>
 <h2 id="consensus-recovery">Consensus recovery</h2>
 <p><code>BFTConsensus</code> owns leader failure handling through <code>BFTViewChangeManager</code>.
 The manager broadcasts view-change messages, collects the quorum, and installs

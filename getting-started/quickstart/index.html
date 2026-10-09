@@ -926,10 +926,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-install" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Install
+        Install
       </span>
     </span>
   </a>
@@ -937,10 +937,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#start-api-server" class="md-nav__link">
+  <a href="#provision-a-local-signing-identity" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start API Server
+        Provision a local signing identity
       </span>
     </span>
   </a>
@@ -948,10 +948,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-python-usage" class="md-nav__link">
+  <a href="#record-and-anchor-an-event" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Python Usage
+        Record and anchor an event
       </span>
     </span>
   </a>
@@ -959,10 +959,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-cli-optional" class="md-nav__link">
+  <a href="#start-the-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Using CLI (optional)
+        Start the API
       </span>
     </span>
   </a>
@@ -973,7 +973,7 @@
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Next Steps
+        Next steps
       </span>
     </span>
   </a>
@@ -4269,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-install" class="md-nav__link">
+  <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Install
+        Install
       </span>
     </span>
   </a>
@@ -4280,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#start-api-server" class="md-nav__link">
+  <a href="#provision-a-local-signing-identity" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Start API Server
+        Provision a local signing identity
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-python-usage" class="md-nav__link">
+  <a href="#record-and-anchor-an-event" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Python Usage
+        Record and anchor an event
       </span>
     </span>
   </a>
@@ -4302,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-cli-optional" class="md-nav__link">
+  <a href="#start-the-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Using CLI (optional)
+        Start the API
       </span>
     </span>
   </a>
@@ -4316,7 +4316,7 @@
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Next Steps
+        Next steps
       </span>
     </span>
   </a>
@@ -4355,58 +4355,89 @@
 
 
 <h1 id="quickstart">Quickstart</h1>
-<p>This document summarizes the minimum steps to try HieraChain.</p>
-<h2 id="quick-install">Quick Install</h2>
-<p>To get started as quickly as possible, install HieraChain with all dependencies (including dev) using one of two methods:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Method 1: Using uv (recommended - fastest)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>sync
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Method 2: Using pip</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<p>This example uses a new local SQLite ledger and a single PoA signer. Run it in an empty working directory after installing the package. Do not reuse a directory containing an existing ledger or identity.</p>
+<h2 id="install">Install</h2>
+<p>From a source checkout:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/VanDung-dev/HieraChain.git
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>HieraChain
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 </code></pre></div>
-<blockquote>
-<p><strong>Note:</strong> For more installation details, see <a href="../install/">Detailed Installation</a>.</p>
-</blockquote>
-<h2 id="start-api-server">Start API Server</h2>
-<p>After installation, you can start the server with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<p><code>uv sync</code> installs base dependencies; <code>--extra dev</code> adds development tools. On Windows, activate with <code>.venv\Scripts\Activate.ps1</code>.</p>
+<h2 id="provision-a-local-signing-identity">Provision a local signing identity</h2>
+<p>Run the following Python code once in the new working directory. It creates the identity required by <code>NodeIdentity</code> and the matching trusted public-key map. Existing files are rejected. Keep the private identity out of Git.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">zmq</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.security_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyPair</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">signing</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">transport_public</span><span class="p">,</span> <span class="n">transport_secret</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">curve_keypair</span><span class="p">()</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">identity</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="s2">"node_id"</span><span class="p">:</span> <span class="s2">"local-node"</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="s2">"msp_id"</span><span class="p">:</span> <span class="s2">"LocalMSP"</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="s2">"signing_key"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">private_key</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="s2">"signing_public_key"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">public_key</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="s2">"transport_public_key"</span><span class="p">:</span> <span class="n">transport_public</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="s2">"transport_secret_key"</span><span class="p">:</span> <span class="n">transport_secret</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="p">}</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">(</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="p">(</span><span class="s2">"identity.json"</span><span class="p">,</span> <span class="n">identity</span><span class="p">),</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="p">(</span><span class="s2">"trusted_block_keys.json"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"local-node"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">public_key</span><span class="p">}),</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="p">):</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_EXCL</span><span class="p">,</span> <span class="mo">0o600</span><span class="p">)</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 </code></pre></div>
-<p>Or use the CLI (if installed via pip):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>hrc<span class="w"> </span>server<span class="w"> </span>start
+<p>Set these variables in the same terminal <strong>before importing HieraChain</strong>. This POSIX shell example disables dotenv loading, P2P and API authentication only for an isolated local demonstration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV</span><span class="o">=</span>dev
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV_FILE</span><span class="o">=</span>/dev/null
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>sqlite
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>sqlite:///local-ledger.db
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VALIDATOR_IDENTITY</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/identity.json"</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_BLOCK_TRUSTED_KEYS_FILE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/trusted_block_keys.json"</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_NODE_ID</span><span class="o">=</span>local-node
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_P2P_ENABLED</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_AUTH_ENABLED</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENABLE_ZK_PROOFS</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_MAINCHAIN_CONSENSUS</span><span class="o">=</span>proof_of_authority
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_BLOCK_INTERVAL</span><span class="o">=</span><span class="m">0</span>
 </code></pre></div>
-<p>By default, the server serves at <code>http://localhost:2661</code>. Open <code>http://localhost:2661/docs</code> to view the OpenAPI documentation and try endpoints.</p>
-<h2 id="quick-python-usage">Quick Python Usage</h2>
-<p>The minimal example below demonstrates creating a <code>Sub-Chain</code>, recording an event, and submitting a proof to the <code>Main Chain</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
+<p>SQLite stores blocks in <code>local-ledger.db</code>; ordering journals live under <code>data/&lt;chain-name&gt;</code> relative to the working directory. Keep both for recovery. Production needs independently provisioned identities and API keys; see <a href="../../reference/config/">Configuration</a> and <a href="../../how-to/secure-deployment/">Secure Deployment</a>.</p>
+<h2 id="record-and-anchor-an-event">Record and anchor an event</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># 1. Initialize Hierarchy Manager</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 2. Create a sub-chain for a specific domain (e.g., supply chain)</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"generic"</span><span class="p">)</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># 3. Record a business operation (Event) into the Sub-Chain</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">success</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="s2">"supply_chain"</span><span class="p">,</span> 
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="s2">"PROD-100"</span><span class="p">,</span> 
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="s2">"production_start"</span><span class="p">,</span> 
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="p">{</span><span class="s2">"location"</span><span class="p">:</span> <span class="s2">"Factory-A"</span><span class="p">,</span> <span class="s2">"operator"</span><span class="p">:</span> <span class="s2">"user_01"</span><span class="p">}</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="p">)</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># 4. Anchor Proof from Sub-Chain to Main Chain</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">proof_success</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Event recorded: </span><span class="si">{</span><span class="s1">'Success'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Failure'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Proof anchored: </span><span class="si">{</span><span class="s1">'Success'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">proof_success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Failure'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">chain</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="k">assert</span> <span class="n">chain</span><span class="o">.</span><span class="n">register_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"product"</span><span class="p">:</span> <span class="s2">"sample"</span><span class="p">})</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"PROD-001"</span><span class="p">,</span> <span class="s2">"production_start"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">chain</span><span class="o">.</span><span class="n">flush_pending_and_finalize</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="n">event</span><span class="p">[</span><span class="s2">"event"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"operation_start"</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">chain</span><span class="o">.</span><span class="n">get_events_by_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="p">)</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
-<h2 id="using-cli-optional">Using CLI (optional)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--help
+<p><code>start_operation()</code> acknowledges submission to ordering. <code>flush_pending_and_finalize()</code> drains pending work; the entity query verifies the business event reached a finalized block. Proof submission must succeed after durable MainChain storage and readback. <code>close()</code> releases owned orderers and storage. Use a different chain name when extending an existing ledger.</p>
+<p>PoA defaults to no additional block-spacing delay (<code>HRC_BLOCK_INTERVAL=0</code>). Sub-Chain ordering still batches up to 50 events or waits up to 1 second by default. PoF retains its separate 5-second interval configuration.</p>
+<h2 id="start-the-api">Start the API</h2>
+<p>With the same configured identity and database, run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
-<h2 id="next-steps">Next Steps</h2>
+<p>The CLI equivalent is <code>hrc node start</code>. Open <code>http://localhost:2661/docs</code>. <code>/api/ledger/health</code> is liveness; <code>/api/ledger/ready</code> initializes/checks hierarchy recovery. Event acceptance is asynchronous; read finalized blocks before relying on a proof anchor.</p>
+<h2 id="next-steps">Next steps</h2>
 <ul>
-<li>Learn about architecture details: <a href="../../architecture/overview/">Overview</a></li>
-<li>See the core module: <a href="../../modules/core/">Core</a></li>
-<li>See more test examples in <a href="../../dev/testing/">Testing</a></li>
+<li><a href="../../architecture/overview/">Architecture</a></li>
+<li><a href="../../reference/api-ledger/">API Ledger</a></li>
+<li><a href="../../modules/hierarchical/">Feature support</a></li>
 </ul>
 
 

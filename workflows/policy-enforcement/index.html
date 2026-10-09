@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Attribute-Based Access Control (ABAC) execution model guarding all access-sensitive operations.">
+        <meta name="description" content="Typed ABAC policy evaluation, caller enforcement, caching and audit behavior.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1637,10 +1637,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -1648,10 +1648,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram" class="md-nav__link">
+  <a href="#evaluation-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram
+        Evaluation flow
       </span>
     </span>
   </a>
@@ -1659,10 +1659,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#policy-rule-structure" class="md-nav__link">
+  <a href="#policy-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Policy rule structure
+        Policy example
       </span>
     </span>
   </a>
@@ -1670,32 +1670,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#condition-operators" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#supported-condition-operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Supported condition operators
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Condition operators
       </span>
     </span>
   </a>
@@ -4302,10 +4280,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4313,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#flow-diagram" class="md-nav__link">
+  <a href="#evaluation-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow diagram
+        Evaluation flow
       </span>
     </span>
   </a>
@@ -4324,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#policy-rule-structure" class="md-nav__link">
+  <a href="#policy-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Policy rule structure
+        Policy example
       </span>
     </span>
   </a>
@@ -4335,32 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#condition-operators" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#supported-condition-operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Supported condition operators
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Condition operators
       </span>
     </span>
   </a>
@@ -4421,219 +4377,103 @@
 
 
 <h1 id="policy-enforcement">Policy enforcement</h1>
-<h2 id="overview">Overview</h2>
-<p>Every access sensitive operation goes through <code>PolicyEngine</code>. Policies are sets of typed <code>PolicyRule</code> objects ordered by priority. Results are cached with a 5 minute TTL and LRU eviction to keep latency low. All evaluations are written to an in-memory audit log.</p>
-<p><code>PolicyEngine</code> is the single authorization gateway. MSP calls it after identity is verified and before <code>SubChain.add_event()</code> runs.</p>
-<hr />
-<h2 id="flow-diagram">Flow diagram</h2>
+<h2 id="scope">Scope</h2>
+<p><code>PolicyEngine</code> evaluates operations that the caller explicitly routes through it. HTTP routes and direct Python calls do not share an automatic ABAC check. <code>HierarchicalMSP</code> uses its separate <code>OrganizationPolicies</code>; it does not invoke this engine.</p>
+<p>A <code>Policy</code> contains typed <code>PolicyRule</code> objects sorted by descending priority. Each rule combines <code>PolicyCondition</code> results with <code>LogicalOperator.AND</code>, <code>OR</code> or <code>NOT</code>. The first applicable rule whose effect differs from the policy default determines the result. If no rule overrides the default, that default remains in effect. Missing or disabled policies return <code>DENY</code>.</p>
+<h2 id="evaluation-flow">Evaluation flow</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / Internal Module
-    participant PE as ⚖️ PolicyEngine
-    participant Cache as ⚡ EvaluationCache
-    participant Policy as 📋 Policy
-
+    participant Caller as Application
+    participant PE as PolicyEngine
+    participant Policy as Policy
     Caller-&gt;&gt;PE: evaluate_policy(policy_id, context)
-    PE-&gt;&gt;PE: cache_key = "{policy_id}:{SHA256(context)[:8]}"
-    PE-&gt;&gt;Cache: lookup(cache_key)
-
-    alt Cache HIT (within 5-min TTL)
-        Cache--&gt;&gt;PE: Cached result
-        PE--&gt;&gt;Caller: result { effect: allow|deny }
-
-    else Cache MISS
-        PE-&gt;&gt;Policy: policy.evaluate(context)
-        Policy-&gt;&gt;Policy: _check_disabled()
-        Policy-&gt;&gt;Policy: Sort rules by priority (desc)
-        loop Each PolicyRule
-            Policy-&gt;&gt;Policy: rule.evaluate(context)
-            Note right of Policy: AND/OR/NOT over PolicyConditions&lt;br/&gt;Operators: equals, contains, matches, in, ...
-            alt Rule applies AND effect != default
-                Policy-&gt;&gt;Policy: Append to applicable_rules&lt;br/&gt;Record decision_path
-                Policy-&gt;&gt;Policy: Break — first overriding rule wins
-            end
-        end
-        Policy--&gt;&gt;PE: EvaluationResult { effect, applicable_rules, decision_path }
-        PE-&gt;&gt;Cache: store(cache_key, result, cached_at=now)
-        PE-&gt;&gt;PE: _log_audit_event("policy_evaluated", ...)
-        PE-&gt;&gt;PE: _update_statistics(effect)
-        PE--&gt;&gt;Caller: result { effect: allow|deny }
-    end</code></pre>
-<hr />
-<h2 id="policy-rule-structure">Policy rule structure</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Example policy: restrict event submission to authorized operators only</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">policy</span> <span class="o">=</span> <span class="n">Policy</span><span class="p">(</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">policy_id</span><span class="o">=</span><span class="s2">"event_submission_policy"</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"Event Submission Access"</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">effect</span><span class="o">=</span><span class="n">PolicyEffect</span><span class="o">.</span><span class="n">DENY</span><span class="p">,</span>       <span class="c1"># Default effect if no rule overrides</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">rules</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="n">PolicyRule</span><span class="p">(</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">rule_id</span><span class="o">=</span><span class="s2">"allow_operators"</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="n">effect</span><span class="o">=</span><span class="n">PolicyEffect</span><span class="o">.</span><span class="n">ALLOW</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                <span class="n">PolicyCondition</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">"role"</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="s2">"in"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="p">[</span><span class="s2">"admin"</span><span class="p">,</span> <span class="s2">"operator"</span><span class="p">])</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>            <span class="p">],</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="n">logic</span><span class="o">=</span><span class="n">RuleLogic</span><span class="o">.</span><span class="n">AND</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="p">)</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="p">]</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">)</span>
+    PE-&gt;&gt;PE: Key = policy ID + version + context hash
+    alt Cached result within TTL
+        PE--&gt;&gt;Caller: Cached result
+    else No valid cached result
+        PE-&gt;&gt;Policy: evaluate(context), or DENY if missing
+        Policy--&gt;&gt;PE: effect, applicable_rules, decision_path
+        PE-&gt;&gt;PE: Update statistics and cache if enabled
+        PE-&gt;&gt;PE: Audit uncached evaluation if enabled
+        PE--&gt;&gt;Caller: Result
+    end
+    Note over Caller: Enforce the returned effect before performing the operation</code></pre>
+<p>The cache TTL defaults to 300 seconds with a maximum of 1,000 entries. The key includes policy version and the first eight hexadecimal characters of a SHA-256 hash of canonical context JSON. When full, the cache evicts the entry with the oldest <code>cached_at</code> timestamp; a cache hit does not refresh it. Cached evaluations return before writing a new audit entry. Audit records remain in memory.</p>
+<h2 id="policy-example">Policy example</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.policy_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">ComparisonOperator</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">LogicalOperator</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">Policy</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">PolicyCondition</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">PolicyEffect</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">PolicyEngine</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">PolicyRule</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">PolicyType</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">policy</span> <span class="o">=</span> <span class="n">Policy</span><span class="p">(</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">policy_id</span><span class="o">=</span><span class="s2">"event_submission_policy"</span><span class="p">,</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">policy_type</span><span class="o">=</span><span class="n">PolicyType</span><span class="o">.</span><span class="n">ACCESS_CONTROL</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">default_effect</span><span class="o">=</span><span class="n">PolicyEffect</span><span class="o">.</span><span class="n">DENY</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">rules</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="n">PolicyRule</span><span class="p">(</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>            <span class="n">rule_id</span><span class="o">=</span><span class="s2">"allow_operators"</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>            <span class="n">effect</span><span class="o">=</span><span class="n">PolicyEffect</span><span class="o">.</span><span class="n">ALLOW</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            <span class="n">conditions</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                <span class="n">PolicyCondition</span><span class="p">(</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>                    <span class="n">attribute</span><span class="o">=</span><span class="s2">"role"</span><span class="p">,</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>                    <span class="n">operator</span><span class="o">=</span><span class="n">ComparisonOperator</span><span class="o">.</span><span class="n">IN</span><span class="p">,</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>                    <span class="n">value</span><span class="o">=</span><span class="p">[</span><span class="s2">"admin"</span><span class="p">,</span> <span class="s2">"operator"</span><span class="p">],</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>                <span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>            <span class="p">],</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>            <span class="n">logical_operator</span><span class="o">=</span><span class="n">LogicalOperator</span><span class="o">.</span><span class="n">AND</span><span class="p">,</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>        <span class="p">)</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    <span class="p">],</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="p">)</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">PolicyEngine</span><span class="p">()</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="n">engine</span><span class="o">.</span><span class="n">register_policy</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">evaluate_policy</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">policy_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"operator"</span><span class="p">})</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">"effect"</span><span class="p">]</span> <span class="o">==</span> <span class="n">PolicyEffect</span><span class="o">.</span><span class="n">ALLOW</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Cache check</strong></td>
-<td style="text-align: left;"><code>cache_key = "{policy_id}:{SHA256(context)[:8]}"</code>. If cache HIT and TTL valid → return immediately</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Rule sort</strong></td>
-<td style="text-align: left;">All rules sorted by <code>priority</code> descending (higher priority evaluated first)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Rule evaluation</strong></td>
-<td style="text-align: left;">Each rule checks its <code>PolicyCondition</code> list using AND/OR/NOT logic</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. First override</strong></td>
-<td style="text-align: left;">The first rule whose effect differs from the policy default wins; remaining rules skipped</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Cache store</strong></td>
-<td style="text-align: left;">Result cached with <code>cached_at</code> timestamp for 5-minute TTL</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Audit log</strong></td>
-<td style="text-align: left;">Every evaluation logged with <code>policy_id</code>, <code>context</code>, <code>effect</code>, and <code>decision_path</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="supported-condition-operators">Supported condition operators</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Operator</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Example</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>equals</code></td>
-<td style="text-align: left;">Exact match</td>
-<td style="text-align: left;"><code>role == "admin"</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>not_equals</code></td>
-<td style="text-align: left;">Negation</td>
-<td style="text-align: left;"><code>status != "revoked"</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>contains</code></td>
-<td style="text-align: left;">String/list containment</td>
-<td style="text-align: left;"><code>permissions contains "submit_events"</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>matches</code></td>
-<td style="text-align: left;">Regex match</td>
-<td style="text-align: left;"><code>entity_id matches "^product-.*"</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>in</code></td>
-<td style="text-align: left;">Set membership</td>
-<td style="text-align: left;"><code>role in ["admin", "operator"]</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>greater_than</code></td>
-<td style="text-align: left;">Numeric comparison</td>
-<td style="text-align: left;"><code>risk_score &gt; 0.8</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
-<th style="text-align: left;">Behavior</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Policy not found</td>
-<td style="text-align: left;">Returns <code>DENY</code> (fail-closed)</td>
-</tr>
-<tr>
-<td style="text-align: left;">Policy disabled</td>
-<td style="text-align: left;">Returns default effect immediately (no rule eval)</td>
-</tr>
-<tr>
-<td style="text-align: left;">Context missing required field</td>
-<td style="text-align: left;">Condition evaluates to <code>False</code>; logged as partial match</td>
-</tr>
-<tr>
-<td style="text-align: left;">Cache evicted (LRU)</td>
-<td style="text-align: left;">Next request triggers fresh evaluation</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<p>Use the returned effect to allow or reject the operation. Creating or evaluating a policy does not automatically protect <code>SubChain.add_event()</code>.</p>
+<h2 id="condition-operators">Condition operators</h2>
+<p><code>ComparisonOperator</code> supports equality/inequality, greater/less comparisons (including inclusive variants), containment, membership and regular-expression matching, including their negated forms. Conditions use <code>attribute</code>, <code>operator</code> and <code>value</code>. A missing context attribute or a failed comparison returns <code>False</code>.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Entry point</td>
+<td style="text-align: left;">Single policy</td>
 <td style="text-align: left;"><code>PolicyEngine.evaluate_policy()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/policy_engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Multi-policy eval</td>
+<td style="text-align: left;">Policy set</td>
 <td style="text-align: left;"><code>PolicyEngine.evaluate_policy_set()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/policy_engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Rule evaluation</td>
-<td style="text-align: left;"><code>PolicyRule.evaluate()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
+<td style="text-align: left;">Policy evaluation</td>
+<td style="text-align: left;"><code>Policy.evaluate()</code></td>
+<td style="text-align: left;"><code>hierachain/security/policy_engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Condition check</td>
-<td style="text-align: left;"><code>PolicyCondition.evaluate()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Cache lookup</td>
-<td style="text-align: left;"><code>_get_cached_result()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Cache store</td>
-<td style="text-align: left;"><code>_cache_result()</code></td>
-<td style="text-align: left;"><code>security/policy_engine.py</code></td>
+<td style="text-align: left;">Rule and condition evaluation</td>
+<td style="text-align: left;"><code>PolicyRule.evaluate()</code> / <code>PolicyCondition.evaluate()</code></td>
+<td style="text-align: left;"><code>hierachain/security/policy_types.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././msp-identity/">MSP Identity</a>: MSP calls <code>evaluate_policy()</code> after identity verified</li>
-<li><a href=".././event-submission/">Event Submission</a>: <code>add_event()</code> guarded by policy evaluation</li>
+<li><a href=".././msp-identity/">MSP Identity</a>: organization-specific membership policies</li>
+<li><a href=".././event-submission/">Event Submission</a>: ingestion and route scope checks</li>
 </ul>
 
 

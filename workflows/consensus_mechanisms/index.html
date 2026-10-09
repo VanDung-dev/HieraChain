@@ -33,7 +33,7 @@
     
     
       
-        <title>Consensus Mechanisms - HieraChain Docs</title>
+        <title>Consensus mechanisms - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#consensus-mechanisms-reference" class="md-skip">
+        <a href="#consensus-mechanisms" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Consensus Mechanisms
+              Consensus mechanisms
             
           </span>
         </div>
@@ -1349,10 +1349,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mechanism-comparison" class="md-nav__link">
+  <a href="#runtime-selection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mechanism comparison
+        Runtime selection
       </span>
     </span>
   </a>
@@ -1360,66 +1360,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#proof-of-authority-poa" class="md-nav__link">
+  <a href="#implementation-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Proof of authority (PoA)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Proof of authority (PoA)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#key-classes-poa" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes: PoA
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#proof-of-federation-pof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof of federation (PoF)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Proof of federation (PoF)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#key-classes-pof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes: PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#byzantine-fault-tolerance-bft-pbft" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Byzantine fault tolerance (BFT / PBFT)
+        Implementation comparison
       </span>
     </span>
   </a>
@@ -1427,10 +1371,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-reference" class="md-nav__link">
+  <a href="#ordering-and-durability" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration reference
+        Ordering and durability
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pof-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PoF boundary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zk-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ZK boundary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuration
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Related
       </span>
     </span>
   </a>
@@ -4303,10 +4291,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mechanism-comparison" class="md-nav__link">
+  <a href="#runtime-selection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mechanism comparison
+        Runtime selection
       </span>
     </span>
   </a>
@@ -4314,66 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#proof-of-authority-poa" class="md-nav__link">
+  <a href="#implementation-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Proof of authority (PoA)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Proof of authority (PoA)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#key-classes-poa" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes: PoA
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#proof-of-federation-pof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Proof of federation (PoF)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Proof of federation (PoF)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#key-classes-pof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key classes: PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#byzantine-fault-tolerance-bft-pbft" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Byzantine fault tolerance (BFT / PBFT)
+        Implementation comparison
       </span>
     </span>
   </a>
@@ -4381,10 +4313,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-reference" class="md-nav__link">
+  <a href="#ordering-and-durability" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration reference
+        Ordering and durability
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pof-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PoF boundary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zk-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ZK boundary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuration
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Related
       </span>
     </span>
   </a>
@@ -4422,230 +4398,78 @@
   
 
 
-<h1 id="consensus-mechanisms-reference">Consensus mechanisms reference</h1>
-<p><strong>Related workflows</strong>: <a href=".././event-submission/">Event Submission</a> · <a href=".././bft-consensus/">BFT Consensus</a></p>
-<p>HieraChain has pluggable consensus across layers. The MainChain (inter-organization alliance) is set by <code>HRC_MAINCHAIN_CONSENSUS</code> and defaults to <code>proof_of_federation</code>. SubChains that hold domain events use proof of authority by default for speed. The event submission flow in <a href=".././event-submission/">Event Submission</a> is the same no matter which mechanism you pick. Only <code>finalize_block()</code> is different.</p>
-<hr />
-<h2 id="mechanism-comparison">Mechanism comparison</h2>
+<h1 id="consensus-mechanisms">Consensus mechanisms</h1>
+<h2 id="runtime-selection">Runtime selection</h2>
+<p>MainChain selects <code>HRC_MAINCHAIN_CONSENSUS</code>, falling back to <code>HRC_CONSENSUS_TYPE</code>; the default is <code>proof_of_authority</code>. Sub-Chains default to PoA and accept a Python <code>config</code> with <code>consensus_type="proof_of_federation"</code>. BFT is a separate implementation under <code>hierachain/consensus/bft/</code>; setting <code>BFT_ENABLED</code> does not wire it into these chain paths. Use the documented PoA/PoF selectors; another value is not a BFT activation switch.</p>
+<h2 id="implementation-comparison">Implementation comparison</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Aspect</th>
-<th style="text-align: left;">PoA</th>
-<th style="text-align: left;">PoF</th>
-<th style="text-align: left;">BFT</th>
+<th>Aspect</th>
+<th>PoA</th>
+<th>PoF</th>
+<th>BFT component</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Config value</strong></td>
-<td style="text-align: left;"><code>proof_of_authority</code></td>
-<td style="text-align: left;"><code>proof_of_federation</code></td>
-<td style="text-align: left;"><code>byzantine_fault_tolerant</code></td>
+<td>Hierarchical runtime</td>
+<td>Default MainChain/Sub-Chain</td>
+<td>Explicit federation selection</td>
+<td>Separate integration required</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Target Layer</strong></td>
-<td style="text-align: left;">SubChain (Internal) / Single MainChain</td>
-<td style="text-align: left;">MainChain Alliance (Inter-Org)</td>
-<td style="text-align: left;">SubChain / MainChain BFT</td>
+<td>Finalization signer</td>
+<td>Registered authority</td>
+<td>Registered validator; validation enforces scheduled leader when rotation is enabled</td>
+<td>PBFT voting protocol</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Who finalizes</strong></td>
-<td style="text-align: left;">Any registered authority</td>
-<td style="text-align: left;">Only rotating leader: <code>Validators[index % n]</code></td>
-<td style="text-align: left;">2f+1 of n validators via PBFT</td>
+<td>Default interval</td>
+<td>0.0 seconds</td>
+<td>5.0 seconds</td>
+<td>Protocol timeout configuration</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Signature type</strong></td>
-<td style="text-align: left;">Ed25519 (asymmetric)</td>
-<td style="text-align: left;">Ed25519 over the unfinalized block hash</td>
-<td style="text-align: left;">Aggregated PBFT votes</td>
+<td>Timestamp spacing check</td>
+<td>At least half of a positive interval</td>
+<td>At least 80% of interval (4 seconds by default)</td>
+<td>Separate protocol</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Leader rotation</strong></td>
-<td style="text-align: left;">Optional round-robin</td>
-<td style="text-align: left;">Enforced, deterministic by block index</td>
-<td style="text-align: left;">View-based, changes on failure</td>
+<td>Membership</td>
+<td>At least one authority</td>
+<td><code>min_validators=3</code> for block creation</td>
+<td><code>n &gt;= 3f + 1</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>ZK Proof check</strong></td>
-<td style="text-align: left;">Optional</td>
-<td style="text-align: left;">Enforced in <code>validate_block()</code></td>
-<td style="text-align: left;">N/A</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Min validators</strong></td>
-<td style="text-align: left;">1 authority sufficient</td>
-<td style="text-align: left;">≥ 3 (<code>min_validators</code> config)</td>
-<td style="text-align: left;">n ≥ 3f + 1</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Fault model</strong></td>
-<td style="text-align: left;">Trust the authority identity</td>
-<td style="text-align: left;">Distributed trust, tolerate absent validator</td>
-<td style="text-align: left;">Tolerates up to f Byzantine nodes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Use case</strong></td>
-<td style="text-align: left;">Intra-org domain chains</td>
-<td style="text-align: left;">Consortium / multi-org MainChain alliance</td>
-<td style="text-align: left;">Critical / adversarial environments</td>
+<td>ZK</td>
+<td>Shared optional verification</td>
+<td>Shared optional verification</td>
+<td>Shared environment flag; see BFT input limitations</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="proof-of-authority-poa">Proof of authority (PoA)</h2>
-<blockquote>
-<p>Default for SubChains, or when <code>HRC_MAINCHAIN_CONSENSUS=proof_of_authority</code> on MainChain.
-A single pre-registered authority signs the block with its Ed25519 private key.</p>
-</blockquote>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant OS as ⚙️ OrderingService
-    participant POA as 🔏 ProofOfAuthority
-
-    OS-&gt;&gt;POA: finalize_block(block, authority_id)
-    POA-&gt;&gt;POA: is_authority(authority_id)
-    Note right of POA: Reject if not in authority registry
-    POA-&gt;&gt;POA: _check_block_timing(block, previous_block)
-    Note right of POA: block.timestamp - prev.timestamp &gt;= block_interval / 2
-    POA-&gt;&gt;POA: _validate_block_events()
-    Note right of POA: Scan all events for forbidden crypto terms
-    POA-&gt;&gt;POA: _create_authority_signature(block, authority_id, private_key)
-    Note right of POA: Ed25519 sign(hash + authority_id + timestamp)&lt;br/&gt;Fallback to random KeyPair in test mode
-    POA-&gt;&gt;POA: Append consensus_finalization event&lt;br/&gt;{ authority_id, authority_signature, finalized_at }
-    POA--&gt;&gt;OS: Finalized Block ✅</code></pre>
-<h3 id="key-classes-poa">Key classes: PoA</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
-<th style="text-align: left;">File</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Authority check</td>
-<td style="text-align: left;"><code>ProofOfAuthority.is_authority()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Timing check</td>
-<td style="text-align: left;"><code>_check_block_timing()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Sign block</td>
-<td style="text-align: left;"><code>_create_authority_signature()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Finalize</td>
-<td style="text-align: left;"><code>ProofOfAuthority.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_authority.py</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="proof-of-federation-pof">Proof of federation (PoF)</h2>
-<blockquote>
-<p>Default for MainChains when <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code>.
-Leader is elected deterministically by block index. ZK proof is enforced.</p>
-</blockquote>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant OS as ⚙️ OrderingService
-    participant POF as 🤝 ProofOfFederation
-
-    OS-&gt;&gt;POF: finalize_block(block, authority_id)
-    POF-&gt;&gt;POF: can_create_block(authority_id)
-    Note right of POF: Requires &gt;= min_validators (default 3)
-    POF-&gt;&gt;POF: get_current_leader(block.index)&lt;br/&gt;= Validators[ block.index % n ]
-    POF-&gt;&gt;POF: validate_block_proposer(block.index, authority_id)
-    Note right of POF: Reject if authority_id != expected leader
-    POF-&gt;&gt;POF: _validate_block_events()
-    Note right of POF: Scan all events for forbidden crypto terms
-    POF-&gt;&gt;POF: _verify_block_zk_proof(block, previous_block)
-    Note right of POF: Enforced — fails block if ZK invalid
-    POF-&gt;&gt;POF: _create_federation_signature(block, signing_key)&lt;br/&gt;Ed25519 sign(block.hash)
-    POF-&gt;&gt;POF: Append consensus_finalization event&lt;br/&gt;{ leader_id, block_hash, validators_count, round, signature }
-    POF--&gt;&gt;OS: Finalized Block ✅</code></pre>
-<h3 id="key-classes-pof">Key classes: PoF</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
-<th style="text-align: left;">File</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Leader election</td>
-<td style="text-align: left;"><code>ProofOfFederation.get_current_leader()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Proposer check</td>
-<td style="text-align: left;"><code>validate_block_proposer()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">ZK verify</td>
-<td style="text-align: left;"><code>_verify_block_zk_proof()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Federation sign</td>
-<td style="text-align: left;"><code>_create_federation_signature()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Finalize</td>
-<td style="text-align: left;"><code>ProofOfFederation.finalize_block()</code></td>
-<td style="text-align: left;"><code>consensus/proof_of_federation.py</code></td>
-</tr>
-</tbody>
-</table>
-<p><code>validate_block()</code> rebuilds the block before the finalization event and checks that its hash matches the signed <code>block_hash</code>. It rejects a missing trusted validator key, altered payload, or a finalization event outside the last position.</p>
-<p>Every block, including genesis, must carry a valid Ed25519 <code>signature</code> from a creator in the trusted key map. <code>HRC_VALIDATOR_IDENTITY</code> supplies the fixed signing key, while <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> supplies the operator-approved <code>creator_id</code> to public-key map. <code>Blockchain.add_block(block, public_key=...)</code> accepts an explicit PEM key only when it matches that map. <code>Blockchain.is_chain_valid()</code> and <code>Blockchain.from_dict()</code> verify the complete chain; missing keys, unsigned blocks, and invalid signatures fail validation. CLI verification uses the same trusted key file and checks each named chain in its SQLite database.</p>
-<hr />
-<h2 id="byzantine-fault-tolerance-bft-pbft">Byzantine fault tolerance (BFT / PBFT)</h2>
-<blockquote>
-<p>Active when <code>HRC_MAINCHAIN_CONSENSUS=byzantine_fault_tolerant</code>.
-Full 3-phase PBFT. See <a href=".././bft-consensus/">BFT Consensus</a> for the complete flow.</p>
-</blockquote>
-<p>You need n &gt;= 3f + 1 nodes to tolerate f faulty nodes.</p>
-<p>View change: if the leader fails within the timeout, <code>view += 1</code>, new leader is <code>Validators[view % n]</code> and the protocol restarts from phase 1.</p>
-<hr />
-<h2 id="configuration-reference">Configuration reference</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Variable</th>
-<th style="text-align: left;">Values</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>HRC_MAINCHAIN_CONSENSUS</code></td>
-<td style="text-align: left;"><code>proof_of_federation</code> (default), <code>proof_of_authority</code>, <code>byzantine_fault_tolerant</code></td>
-<td style="text-align: left;">MainChain inter-org consensus mechanism</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>HRC_ENABLE_ZK_PROOFS</code></td>
-<td style="text-align: left;"><code>true</code> / <code>false</code></td>
-<td style="text-align: left;">Toggle ZK verification (required for PoF production)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>HRC_ZK_MODE</code></td>
-<td style="text-align: left;"><code>mock</code>, <code>production</code></td>
-<td style="text-align: left;">ZK implementation: SHA-256 simulation or ZoKrates circuits</td>
-</tr>
-</tbody>
-</table>
+<h2 id="ordering-and-durability">Ordering and durability</h2>
+<p><code>SubChain.add_event()</code> journals and queues the event. Ordering batches events, finalizes consensus, signs the block header and saves the block before publishing it to the commit queue. The Sub-Chain consumer validates and applies the committed block without rewriting it. A submission acknowledgement is earlier than finality. Default Sub-Chain ordering uses 50 events and a 1-second batch timeout; this wait is independent of PoA block spacing.</p>
+<h2 id="pof-boundary">PoF boundary</h2>
+<p><code>get_current_leader(index)</code> uses the sorted validator list and <code>index % count</code>. <code>validate_block()</code> checks structure, timestamp spacing, leader identity, the leader's signature over the reconstructed pre-finalization payload, and the shared optional ZK check. Despite its name, <code>_verify_block_quorum()</code> checks a single leader signature. <code>verify_quorum_signatures()</code> separately verifies distinct validator signatures with a default threshold of <code>floor(2n/3)+1</code>; ordinary block finalization/validation does not collect or enforce that quorum. No automatic leader failover is implemented by this class.</p>
+<p>Register real validator public keys. If a caller omits <code>public_key</code> in <code>add_validator()</code>, the class generates a key unrelated to that remote validator; this is unsuitable for network provisioning.</p>
+<h2 id="zk-boundary">ZK boundary</h2>
+<p><code>HRC_ENABLE_ZK_PROOFS=false</code> disables the shared ZK check. If enabled, missing-proof handling also depends on <code>HRC_ZK_REQUIRED_MAINCHAIN</code>. PoF does not independently require ZK by default. Mock proofs are forgeable development fixtures; <code>production</code> proving/verifying is unimplemented. Signed blocks and Merkle anchors remain separate integrity mechanisms.</p>
+<h2 id="configuration">Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>HRC_MAINCHAIN_CONSENSUS=proof_of_authority
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>HRC_BLOCK_INTERVAL=0.0
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>HRC_ENABLE_ZK_PROOFS=false
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>HRC_ZK_REQUIRED_MAINCHAIN=false
+</code></pre></div>
+<p>PoF's <code>block_interval</code> is a separate consensus configuration value; <code>HRC_BLOCK_INTERVAL</code> controls PoA. Current chain constructors do not apply <code>CONSENSUS_FEDERATION_CONFIG</code>. BFT uses the shared ZK flag, but its helper and request wrapper have different operation locations; see <a href="../../consensus/bft_consensus/">BFT</a> before relying on that check.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="../../consensus/poa/">PoA</a> · <a href="../../consensus/pof/">PoF</a></li>
+<li><a href="../bft-consensus/">BFT workflow</a></li>
+<li><a href="../event-submission/">Event submission</a> · <a href="../proof-anchoring/">Proof anchoring</a></li>
+</ul>
 
 
 

@@ -4497,12 +4497,10 @@
 <hr />
 <h2 id="state-update-flow">State update flow</h2>
 <pre class="mermaid"><code>graph TD
-    A[New Block Committed] --&gt; B[World State Manager]
-    B --&gt; C{Extract Events}
-    C --&gt; D[Apply Business Logic]
-    D --&gt; E[Update State Cache]
-    E --&gt; F[Persist to Backend]
-    F --&gt; G[(SQL / Redis / Memory)]</code></pre>
+    A[Verified finalized block] --&gt; B[WorldState.apply_block]
+    B --&gt; C[In-memory entity projection]
+    D[Recovered signed blocks] --&gt; B
+    C --&gt; E[Diagnostic projection root]</code></pre>
 <hr />
 <h2 id="core-data-models">Core data models</h2>
 <p>There is no <code>models.py</code> or SQLAlchemy <code>BlockModel</code>/<code>EventModel</code>. Tables are created with raw SQL in <code>sqlite_schema.py</code>/<code>postgres_schema.py:init_database_schema()</code> with <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>. <code>Block</code> and <code>Blockchain</code> are plain Python classes in <code>hierachain/core/</code>.</p>
@@ -4534,7 +4532,7 @@
 <h3 id="integrity-and-idempotency">Integrity and idempotency</h3>
 <p><code>SQLiteAdapter</code> and <code>PostgresAdapter</code> (via <code>SQLBase</code>) handle <code>save_block</code> with checks for duplicate <code>hash</code>/<code>block_hash</code> and verify <code>previous_hash</code> links (<code>consensus/ordering/storage.py:_verify_chain_links</code>). <code>SqlStorageBackend</code> does not exist in the current code.</p>
 <h3 id="indexing-and-queries">Indexing and queries</h3>
-<p>World State indexes every entity by <code>entity_id</code> and <code>timestamp</code>. With the Redis adapter, these indexes are stored as Sorted Sets, which makes history queries for an entity fast.</p>
+<p><code>WorldState</code> holds the latest entity projection in memory and is rebuilt from verified blocks. It does not write SQL or Redis itself. Native chain event indexes and the separate Redis adapter support history queries; they are distinct from this projection.</p>
 <hr />
 <h2 id="related">Related</h2>
 <ul>

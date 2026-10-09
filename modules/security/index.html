@@ -4378,8 +4378,7 @@
 
 <h1 id="security-module-hierachainsecurity">Security Module (<code>hierachain/security/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p>The security module provides the main protections for HieraChain. It does not rely on one layer. It combines identity, access control, resource protection and signed ledger integrity. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.</p>
-<hr />
+<p>The security module provides identity helpers, access-control policies, sanitization and signed ledger integrity. HTTP scope checks, organization policies and direct Python calls have different enforcement paths. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.</p>
 <h2 id="six-security-areas">Six security areas</h2>
 <p>The design groups protections into six areas that work together:</p>
 <div class="grid cards">
@@ -4393,13 +4392,13 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg></span> <strong>Secure logging</strong></p>
 <hr />
-<p>Tamper-evident logging for security-sensitive operations.
+<p>Structured JSON logs with sanitization and sensitive-field redaction. Audit verification uses the separate <code>AuditLogger</code> and a trusted manifest.
 <a href="../../security/lockdown-logging/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg></span> <strong>Integrity and guard</strong></p>
 <hr />
-<p>Resource protection against DoS and integrity checks for code and configuration at startup.
+<p>API and ordering resource limits, with signed-block verification during ledger loading and commitment.
 <a href="../../security/fault-tolerance-integrity/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
@@ -4411,7 +4410,7 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg></span> <strong>Encryption and keys</strong></p>
 <hr />
-<p>Key lifecycle management (Ed25519, AES-GCM) and X.509 certificates.
+<p>Ed25519 key providers, IPFS AES-GCM encryption and internal MSP certificates. MSP does not implement X.509 or mTLS.
 <a href="../../security/encryption-keys/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
@@ -4422,22 +4421,19 @@
 </li>
 </ul>
 </div>
-<hr />
 <h2 id="how-it-connects">How it connects</h2>
-<p>Each part of HieraChain uses the same layers:</p>
+<p>The runtime applies these checks in their respective paths:</p>
 <ul>
-<li>API server uses <code>ResourceGuard</code> and <code>APIKeyVerifier</code> as middleware. They run first on every request.</li>
-<li>Consensus signs every consensus message and checks integrity before accepting it.</li>
-<li>Storage encrypts sensitive data before write and sanitizes input on queries.</li>
+<li>Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM <code>ResourceGuardMiddleware</code>.</li>
+<li>Signed blocks are checked against operator-approved creator keys; consensus-message checks depend on the selected component.</li>
+<li>IPFS uploads encrypt by default. SQL ledger storage does not automatically encrypt all stored event details; configure storage encryption and access controls at deployment.</li>
 </ul>
-<hr />
 <h2 id="security-configuration">Security configuration</h2>
 <p>Main settings live in <code>hierachain/config/settings.py</code>:</p>
 <ul>
 <li><code>AUTH_ENABLED</code> turns API authentication on or off.</li>
 <li><code>HRC_ENABLE_ZK_PROOFS</code> enables the ZK verification path; it does not provide a production backend. See <a href="../../security/decentralized-zkp/">ZK scope</a>.</li>
 </ul>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href="../../architecture/security/">Security Architecture</a></li>

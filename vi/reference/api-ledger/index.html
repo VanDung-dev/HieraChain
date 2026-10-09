@@ -3280,10 +3280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ghi-chu-trien-khai-rut-gon-tu-endpointspy" class="md-nav__link">
+  <a href="#ghi-chu-trien-khai-rut-gon-tu-hierachainapiledgereventspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ghi chú triển khai (rút gọn từ <code>endpoints.py</code>)
+        Ghi chú triển khai (rút gọn từ <code>hierachain/api/ledger/events.py</code>)
       </span>
     </span>
   </a>
@@ -4590,10 +4590,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ghi-chu-trien-khai-rut-gon-tu-endpointspy" class="md-nav__link">
+  <a href="#ghi-chu-trien-khai-rut-gon-tu-hierachainapiledgereventspy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ghi chú triển khai (rút gọn từ <code>endpoints.py</code>)
+        Ghi chú triển khai (rút gọn từ <code>hierachain/api/ledger/events.py</code>)
       </span>
     </span>
   </a>
@@ -4670,27 +4670,23 @@
     participant Main as Main Chain
 
     Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/create
-    API-&gt;&gt;Sub: Khởi tạo Sub-Chain
+    API-&gt;&gt;Sub: Initialize Sub-Chain
     API--&gt;&gt;Client: 201 Created
 
     Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/events
-    API-&gt;&gt;Sub: add_event(event)
-    Sub-&gt;&gt;Sub: OrderingService.receive_event()
-    Sub-&gt;&gt;Sub: Ghi Journal và đưa sự kiện vào hàng đợi
-    API--&gt;&gt;Client: 200 OK (event_id; đã tiếp nhận, chưa phải block finality)
-
-    Note over Sub: Xử lý nền sau phản hồi API
-    Sub-&gt;&gt;Sub: Gom batch và tạo block
-    Sub-&gt;&gt;Sub: Finalize bằng consensus PoA hoặc PoF đã cấu hình
-    Sub-&gt;&gt;Sub: Lưu block đã finalize
+    API-&gt;&gt;Sub: Add event to ordering service
+    Sub-&gt;&gt;Sub: Journal and enqueue event
+    API--&gt;&gt;Client: 200 OK (Event ID accepted for ordering)
+    Note over Sub: Background batching, block finalization, and persistence happen later
 
     Client-&gt;&gt;API: POST /api/ledger/chains/{chain_name}/submit-proof
-    API-&gt;&gt;Sub: Lấy Proof
-    Sub-&gt;&gt;Main: Gửi Proof (Neo dữ liệu)
-    Main--&gt;&gt;Sub: Xác nhận
+    API-&gt;&gt;Sub: Get Proof
+    Sub-&gt;&gt;Main: Submit Proof (Data Anchoring)
+    Main--&gt;&gt;Sub: Confirm
     API--&gt;&gt;Client: 200 OK (Proof ID)</code></pre>
 <ul>
-<li>GET <code>/api/ledger/health</code>: Kiểm tra tình trạng.</li>
+<li>GET <code>/api/ledger/health</code>: Liveness.</li>
+<li>GET <code>/api/ledger/ready</code>: Readiness khởi tạo/phục hồi hierarchy; HTTP 503 khi chưa khả dụng.</li>
 <li>GET <code>/api/ledger/chains</code>: Liệt kê Main Chain và tất cả Sub-Chain.</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).</li>
 <li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Thêm sự kiện vào Sub-Chain.</li>
@@ -4712,7 +4708,7 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s1">       "details": {"batch": "BATCH-001"}</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">     }'</span>
 </code></pre></div>
-<p>Channel không tồn tại trả về <code>404</code>; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về <code>403</code>. Phải bật xác thực API key và key cần có quyền <code>events</code>. <code>HierarchyManager</code> đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Ledger event của channel vẫn ở trong bộ nhớ khi manager restart.</p>
+<p>Channel không tồn tại trả về <code>404</code>; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về <code>403</code>. Phải bật xác thực API key và key cần có quyền <code>events</code>. <code>HierarchyManager</code> đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Channel được quản lý bằng SQLite/PostgreSQL lưu record event và block có chữ ký trong stream append-only riêng, refresh theo sequence khi restart hoặc giữa các worker. Ghi event không ghi lại toàn bộ registry. Backend memory chỉ tồn tại trong process.</p>
 <h2 id="schema-chinh-trich-tu-hierachainapiledgerschemaspy">Schema chính (trích từ <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
 <li>
@@ -4724,6 +4720,8 @@
 <li><code>details_cid: str | None</code> (Off-chain CID reference)</li>
 <li><code>details_nonce: str | None</code> (Encryption nonce)</li>
 <li><code>details_metadata: dict[str, Any] | None</code></li>
+<li><code>sender: str | None</code></li>
+<li><code>signature: str | None</code></li>
 </ul>
 </li>
 <li>
@@ -4795,10 +4793,11 @@
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">      }'</span>
 </code></pre></div>
 <p>Phản hồi:</p>
+<p>Event ID dưới đây là giá trị minh họa; ID được tạo có 16 ký tự thập lục phân viết thường.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Event added to chain 'supply_chain'"</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1_1"</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"event_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a1b2c3d4e5f67890"</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </code></pre></div>
 <p>Phản hồi xác nhận sự kiện đã được ghi journal và đưa vào hàng đợi Ordering; tạo block và lưu block diễn ra bất đồng bộ sau đó.</p>
@@ -4806,10 +4805,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 <p>Phản hồi:</p>
+<p>Ví dụ phản hồi này giả định chain có hai block; hậu tố của proof ID là độ dài chain.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Proof submitted from 'supply_chain' to main chain"</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_1"</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"proof_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain_2"</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="5-lay-thong-tin-khoi-chi-tiet">5. Lấy thông tin khối (Chi tiết)</h3>
@@ -4843,12 +4843,12 @@
 <li>404 Not Found: Không tìm thấy chuỗi hoặc sub-chain.</li>
 <li>500 Internal Server Error: Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).</li>
 </ul>
-<h2 id="ghi-chu-trien-khai-rut-gon-tu-endpointspy">Ghi chú triển khai (rút gọn từ <code>endpoints.py</code>)</h2>
+<h2 id="ghi-chu-trien-khai-rut-gon-tu-hierachainapiledgereventspy">Ghi chú triển khai (rút gọn từ <code>hierachain/api/ledger/events.py</code>)</h2>
 <ul>
 <li>DI lười (lazy DI): dùng các singleton nhẹ <code>get_hierarchy_manager()</code> và <code>get_entity_tracer()</code> cho request lifecycle.</li>
-<li><code>POST /chains/{chain_name}/events</code>: server sẽ đặt <code>timestamp = time.time()</code>; <code>details</code> vắng mặt sẽ thành <code>{}</code>.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/events</code>: server sẽ đặt <code>timestamp = time.time()</code>; <code>details</code> vắng mặt sẽ thành <code>{}</code>.</li>
 <li><code>POST /api/ledger/chains/{chain_name}/submit-proof</code>: gọi <code>HierarchyManager.submit_proof_to_main_chain()</code>; thành công nghĩa là block proof MainChain đã ký được hoàn tất và kiểm tra lại sau khi đọc từ SQL bền vững. Thiếu storage hoặc backend chưa hỗ trợ sẽ trả lỗi.</li>
-<li><code>GET /chains/{chain_name}/blocks</code>: khi <code>Block</code> không có <code>to_event_list</code>, có fallback chuyển đổi từ Arrow Table (<code>to_pylist</code>) để an toàn.</li>
+<li><code>GET /api/ledger/chains/{chain_name}/blocks</code>: khi <code>Block</code> không có <code>to_event_list</code>, có fallback chuyển đổi từ Arrow Table (<code>to_pylist</code>) để an toàn.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

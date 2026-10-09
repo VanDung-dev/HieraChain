@@ -4424,7 +4424,7 @@
 </code></pre></div>
 <p>Mẹo: Sử dụng Dependency Injection có sẵn (ví dụ: <code>Depends(get_hierarchy_manager)</code>) nếu endpoint cần truy cập hệ thống chuỗi.</p>
 <h2 id="buoc-3-khoi-chay-server-va-kiem-thu-nhanh">Bước 3: Khởi chạy Server và Kiểm thử Nhanh</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
 <p>Mở <code>http://localhost:2661/docs</code> để thử nghiệm trên Swagger UI hoặc sử dụng <code>curl</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/ping<span class="w"> </span><span class="se">\</span>

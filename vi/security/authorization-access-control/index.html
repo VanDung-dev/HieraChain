@@ -4413,8 +4413,8 @@
 <p>Quản lý thông tin chi tiết về người dùng và tổ chức:</p>
 <ul>
 <li><strong>Organization Management</strong>: Định nghĩa các tổ chức thành viên.</li>
-<li><strong>User Profiles</strong>: Lưu trữ thông tin định danh, vai trò và chữ ký số Ed25519 của người dùng.</li>
-<li><strong>Signature Verification</strong>: Xác thực chữ ký của người dùng trên các yêu cầu và sự kiện.</li>
+<li><strong>User Profiles</strong>: Lưu thông tin định danh, vai trò và khóa công khai Ed25519 tùy chọn.</li>
+<li><strong>Signature Verification</strong>: <code>verify_user_signature()</code> kiểm tra message và chữ ký do caller cung cấp dựa trên khóa công khai đã đăng ký khi được gọi. Các handler request và event không tự động gọi hàm này.</li>
 </ul>
 <h2 id="3-policy-engine-abac">3. Policy Engine (ABAC)</h2>
 <p><strong>File</strong>: <code>hierachain/security/policy_engine.py</code></p>
@@ -4427,8 +4427,8 @@
 <p><strong>File</strong>: <code>hierachain/security/verify/api_key_verifier.py</code></p>
 <p>Lớp xác thực nhanh cho các yêu cầu qua API:</p>
 <ul>
-<li><strong>API Key Management</strong>: Tạo, thu hồi và kiểm tra API Key.</li>
-<li><strong>Middleware Tích hợp</strong>: Tự động xác thực API Key cho mọi yêu cầu HTTP vào server.</li>
+<li><strong>API Key Lifecycle</strong>: <code>KeyManager</code> trong <code>hierachain/security/key_manager.py</code> tạo và thu hồi key. <code>APIKeyVerifier</code> xác minh key khi xử lý request.</li>
+<li><strong>Global HTTP Authentication</strong>: Server chỉ cài dependency API key khi <code>AUTH_ENABLED</code> là true. Các đường dẫn trong <code>EXEMPT_PATHS</code>, gồm health, status và docs, bỏ qua bước kiểm tra key toàn cục này; các kiểm tra xác thực hoặc quyền riêng theo route vẫn có thể được áp dụng. Khi chạy production, server từ chối khởi động nếu tắt xác thực.</li>
 <li><strong>Permission Mapping</strong>: Ánh xạ API Key với các quyền hạn cụ thể trong hệ thống.</li>
 </ul>
 <h2 id="kiem-tra-uy-quyen">Kiểm tra ủy quyền</h2>
@@ -4440,14 +4440,19 @@
 <hr />
 <h2 id="luong-xac-thuc-uy-quyen">Luồng Xác thực &amp; Ủy quyền</h2>
 <pre class="mermaid"><code>graph TD
-    A[Request with API Key] --&gt; B[API Key Verifier]
-    B -- Valid --&gt; C[Identity Manager]
-    C --&gt; D[Identify Organization &amp; Role]
-    D --&gt; E[Policy Engine]
-    E -- Check Rules --&gt; F{Authorized?}
-    F -- Yes --&gt; G[Execute Business Logic]
-    F -- No --&gt; H[403 Forbidden]
-    B -- Invalid --&gt; I[401 Unauthorized]</code></pre>
+    Request[HTTP request] --&gt; Auth{AUTH_ENABLED?}
+    Auth -- No --&gt; Route[Route handler]
+    Auth -- Yes --&gt; Exempt{Exempt path?}
+    Exempt -- Yes --&gt; Route
+    Exempt -- No --&gt; Verify[APIKeyVerifier]
+    Verify -- Invalid --&gt; Error401[401 Unauthorized]
+    Verify -- Valid --&gt; Route
+    Route --&gt; Permission[Route-specific checks, where required]
+    Permission --&gt; Business[Business logic]
+    PythonApp[Python application] --&gt;|explicit call| MSP["HierarchicalMSP.authorize_action()"]
+    MSP --&gt; OrgPolicies[OrganizationPolicies]
+    PythonApp --&gt;|explicit call| Signature["IdentityManager.verify_user_signature()"]
+    PythonApp --&gt;|explicit call| Policy[Typed PolicyEngine]</code></pre>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

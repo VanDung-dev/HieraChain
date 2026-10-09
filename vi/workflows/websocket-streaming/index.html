@@ -4422,60 +4422,57 @@
 
 <h1 id="luong-du-lieu-websocket-thoi-gian-thuc">Luồng dữ liệu WebSocket thời gian thực</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain đẩy thông báo khối mới và sự kiện mới tới client đang kết nối qua WebSocket. Client có thể đăng ký theo chuỗi cụ thể hoặc theo loại sự kiện. Vòng lặp ping nền giám sát kết nối chết và tự giải phóng.</p>
-<p><code>WebSocketManager</code> là singleton (<code>ws_manager</code>) dùng chung cho mọi route API để quản lý đăng ký tập trung.</p>
-<hr />
+<p>WebSocket API tiếp nhận đăng ký theo dõi chuỗi/sự kiện và cung cấp các hàm hỗ trợ broadcast. Các luồng commit và sự kiện ledger hiện tại không gọi <code>broadcast_new_block()</code> hay <code>broadcast_event()</code>. Ứng dụng phải nối nguồn sự kiện với các hàm này để bên đăng ký nhận được thông báo ledger. Tác vụ ping asyncio loại bỏ kết nối khi gửi thất bại hoặc vượt thời gian chờ; nó không chờ pong từ client.</p>
+<p><code>WebSocketManager</code> là singleton (<code>ws_manager</code>) được các route dùng chung trong một tiến trình API. Mỗi worker có sổ đăng ký kết nối riêng.</p>
 <h2 id="bieu-o-luong-vong-oi-ket-noi-va-broadcast">Biểu đồ luồng: vòng đời kết nối và broadcast</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant Client as 🖥️ Trình duyệt / SDK Client
+    participant Client as 🖥️ Browser / SDK Client
     participant WS as 🔌 WebSocket Endpoint
     participant WSM as 📡 WebSocketManager
-    participant SC as 📦 SubChain
+    participant SC as Application broadcast integration
 
-    Client-&gt;&gt;WS: Nâng cấp WebSocket (GET /ws?chain_name={chain_name})
+    Client-&gt;&gt;WS: WebSocket Upgrade (GET /ws?chain_name=supply_chain)
     WS-&gt;&gt;WSM: connect(connection_id, websocket, chain_name)
-    WSM-&gt;&gt;WSM: Kiểm tra max_connections (mặc định 1000)
+    WSM-&gt;&gt;WSM: Check max_connections (default 1000)
     WSM-&gt;&gt;WSM: Registry.add(connection_id, conn)
     WSM-&gt;&gt;WSM: SubscriptionManager.subscribe_to_chain(connection_id, chain_name)
-    WS--&gt;&gt;Client: Kết nối thành công ✅
+    WS--&gt;&gt;Client: Connection established ✅
 
-    opt Client lọc theo loại sự kiện cụ thể
+    opt Client subscribes to specific event types
         Client-&gt;&gt;WS: { "type": "subscribe", "chain_name": "supply_chain", "event_types": ["quality_check", ...] }
         WS-&gt;&gt;WSM: subscribe(connection_id, chain_name, event_types)
         WSM-&gt;&gt;WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
 
-    Note over SC: Khối đã được hoàn tất (Gửi Sự kiện - bước 8)
+    Note over SC: Application calls the broadcast helper explicitly
 
     SC-&gt;&gt;WSM: broadcast_new_block(chain_name, block_data)
     WSM-&gt;&gt;WSM: get_chain_subscribers(chain_name)
-    loop Với từng người đăng ký
-        WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", chain_name: "supply_chain", data: block_data })
+    loop Each subscriber
+        WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", chain_name: chain_name, data: block_data })
     end</code></pre>
-<hr />
 <h2 id="bieu-o-luong-vong-lap-ping-va-don-dep">Biểu đồ luồng: vòng lặp ping và dọn dẹp</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant BG as 🔄 PingLoopRunner (chạy nền)
+    participant BG as 🔄 PingLoopRunner (background)
     participant WSM as 📡 WebSocketManager
     participant Client as 🖥️ Client
 
-    Note over BG: Chạy định kỳ mỗi 30 giây
+    Note over BG: Every 30 seconds
 
-    loop Trên từng kết nối đang hoạt động
-        BG-&gt;&gt;Client: Gửi gói tin ping
-        alt Nhận lại Pong trong vòng 10 giây
-            Client--&gt;&gt;BG: pong ✅
-        else Quá thời gian phản hồi (10 giây)
+    loop Each active connection
+        BG-&gt;&gt;Client: send_text JSON ping with 10s timeout
+        alt Send succeeds
+            Note over BG: Keep connection; no pong wait
+        else Send failure or timeout
             BG-&gt;&gt;WSM: disconnect(connection_id)
             WSM-&gt;&gt;WSM: Registry.remove(connection_id)
             WSM-&gt;&gt;WSM: SubscriptionManager.unsubscribe_all(connection_id)
         end
     end</code></pre>
-<hr />
 <h2 id="inh-dang-thong-iep">Định dạng thông điệp</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Thông báo khi có khối mới</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Block added notification (example payload)</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"block_added"</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
@@ -4485,21 +4482,26 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="nt">"previous_hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9d1e4f..."</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mf">1714000000.0</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="nt">"event_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1">// Thông báo sự kiện (nếu đăng ký lọc theo event_types)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">{</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">}</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1">// Event notification sent by broadcast_event_type() after event-type filtering (example payload)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">{</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span><span class="p">,</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="nt">"event_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="p">}</span>
 </code></pre></div>
-<hr />
+<p><code>broadcast_new_block()</code> bọc <code>block_data</code> do ứng dụng cung cấp. Hàm này không xác nhận block đã được commit bền vững; hãy gọi sau khi ứng dụng xác lập trạng thái block muốn thông báo.</p>
 <h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
 <table>
 <thead>
@@ -4510,36 +4512,35 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>1. Nâng cấp giao thức</strong></td>
-<td style="text-align: left;">Kết nối <code>/ws</code> và truyền <code>chain_name</code> qua query string, ví dụ <code>/ws?chain_name=supply_chain</code>.</td>
+<td style="text-align: left;">1. Upgrade</td>
+<td style="text-align: left;">Kết nối đến <code>/ws</code>, có thể truyền tham số truy vấn <code>chain_name</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Kiểm tra giới hạn</strong></td>
+<td style="text-align: left;">2. Kiểm tra giới hạn</td>
 <td style="text-align: left;">Từ chối nếu <code>active_connections &gt;= max_connections</code> (mặc định 1000).</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Đăng ký</strong></td>
+<td style="text-align: left;">3. Đăng ký</td>
 <td style="text-align: left;"><code>ConnectionRegistry.add()</code> lưu kết nối theo <code>connection_id</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Đăng ký chuỗi</strong></td>
+<td style="text-align: left;">4. Đăng ký chuỗi</td>
 <td style="text-align: left;"><code>SubscriptionManager.subscribe_to_chain()</code> liên kết kết nối với chuỗi.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Bộ lọc tùy chọn</strong></td>
-<td style="text-align: left;">Client có thể gửi danh sách <code>event_types</code> để lọc.</td>
+<td style="text-align: left;">5. Bộ lọc tùy chọn</td>
+<td style="text-align: left;">Chỉ <code>broadcast_event_type()</code> áp dụng subscription theo loại event; <code>broadcast_event()</code> gửi tới mọi subscriber của chain.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Broadcast</strong></td>
-<td style="text-align: left;">Khi Gửi Sự kiện hoàn tất khối mới, <code>broadcast_new_block()</code> gửi tới mọi subscriber.</td>
+<td style="text-align: left;">6. Broadcast</td>
+<td style="text-align: left;">Lời gọi <code>broadcast_new_block()</code> từ ứng dụng gửi đến các bên đăng ký</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Vòng lặp ping</strong></td>
-<td style="text-align: left;">Luồng nền gửi ping mỗi 30 giây; ngắt client không phản hồi quá 10 giây.</td>
+<td style="text-align: left;">7. Vòng lặp ping</td>
+<td style="text-align: left;">Tác vụ asyncio gửi ping JSON mỗi 30 giây; gửi thất bại hoặc hết thời gian chờ gửi 10 giây sẽ ngắt kết nối</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="xu-ly-loi">Xử lý lỗi</h2>
 <table>
 <thead>
@@ -4551,7 +4552,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;">Vượt giới hạn kết nối</td>
-<td style="text-align: left;">Từ chối kèm mã <code>1008 Policy Violation</code></td>
+<td style="text-align: left;"><code>WebSocketManager.connect()</code> phát sinh <code>Exception</code> chung; endpoint bắt và ghi log, sau đó chạy cleanup. Endpoint không gửi rõ mã đóng <code>1008</code>.</td>
 </tr>
 <tr>
 <td style="text-align: left;">Client ngắt đột ngột</td>
@@ -4567,7 +4568,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
@@ -4625,11 +4625,10 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a>: kích hoạt <code>broadcast_new_block()</code> sau khi commit khối</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: cảnh báo cũng được đẩy qua kênh WebSocket này</li>
+<li><a href=".././event-submission/">Gửi sự kiện</a>: pipeline ledger mà ứng dụng có thể nối với các hàm hỗ trợ broadcast</li>
+<li><a href=".././risk-alerts/">Phân tích rủi ro và cảnh báo</a>: quy trình thông báo email/webhook riêng</li>
 </ul>
 
 

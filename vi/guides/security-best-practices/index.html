@@ -3829,10 +3829,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mục đích
+        Triển khai
       </span>
     </span>
   </a>
@@ -3840,10 +3840,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#khuyen-nghi-cot-loi" class="md-nav__link">
+  <a href="#khoa-va-log" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Khuyến nghị cốt lõi
+        Khóa và log
       </span>
     </span>
   </a>
@@ -3862,10 +3862,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thanh-phan-lien-quan" class="md-nav__link">
+  <a href="#tham-chieu-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Thành phần liên quan
+        Tham chiếu triển khai
       </span>
     </span>
   </a>
@@ -3877,17 +3877,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Cấu hình
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#danh-sach-kiem-tra-nhanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Danh sách kiểm tra nhanh
       </span>
     </span>
   </a>
@@ -4280,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Mục đích
+        Triển khai
       </span>
     </span>
   </a>
@@ -4291,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#khuyen-nghi-cot-loi" class="md-nav__link">
+  <a href="#khoa-va-log" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Khuyến nghị cốt lõi
+        Khóa và log
       </span>
     </span>
   </a>
@@ -4313,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thanh-phan-lien-quan" class="md-nav__link">
+  <a href="#tham-chieu-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Thành phần liên quan
+        Tham chiếu triển khai
       </span>
     </span>
   </a>
@@ -4328,17 +4317,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Cấu hình
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#danh-sach-kiem-tra-nhanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Danh sách kiểm tra nhanh
       </span>
     </span>
   </a>
@@ -4377,45 +4355,52 @@
 
 
 <h1 id="thuc-hanh-bao-mat">Thực hành bảo mật</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Đề xuất các thực hành chuẩn để triển khai HieraChain an toàn ở môi trường production.</p>
-<h2 id="khuyen-nghi-cot-loi">Khuyến nghị cốt lõi</h2>
-<ul>
-<li>Bật AUTH và dùng API key (hoặc nâng cấp OAuth/mTLS theo nhu cầu).</li>
-<li>Quản lý khóa (Ed25519) tập trung; luân chuyển/thu hồi khóa định kỳ; sao lưu an toàn.</li>
-<li>Sanitization log và payload để tránh rò rỉ dữ liệu nhạy cảm.</li>
-<li>Bật HSTS/CORS/Rate limit phù hợp với môi trường và front‑end hợp lệ.</li>
-<li>Bật guard tài nguyên để giảm tải khi hệ thống quá tải.</li>
-</ul>
+<h2 id="trien-khai">Triển khai</h2>
+<p>Production yêu cầu xác thực API key và bản đồ khóa đã được cấp sẵn. Chỉ cấp cho client các scope mà route của nó cần. Kết thúc HTTPS tại reverse proxy doanh nghiệp, cấu hình <code>Strict-Transport-Security</code> ở đó và giới hạn CORS cho các frontend được phép. Cấu hình HSTS của HieraChain không thêm header này.</p>
+<p>Dùng giới hạn payload/tốc độ của API và giới hạn event pool/RAM của ordering để bảo vệ tài nguyên ứng dụng. Cấu hình thêm giới hạn tại proxy. Package không có <code>ResourceGuardMiddleware</code> hay <code>security/resource_guard.py</code>.</p>
+<h2 id="khoa-va-log">Khóa và log</h2>
+<p>Lưu đầy đủ node identity, bản đồ khóa block đáng tin cậy và khóa mã hóa IPFS trong kho có kiểm soát truy cập và khả năng khôi phục. Khi xoay khóa, cập nhật các bản đồ khóa công khai được verifier phê duyệt. Xem <a href="../../workflows/key-backup/">Sao lưu khóa</a> để phân biệt node identity với file cặp khóa của CLI.</p>
+<p>Dùng trường có tên trong dữ liệu có cấu trúc để <code>SecureLogger</code> che bí mật. Nó không phát hiện việc xóa hay sửa log. Xác minh kiểm toán dùng <code>AuditLogger</code> với manifest đáng tin cậy được lưu riêng. Áp dụng chính sách lưu giữ và kiểm soát truy cập tại hệ thống log của môi trường triển khai.</p>
 <h2 id="luu-trang-thai-khoa-xac-thuc">Lưu trạng thái khóa xác thực</h2>
 <ul>
 <li>Dùng backend brute-force SQLite hoặc Redis khi xác thực API chạy trên nhiều worker. Cả hai backend đều đếm lần thất bại nguyên tử giữa các worker.</li>
-<li>Backend memory và file giữ bộ đếm lần thử trong một tiến trình; chỉ chạy một worker với các backend này. Các instance dùng file sẽ tải lại trạng thái khóa để nhận biết lệnh khóa do instance khác trong cùng triển khai ghi ở lần kiểm tra tiếp theo.</li>
-<li>Lỗi backend dùng chung sẽ dừng yêu cầu xác thực. Hãy khôi phục backend đã cấu hình trước khi tiếp tục phục vụ yêu cầu cần xác thực.</li>
+<li>Backend memory và file giữ bộ đếm lần thử trong một process; dùng một worker với các backend này. Instance dùng file nạp lại trạng thái khóa, nên lần kiểm tra tiếp theo thấy được khóa do instance khác ghi.</li>
+<li>Lỗi backend dùng chung làm dừng xác thực. Khôi phục backend trước khi tiếp tục phục vụ request cần xác thực.</li>
 </ul>
-<h2 id="thanh-phan-lien-quan">Thành phần liên quan</h2>
-<ul>
-<li>Identity/MSP/Key: <code>hierachain/security/{identity.py, msp.py, key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code></li>
-<li>Policy/Guard: <code>hierachain/security/{policy_engine.py, resource_guard.py}</code></li>
-<li>Log/Sanitize: <code>hierachain/security/{secure_logging.py, sanitization.py}</code></li>
-<li>API Key: <code>hierachain/security/verify/api_key_verifier.py</code></li>
-</ul>
+<h2 id="tham-chieu-trien-khai">Tham chiếu triển khai</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Phạm vi</th>
+<th style="text-align: left;">Mã nguồn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Identity và khóa</td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code>, <code>msp.py</code>, <code>key_manager.py</code>, <code>key_provider.py</code>, <code>identity_loader.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">ABAC do caller quản lý</td>
+<td style="text-align: left;"><code>hierachain/security/policy_engine.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Xác thực API</td>
+<td style="text-align: left;"><code>hierachain/security/verify/api_key_verifier.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Log có cấu trúc</td>
+<td style="text-align: left;"><code>hierachain/security/secure_logging.py</code>, <code>sanitization.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Giới hạn API</td>
+<td style="text-align: left;"><code>hierachain/api/middleware.py</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li><code>AUTH_ENABLED</code>, <code>API_KEY_LOCATION</code>, <code>API_KEY_NAME</code></li>
-<li><code>CORS_ALLOW_ALL</code>, <code>CORS_ORIGINS</code></li>
-<li><code>HSTS_ENABLED</code>, <code>HSTS_MAX_AGE</code></li>
-<li><code>RATE_LIMIT_ENABLED</code>, <code>RATE_LIMIT_REQUESTS_PER_MINUTE</code></li>
-</ul>
-<h2 id="danh-sach-kiem-tra-nhanh">Danh sách kiểm tra nhanh</h2>
-<ul>
-<li>[ ] Secrets qua secret manager (không hard‑code).</li>
-<li>[ ] CORS chỉ cho phép origin hợp lệ (không dùng <code>*</code> ở production).</li>
-<li>[ ] Bật HSTS với <code>max-age</code> phù hợp; đảm bảo HTTPS.</li>
-<li>[ ] Rate limit tại API gateway/ngay trên app (khi cần).</li>
-<li>[ ] Nhật ký không chứa dữ liệu nhạy cảm; bật sanitize.</li>
-<li>[ ] Cơ chế thu hồi API key khi bị lộ; audit đầy đủ.</li>
-</ul>
+<p>Dùng <code>HRC_AUTH_ENABLED</code>, <code>HRC_API_KEYS_FILE</code>, <code>HRC_API_KEY_LOCATION</code> và <code>HRC_API_KEY_NAME</code> để cấu hình xác thực API. CORS dùng <code>HRC_CORS_ALLOW_ALL</code> và <code>HRC_CORS_ORIGINS</code>. Giới hạn tốc độ dùng <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code> và <code>HRC_RATE_LIMIT_BACKEND</code>.</p>
+<p>Xem <a href="../../how-to/secure-deployment/">Triển khai an toàn</a> để biết lệnh cấp khóa và <a href="../../reference/config/">Cấu hình</a> để biết giá trị mặc định. Tích hợp OAuth, LDAP, HSM và SIEM thuộc ứng dụng chủ hoặc gateway doanh nghiệp.</p>
 
 
 

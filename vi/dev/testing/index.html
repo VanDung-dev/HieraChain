@@ -4749,20 +4749,22 @@
 <p>Chạy tất cả các bài kiểm thử đồng thời có thể gây lỗi do giới hạn về tài nguyên hệ thống. Khuyên dùng chạy theo từng file hoặc các nhóm nhỏ độc lập.</p>
 </div>
 <h3 id="chay-unit-test-kiem-thu-on-vi">Chạy Unit Test (Kiểm thử Đơn vị)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit/core/test_block.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="chay-integration-test-kiem-thu-tich-hop">Chạy Integration Test (Kiểm thử Tích hợp)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="chay-scenario-test-kiem-thu-kich-ban">Chạy Scenario Test (Kiểm thử Kịch bản)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/scenarios<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/scenarios/test_recovery.py<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="chay-benchmark-test-kiem-thu-hieu-nang">Chạy Benchmark Test (Kiểm thử Hiệu năng)</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>--benchmark-only<span class="w"> </span>-v<span class="w"> </span>--benchmark-save<span class="o">=</span>benchmark_report
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>--benchmark-only<span class="w"> </span>-v<span class="w"> </span>--benchmark-histogram<span class="o">=</span>benchmark_report
 </code></pre></div>
 <h3 id="chay-tat-ca-kiem-thu">Chạy Tất cả Kiểm thử</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">for</span><span class="w"> </span>test_file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>tests/unit<span class="w"> </span>tests/integration<span class="w"> </span>tests/scenarios<span class="w"> </span>-name<span class="w"> </span><span class="s1">'test_*.py'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span><span class="s2">"</span><span class="nv">$test_file</span><span class="s2">"</span><span class="w"> </span>-v<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">break</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">done</span>
 </code></pre></div>
 <p>Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQLite và journal trong thư mục tạm riêng cho từng test. Chúng không yêu cầu dịch vụ PostgreSQL trong <code>.env</code> của ứng dụng; test live-backend chuyên biệt kiểm tra PostgreSQL.</p>
 <h3 id="cac-cong-kiem-tra-ci-bat-buoc">Các cổng kiểm tra CI bắt buộc</h3>
@@ -4840,42 +4842,42 @@ PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Build image</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--no-cache<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Tạo cluster Kind</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Create Kind cluster</span>
 <a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>kind<span class="w"> </span>create<span class="w"> </span>cluster<span class="w"> </span>--config<span class="w"> </span>docker/kind-config.yaml
 <a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1"># Giới hạn tài nguyên cho mỗi Node K8s (1 CPU, 1GiB RAM)</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1"># Resource limit for each Node of K8s (1 CPU, 1GiB RAM)</span>
 <a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-control-plane
 <a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker
 <a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker2
 <a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker3
 <a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="c1"># Tải image vào trong cluster</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="c1"># Load image into cluster</span>
 <a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>kind<span class="w"> </span>load<span class="w"> </span>docker-image<span class="w"> </span>hierachain:latest<span class="w"> </span>--name<span class="w"> </span>hiera-cluster
 <a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>kubectl<span class="w"> </span>apply<span class="w"> </span>-k<span class="w"> </span>docker/k8s/
 <a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
-<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1"># Chờ các pod sẵn sàng</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1"># Wait for pods to be ready</span>
 <a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a>kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>ready<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hierachain<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--timeout<span class="o">=</span>120s
 <a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>
-<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="c1"># Ánh xạ cổng API ra máy cục bộ (localhost)</span>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="c1"># Expose the API to local host</span>
 <a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/hierachain-api<span class="w"> </span><span class="m">2661</span>:2661<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--address<span class="w"> </span><span class="m">0</span>.0.0.0
 <a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>
-<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1"># Kiểm tra API hoạt động  </span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1"># Test API</span>
 <a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>curl<span class="w"> </span>http://localhost:2661/api/ledger/health
 <a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>
-<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1"># Chạy stress test</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1"># Run stress test</span>
 <a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.k8s-stress.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--build<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
 <a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>
-<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="c1"># Dọn dẹp</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="c1"># Cleanup</span>
 <a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>kubectl<span class="w"> </span>delete<span class="w"> </span>-k<span class="w"> </span>docker/k8s/
 <a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>kind<span class="w"> </span>delete<span class="w"> </span>cluster<span class="w"> </span>--name<span class="w"> </span>hiera-cluster
 </code></pre></div>
 <h2 id="cac-kich-ban-ho-tro-developer-developer-scripts">Các Kịch bản Hỗ trợ Developer (Developer Scripts)</h2>
 <p>Thư mục <code>scripts/</code> chứa các công cụ tiện ích hỗ trợ nhà phát triển.</p>
 <h3 id="phan-tich-tinh-static-analysis">Phân tích Tĩnh (Static Analysis)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Chạy mặc định</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Run default</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Xuất kết quả phân tích ra file</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Export results to file</span>
 <a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
 </code></pre></div>
 <h3 id="ra-quet-kiem-tra-bao-mat-security-auditing">Rà quét &amp; Kiểm tra Bảo mật (Security Auditing)</h3>
@@ -4883,28 +4885,28 @@ PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
 <ul>
 <li>
 <p><strong>Bandit</strong> (Phân tích bảo mật mã nguồn tĩnh SAST cho Python):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Quét toàn bộ các mức độ cảnh báo</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Full security scan across all severity levels</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Chỉ quét cảnh báo mức Medium và High</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
 </code></pre></div>
 </li>
 <li>
 <p><strong>pip-audit</strong> (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Quét toàn bộ thư viện đã cài đặt trong .venv</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Scan all installed dependencies</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Chế độ nghiêm ngặt (Strict mode)</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
 <a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
 </code></pre></div>
 </li>
 <li>
 <p><strong>Semgrep</strong> (Phân tích ngữ nghĩa &amp; quy tắc bảo mật API):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Tự động nhận diện quy tắc phù hợp</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Auto-detect relevant rules</span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>auto<span class="w"> </span>hierachain/
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Chạy bộ quy tắc OWASP Top 10</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Run OWASP Top 10 ruleset</span>
 <a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>p/owasp-top-ten<span class="w"> </span>hierachain/
 </code></pre></div>
 </li>
@@ -4945,8 +4947,8 @@ PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
 </li>
 </ul>
 <h2 id="vi-du-chay-kiem-thu-theo-marker">Ví dụ chạy kiểm thử theo Marker</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="cac-nguyen-tac-kiem-thu">Các Nguyên tắc Kiểm thử</h2>
 <ul>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Federation consensus protocol: Deterministic leader election, Quorum voting, and multi-organization governance.">
+        <meta name="description" content="PoF validator membership, deterministic leader rotation, signature validation and the limits of quorum integration.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#proof-of-federation-hierachainconsensusproof_of_federationpy" class="md-skip">
+        <a href="#proof-of-federation-pof" class="md-skip">
           Skip to content
         </a>
       
@@ -2823,10 +2823,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Configuration
       </span>
     </span>
   </a>
@@ -2834,65 +2834,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architectural-position-poa-vs-pof" class="md-nav__link">
+  <a href="#validation-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Architectural Position: PoA vs. PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key Features
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-parameters" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configuration Parameters
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#block-verification-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block Verification Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#advantages-and-limitations" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Advantages and Limitations
+        Validation flow
       </span>
     </span>
   </a>
@@ -4302,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Configuration
       </span>
     </span>
   </a>
@@ -4313,65 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architectural-position-poa-vs-pof" class="md-nav__link">
+  <a href="#validation-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Architectural Position: PoA vs. PoF
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Key Features
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-parameters" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configuration Parameters
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#block-verification-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Block Verification Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#advantages-and-limitations" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Advantages and Limitations
+        Validation flow
       </span>
     </span>
   </a>
@@ -4420,108 +4310,55 @@
   
 
 
-<h1 id="proof-of-federation-hierachainconsensusproof_of_federationpy">Proof of Federation (<code>hierachain/consensus/proof_of_federation.py</code>)</h1>
-<h2 id="overview">Overview</h2>
-<p><strong>Proof of Federation (PoF)</strong> is an Inter-MainChain consensus protocol designed specifically for <strong>Consortium Alliance</strong> networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z), each operating their own autonomous MainChain, to securely exchange, verify, and reach consensus on cross-organizational event proofs <strong>without requiring a central RootChain or single authority</strong>.</p>
-<hr />
-<h2 id="architectural-position-poa-vs-pof">Architectural Position: PoA vs. PoF</h2>
+<h1 id="proof-of-federation-pof">Proof of Federation (PoF)</h1>
+<p><code>hierachain/consensus/proof_of_federation.py</code> implements sorted validator membership, deterministic leader rotation and Ed25519 finalization signatures. Select it explicitly for MainChain with <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code>. PoA remains the default.</p>
+<h2 id="configuration">Configuration</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Consensus Mechanism</th>
-<th style="text-align: left;">Scope &amp; Purpose</th>
-<th style="text-align: left;">Target Layer &amp; Governance</th>
+<th>Python configuration key</th>
+<th>Default</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
-<td style="text-align: left;"><strong>Intra-Organization</strong> (Internal Domain Sub-Chains)</td>
-<td style="text-align: left;"><strong>SubChain Level</strong> (Default for all internal domain events; single-entity control)</td>
+<td><code>min_validators</code></td>
+<td><code>3</code></td>
+<td>Minimum membership for <code>can_create_block()</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
-<td style="text-align: left;"><strong>Inter-Organization</strong> (Peer-to-Peer MainChain Alliance)</td>
-<td style="text-align: left;"><strong>MainChain Level</strong> (Configured via <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code> for multi-party alliance)</td>
+<td><code>block_interval</code></td>
+<td><code>5.0</code></td>
+<td>Validation requires at least 80% of this spacing</td>
+</tr>
+<tr>
+<td><code>enforce_rotation</code></td>
+<td><code>True</code></td>
+<td>Validate the signer against <code>validators[index % count]</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="how-it-works">How It Works</h2>
-<p>PoF uses a peer-to-peer federation rotation model combined with multi-signature verification:
-1.  <strong>Leader Rotation</strong>: The Leader with block proposal rights for a federation round is determined by a deterministic mathematical formula: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. This prevents any single MainChain from monopolizing block creation.
-2.  <strong>Quorum Voting</strong>: For a cross-organizational block to be valid across independent MainChains, it requires multi-signature confirmation from a minimum threshold of consortium members (typically <strong>2/3 + 1</strong>).
-3.  <strong>Sorted Validator List</strong>: The list of participating MainChains is deterministically sorted across all nodes to guarantee schedule synchronization.</p>
-<hr />
-<h2 id="key-features">Key Features</h2>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5.5A3.5 3.5 0 0 1 15.5 9a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 8.5 9 3.5 3.5 0 0 1 12 5.5M5 8c.56 0 1.08.15 1.53.42-.15 1.43.27 2.85 1.13 3.96C7.16 13.34 6.16 14 5 14a3 3 0 0 1-3-3 3 3 0 0 1 3-3m14 0a3 3 0 0 1 3 3 3 3 0 0 1-3 3c-1.16 0-2.16-.66-2.66-1.62a5.54 5.54 0 0 0 1.13-3.96c.45-.27.97-.42 1.53-.42M5.5 18.25c0-2.07 2.91-3.75 6.5-3.75s6.5 1.68 6.5 3.75V20h-13zM0 20v-1.5c0-1.39 1.89-2.56 4.45-2.9-.59.68-.95 1.62-.95 2.65V20zm24 0h-3.5v-1.75c0-1.03-.36-1.97-.95-2.65 2.56.34 4.45 1.51 4.45 2.9z"/></svg></span> <strong>Multi-party Governance</strong></p>
-<hr />
-<p>Eliminates Single Point of Failure. If the current Leader fails, block creation rights automatically transfer to the next node in the cycle.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m18 13 3 3v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4l3-3h.83l2 2H6.78L5 17h14l-1.77-2h-1.91l2-2zm1 7v-1H5v1zm-7.66-5-4.95-4.93a.996.996 0 0 1 0-1.41l6.37-6.37a.975.975 0 0 1 1.4.01l4.95 4.95c.39.39.39 1.02 0 1.41L12.75 15a.96.96 0 0 1-1.41 0m2.12-10.59L8.5 9.36l3.55 3.54L17 7.95z"/></svg></span> <strong>Quorum Voting</strong></p>
-<hr />
-<p>Provides an additional security layer by requiring consensus from the majority of member organizations before committing data.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c-1.27 0-2.4.8-2.82 2H3v2h1.95L2 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3L6.05 7h3.12c.33.85.98 1.5 1.83 1.83V20H2v2h20v-2h-9V8.82c.85-.32 1.5-.97 1.82-1.82h3.13L15 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3l-2.95-7H21V5h-6.17C14.4 3.8 13.27 3 12 3m0 2a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-6.5 5.25L7 14H4zm13 0L20 14h-3z"/></svg></span> <strong>Fairness &amp; Transparency</strong></p>
-<hr />
-<p>Every member organization has equal opportunity to contribute and control the ledger through the predetermined schedule.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="configuration-parameters">Configuration Parameters</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>min_validators</code></td>
-<td style="text-align: left;">Minimum number of nodes for network operation.</td>
-<td style="text-align: left;"><code>3</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>block_interval</code></td>
-<td style="text-align: left;">Target block creation cycle.</td>
-<td style="text-align: left;"><code>5.0</code> seconds</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>enforce_rotation</code></td>
-<td style="text-align: left;">Mandatory leader rotation after each block.</td>
-<td style="text-align: left;"><code>True</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="block-verification-flow">Block Verification Flow</h2>
-<pre class="mermaid"><code>graph TD
-    A[Block Proposed by Leader] --&gt; B{Verify Leader Identity}
-    B -- Correct Leader --&gt; C[Collect Quorum Signatures]
-    C --&gt; D{Signatures &gt;= 2/3 + 1?}
-    D -- Yes --&gt; E[Commit Block to Ledger]
-    D -- No --&gt; F[Reject &amp; Wait for Next Leader]
-    B -- Wrong Leader --&gt; G[Reject Block]</code></pre>
-<hr />
-<h2 id="advantages-and-limitations">Advantages and Limitations</h2>
-<ul>
-<li><strong>Advantages</strong>: Suitable for multi-party consortium networks, resistant to domination by a small group, high availability.</li>
-<li><strong>Limitations</strong>: Requires additional network bandwidth for Quorum signature collection compared to PoA, performance slightly degrades when the number of Validators grows too large.</li>
-</ul>
-<hr />
+<p>These keys belong to the consensus instance's configuration. The current MainChain/SubChain constructors do not apply <code>CONSENSUS_FEDERATION_CONFIG</code> automatically.</p>
+<p>Supply each validator's real public key when calling <code>add_validator(validator_id, metadata={"public_key": ...})</code>. Membership and keys must agree across nodes. Setting the selector alone does not provision a federation.</p>
+<h2 id="validation-flow">Validation flow</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[Proposed finalized block] --&gt; B{Structure and timestamp spacing valid?}
+    B --&gt;|Yes| C{Expected leader when rotation enabled?}
+    C --&gt;|Yes| D{Leader signature matches reconstructed payload?}
+    D --&gt;|Yes| E{Shared optional ZK check passes?}
+    E --&gt;|Yes| F[Validation succeeds]
+    B --&gt;|No| R[Reject]
+    C --&gt;|No| R
+    D --&gt;|No| R
+    E --&gt;|No| R</code></pre>
+<p>The ordinary <code>_verify_block_quorum()</code> helper checks the leader signature, not multi-party quorum signatures. The separate <code>verify_quorum_signatures(message, signatures, required_count=None)</code> counts distinct registered validators and defaults to <code>floor(2n/3)+1</code>. It is not automatically invoked to collect votes during block finalization. This class does not implement automatic failover or timeout-based leader replacement.</p>
+<p>ZK verification is optional and shared with PoA. Development mock proofs are not zero-knowledge guarantees; production proving/verifying is unavailable. <code>HRC_BLOCK_INTERVAL</code> changes PoA spacing and does not change PoF's interval.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././poa/">Proof of Authority (PoA)</a></li>
-<li><a href="../../modules/network/">P2P Network Architecture</a></li>
-<li><a href="../../security/authorization-access-control/">Security System</a></li>
+<li><a href="../poa/">PoA</a></li>
+<li><a href="../../workflows/consensus_mechanisms/">Consensus runtime scope</a></li>
+<li><a href="../../architecture/zk-proofs/">ZK implementation</a></li>
 </ul>
 
 

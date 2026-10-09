@@ -1706,10 +1706,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-tai-len-ma-hoa-va-ghim" class="md-nav__link">
+  <a href="#tai-len-va-tai-xuong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng: tải lên (mã hóa và ghim)
+        Tải lên và tải xuống
       </span>
     </span>
   </a>
@@ -1717,10 +1717,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-tai-ve-truy-xuat-va-giai-ma" class="md-nav__link">
+  <a href="#bao-mat-va-tich-hop" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng: tải về (truy xuất và giải mã)
+        Bảo mật và tích hợp
       </span>
     </span>
   </a>
@@ -1728,32 +1728,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xu-ly-loi-ipfs-ngoai-tuyen" class="md-nav__link">
+  <a href="#loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Xử lý lỗi: IPFS ngoại tuyến
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#thuoc-tinh-an-toan" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Thuộc tính an toàn
+        Lỗi
       </span>
     </span>
   </a>
@@ -4313,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-tai-len-ma-hoa-va-ghim" class="md-nav__link">
+  <a href="#tai-len-va-tai-xuong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng: tải lên (mã hóa và ghim)
+        Tải lên và tải xuống
       </span>
     </span>
   </a>
@@ -4324,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-tai-ve-truy-xuat-va-giai-ma" class="md-nav__link">
+  <a href="#bao-mat-va-tich-hop" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng: tải về (truy xuất và giải mã)
+        Bảo mật và tích hợp
       </span>
     </span>
   </a>
@@ -4335,32 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xu-ly-loi-ipfs-ngoai-tuyen" class="md-nav__link">
+  <a href="#loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Xử lý lỗi: IPFS ngoại tuyến
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#thuoc-tinh-an-toan" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Thuộc tính an toàn
+        Lỗi
       </span>
     </span>
   </a>
@@ -4422,186 +4378,112 @@
 
 <h1 id="luu-tru-ma-hoa-ipfs">Lưu trữ mã hóa IPFS</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Dữ liệu lớn hoặc nhạy cảm ngoài chuỗi (ví dụ tệp đính kèm, bằng chứng kiểm toán, tài sản nhị phân) được lưu trên swarm IPFS riêng với mã hóa bắt buộc AES-256-GCM. Chỉ node có chung khóa mới giải mã được. CID do IPFS trả về được lưu trên chuỗi làm tham chiếu; plaintext không rời khỏi ranh giới mã hóa.</p>
-<p>Điểm an toàn cốt lõi: ngay cả khi storage IPFS bị lộ vật lý, dữ liệu vẫn không đọc được nếu không có khóa AES-256-GCM.</p>
-<hr />
-<h2 id="bieu-o-luong-tai-len-ma-hoa-va-ghim">Biểu đồ luồng: tải lên (mã hóa và ghim)</h2>
+<p><code>IPFSClient</code> tải byte hoặc JSON lên Kubo daemon đã cấu hình và trả về CID. <code>upload_bytes()</code> và <code>upload_json()</code> mặc định mã hóa bằng AES-256-GCM. Bên gọi trực tiếp có thể truyền <code>encrypt=False</code> để gửi dữ liệu rõ lên IPFS. Cấu hình daemon và quyền truy cập mạng riêng; client không bắt buộc sử dụng private swarm.</p>
+<p><code>create_ipfs_client_from_env()</code> yêu cầu <code>HRC_IPFS_ENCRYPTION_KEY</code> chứa đúng 64 ký tự thập lục phân (32 byte). Khóa thiếu hoặc sai định dạng gây <code>IPFSError</code>. Giữ khóa này qua các lần khởi động lại để đọc được các đối tượng đã mã hóa trước đó. Client được khởi tạo trực tiếp có thể tạo khóa trong bộ nhớ khi không được cấp khóa; khóa đó không phải cơ chế khôi phục bền vững.</p>
+<h2 id="tai-len-va-tai-xuong">Tải lên và tải xuống</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller-&gt;&gt;IC: upload_json(data, encrypt=True, metadata)
-
-    IC-&gt;&gt;IC: json.dumps(data) → raw_bytes
-    IC-&gt;&gt;AES: encrypt(raw_bytes, aad=json(metadata))
-    Note right of AES: Mã hóa AES-256-GCM&lt;br/&gt;nonce = ngẫu nhiên 96-bit (secrets.token_bytes(12))&lt;br/&gt;ciphertext = AESGCM.encrypt(nonce, plaintext, aad)&lt;br/&gt;output = nonce || ciphertext
-    AES--&gt;&gt;IC: ciphertext, nonce
-
-    IC-&gt;&gt;IPFS: add_bytes(ciphertext)
-    IPFS--&gt;&gt;IC: CID (Content Identifier - Mã định danh nội dung)
-
-    alt auto_pin=True (mặc định)
-        IC-&gt;&gt;IPFS: pin.add(CID)
-        Note right of IPFS: Ngăn chặn cơ chế dọn rác (GC) xóa file
-    end
-
-    IC--&gt;&gt;Caller: { cid, size, encrypted: True, nonce: hex(nonce) }
-    Note over Caller: Lưu trữ CID + nonce lên chuỗi để truy xuất sau này</code></pre>
-<hr />
-<h2 id="bieu-o-luong-tai-ve-truy-xuat-va-giai-ma">Biểu đồ luồng: tải về (truy xuất và giải mã)</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller-&gt;&gt;IC: download_json(cid, encrypted=True, nonce=hex, metadata)
-    IC-&gt;&gt;IPFS: cat(cid) → ciphertext bytes
+    participant Caller as Application
+    participant IC as IPFSClient
+    participant AES as AESEncryption
+    participant IPFS as Kubo daemon
+    Caller-&gt;&gt;IC: upload_json(data, encrypt=True, metadata=metadata)
+    IC-&gt;&gt;IC: Serialize JSON to bytes
+    IC-&gt;&gt;AES: encrypt(bytes, canonical metadata AAD)
+    AES--&gt;&gt;IC: ciphertext, random 12-byte nonce
+    IC-&gt;&gt;IPFS: POST /api/v0/add (pin=auto_pin)
+    IPFS--&gt;&gt;IC: CID
+    IC--&gt;&gt;Caller: cid, size, encrypted, nonce, metadata if provided
+    Note over Caller: Retain CID, nonce and metadata; protect key separately
+    Caller-&gt;&gt;IC: download_json(cid, nonce=nonce, metadata=metadata)
+    IC-&gt;&gt;IPFS: POST /api/v0/cat?arg=cid
     IPFS--&gt;&gt;IC: ciphertext
-
-    IC-&gt;&gt;AES: decrypt(ciphertext, nonce_bytes, aad=json(metadata))
-    Note right of AES: Xác thực thẻ GCM trước&lt;br/&gt;Nếu thẻ không hợp lệ → ném lỗi DecryptionError
-    AES--&gt;&gt;IC: plaintext bytes
-
-    IC-&gt;&gt;IC: json.loads(plaintext) → dict
-    IC--&gt;&gt;Caller: Dữ liệu đã giải mã ✅</code></pre>
-<hr />
-<h2 id="xu-ly-loi-ipfs-ngoai-tuyen">Xử lý lỗi: IPFS ngoại tuyến</h2>
-<p><code>IPFSClient.is_available(cid)</code> kiểm tra <code>/api/v0/files/stat</code> với <code>arg=/ipfs/&lt;cid&gt;</code>. Hàm trả về <code>False</code> khi phản hồi không thành công hoặc kết nối lỗi; không dùng endpoint <code>/api/v0/object/stat</code> đã bị loại bỏ.</p>
-<pre class="mermaid"><code>flowchart LR
-    CALL["upload_json(data)"]
-    CONN["Kết nối tới IPFS daemon\n(HRC_IPFS_HOST)"]
-    FAIL["❌ Kết nối bị từ chối\nhoặc hết hạn chờ"]
-    RETRY["Thử lại với khoảng chờ tăng dần\n(tối đa 3 lần)"]
-    ERR["Ném lỗi IPFSConnectionError\nGhi nhật ký + Cảnh báo qua Risk Alerts"]
-    OK["✅ Nhận lại mã CID"]
-
-    CALL --&gt; CONN
-    CONN --&gt;|Thành công| OK
-    CONN --&gt;|Thất bại| FAIL --&gt; RETRY
-    RETRY --&gt;|Quá số lần thử| ERR
-    RETRY --&gt;|Kết nối lại được| OK</code></pre>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Tuần tự hóa</strong></td>
-<td style="text-align: left;"><code>json.dumps(data)</code> thành bytes thô.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Mã hóa</strong></td>
-<td style="text-align: left;">AES-256-GCM với nonce ngẫu nhiên 96-bit. AAD được tạo từ metadata JSON.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Tải lên</strong></td>
-<td style="text-align: left;">Bytes mã hóa được gửi tới IPFS daemon qua Kubo RPC API (<code>httpx</code>).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Ghim</strong></td>
-<td style="text-align: left;"><code>pin.add(CID)</code> giữ dữ liệu trên đĩa, tránh GC của IPFS xóa.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Trả kết quả</strong></td>
-<td style="text-align: left;">Bên gọi nhận <code>{ cid, nonce }</code>; cả hai phải lưu trên chuỗi để truy xuất sau.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Truy xuất</strong></td>
-<td style="text-align: left;"><code>cat(cid)</code> tải bytes mã hóa; <code>decrypt()</code> kiểm tra thẻ GCM trước khi giải mã.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="thuoc-tinh-an-toan">Thuộc tính an toàn</h2>
+    IC-&gt;&gt;AES: decrypt(ciphertext, nonce, same metadata AAD)
+    AES--&gt;&gt;IC: Authenticated plaintext
+    IC--&gt;&gt;Caller: Decoded JSON</code></pre>
+<p>Dữ liệu mã hóa bao gồm thẻ xác thực GCM. Nonce được trả về riêng dưới dạng 24 ký tự thập lục phân. Đây là metadata công khai, không phải khóa mã hóa. Nếu metadata đã được dùng làm dữ liệu xác thực bổ sung (AAD), hãy cung cấp cùng metadata khi tải xuống; client tuần tự hóa nó bằng <code>dumps_canonical_json()</code>.</p>
+<p>Khi tải lên, client truyền <code>pin</code> vào RPC add của Kubo theo <code>auto_pin</code> (mặc định <code>True</code>). Có thể gọi <code>IPFSClient.pin()</code> để ghim rõ ràng. Duy trì các pin và bản sao lưu theo chính sách vận hành daemon.</p>
+<h2 id="bao-mat-va-tich-hop">Bảo mật và tích hợp</h2>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Thuộc tính</th>
-<th style="text-align: left;">Cơ chế</th>
+<th style="text-align: left;">Triển khai</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Bảo mật</strong></td>
-<td style="text-align: left;">AES-256-GCM</td>
+<td style="text-align: left;">Tính bí mật</td>
+<td style="text-align: left;">AES-256-GCM khi <code>encrypt=True</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Toàn vẹn</strong></td>
-<td style="text-align: left;">Xác thực thẻ GCM (authenticated encryption)</td>
+<td style="text-align: left;">Tính toàn vẹn</td>
+<td style="text-align: left;">Xác minh thẻ GCM với cùng khóa, nonce và AAD</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Chống replay</strong></td>
-<td style="text-align: left;">Mỗi lần tải lên dùng nonce 96-bit ngẫu nhiên riêng</td>
+<td style="text-align: left;">Nonce</td>
+<td style="text-align: left;">Nonce ngẫu nhiên 96 bit cho mỗi lần mã hóa; phát hiện phát lại cần trạng thái của ứng dụng</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Quản lý khóa</strong></td>
-<td style="text-align: left;">Cấu hình qua <code>HRC_IPFS_ENCRYPTION_KEY</code>; tự sinh nếu thiếu</td>
+<td style="text-align: left;">Cấu hình khóa</td>
+<td style="text-align: left;">Factory từ môi trường yêu cầu <code>HRC_IPFS_ENCRYPTION_KEY</code> ổn định</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Kiểm soát quyền</strong></td>
-<td style="text-align: left;">Policy engine kiểm soát quyền gọi API upload/download</td>
+<td style="text-align: left;">Phân quyền</td>
+<td style="text-align: left;">Bên gọi thực thi quyền; client không gọi <code>PolicyEngine</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p>Giữ khóa trong hệ thống quản lý bí mật. Lưu CID, nonce, cờ mã hóa và metadata AAD cần thiết cho việc truy xuất. Mã hóa không ngăn người có khả năng phát lại CID cũ yêu cầu lại cùng đối tượng.</p>
+<h2 id="loi">Lỗi</h2>
+<p>Lỗi HTTP khi tải lên/tải xuống gây <code>IPFSError</code>; lỗi mã hóa được truyền ra dưới dạng <code>EncryptionError</code>. Client không tự động thử lại ba lần hay tích hợp cảnh báo rủi ro. Ứng dụng quyết định có thử lại hay không và cách báo cáo lỗi.</p>
+<p><code>IPFSClient.is_available(cid)</code> kiểm tra <code>/api/v0/files/stat</code> với <code>arg=/ipfs/&lt;cid&gt;</code> và trả về <code>False</code> khi phản hồi không thành công hoặc kết nối thất bại. Kết quả này không chứng minh bên gọi có khóa giải mã đúng.</p>
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
+<th style="text-align: left;">Thao tác</th>
+<th style="text-align: left;">Phương thức</th>
 <th style="text-align: left;">Tệp</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Điểm tải lên</td>
+<td style="text-align: left;">Tải JSON lên</td>
 <td style="text-align: left;"><code>IPFSClient.upload_json()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Tải byte lên</td>
+<td style="text-align: left;"><code>IPFSClient.upload_bytes()</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Mã hóa</td>
 <td style="text-align: left;"><code>AESEncryption.encrypt()</code></td>
-<td style="text-align: left;"><code>api/storage/encryption.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Tải bytes thô</td>
-<td style="text-align: left;"><code>IPFSClient.upload_bytes()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/encryption.py</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">Ghim</td>
 <td style="text-align: left;"><code>IPFSClient.pin()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Tải về và giải mã</td>
+<td style="text-align: left;">Tải JSON xuống</td>
 <td style="text-align: left;"><code>IPFSClient.download_json()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Tạo client</td>
+<td style="text-align: left;">Factory từ môi trường</td>
 <td style="text-align: left;"><code>create_ipfs_client_from_env()</code></td>
-<td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
+<td style="text-align: left;"><code>hierachain/api/storage/ipfs_client.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Thực thi Chính sách</a>: kiểm soát quyền upload/download</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: lỗi kết nối IPFS kích hoạt cảnh báo</li>
-<li><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a>: cùng mô hình mã hóa AES-256-GCM cho bản sao lưu khóa</li>
+<li><a href=".././policy-enforcement/">Thực thi chính sách</a>: phân quyền do bên gọi quản lý</li>
+<li><a href=".././risk-alerts/">Phân tích rủi ro và cảnh báo</a>: báo cáo lỗi do ứng dụng quản lý</li>
+<li><a href=".././key-backup/">Sao lưu khóa</a>: lưu khóa do người vận hành quản lý</li>
 </ul>
 
 

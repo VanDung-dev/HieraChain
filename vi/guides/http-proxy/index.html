@@ -4415,16 +4415,16 @@
 <li><strong>Dữ liệu cần xác thực</strong>: Đi qua HieraChain để tạo bằng chứng số trước khi đồng bộ.</li>
 </ul>
 <pre class="mermaid"><code>graph TD
-    User((Người dùng/Ứng dụng)) --&gt; Web2[Hạ tầng Web2 Enterprise&lt;br/&gt;WAF / LB / Gateway]
+    User((User/Application)) --&gt; Web2[Enterprise Web2 Infrastructure&lt;br/&gt;WAF / LB / Gateway]
 
-    Web2 -- "Dữ liệu cần xác thực" --&gt; HC[HieraChain API Node]
-    Web2 -- "Dữ liệu thường" --&gt; DB_Web2[(Web2 Database)]
+    Web2 -- "Data requiring verification" --&gt; HC[HieraChain API Node]
+    Web2 -- "Regular data" --&gt; DB_Web2[(Web2 Database)]
 
-    subgraph HieraChain_Internal [Hệ sinh thái HieraChain]
-        HC --&gt; DB_HC[(HieraChain Private DB&lt;br/&gt;Lưu trữ bằng chứng)]
+    subgraph HieraChain_Internal [HieraChain Ecosystem]
+        HC --&gt; DB_HC[(HieraChain Private DB&lt;br/&gt;Proof Storage)]
     end
 
-    HC -. "Kiểm tra &amp; Đối soát" .-&gt; DB_Web2</code></pre>
+    HC -. "Cross-check &amp; Verify" .-&gt; DB_Web2</code></pre>
 <h3 id="2-triet-ly-plugin-layer">2. Triết lý "Plugin Layer"</h3>
 <p>HieraChain chạy cùng các hệ thống Web2 doanh nghiệp:</p>
 <ul>
@@ -4460,7 +4460,7 @@
 <p>Dù chỉ chạy HTTP/1.1, HieraChain vẫn duy trì các lớp bảo mật nội tại:</p>
 <ul>
 <li><strong>API Key Verification</strong>: Xác thực quyền truy cập ở mức ứng dụng.</li>
-<li><strong>Trusted Proxies</strong>: Chỉ chấp nhận yêu cầu từ các IP của Load Balancer được định nghĩa trước (qua biến <code>HRC_TRUSTED_PROXIES</code>).</li>
+<li><strong>Trusted Proxies</strong>: <code>HRC_TRUSTED_PROXIES</code> quy định peer IP nào được phép cung cấp header <code>X-Forwarded-For</code> đáng tin cậy; thiết lập này không từ chối request từ IP khác. Hãy giới hạn truy cập mạng ở lớp proxy, firewall hoặc network policy.</li>
 <li><strong>Payload Sanitization</strong>: Làm sạch dữ liệu đầu vào để chống các cuộc tấn công tầng ứng dụng.</li>
 </ul>
 

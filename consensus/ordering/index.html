@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Event ordering service: Deterministic ordering, Crash Fault Tolerance, and Journaling integration.">
+        <meta name="description" content="Local event ordering, durable journal recovery, certification, batching and signed block persistence.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4500,10 +4500,9 @@
 
 <h1 id="ordering-service-hierachainconsensusordering">Ordering Service (<code>hierachain/consensus/ordering/*</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>Ordering Service</strong> is the central component in HieraChain's consensus architecture, responsible for receiving raw events, ordering them in a unique sequence, and packaging them into blocks. This is a <strong>Crash Fault Tolerance (CFT)</strong> mechanism, ensuring the system remains stable when some nodes go down.</p>
-<hr />
+<p>Ordering Service receives local events, journals and queues them, then certifies and batches them into signed blocks. Journal replay supports recovery after a process failure. The service does not implement replicated orderer election or automatic node failover.</p>
 <h2 id="system-architecture">System Architecture</h2>
-<p>Ordering Service is designed using the <strong>Facade</strong> pattern, coordinating multiple specialized components:</p>
+<p>Ordering Service is designed using the Facade pattern, coordinating multiple specialized components:</p>
 <table>
 <thead>
 <tr>
@@ -4514,44 +4513,43 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>OrderingService</strong></td>
+<td style="text-align: left;">OrderingService</td>
 <td style="text-align: left;">Main access point, lifecycle and configuration management.</td>
 <td style="text-align: left;"><code>service.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Processor</strong></td>
+<td style="text-align: left;">Processor</td>
 <td style="text-align: left;">Async collection, batch signature verification, certification and event processing.</td>
 <td style="text-align: left;"><code>processor.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Block Builder</strong></td>
-<td style="text-align: left;">Event batching and block structure construction.</td>
+<td style="text-align: left;">Block Builder</td>
+<td style="text-align: left;">Collects event batches; the block manager constructs blocks.</td>
 <td style="text-align: left;"><code>block_builder.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Certifier</strong></td>
-<td style="text-align: left;">Validates event signatures and permissions before ordering.</td>
+<td style="text-align: left;">Certifier</td>
+<td style="text-align: left;">Runs custom rules, structure checks and conditional signature/ZK checks.</td>
 <td style="text-align: left;"><code>certifier.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Storage</strong></td>
-<td style="text-align: left;">Manages persistent storage for pending events.</td>
+<td style="text-align: left;">Storage</td>
+<td style="text-align: left;">Persists signed blocks and reads finalized history.</td>
 <td style="text-align: left;"><code>storage.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Recovery</strong></td>
-<td style="text-align: left;">Restores state from <strong>Event Journal</strong> after failures.</td>
+<td style="text-align: left;">Recovery</td>
+<td style="text-align: left;">Restores state from Event Journal after failures.</td>
 <td style="text-align: left;"><code>recovery.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Journal lookup</strong></td>
+<td style="text-align: left;">Journal lookup</td>
 <td style="text-align: left;">Indexes durable ID/channel/content commitments for stable-ID admission.</td>
 <td style="text-align: left;"><code>journal_lookup.py</code></td>
 </tr>
 </tbody>
 </table>
 <p><code>OrderingService</code> owns the event queue, pending events, certifier, block builder, storage and metrics. <code>OrderingProcessor</code> accesses these dependencies through the service and processes both live batches and replayed events directly. Block creation and commit remain in <code>OrderingBlockManager</code>; journal replay remains in <code>OrderingRecovery</code>.</p>
-<hr />
 <h2 id="event-processing-flow-ordering-pipeline">Event Processing Flow (Ordering Pipeline)</h2>
 <pre class="mermaid"><code>graph TD
     A[Client Submit Event] --&gt; B[Event Journal]
@@ -4559,13 +4557,13 @@
     C --&gt; D[Event Certifier]
     D -- Valid --&gt; E[Ordering Processor]
     E --&gt; F[Block Builder]
-    F -- Batch Full / Timeout --&gt; G[Block Creation]
-    G --&gt; H[Commit to Storage]
-    H --&gt; I[Notify Listeners]</code></pre>
-<hr />
+    F -- Batch Full / Timeout --&gt; G[Create Block and Run Configured Finalizer]
+    G --&gt; S[Sign Block Header]
+    S --&gt; H[Commit to Storage]
+    H --&gt; I[Commit Queue for Consumer]</code></pre>
 <h2 id="core-features">Core Features</h2>
 <h3 id="1-persistence-durability">1. Persistence &amp; Durability</h3>
-<p>Accepted events are synchronously written to the <strong>Event Journal</strong> and fsynced before they are queued. Fsync is always enabled and cannot be disabled through configuration. On restart, <code>Recovery</code> replays journal entries and commits recovered events to block storage before the ordering service becomes active. An incomplete final frame in the active journal is truncated before the file is reopened for append. A complete frame with corrupt Arrow data fails recovery, and replay, certification, or block-processing errors leave the service in <code>MAINTENANCE</code> rather than activating with events missing.</p>
+<p>Accepted events are synchronously written to the Event Journal and fsynced before they are queued. Fsync is always enabled and cannot be disabled through configuration. On restart, <code>Recovery</code> replays journal entries and commits recovered events to block storage before the ordering service becomes active. An incomplete final frame in the active journal is truncated before the file is reopened for append. A complete frame with corrupt Arrow data fails recovery, and replay, certification, or block-processing errors leave the service in <code>MAINTENANCE</code> rather than activating with events missing.</p>
 <p>The <code>GET /api/ledger/ready</code> endpoint returns HTTP 200 only when every registered Sub-Chain's Ordering Service is <code>ACTIVE</code>; it returns HTTP 503 while any service is recovering or in maintenance.</p>
 <p><code>TransactionJournal.log_event()</code> still flushes and fsyncs every successful append before returning. <code>read_since()</code> reads records from disk but reuses a successful sync when the active file's device, inode, size, modification time and change time match the synchronized state. Opening/closing the writer, rotation and failed writes invalidate that state. Unknown or changed state requires another fsync; read and sync failures propagate. An active path replaced with another inode is rejected. Explicit <code>flush()</code> continues to synchronize every call. These rules retain the single-owner append-only journal contract; they do not make read-back a memory-only ACK.</p>
 <p>Stable IDs first check live pending/batch/processed state and block storage. For remaining IDs, <code>JournalEventLookup</code> scans journal history once on first use, then reads only the suffix after its cursor and stores compact channel/content commitments. It rejects conflicting IDs, including conflicting repeated records. An older journal-only event whose payload must be requeued still uses a full disk read; no historical payload copies are retained in the index. Custom or replaced journals without this lookup keep the compatibility scan. Missing/truncated cursor history fails closed. Initial scanning, archive enumeration and index metadata still grow with retained history; no retention/compaction is added.</p>
@@ -4574,37 +4572,40 @@
 <p>Queue admission waits at most <code>enqueue_timeout</code> seconds (default <code>1.0</code>, allowed range greater than zero through <code>60</code>). A full queue or shutdown raises <code>OrderingBackpressureError</code>, carrying <code>event_id</code> and <code>journaled</code>. New submissions reserve capacity before writing, so rejection at this boundary has <code>journaled=False</code>. Reconciliation of an existing durable event reports <code>journaled=True</code> and can retry the same ID without another append. <code>POST /api/ledger/chains/{chain_name}/events</code> maps this error to HTTP 503 with these fields in <code>detail</code>. Shutdown wakes waiting producers. Admission holds the queue condition through fsync; disk latency therefore also delays consumers.</p>
 <p>To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
 *   A directly initialized <code>OrderingService</code> uses <code>batch_size=100</code> and <code>batch_timeout=2.0</code> seconds by default.
-*   Sub-Chain defaults are <code>block_size=50</code> and <code>batch_timeout=1.0</code> second.</p>
+*   Sub-Chain defaults are <code>block_size=50</code> and <code>batch_timeout=1.0</code> second; explicit configuration can change both.</p>
 <h3 id="3-event-certification">3. Event Certification</h3>
-<p>The <code>Certifier</code> module integrates closely with the <strong>Security</strong> system to check:
-*   Data format (Schema Validation).
-*   Submitter's digital signature (Identity Verification).
-*   Channel access permissions (Policy Enforcement).</p>
+<p><code>EventCertifier</code> runs caller-added validation rules and checks required <code>entity_id</code>, <code>event</code> and a finite timestamp. Live events must be within 300 seconds of server time; replay can allow older timestamps. Its signature helper verifies only when string sender/signature fields and a string details payload are available, unless batch verification already succeeded. It also runs the optional ZK check. It does not call MSP or <code>PolicyEngine</code>; applications must enforce channel permissions in their integration.</p>
 <p>The certifier retains the most recent 10,000 results by default (<code>EventCertifier(max_history=...)</code>). Rejected events leave the pending map. After a result is evicted, <code>get_event_status()</code> queries durable storage for committed events and returns <code>ordered</code> without a certification result; an older rejected event can return <code>None</code>. This history is not durable certification evidence.</p>
 <h3 id="4-commit-and-cross-chain-costs">4. Commit and cross-chain costs</h3>
 <p><code>events_committed</code> and <code>average_batch_size</code> count only events in successfully persisted blocks. Latency uses the receipt times of those events; timing state for events still waiting in another batch is retained. Processor <code>batch_size</code> can differ from block <code>block_size</code> without counting uncommitted events.</p>
 <p>Block index assignment, previous-hash linkage, signing and storage commitment remain serialized per Ordering Service. Signature verification retains the existing batch thread pool and certification checks. The 2PC coordinator keeps durable phase records and read-back before participant commits; uncertain COMMIT decisions remain in doubt and cannot trigger rollback. Reducing journal rereads does not remove these integrity boundaries or imply that an event acceptance ACK is block finality. Independent chains can partition load with separate journal owners; batching blocks does not batch event durability ACKs.</p>
-<hr />
 <h2 id="usage-example">Usage Example</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingService</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Initialize with enterprise configuration</span>
+<p>Provision the complete signing identity and approved trusted keys using <a href="../../getting-started/quickstart/">Quickstart</a>, and select a supported durable storage backend before running this example. <code>batch_size</code> limits processor collection; <code>block_size</code> limits events per block. The returned ID confirms acceptance, while <code>force_block_creation()</code> requests a flush; inspect persisted blocks to confirm commitment.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingService</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="s2">"batch_size"</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="s2">"batch_timeout"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="s2">"storage_dir"</span><span class="p">:</span> <span class="s2">"/data/ordering"</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="s2">"block_size"</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="s2">"batch_timeout"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="s2">"storage_dir"</span><span class="p">:</span> <span class="s2">"data/ordering-example"</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">service</span> <span class="o">=</span> <span class="n">OrderingService</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Submit event; the returned ID acknowledges journaling and enqueueing, not block finality</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">receive_event</span><span class="p">(</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">event_data</span><span class="o">=</span><span class="p">{</span><span class="s2">"item"</span><span class="p">:</span> <span class="s2">"container_45"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"shipped"</span><span class="p">},</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">channel_id</span><span class="o">=</span><span class="s2">"logistics_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">submitter_org</span><span class="o">=</span><span class="s2">"ORG_SUPPLY"</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">event_id</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">receive_event</span><span class="p">(</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="n">event_data</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"CONTAINER-45"</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>            <span class="s2">"event"</span><span class="p">:</span> <span class="s2">"shipped"</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>            <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="s2">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"shipped"</span><span class="p">},</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="p">},</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        <span class="n">channel_id</span><span class="o">=</span><span class="s2">"logistics_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="n">submitter_org</span><span class="o">=</span><span class="s2">"ORG_SUPPLY"</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="p">)</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">service</span><span class="o">.</span><span class="n">force_block_creation</span><span class="p">()</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    <span class="n">service</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
 </code></pre></div>
-<hr />
 <h2 id="local-journal-ownership">Local journal ownership</h2>
 <p>A local journal path has one owning instance/process at a time, enforced by a nonblocking POSIX advisory writer lock. A second owner fails to open until the first closes or exits; this guard does not turn the journal into a shared multiwriter log. Multiple threads must share the same <code>TransactionJournal</code> instance. Give independent writers distinct node identities and storage directories, or separate local volumes on a filesystem that supports POSIX locks and directory fsync. The Kubernetes StatefulSet's per-pod PVC pattern keeps node journals separate. Upgrade every process using a path before writing the new journal format; older versions do not acquire the writer lock.</p>
 <h2 id="related">Related</h2>

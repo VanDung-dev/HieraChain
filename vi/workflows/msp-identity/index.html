@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Vòng đời chứng chỉ X.509, đăng ký và xác thực MSP cho các thành phần tham gia hệ thống.">
+        <meta name="description" content="Đăng ký chứng chỉ nội bộ, kiểm tra danh tính MSP và chính sách vai trò của tổ chức.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -1782,10 +1782,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -1793,32 +1793,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp" class="md-nav__link">
+  <a href="#ang-ky-va-phan-quyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ luồng: đăng ký thực thể (doanh nghiệp MSP)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#so-o-luong-xac-thuc-quyen-luc-chay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sơ đồ luồng: xác thực quyền lúc chạy
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#so-o-luong-thu-hoi-chung-chi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sơ đồ luồng: thu hồi chứng chỉ
+        Đăng ký và phân quyền
       </span>
     </span>
   </a>
@@ -1837,21 +1815,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#thu-hoi-va-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Thu hồi và lỗi
       </span>
     </span>
   </a>
@@ -4313,10 +4280,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -4324,32 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp" class="md-nav__link">
+  <a href="#ang-ky-va-phan-quyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ luồng: đăng ký thực thể (doanh nghiệp MSP)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#so-o-luong-xac-thuc-quyen-luc-chay" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sơ đồ luồng: xác thực quyền lúc chạy
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#so-o-luong-thu-hoi-chung-chi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Sơ đồ luồng: thu hồi chứng chỉ
+        Đăng ký và phân quyền
       </span>
     </span>
   </a>
@@ -4368,21 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-buoc-chi-tiet" class="md-nav__link">
+  <a href="#thu-hoi-va-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các bước chi tiết
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Xử lý lỗi
+        Thu hồi và lỗi
       </span>
     </span>
   </a>
@@ -4443,105 +4377,35 @@
 
 
 <h1 id="danh-tinh-va-uy-quyen-msp">Danh tính và ủy quyền MSP</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain có hai lớp danh tính:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Lớp</th>
-<th style="text-align: left;">Lớp (Class)</th>
-<th style="text-align: left;">Trường hợp dùng</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>RBAC đơn giản</strong></td>
-<td style="text-align: left;"><code>IdentityManager</code></td>
-<td style="text-align: left;">Triển khai một tổ chức; kiểm tra quyền theo vai trò</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Doanh nghiệp MSP</strong></td>
-<td style="text-align: left;"><code>HierarchicalMSP</code></td>
-<td style="text-align: left;">Liên minh đa tổ chức; phân cấp chứng chỉ X.509 với <code>CertificateAuthority</code></td>
-</tr>
-</tbody>
-</table>
-<p>Mỗi thực thể phải đăng ký và xác thực danh tính trước khi được gọi <code>PolicyEngine</code> hoặc gửi sự kiện.</p>
-<hr />
-<h2 id="so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp">Sơ đồ luồng: đăng ký thực thể (doanh nghiệp MSP)</h2>
+<h2 id="pham-vi">Phạm vi</h2>
+<p><code>IdentityManager</code> trong <code>hierachain/security/identity.py</code> cung cấp đăng ký người dùng, quyền theo vai trò và các hàm hỗ trợ chữ ký. <code>HierarchicalMSP</code> trong <code>hierachain/security/msp.py</code> quản lý thực thể tổ chức, chứng chỉ nội bộ và <code>OrganizationPolicies</code> gắn với vai trò.</p>
+<p>Chứng chỉ MSP là dataclass Python <code>Certificate</code>, không phải chứng chỉ X.509. CA tạo chữ ký Ed25519 trên ID chứng chỉ, chủ thể và khóa công khai. <code>verify_certificate()</code> kiểm tra trạng thái và thời hạn của chứng chỉ đã lưu; nó không xác minh chuỗi X.509 hay chứng minh thực thể sở hữu khóa riêng. Khóa CA, thông tin đăng ký và thu hồi được giữ trong bộ nhớ.</p>
+<p>Các route sự kiện Ledger thông thường kiểm tra phạm vi API key và gửi đến Sub-Chain. Chúng không tự động gọi MSP hay <code>PolicyEngine</code>. Các luồng Channel áp dụng kiểm tra thành viên và vai trò riêng. Ứng dụng sử dụng giao diện Python phải gọi các bước kiểm tra cần thiết cho thao tác của mình.</p>
+<h2 id="ang-ky-va-phan-quyen">Đăng ký và phân quyền</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Quản trị viên Doanh nghiệp
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Thực thi Chính sách)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Giai đoạn 1 — Định nghĩa vai trò
-
-        Admin-&gt;&gt;MSP: define_role(role_name, permissions, policy_ids)
-        MSP-&gt;&gt;MSP: OrganizationPolicies.assign_role_permissions(role, perms)
+    participant App as Application
+    participant MSP as HierarchicalMSP
+    participant CA as CertificateAuthority
+    participant Policies as OrganizationPolicies
+    App-&gt;&gt;MSP: define_role(role_name, permissions, policy_ids)
+    MSP-&gt;&gt;Policies: assign_role_permissions(role, permissions)
+    App-&gt;&gt;MSP: register_entity(entity_id, credentials, role, attributes)
+    MSP-&gt;&gt;CA: issue_certificate(subject, public_key, attributes, valid_days)
+    CA--&gt;&gt;MSP: Internal Certificate
+    MSP--&gt;&gt;App: Registration success or failure
+    App-&gt;&gt;MSP: validate_identity(entity_id, credentials)
+    MSP-&gt;&gt;CA: verify_certificate(cert_id)
+    MSP-&gt;&gt;MSP: Compare supplied and registered public keys
+    MSP--&gt;&gt;App: True or False
+    App-&gt;&gt;MSP: authorize_action(entity_id, action, resource)
+    MSP-&gt;&gt;CA: Verify active certificate
+    MSP-&gt;&gt;Policies: check_permission(role, action)
+    loop Role-linked policy IDs
+        MSP-&gt;&gt;Policies: evaluate_policy(policy_id, context)
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Giai đoạn 2 — Đăng ký thực thể
-
-        Admin-&gt;&gt;MSP: register_entity(entity_id, credentials, role, attributes)
-        MSP-&gt;&gt;CA: issue_certificate(entity_id, public_key, attributes, valid_days)
-        CA-&gt;&gt;CA: _generate_cert_id(entity_id, public_key)
-        CA-&gt;&gt;CA: _sign_certificate(cert_id, subject, public_key, ca_key)
-        CA--&gt;&gt;MSP: Certificate { cert_id, valid_until, status=ACTIVE }
-        MSP-&gt;&gt;MSP: entities[entity_id] = { certificate, role, status: active }
-        MSP--&gt;&gt;Admin: True ✅
-    end</code></pre>
-<hr />
-<h2 id="so-o-luong-xac-thuc-quyen-luc-chay">Sơ đồ luồng: xác thực quyền lúc chạy</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API Client
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Thực thi Chính sách)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,CA: Giai đoạn 1 — Xác thực Danh tính
-        Caller-&gt;&gt;MSP: validate_identity(entity_id, credentials)
-        MSP-&gt;&gt;CA: verify_certificate(cert_id)
-        CA-&gt;&gt;CA: Kiểm tra: chứng chỉ chưa bị thu hồi VÀ is_valid() (trong thời hạn)
-        CA--&gt;&gt;MSP: True / False
-        MSP-&gt;&gt;MSP: So khớp credentials.public_key với chứng chỉ đã lưu trữ
-        MSP--&gt;&gt;Caller: True ✅ (xác nhận danh tính)
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,PE: Giai đoạn 2 — Cấp quyền Hành động
-        Caller-&gt;&gt;MSP: authorize_action(entity_id, action, resource)
-        MSP-&gt;&gt;MSP: check_permission(role, action)
-        MSP-&gt;&gt;MSP: evaluate_policy(policy_id, context) cho mỗi chính sách vai trò
-        MSP--&gt;&gt;Caller: True / False
-    end
-
-    alt Hành động được cấp quyền
-        Caller-&gt;&gt;PE: evaluate_policy(policy_id, context_with_role)
-        Note right of PE: Luồng Thực thi Chính sách tiếp tục tại đây
-    end</code></pre>
-<hr />
-<h2 id="so-o-luong-thu-hoi-chung-chi">Sơ đồ luồng: thu hồi chứng chỉ</h2>
-<pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Quản trị viên Doanh nghiệp
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-
-    Admin-&gt;&gt;MSP: revoke_entity(entity_id, reason)
-    MSP-&gt;&gt;CA: revoke_certificate(cert_id, reason)
-    CA-&gt;&gt;CA: revoked_certificates.add(cert_id)
-    CA-&gt;&gt;CA: cert.status = REVOKED
-    MSP-&gt;&gt;MSP: entity[status] = revoked
-    MSP--&gt;&gt;Admin: True ✅
-
-    Note over CA: Tất cả các yêu cầu validate_identity() sau này của thực thể này&lt;br/&gt;sẽ thất bại tại CA.verify_certificate()</code></pre>
-<hr />
+    MSP--&gt;&gt;App: True only if all required checks pass</code></pre>
+<p><code>credentials</code> phải chứa <code>public_key</code>. Đăng ký trả về <code>False</code> khi thất bại, bao gồm trường hợp vai trò chưa được định nghĩa. <code>validate_identity()</code> kiểm tra đăng ký, tính hợp lệ của chứng chỉ và khóa công khai được cung cấp; nó không xác minh chữ ký thử thách mới. Dùng luồng xác minh chữ ký riêng khi cần chứng minh quyền sở hữu khóa.</p>
+<p><code>authorize_action()</code> yêu cầu thực thể đang hoạt động và chứng chỉ đã lưu còn hợp lệ, kiểm tra quyền theo vai trò, rồi đánh giá mọi chính sách tổ chức được liên kết. Đây là <code>OrganizationPolicies</code>, đánh giá dựa trên các thuộc tính ngữ cảnh bắt buộc đã cấu hình. Chúng tách biệt với các quy tắc có kiểu trong <code>security/policy_engine.py</code>.</p>
 <h2 id="vai-tro-mac-inh">Vai trò mặc định</h2>
 <table>
 <thead>
@@ -4553,7 +4417,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>admin</code></td>
-<td style="text-align: left;">manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data</td>
+<td style="text-align: left;">manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data, view_data</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>operator</code></td>
@@ -4565,141 +4429,56 @@
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="cac-buoc-chi-tiet">Các bước chi tiết</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Mô tả</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Định nghĩa vai trò</strong></td>
-<td style="text-align: left;">Quản trị viên định nghĩa vai trò, tập quyền và ID chính sách liên kết.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. Đăng ký thực thể</strong></td>
-<td style="text-align: left;">MSP yêu cầu chứng chỉ X.509 từ CA cho public key của thực thể.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. CA phát hành</strong></td>
-<td style="text-align: left;">CA tạo <code>cert_id</code>, ký chứng chỉ và lưu với <code>status=ACTIVE</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Xác thực danh tính</strong></td>
-<td style="text-align: left;">CA kiểm tra: chứng chỉ chưa thu hồi và thời gian hiện tại trong <code>[issued_at, valid_until]</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. So khớp</strong></td>
-<td style="text-align: left;">MSP kiểm tra <code>credentials.public_key == certificate.public_key</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Cấp quyền</strong></td>
-<td style="text-align: left;"><code>check_permission(role, action)</code> và đánh giá mọi chính sách liên kết với vai trò.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Cổng chính sách</strong></td>
-<td style="text-align: left;">Nếu được cấp quyền, PolicyEngine đánh giá thêm quy tắc theo ngữ cảnh.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>8. Thu hồi</strong></td>
-<td style="text-align: left;">Đặt <code>cert.status = REVOKED</code>; mọi <code>validate_identity()</code> sau đó lỗi tại bước 4.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="xu-ly-loi">Xử lý lỗi</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Điều kiện</th>
-<th style="text-align: left;">Hành vi</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">Thực thể chưa đăng ký</td>
-<td style="text-align: left;"><code>validate_identity()</code> trả về <code>False</code> ngay</td>
-</tr>
-<tr>
-<td style="text-align: left;">Chứng chỉ hết hạn</td>
-<td style="text-align: left;"><code>CA.is_valid()</code> trả về <code>False</code>; từ chối danh tính</td>
-</tr>
-<tr>
-<td style="text-align: left;">Chứng chỉ bị thu hồi</td>
-<td style="text-align: left;"><code>CA.verify_certificate()</code> lỗi; từ chối danh tính</td>
-</tr>
-<tr>
-<td style="text-align: left;">Không khớp public key</td>
-<td style="text-align: left;"><code>validate_identity()</code> trả về <code>False</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Vai trò không có quyền</td>
-<td style="text-align: left;"><code>authorize_action()</code> trả về <code>False</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
+<h2 id="thu-hoi-va-loi">Thu hồi và lỗi</h2>
+<p><code>revoke_entity(entity_id, reason)</code> thu hồi chứng chỉ đã lưu và đánh dấu thực thể đã bị thu hồi. Các lần xác thực danh tính và phân quyền thao tác sau đó sẽ thất bại. Chứng chỉ hết hạn hoặc bị thu hồi, thực thể không tồn tại, khóa công khai không khớp và thiếu quyền cũng khiến các bước kiểm tra tương ứng thất bại.</p>
+<p>Vòng đời này không có phân phối CRL, sổ đăng ký chứng chỉ bền vững, mTLS hay hook sao lưu khóa tự động. Cấu hình bảo mật truyền tải tại reverse proxy và quản lý sao lưu danh tính riêng.</p>
 <h2 id="lop-va-phuong-thuc-chinh">Lớp và phương thức chính</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bước</th>
-<th style="text-align: left;">Lớp / Phương thức</th>
+<th style="text-align: left;">Thao tác</th>
+<th style="text-align: left;">Phương thức</th>
 <th style="text-align: left;">Tệp</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Đăng ký RBAC đơn giản</td>
+<td style="text-align: left;">Đăng ký người dùng</td>
 <td style="text-align: left;"><code>IdentityManager.register_user()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác thực RBAC đơn giản</td>
+<td style="text-align: left;">Xác thực người dùng</td>
 <td style="text-align: left;"><code>IdentityManager.validate_identity()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác minh chữ ký</td>
+<td style="text-align: left;">Xác minh chữ ký người dùng</td>
 <td style="text-align: left;"><code>IdentityManager.verify_user_signature()</code></td>
-<td style="text-align: left;"><code>security/identity.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Đăng ký doanh nghiệp</td>
+<td style="text-align: left;">Đăng ký thực thể</td>
 <td style="text-align: left;"><code>HierarchicalMSP.register_entity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Phát hành chứng chỉ</td>
-<td style="text-align: left;"><code>CertificateAuthority.issue_certificate()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;">Cấp/xác minh/thu hồi chứng chỉ</td>
+<td style="text-align: left;">Các phương thức <code>CertificateAuthority</code></td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Xác thực danh tính</td>
-<td style="text-align: left;"><code>HierarchicalMSP.validate_identity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Ủy quyền thao tác</td>
+<td style="text-align: left;">Phân quyền thực thể</td>
 <td style="text-align: left;"><code>HierarchicalMSP.authorize_action()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">Thu hồi thực thể</td>
-<td style="text-align: left;"><code>HierarchicalMSP.revoke_entity()</code></td>
-<td style="text-align: left;"><code>security/msp.py</code></td>
+<td style="text-align: left;"><code>hierachain/security/msp.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Thực thi Chính sách</a>: gọi sau khi ủy quyền MSP thành công</li>
-<li><a href=".././event-submission/">Gửi Sự kiện</a>: <code>authorize_action()</code> là rào chắn trước <code>add_event()</code></li>
-<li><a href=".././key-backup/">Sao lưu Khóa</a>: phát hành chứng chỉ mới không tự kích hoạt sao lưu khóa</li>
+<li><a href=".././policy-enforcement/">Thực thi chính sách</a>: các chính sách ABAC có kiểu riêng</li>
+<li><a href=".././event-submission/">Gửi sự kiện</a>: tiếp nhận vào ledger thông thường</li>
+<li><a href=".././key-backup/">Sao lưu khóa</a>: sao lưu danh tính do người vận hành quản lý</li>
 </ul>
 
 

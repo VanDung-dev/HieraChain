@@ -4366,9 +4366,9 @@
 </ul>
 </li>
 <li>
-<p><strong>Data Loading</strong>: The <strong>"Load Details"</strong> button fetches data from IPFS through the API Server without reloading the page.</p>
+<p><strong>Data Loading</strong>: The current <strong>"Load Details"</strong> handler requests block data with <code>resolve_cid=true</code>, but reads a top-level <code>details</code> field. The blocks endpoint returns resolved records inside <code>blocks</code>, so this handler does not display those event details.</p>
 </li>
-<li><strong>Decryption</strong>: The Server decrypts data before displaying it in the user interface.</li>
+<li><strong>Decryption</strong>: When IPFS is enabled, the API can resolve and decrypt details in block responses. The current Explorer handler does not render those resolved details.</li>
 </ul>
 <h3 id="2-render-the-dashboard-via-api">2. Render the Dashboard via API</h3>
 <p>Developers can integrate the Dashboard directly into their Server-side Rendering:</p>

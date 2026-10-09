@@ -4422,16 +4422,15 @@
 
 <h1 id="websocket-real-time-streaming">WebSocket real-time streaming</h1>
 <h2 id="overview">Overview</h2>
-<p>HieraChain pushes block and event notifications to connected clients over WebSocket. Clients subscribe to specific chains or event types. A background ping loop checks for stale connections and removes them.</p>
-<p><code>WebSocketManager</code> is a singleton (<code>ws_manager</code>) shared by all API routes, so there is a single connection registry.</p>
-<hr />
+<p>The WebSocket API accepts chain/event subscriptions and provides broadcast helpers. The current ledger commit and event paths do not call <code>broadcast_new_block()</code> or <code>broadcast_event()</code>. Applications must connect their event source to those helpers before subscribers receive ledger notifications. An asyncio ping task removes connections when a send fails or exceeds its timeout; it does not wait for a client pong.</p>
+<p><code>WebSocketManager</code> is a singleton (<code>ws_manager</code>) shared by the routes within one API process. Multiple workers have separate connection registries.</p>
 <h2 id="flow-diagram-connection-and-broadcast-lifecycle">Flow diagram: connection and broadcast lifecycle</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Client as 🖥️ Browser / SDK Client
     participant WS as 🔌 WebSocket Endpoint
     participant WSM as 📡 WebSocketManager
-    participant SC as 📦 SubChain
+    participant SC as Application broadcast integration
 
     Client-&gt;&gt;WS: WebSocket Upgrade (GET /ws?chain_name=supply_chain)
     WS-&gt;&gt;WSM: connect(connection_id, websocket, chain_name)
@@ -4446,14 +4445,13 @@
         WSM-&gt;&gt;WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
 
-    Note over SC: Block committed after asynchronous ordering (Event Submission)
+    Note over SC: Application calls the broadcast helper explicitly
 
     SC-&gt;&gt;WSM: broadcast_new_block(chain_name, block_data)
     WSM-&gt;&gt;WSM: get_chain_subscribers(chain_name)
     loop Each subscriber
         WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", chain_name: chain_name, data: block_data })
     end</code></pre>
-<hr />
 <h2 id="flow-diagram-ping-and-stale-connection-cleanup">Flow diagram: ping and stale connection cleanup</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4464,18 +4462,17 @@
     Note over BG: Every 30 seconds
 
     loop Each active connection
-        BG-&gt;&gt;Client: ping frame
-        alt Pong received within 10s
-            Client--&gt;&gt;BG: pong ✅
-        else Timeout (10s)
+        BG-&gt;&gt;Client: send_text JSON ping with 10s timeout
+        alt Send succeeds
+            Note over BG: Keep connection; no pong wait
+        else Send failure or timeout
             BG-&gt;&gt;WSM: disconnect(connection_id)
             WSM-&gt;&gt;WSM: Registry.remove(connection_id)
             WSM-&gt;&gt;WSM: SubscriptionManager.unsubscribe_all(connection_id)
         end
     end</code></pre>
-<hr />
 <h2 id="message-format">Message format</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Block added notification</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Block added notification (example payload)</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">{</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"block_added"</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
@@ -4485,21 +4482,26 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="nt">"previous_hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9d1e4f..."</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mf">1714000000.0</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="nt">"event_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1">// Event notification (if subscribed to event_types)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">{</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">}</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1">// Event notification sent by broadcast_event_type() after event-type filtering (example payload)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">{</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="nt">"chain_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="nt">"entity_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product-SKU-001"</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">        </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">"optimized"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-09T12:00:00"</span><span class="p">,</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="nt">"event_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"quality_check"</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="p">}</span>
 </code></pre></div>
-<hr />
+<p><code>broadcast_new_block()</code> wraps the <code>block_data</code> supplied by the application. It does not confirm that the block was durably committed; call it after the application establishes the block state it wants to announce.</p>
 <h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
 <table>
 <thead>
@@ -4510,36 +4512,35 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>1. Upgrade</strong></td>
+<td style="text-align: left;">1. Upgrade</td>
 <td style="text-align: left;">Connect to <code>/ws</code>, optionally passing <code>chain_name</code> as a query parameter</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Capacity check</strong></td>
+<td style="text-align: left;">2. Capacity check</td>
 <td style="text-align: left;">Reject if <code>active_connections &gt;= max_connections</code> (default 1000)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Register</strong></td>
+<td style="text-align: left;">3. Register</td>
 <td style="text-align: left;"><code>ConnectionRegistry.add()</code> stores connection by <code>connection_id</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Subscribe</strong></td>
+<td style="text-align: left;">4. Subscribe</td>
 <td style="text-align: left;"><code>SubscriptionManager.subscribe_to_chain()</code> links connection to chain</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Optional filter</strong></td>
-<td style="text-align: left;">Client can narrow to specific <code>event_types</code></td>
+<td style="text-align: left;">5. Optional filter</td>
+<td style="text-align: left;">Only <code>broadcast_event_type()</code> applies the event-type subscription; <code>broadcast_event()</code> sends to all subscribers of the chain.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Broadcast</strong></td>
-<td style="text-align: left;">After the Sub-Chain commits a block, <code>broadcast_new_block()</code> fans out to subscribers</td>
+<td style="text-align: left;">6. Broadcast</td>
+<td style="text-align: left;">An application call to <code>broadcast_new_block()</code> fans out to subscribers</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Ping loop</strong></td>
-<td style="text-align: left;">Background thread pings every 30s; removes unresponsive connections after 10s timeout</td>
+<td style="text-align: left;">7. Ping loop</td>
+<td style="text-align: left;">An asyncio task sends JSON pings every 30s; send failures or a 10s send timeout cause disconnection</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="error-handling">Error handling</h2>
 <table>
 <thead>
@@ -4551,7 +4552,7 @@
 <tbody>
 <tr>
 <td style="text-align: left;">Max connections reached</td>
-<td style="text-align: left;">New connection refused with <code>1008 Policy Violation</code></td>
+<td style="text-align: left;"><code>WebSocketManager.connect()</code> raises a generic <code>Exception</code>; the endpoint catches and logs it, then runs cleanup. It does not explicitly send close code <code>1008</code>.</td>
 </tr>
 <tr>
 <td style="text-align: left;">Client disconnects unexpectedly</td>
@@ -4567,7 +4568,6 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
@@ -4625,11 +4625,10 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a>: triggers <code>broadcast_new_block()</code> after block commit</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: alert notifications can also be pushed via WebSocket</li>
+<li><a href=".././event-submission/">Event Submission</a>: ledger pipeline that an application can connect to broadcast helpers</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: separate email/webhook notification workflow</li>
 </ul>
 
 

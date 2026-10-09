@@ -4391,18 +4391,18 @@
     participant CJ as Coordinator journal
 
     Client-&gt;&gt;TM: initiate_transaction(src, dst, payload)
-    TM-&gt;&gt;CJ: fsync và đọc lại begin
+    TM-&gt;&gt;CJ: fsync and read back begin
     TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload, true)
     SRC--&gt;&gt;TM: prepared
     TM-&gt;&gt;DST: prepare_transaction(tx_id, payload, false)
     DST--&gt;&gt;TM: prepared
-    TM-&gt;&gt;CJ: fsync và đọc lại prepared
-    TM-&gt;&gt;CJ: fsync và đọc lại COMMIT decision
+    TM-&gt;&gt;CJ: fsync and read back prepared
+    TM-&gt;&gt;CJ: fsync and read back COMMIT decision
     TM-&gt;&gt;SRC: commit_transaction(tx_id)
-    SRC--&gt;&gt;TM: đọc lại ordering events
+    SRC--&gt;&gt;TM: ordering events read back
     TM-&gt;&gt;DST: commit_transaction(tx_id)
-    DST--&gt;&gt;TM: đọc lại ordering events
-    TM-&gt;&gt;CJ: fsync và đọc lại committed
+    DST--&gt;&gt;TM: ordering events read back
+    TM-&gt;&gt;CJ: fsync and read back committed
     TM--&gt;&gt;Client: tx_id</code></pre>
 <h2 id="loi-va-phuc-hoi">Lỗi và phục hồi</h2>
 <pre class="mermaid"><code>flowchart TD

@@ -4362,12 +4362,14 @@ dụng. Snapshot và phục hồi hạ tầng thuộc về deployment, không ph
 tự động trong package này.</p>
 <h2 id="luong-runtime">Luồng runtime</h2>
 <pre class="mermaid"><code>flowchart TD
-    ERR["Lỗi hoặc node hỏng"] --&gt; CLASS["ErrorClassifier\nphân loại và ghi log"]
-    CLASS --&gt;|Sự kiện đang chờ| JOURNAL["TransactionJournal\nphát lại sau restart"]
-    CLASS --&gt;|Lỗi đồng thuận| VIEW["BFTViewChangeManager\nbắt đầu view mới"]
-    CLASS --&gt;|Lỗi xác thực| REJECT["Từ chối và báo cáo"]
-    JOURNAL --&gt; VALIDATE["Xác thực trước ordering"]
-    VIEW --&gt; CONSENSUS["Tiếp tục các pha BFT"]</code></pre>
+    ERR["Error or node failure"] --&gt; CLASS["ErrorClassifier\nclassify and log"]
+    CLASS --&gt;|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
+    EVENT["Pending journal event"] --&gt; JOURNAL["TransactionJournal\nwrite before ordering"]
+    JOURNAL --&gt; RECOVERY["OrderingRecovery\nreplay after restart"]
+    RECOVERY --&gt; VALIDATE["Validate before ordering"]
+    LEADER["Leader unavailable"] --&gt; VIEW["BFTConsensus\nBFTViewChangeManager"]
+    VIEW --&gt; CONSENSUS["Install new view\nresume BFT phases"]</code></pre>
+<p>Đây là các luồng riêng do từng component phụ trách, không phải chuỗi điều phối từ <code>ErrorClassifier</code>. <code>classify_error()</code> ghi lại và trả về <code>ErrorInfo</code>; hàm chỉ có thể gọi callback lockdown tùy chọn đối với lỗi security/performance mức CRITICAL hoặc lỗi security mức HIGH, và chỉ khi đã cấu hình callback. <code>OrderingRecovery</code> phát lại các mục trong journal, còn <code>BFTConsensus</code> phụ trách view change khi leader gặp sự cố.</p>
 <h2 id="phuc-hoi-ong-thuan">Phục hồi đồng thuận</h2>
 <p><code>BFTConsensus</code> sở hữu việc xử lý leader hỏng thông qua
 <code>BFTViewChangeManager</code>. Manager phát các message view-change, thu thập quorum

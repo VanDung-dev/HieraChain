@@ -4378,12 +4378,13 @@
 
 <h1 id="create-sub-chain">Create Sub-Chain</h1>
 <h2 id="purpose">Purpose</h2>
-<p>Create a Sub-Chain (domain chain) and operate its basic lifecycle: initialize → record events → submit proof to Main Chain.</p>
+<p>Use Python <code>HierarchyManager</code> to create a <code>DomainChain</code>, or use REST to create a generic <code>SubChain</code>, then record events and submit proofs. The Python path provides <code>DomainChain</code> validation and participant 2PC behavior.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>Package installed and environment activated per <a href="../../getting-started/install/">Getting Started</a>.</li>
-<li>Can run API server: <code>python -m hierachain.api.server</code> (default <code>http://localhost:2661</code>).</li>
+<li>Can run API server: <code>python -m hierachain</code> (default <code>http://localhost:2661</code>).</li>
 </ul>
+<p>Configure the signing identity, trusted keys and storage using <a href="../../getting-started/quickstart/">Quickstart</a>. The Python example uses a new ledger and registers the entity before starting operations.</p>
 <h2 id="method-1-using-python-api-hierarchymanager">Method 1: Using Python API (HierarchyManager)</h2>
 <pre class="mermaid"><code>flowchart TD
     Start[Start] --&gt; Init[Initialize HierarchyManager]
@@ -4403,26 +4404,30 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># 2. Create Sub-Chain by domain</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">ok</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="n">domain_type</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">)</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">assert</span> <span class="n">ok</span><span class="p">,</span> <span class="s2">"Sub-chain name already exists?"</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># 3. Record a domain operation/event</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">entity_id</span><span class="o">=</span><span class="s2">"PROD-001"</span><span class="p">,</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">operation_type</span><span class="o">=</span><span class="s2">"production_start"</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">"batch"</span><span class="p">:</span> <span class="s2">"BATCH-001"</span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">manager</span><span class="o">.</span><span class="n">complete_operation</span><span class="p">(</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">entity_id</span><span class="o">=</span><span class="s2">"PROD-001"</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">operation_type</span><span class="o">=</span><span class="s2">"production_start"</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">result</span><span class="o">=</span><span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">}</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="c1"># 4. (Optional) Submit proof to Main Chain</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="c1"># 5. System overview</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="nb">print</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">get_system_overview</span><span class="p">())</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">chain</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="k">assert</span> <span class="n">chain</span><span class="o">.</span><span class="n">register_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"batch"</span><span class="p">:</span> <span class="s2">"BATCH-001"</span><span class="p">})</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># 3. Record a domain operation/event</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">entity_id</span><span class="o">=</span><span class="s2">"PROD-001"</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">operation_type</span><span class="o">=</span><span class="s2">"production_start"</span><span class="p">,</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">"batch"</span><span class="p">:</span> <span class="s2">"BATCH-001"</span><span class="p">}</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">manager</span><span class="o">.</span><span class="n">complete_operation</span><span class="p">(</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">entity_id</span><span class="o">=</span><span class="s2">"PROD-001"</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">operation_type</span><span class="o">=</span><span class="s2">"production_start"</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">result</span><span class="o">=</span><span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">}</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1"># 4. (Optional) Submit proof to Main Chain</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="n">chain</span><span class="o">.</span><span class="n">flush_pending_and_finalize</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="c1"># 5. System overview</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="nb">print</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">get_system_overview</span><span class="p">())</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="n">manager</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
 <p>Notes: The above methods follow <code>hierachain/hierarchical/hierarchy_manager/base.py</code>:</p>
 <ul>
@@ -4432,6 +4437,7 @@
 </ul>
 <h2 id="method-2-using-rest-api-ledger">Method 2: Using REST API Ledger</h2>
 <p>Assuming API server is running at <code>http://localhost:2661</code>:</p>
+<p>The REST endpoint constructs the base <code>SubChain</code> class and defaults <code>chain_type</code> to <code>generic</code>; it does not construct <code>DomainChain</code>. Use the Python method above when <code>DomainChain</code> validation or participant 2PC behavior is required.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. Create sub-chain (POST)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:2661/api/ledger/chains/production/create"</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>

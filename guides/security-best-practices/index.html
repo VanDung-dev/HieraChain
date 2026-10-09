@@ -3829,10 +3829,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#deployment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        Deployment
       </span>
     </span>
   </a>
@@ -3840,10 +3840,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-recommendations" class="md-nav__link">
+  <a href="#keys-and-logs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Recommendations
+        Keys and logs
       </span>
     </span>
   </a>
@@ -3862,10 +3862,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#related-components" class="md-nav__link">
+  <a href="#implementation-references" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related Components
+        Implementation references
       </span>
     </span>
   </a>
@@ -3877,17 +3877,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Configuration
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quick Checklist
       </span>
     </span>
   </a>
@@ -4280,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#deployment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        Deployment
       </span>
     </span>
   </a>
@@ -4291,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-recommendations" class="md-nav__link">
+  <a href="#keys-and-logs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Recommendations
+        Keys and logs
       </span>
     </span>
   </a>
@@ -4313,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#related-components" class="md-nav__link">
+  <a href="#implementation-references" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Related Components
+        Implementation references
       </span>
     </span>
   </a>
@@ -4328,17 +4317,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Configuration
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Quick Checklist
       </span>
     </span>
   </a>
@@ -4376,46 +4354,53 @@
   
 
 
-<h1 id="security-best-practices">Security Best Practices</h1>
-<h2 id="purpose">Purpose</h2>
-<p>Recommends standard practices for deploying HieraChain securely in production environments.</p>
-<h2 id="core-recommendations">Core Recommendations</h2>
-<ul>
-<li>Enable AUTH and use API keys (or upgrade to OAuth/mTLS as needed).</li>
-<li>Centralized key (Ed25519) management; periodic key rotation/revocation; secure backups.</li>
-<li>Sanitize logs and payloads to avoid sensitive data leakage.</li>
-<li>Enable HSTS/CORS/Rate limit appropriate to environment and valid front-ends.</li>
-<li>Enable resource guard to shed load when the system is overloaded.</li>
-</ul>
+<h1 id="security-best-practices">Security best practices</h1>
+<h2 id="deployment">Deployment</h2>
+<p>Production requires API-key authentication and a provisioned key map. Give each client the scopes needed by its routes. Terminate HTTPS at the enterprise reverse proxy, configure <code>Strict-Transport-Security</code> there, and restrict CORS to the intended frontends. HieraChain's HSTS settings do not add the header.</p>
+<p>Use API payload/rate limits and ordering event-pool/RAM limits for application resource protection. Configure proxy limits as well. There is no <code>ResourceGuardMiddleware</code> or <code>security/resource_guard.py</code> in the package.</p>
+<h2 id="keys-and-logs">Keys and logs</h2>
+<p>Keep the complete node identity, trusted block key map and IPFS encryption key in recoverable, access-controlled storage. Rotation requires updating the approved public key maps used by verifiers. See <a href="../../workflows/key-backup/">Key Backup</a> for the distinction between node identity and CLI key pair files.</p>
+<p>Use structured named fields so <code>SecureLogger</code> can redact secrets. It does not detect log deletion or modification. Audit verification uses <code>AuditLogger</code> with a separately trusted manifest. Apply retention and access controls in the deployment's logging system.</p>
 <h2 id="authentication-lockout-storage">Authentication lockout storage</h2>
 <ul>
 <li>Use the SQLite or Redis brute-force backend when API authentication runs in multiple worker processes. Both backends count failures atomically across workers.</li>
-<li>The memory and file backends keep attempt counts in one process; run one worker with either backend. Running file-backed instances reload lockouts so a lockout written by another instance in the same deployment becomes visible on the next check.</li>
-<li>Shared backend errors stop the authentication request. Restore the configured backend before serving authenticated requests again.</li>
+<li>Memory and file backends keep attempt counts in one process; run one worker with either backend. File-backed instances reload lockouts so a lockout written by another instance becomes visible on the next check.</li>
+<li>Shared backend errors stop authentication. Restore the backend before serving authenticated requests again.</li>
 </ul>
-<h2 id="related-components">Related Components</h2>
-<ul>
-<li>Identity/MSP/Key: <code>hierachain/security/{identity.py, msp.py, key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code></li>
-<li>Policy/Guard: <code>hierachain/security/{policy_engine.py, resource_guard.py}</code></li>
-<li>Log/Sanitize: <code>hierachain/security/{secure_logging.py, sanitization.py}</code></li>
-<li>API Key: <code>hierachain/security/verify/api_key_verifier.py</code></li>
-</ul>
+<h2 id="implementation-references">Implementation references</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Area</th>
+<th style="text-align: left;">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Identity and keys</td>
+<td style="text-align: left;"><code>hierachain/security/identity.py</code>, <code>msp.py</code>, <code>key_manager.py</code>, <code>key_provider.py</code>, <code>identity_loader.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Caller-managed ABAC</td>
+<td style="text-align: left;"><code>hierachain/security/policy_engine.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">API authentication</td>
+<td style="text-align: left;"><code>hierachain/security/verify/api_key_verifier.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Structured logging</td>
+<td style="text-align: left;"><code>hierachain/security/secure_logging.py</code>, <code>sanitization.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">API limits</td>
+<td style="text-align: left;"><code>hierachain/api/middleware.py</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="configuration">Configuration</h2>
-<ul>
-<li><code>AUTH_ENABLED</code>, <code>API_KEY_LOCATION</code>, <code>API_KEY_NAME</code></li>
-<li><code>CORS_ALLOW_ALL</code>, <code>CORS_ORIGINS</code></li>
-<li><code>HSTS_ENABLED</code>, <code>HSTS_MAX_AGE</code></li>
-<li><code>RATE_LIMIT_ENABLED</code>, <code>RATE_LIMIT_REQUESTS_PER_MINUTE</code></li>
-</ul>
-<h2 id="quick-checklist">Quick Checklist</h2>
-<ul>
-<li>[ ] Secrets via secret manager (no hard-coding).</li>
-<li>[ ] CORS only allows valid origins (no <code>*</code> in production).</li>
-<li>[ ] Enable HSTS with appropriate <code>max-age</code>; ensure HTTPS.</li>
-<li>[ ] Rate limit at API gateway/app level (when needed).</li>
-<li>[ ] Logs contain no sensitive data; enable sanitize.</li>
-<li>[ ] API key revocation mechanism when exposed; full audit.</li>
-</ul>
+<p>Use <code>HRC_AUTH_ENABLED</code>, <code>HRC_API_KEYS_FILE</code>, <code>HRC_API_KEY_LOCATION</code> and <code>HRC_API_KEY_NAME</code> for API authentication. CORS uses <code>HRC_CORS_ALLOW_ALL</code> and <code>HRC_CORS_ORIGINS</code>. Rate limits use <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code> and <code>HRC_RATE_LIMIT_BACKEND</code>.</p>
+<p>See <a href="../../how-to/secure-deployment/">Secure deployment</a> for provisioning commands and <a href="../../reference/config/">Config</a> for defaults. OAuth, LDAP, HSM and SIEM integrations belong to the host application or enterprise gateway.</p>
 
 
 

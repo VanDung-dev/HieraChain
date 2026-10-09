@@ -4345,7 +4345,7 @@
 <p><strong>File</strong>: <code>hierachain/security/verify/zk_verifier.py</code></p>
 <ul>
 <li>Mock verification compares the commitment with a hash of the public inputs. A matching hash establishes no mathematical proof of a valid transition.</li>
-<li>Production verification raises <code>ZKVerificationError</code> wrapping the unimplemented backend error for well-formed inputs; malformed inputs return <code>False</code> before backend dispatch.</li>
+<li>For well-formed inputs, production verification raises <code>ZKVerificationError</code> wrapping the unimplemented backend error. Current checks return <code>False</code> for malformed values they recognize, but wrong-typed roots or block indices can raise before backend dispatch.</li>
 <li>Loading a verification key does not make production verification available.</li>
 </ul>
 <h2 id="3-configuration-and-runtime-boundary">3. Configuration and runtime boundary</h2>

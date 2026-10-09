@@ -4390,19 +4390,17 @@
 </tbody>
 </table>
 <h2 id="source-code-context">Source Code Context</h2>
-<p>The system has <strong>Hard Enforcement</strong> mechanisms in code to block cryptocurrency terms.</p>
+<p>Event validation includes a recursive check for standalone cryptocurrency terms in dictionary keys and values.</p>
 <ul>
 <li><strong>File</strong>: <code>hierachain/core/utils.py</code></li>
 <li><strong>Function</strong>: <code>validate_no_cryptocurrency_terms</code></li>
-<li><strong>Logic</strong>: If an Event contains keywords like <code>coin</code>, <code>token</code>, <code>wallet</code> -&gt; The system will refuse processing (Raise Error).</li>
+<li><strong>Logic</strong>: <code>validate_no_cryptocurrency_terms()</code> returns <code>False</code> when it finds a forbidden term. <code>validate_event_structure()</code> also returns <code>False</code> for invalid events; each caller decides how to report rejection.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Actual excerpt from hierachain/core/utils.py</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Terms matched as standalone words by validate_no_cryptocurrency_terms</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">crypto_terms</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"mining"</span><span class="p">,</span> <span class="s2">"coin"</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">,</span> <span class="s2">"wallet"</span><span class="p">,</span> <span class="s2">"address"</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"fee"</span><span class="p">,</span> <span class="s2">"reward"</span><span class="p">,</span> <span class="s2">"coinbase"</span> 
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="c1"># Note: "transaction" may be used in the context of "Database Transaction",</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="c1"># but context must be carefully considered.</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">]</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">"transaction"</span><span class="p">,</span> <span class="s2">"mining"</span><span class="p">,</span> <span class="s2">"coin"</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">,</span> <span class="s2">"wallet"</span><span class="p">,</span> <span class="s2">"address"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s2">"sender"</span><span class="p">,</span> <span class="s2">"receiver"</span><span class="p">,</span> <span class="s2">"amount"</span><span class="p">,</span> <span class="s2">"fee"</span><span class="p">,</span> <span class="s2">"reward"</span><span class="p">,</span> <span class="s2">"coinbase"</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">]</span>
 </code></pre></div>
 <h2 id="thinking-guidance">Thinking Guidance</h2>
 <p>When users ask about "Consensus":</p>

@@ -4692,24 +4692,24 @@
 <hr />
 <h2 id="vi-du-su-dung-thuc-te">Ví dụ sử dụng thực tế</h2>
 <h3 id="1-khoi-tao-he-thong-va-tao-chuoi-cung-ung">1. Khởi tạo hệ thống và tạo chuỗi cung ứng</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Khởi tạo dữ liệu node</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Initialize node data</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>hrc<span class="w"> </span>node<span class="w"> </span>init<span class="w"> </span>--data-dir<span class="w"> </span>./my_data
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Tạo chuỗi cung ứng linh kiện</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Create a component supply chain</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
 </code></pre></div>
 <h3 id="2-ghi-nhan-quy-trinh-san-xuat">2. Ghi nhận quy trình sản xuất</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Bắt đầu sản xuất thực thể ITEM-99</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start production of entity ITEM-99</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">'{"line": "A1"}'</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Khởi chạy API với cùng cấu hình node</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Start the API with the same node configuration</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>--config<span class="w"> </span>./my_data/config.yaml<span class="w"> </span>node<span class="w"> </span>start
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Gửi proof qua REST API có xác thực và SQL storage bền vững</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Submit proofs through the authenticated REST API backed by durable SQL storage</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-API-Key: </span><span class="nv">$HRC_API_KEY</span><span class="s2">"</span><span class="w"> </span>http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 </code></pre></div>
 <h3 id="3-kiem-inh-an-toan-du-lieu">3. Kiểm định an toàn dữ liệu</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Kiểm tra 100 block gần nhất xem có bị sửa đổi không</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Check the 100 most recent blocks for tampering</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>hrc<span class="w"> </span>verify<span class="w"> </span>signatures<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 <hr />

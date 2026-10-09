@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn toàn diện và tài liệu tham khảo cho lập trình viên về 16 luồng công việc hệ thống của HieraChain bao gồm hoạt động cốt lõi, bảo mật, đồng thuận và phục hồi.">
+        <meta name="description" content="Hướng dẫn và tài liệu tham chiếu cho lập trình viên về các quy trình HieraChain: vận hành cốt lõi, bảo mật, đồng thuận và khôi phục.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -4446,8 +4446,7 @@
 
 <h1 id="tong-quan-va-huong-dan-luong-cong-viec">Tổng quan và hướng dẫn luồng công việc</h1>
 <p>HieraChain là sổ cái phân cấp thuần Python, hoạt động như plugin layer cho hạ tầng Web2 hiện có. Nó không thay thế ngăn xếp mạng doanh nghiệp vốn đã xử lý TLS/SSL, tường lửa và WAF ở API gateway. HieraChain tập trung vào tính bất biến, niềm tin phân tán, bằng chứng can thiệp và chống chối bỏ.</p>
-<p>Tài liệu này là tham khảo trung tâm cho 16 luồng công việc hệ thống trong 6 nhóm chức năng. Nó mô tả cách các luồng tương tác khi chạy và cách đọc, duy trì hoặc thêm luồng mới.</p>
-<hr />
+<p>Tài liệu này liệt kê các quy trình theo sáu nhóm chức năng. Nó mô tả cách các quy trình tương tác khi chạy và cách đọc, bảo trì hoặc bổ sung quy trình.</p>
 <h2 id="1-rao-chan-phat-trien-cot-loi">1. Rào chắn phát triển cốt lõi</h2>
 <p>Khi làm việc với luồng công việc của HieraChain, tuân thủ các rào chắn sau:</p>
 <ul>
@@ -4456,15 +4455,14 @@
 <ul>
 <li>Từ bị cấm: <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>, <code>address</code>, <code>sender</code>, <code>receiver</code>, <code>amount</code>, <code>fee</code>.</li>
 <li>Từ bắt buộc: <code>event</code> cho mục sổ cái, <code>node</code> cho peer, <code>msp_id</code> cho danh tính, <code>entity_id</code> cho tài sản nghiệp vụ.</li>
-<li>Lưu ý: <code>CrossChainValidator</code> quét commit và từ chối mã chứa từ bị cấm.</li>
+<li><code>CrossChainValidator</code> kiểm tra dữ liệu ledger/miền được cung cấp; nó không phải hook commit mã nguồn.</li>
 </ul>
 </li>
 <li>
-<p>Ràng buộc độ trễ tối thiểu: HieraChain giữ độ trễ cơ sở ở mức 10 đến 20ms. Giữ mã luồng ngắn và nhanh. Không thêm mã hóa tầng truyền tải hoặc wrapper thừa làm tăng tải CPU.</p>
+<p>Ràng buộc độ trễ thấp: Kiến trúc hướng đến độ trễ thấp; độ trễ thực tế phụ thuộc vào gom lô, lưu bền vững và triển khai. Giữ mã quy trình ngắn gọn, chạy nhanh. Không thêm mã hóa ở tầng truyền tải hoặc lớp bọc bổ sung làm tăng chi phí CPU.</p>
 </li>
 <li>Không truy cập trực tiếp bộ lưu trữ: không truy vấn SQL hoặc Redis trực tiếp. Dùng adapter lưu trữ trong <code>adapters/database/</code> (ví dụ <code>adapters/database/sqlite_adapter.py</code>).</li>
 </ul>
-<hr />
 <h2 id="2-tat-ca-luong-cong-viec-tra-cuu-nhanh">2. Tất cả luồng công việc: tra cứu nhanh</h2>
 <p>Bảng này liệt kê tất cả luồng để tra cứu nhanh:</p>
 <table>
@@ -4528,24 +4526,24 @@
 <td style="text-align: left;"><code>hierarchical/sub_chain/base.py</code> + <code>hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a></td>
+<td style="text-align: left;"><a href=".././integrity-validation/">Kiểm tra tính toàn vẹn</a></td>
 <td style="text-align: left;">D</td>
-<td style="text-align: left;">Định kỳ / thủ công / bất thường Risk Alerts</td>
-<td style="text-align: left;"><code>IntegrityReport</code> (HEALTHY / DEGRADED)</td>
-<td style="text-align: left;"><code>security/verify/block_verifier.py</code></td>
+<td style="text-align: left;">Lời gọi chủ động từ ứng dụng</td>
+<td style="text-align: left;">Tổng hợp sức khỏe hoặc báo cáo nhất quán khối/bằng chứng</td>
+<td style="text-align: left;"><code>hierarchical/hierarchy_manager/validation.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././policy-enforcement/">Thực thi Chính sách</a></td>
+<td style="text-align: left;"><a href=".././policy-enforcement/">Thực thi chính sách</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Mọi thao tác nhạy cảm về quyền</td>
+<td style="text-align: left;">Lời gọi rõ ràng đến <code>PolicyEngine</code></td>
 <td style="text-align: left;"><code>allow</code> hoặc <code>deny</code> kèm đường dẫn quyết định</td>
 <td style="text-align: left;"><code>security/policy_engine.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././websocket-streaming/">Luồng dữ liệu WebSocket</a></td>
+<td style="text-align: left;"><a href=".././websocket-streaming/">Truyền WebSocket</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Client kết nối tới <code>/ws</code>, có thể truyền <code>chain_name</code> qua query</td>
-<td style="text-align: left;">Đẩy khối/sự kiện thời gian thực</td>
+<td style="text-align: left;">Client kết nối đến <code>/ws</code>, có thể truyền tham số truy vấn <code>chain_name</code></td>
+<td style="text-align: left;">Đăng ký theo dõi; thông báo cần lời gọi broadcast từ ứng dụng</td>
 <td style="text-align: left;"><code>api/websocket/manager.py</code></td>
 </tr>
 <tr>
@@ -4556,10 +4554,10 @@
 <td style="text-align: left;"><code>api/storage/ipfs_client.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././risk-alerts/">Cảnh báo Rủi ro</a></td>
+<td style="text-align: left;"><a href=".././risk-alerts/">Phân tích rủi ro và cảnh báo</a></td>
 <td style="text-align: left;">E</td>
-<td style="text-align: left;">Lịch <code>PerformanceMonitor</code></td>
-<td style="text-align: left;">Cảnh báo được gửi; leo thang nếu không xác nhận</td>
+<td style="text-align: left;">Ứng dụng gọi <code>AlertManager.check_metric()</code></td>
+<td style="text-align: left;">Thông báo được xếp hàng và nâng cấp theo cấu hình quy tắc</td>
 <td style="text-align: left;"><code>monitoring/alert_system.py</code></td>
 </tr>
 <tr>
@@ -4570,22 +4568,21 @@
 <td style="text-align: left;"><code>integration/erp_ledger.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././msp-identity/">Danh tính &amp; Xác thực MSP</a></td>
+<td style="text-align: left;"><a href=".././msp-identity/">Danh tính và xác thực MSP</a></td>
 <td style="text-align: left;">F</td>
-<td style="text-align: left;">Đăng ký thực thể / xác thực API</td>
-<td style="text-align: left;">Xác nhận danh tính và ủy quyền thao tác</td>
+<td style="text-align: left;">Lời gọi đăng ký/xác thực MSP rõ ràng</td>
+<td style="text-align: left;">Danh tính được xác nhận + thao tác được cấp quyền</td>
 <td style="text-align: left;"><code>security/msp.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a></td>
+<td style="text-align: left;"><a href=".././key-backup/">Sao lưu và khôi phục khóa</a></td>
 <td style="text-align: left;">F</td>
-<td style="text-align: left;">Tạo khóa (<code>cli/key.py</code>)</td>
-<td style="text-align: left;">Tệp khóa / vault được sao lưu; khôi phục qua CLI</td>
+<td style="text-align: left;">Sao lưu tệp/kho khóa do người vận hành quản lý</td>
+<td style="text-align: left;">Các tệp danh tính/provider được khôi phục</td>
 <td style="text-align: left;"><code>cli/key.py</code> + <code>security/key_provider.py</code> (không có <code>key_backup_manager.py</code>)</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="3-nhom-chuc-nang-va-phan-he">3. Nhóm chức năng và phân hệ</h2>
 <p>Các luồng được nhóm thành sáu khu vực. Dùng bảng điều khiển bên dưới để tìm nhóm khớp với phân hệ bạn đang gỡ lỗi hoặc thay đổi:</p>
 <div class="grid cards">
@@ -4649,37 +4646,26 @@
 </li>
 </ul>
 </div>
-<hr />
 <h2 id="4-cach-luong-tuong-tac">4. Cách luồng tương tác</h2>
-<p>Sơ đồ cho thấy quan hệ thời gian chạy và kích hoạt giữa các luồng. Đường liền là thao tác đồng bộ hoặc chặn. Đường đứt là không đồng bộ hoặc theo sự kiện.</p>
+<p>Sơ đồ tách các luồng runtime khỏi phần tích hợp do ứng dụng cung cấp. Đường nét đứt chỉ các kết nối do bên gọi quản lý.</p>
 <pre class="mermaid"><code>flowchart TD
-    ERP["🏢 ERP System\n(SAP / Oracle)"]
-    CLIENT["🖥️ Client / SDK"]
-
-    WF14["ERP Sync"] --&gt;|add_event| WF1
-    CLIENT --&gt;|POST /events| WF1
-
-    WF15["🪪 MSP Identity"] --&gt;|authorize_action| WF1
-    WF15 --&gt;|validate_identity| WF10["⚖️ Policy Enforcement"]
-    WF10 --&gt;|allow/deny gate| WF1
-
-    WF1["📦 Event Submission"] --&gt;|block finalized| WF2["Proof Anchoring"]
-    WF1 --&gt;|broadcast_new_block| WF11["🔌 WebSocket"]
-    WF1 --&gt;|upload large data| WF12["🗄️ IPFS Storage"]
-
-    WF1 --&gt;|cross-chain op| WF3["2PC Cross-Chain"]
-    WF4["👑 BFT Consensus"] -. Separate component .-&gt; WF1
-
-    WF9["🔍 Integrity Scan"] --&gt;|DEGRADED| WF13["🚨 Risk &amp; Alerts"]
-    WF13 --&gt;|critical alert| WF6["🔧 Error Recovery"]
-    WF6 -.-&gt;|snapshot fail| WF8["♻️ Rehydration"]
-    WF8 -.-&gt;|restore state| WF1
-
-    WF15 -.-&gt;|cert issued| WF16
-
-    WF7["🗂️ Entity Tracing"] -.-&gt;|reads| WF1
-
-    ERP --&gt; WF14</code></pre>
+    CLIENT[Client or SDK] --&gt;|Ledger API| WF1[Event submission]
+    ERP[Application ERP sink] --&gt;|add_event| WF1
+    WF1 --&gt;|Apply committed block, proof due| WF2[Proof anchoring]
+    App -.-&gt;|Upload via IPFSClient.upload_json()| WF12[IPFS storage]
+    WF12 -.-&gt;|Return CID to caller| App
+    App -.-&gt;|Submit event with details_cid| WF1
+    App[Application integration] -.-&gt; MSP[MSP checks]
+    App -.-&gt; Policy[PolicyEngine checks]
+    App -.-&gt; WS[WebSocket broadcast helpers]
+    App -.-&gt; Integrity[Integrity reports]
+    Integrity -.-&gt;|Caller handles report| Alerts[AlertManager]
+    App -.-&gt; Backup[Identity backup]
+    App --&gt; Rehydrate[Explicit sync_chain]
+    Rehydrate --&gt;|Rebuild chain and indexes| WF1
+    Trace[Entity tracing] --&gt;|Read finalized history| WF1
+    App --&gt; BFT[Separate BFT library]
+    App --&gt; TwoPC[Cross-chain 2PC coordinator]</code></pre>
 <h3 id="luong-tich-hop-chinh-cho-lap-trinh-vien">Luồng tích hợp chính cho lập trình viên</h3>
 <table>
 <thead>
@@ -4690,45 +4676,44 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>ERP → ERP Sync → Gửi Sự kiện → Neo giữ Bằng chứng</strong></td>
+<td style="text-align: left;">ERP → ERP Sync → Gửi Sự kiện → Neo giữ Bằng chứng</td>
 <td style="text-align: left;">Pipeline tiếp nhận: thay đổi nghiệp vụ → sự kiện nội bộ → khối Sub-Chain → mã băm bằng chứng neo lên chuỗi gốc.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>MSP Identity → Thực thi Chính sách → Gửi Sự kiện</strong></td>
-<td style="text-align: left;">Đường xác thực bảo mật: xác minh cert nội bộ (<code>msp.py:verify_certificate</code>) → kiểm tra chính sách ABAC → chấp nhận/từ chối sự kiện.</td>
+<td style="text-align: left;">Danh tính MSP → Thực thi chính sách → Gửi sự kiện</td>
+<td style="text-align: left;">Tích hợp do bên gọi quản lý: MSP kiểm tra vai trò/chính sách tổ chức; ứng dụng có thể thêm bước kiểm tra <code>PolicyEngine</code> riêng trước khi gửi.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Phục hồi Lỗi</strong></td>
-<td style="text-align: left;">Đường phát hiện bất thường: <code>block_verifier</code> → gửi cảnh báo → phục hồi vận hành.</td>
+<td style="text-align: left;">Kiểm tra tính toàn vẹn → Rủi ro và cảnh báo → Khôi phục sau lỗi</td>
+<td style="text-align: left;">Tích hợp do bên gọi quản lý: kiểm tra kết quả tính toàn vẹn, cung cấp metric hoặc quy tắc cảnh báo, rồi chọn hành động khôi phục vận hành.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Phục hồi Lỗi → Nạp lại Trạng thái</strong></td>
-<td style="text-align: left;">Dự phòng đồng bộ trạng thái: replay journal và nạp lại chuỗi dựng lại trạng thái trong bộ nhớ từ storage bền vững.</td>
+<td style="text-align: left;">Khôi phục sau lỗi → Nạp lại trạng thái chuỗi</td>
+<td style="text-align: left;">Phát lại lúc khởi động ordering và đồng bộ Sub-Chain khôi phục trạng thái cục bộ; không có hook tự động từ lỗi snapshot sang dựng lại chuỗi.</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="5-huong-dan-lap-trinh-vien-duy-tri-luong-cong-viec">5. Hướng dẫn lập trình viên: duy trì luồng công việc</h2>
 <p>Giữ tài liệu luồng đồng bộ với mã khi bạn thêm tính năng hoặc sửa hành vi:</p>
 <h3 id="cau-truc-cua-mot-tai-lieu-luong">Cấu trúc của một tài liệu luồng</h3>
 <p>Mỗi trang luồng (ví dụ <code>event-submission.md</code>) có bố cục sau. Nó phải chứa:</p>
 <ol>
-<li><strong>Front-matter Zensical</strong>: metadata YAML với <code>title</code>, <code>description</code> và <code>icon</code>. Không có tiền tố WF-number.</li>
-<li><strong>Tiêu đề H1</strong>: <code># [Title]</code> khớp với front-matter.</li>
-<li><strong>Tổng quan</strong>: luồng làm gì và khi nào dùng.</li>
-<li><strong>Sơ đồ luồng</strong>: sơ đồ Mermaid sequence hoặc flowchart thể hiện tương tác thời gian chạy.</li>
-<li><strong>Chi tiết từng bước</strong>: bảng ánh xạ số thứ tự tới hành động của lập trình viên.</li>
-<li><strong>Xử lý lỗi</strong>: bảng ánh xạ lỗi (node offline, lỗi xác thực) tới biện pháp xử lý.</li>
-<li><strong>Lớp và phương thức chính</strong>: con trỏ từ bước luồng tới mã (ví dụ <code>SubChain.add_event()</code>).</li>
-<li><strong>Liên quan</strong>: liên kết tới luồng anh em hoặc luồng tiếp theo.</li>
+<li>Front-matter Zensical: metadata YAML với <code>title</code>, <code>description</code> và <code>icon</code>. Không có tiền tố WF-number.</li>
+<li>Tiêu đề H1: <code># [Title]</code> khớp với front-matter.</li>
+<li>Tổng quan: luồng làm gì và khi nào dùng.</li>
+<li>Sơ đồ luồng: sơ đồ Mermaid sequence hoặc flowchart thể hiện tương tác thời gian chạy.</li>
+<li>Chi tiết từng bước: bảng ánh xạ số thứ tự tới hành động của lập trình viên.</li>
+<li>Xử lý lỗi: bảng ánh xạ lỗi (node offline, lỗi xác thực) tới biện pháp xử lý.</li>
+<li>Lớp và phương thức chính: con trỏ từ bước luồng tới mã (ví dụ <code>SubChain.add_event()</code>).</li>
+<li>Liên quan: liên kết tới luồng anh em hoặc luồng tiếp theo.</li>
 </ol>
 <h3 id="quy-trinh-them-hoac-sua-luong">Quy trình thêm hoặc sửa luồng</h3>
 <ol>
-<li><strong>Viết Markdown chuẩn</strong>: lưu luồng mới dưới <code>docs/en/workflows/name.md</code> dùng hệ thống thiết kế hiện tại.</li>
-<li><strong>Đăng ký trong zensical.toml</strong>: thêm luồng vào cây <code>Workflows</code> trong <a href="../../../zensical.toml">zensical.toml</a> với tên gọn.</li>
-<li><strong>Quét thuật ngữ</strong>: kiểm tra không thêm từ vựng tiền mã hóa bị cấm.</li>
+<li>Viết Markdown chuẩn: lưu luồng mới dưới <code>docs/en/workflows/name.md</code> dùng hệ thống thiết kế hiện tại.</li>
+<li>Đăng ký trong zensical.toml: thêm luồng vào cây <code>Workflows</code> trong <a href="https://github.com/VanDung-dev/HieraChain/blob/main/zensical.toml">zensical.toml</a> với tên gọn.</li>
+<li>Quét thuật ngữ: kiểm tra không thêm từ vựng tiền mã hóa bị cấm.</li>
 <li>
-<p><strong>Biên dịch và xác thực</strong>: chạy build Zensical trong môi trường HieraChain để kiểm tra định dạng và liên kết:</p>
+<p>Biên dịch và xác thực: chạy build Zensical trong môi trường HieraChain để kiểm tra định dạng và liên kết:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>zensical<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>zensical.toml
 </code></pre></div>
 </li>

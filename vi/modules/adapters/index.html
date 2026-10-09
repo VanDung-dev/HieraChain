@@ -4706,13 +4706,13 @@
 <h3 id="vai-tro-chinh">Vai trò chính</h3>
 <ul>
 <li>Chuẩn hóa thao tác đọc và ghi dữ liệu cho chuỗi, khối, sự kiện, bằng chứng và trạng thái thực thể.</li>
-<li>Hỗ trợ nhiều môi trường, với PostgreSQL là mặc định và SQLite là backend fallback cục bộ.</li>
+<li>Hỗ trợ nhiều môi trường, với PostgreSQL là mặc định và SQLite là backend được chọn rõ ràng.</li>
 <li>Đảm bảo phân lập dữ liệu và kiểm tra tính hợp lệ của đầu vào trên các hệ quản trị cơ sở dữ liệu.</li>
 </ul>
 <h2 id="2-cac-adapter-co-so-du-lieu-hien-co">2. Các adapter cơ sở dữ liệu hiện có</h2>
 <p>Toàn bộ adapter lưu trữ nằm tại <code>hierachain/adapters/database/</code>.</p>
 <h3 id="21-sqlite-database-adapter-sqlite_adapterpy">2.1 SQLite Database Adapter (<code>sqlite_adapter.py</code>)</h3>
-<p>Adapter fallback khi PostgreSQL không khả dụng, đồng thời là lựa chọn tường minh cho thiết lập một node nhẹ.</p>
+<p>Adapter được chọn rõ ràng cho triển khai cục bộ. PostgreSQL lỗi không tự chuyển sang SQLite.</p>
 <ul>
 <li>Công nghệ: SQLite3 qua <code>sqlite3</code> và <code>hierachain/adapters/database/base/sql_adapter.py</code> (<code>SQLBase</code>).</li>
 <li>Lược đồ dữ liệu: Khởi tạo qua <code>sqlite_schema.py</code>, tạo các bảng <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code> và <code>chain_state</code>.</li>
@@ -4725,7 +4725,7 @@
 <li>Công nghệ: PostgreSQL với cơ chế connection pooling.</li>
 <li>Lược đồ dữ liệu: Khởi tạo qua <code>postgres_schema.py</code> với cấu trúc tương thích hoàn toàn với SQLite.</li>
 <li>Điểm mạnh: Khả năng ghi đồng thời lớn, quản lý kết nối hiệu quả, hỗ trợ công cụ sao lưu doanh nghiệp.</li>
-<li>Tính năng truy vấn: Tối ưu cho phân vùng dữ liệu và quét chỉ mục cho các bản ghi kiểm toán dung lượng lớn.</li>
+<li>Truy vấn dùng index event SQL; adapter không tự cấu hình partitioning.</li>
 </ul>
 <h3 id="23-redis-database-adapter-redis_adapterpy">2.3 Redis Database Adapter (<code>redis_adapter.py</code>)</h3>
 <p>Adapter trên bộ nhớ phục vụ đọc dữ liệu tốc độ cao và tra cứu trạng thái thực thể tức thời.</p>
@@ -4741,8 +4741,8 @@
 <tr>
 <th style="text-align: left;">Đặc điểm</th>
 <th style="text-align: left;">SQLiteAdapter</th>
-<th style="text-align: left;">PostgreSQLAdapter</th>
-<th style="text-align: left;">RedisAdapter</th>
+<th style="text-align: left;">PostgresAdapter</th>
+<th style="text-align: left;">RedisStorageAdapter</th>
 </tr>
 </thead>
 <tbody>
@@ -4758,40 +4758,19 @@
 <td style="text-align: left;">Môi trường sản xuất, cụm đa node</td>
 <td style="text-align: left;">Truy vấn trạng thái độ trễ thấp, cache</td>
 </tr>
-<tr>
-<td style="text-align: left;">Độ trễ ghi</td>
-<td style="text-align: left;">Thấp</td>
-<td style="text-align: left;">Thấp đến trung bình</td>
-<td style="text-align: left;">Rất thấp</td>
-</tr>
-<tr>
-<td style="text-align: left;">Độ linh hoạt truy vấn</td>
-<td style="text-align: left;">Toàn bộ SQL</td>
-<td style="text-align: left;">Toàn bộ SQL</td>
-<td style="text-align: left;">Tra cứu khóa và chỉ mục</td>
-</tr>
-<tr>
-<td style="text-align: left;">Tính bền vững</td>
-<td style="text-align: left;">ACID trên file cục bộ</td>
-<td style="text-align: left;">ACID trên máy chủ doanh nghiệp</td>
-<td style="text-align: left;">Snapshot RDB / AOF</td>
-</tr>
-<tr>
-<td style="text-align: left;">Dịch vụ bên ngoài</td>
-<td style="text-align: left;">Không</td>
-<td style="text-align: left;">PostgreSQL 13+</td>
-<td style="text-align: left;">Redis 6+</td>
-</tr>
 </tbody>
 </table>
+<p>| Độ linh hoạt truy vấn | Toàn bộ SQL | Toàn bộ SQL | Tra cứu khóa và chỉ mục |
+| Tính bền vững | ACID trên file cục bộ | ACID trên máy chủ doanh nghiệp | Snapshot RDB / AOF |
+| Dịch vụ bên ngoài | Không | PostgreSQL | Redis |</p>
 <h2 id="4-cau-hinh-va-su-dung">4. Cấu hình và sử dụng</h2>
 <h3 id="cau-hinh-qua-settings">Cấu hình qua settings</h3>
 <p>Thiết lập backend lưu trữ bằng biến môi trường:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Các backend hỗ trợ: sqlite, postgres, redis, memory</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Available backends: sqlite, postgres, redis, memory</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>sqlite
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">"sqlite:///data/ledger.db"</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Hoặc đối với PostgreSQL</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Or for PostgreSQL</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># export HRC_STORAGE_BACKEND=postgres</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># export DATABASE_URL="postgresql://user:pass@localhost:5432/hierachain"</span>
 </code></pre></div>
@@ -4804,16 +4783,16 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="su-dung-postgresql">Sử dụng PostgreSQL</h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.postgres_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">PostgreSQLAdapter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.postgres_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">PostgresAdapter</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">PostgreSQLAdapter</span><span class="p">(</span><span class="n">connection_string</span><span class="o">=</span><span class="s2">"postgresql://user:pass@localhost:5432/hierachain"</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">PostgresAdapter</span><span class="p">(</span><span class="n">database_url</span><span class="o">=</span><span class="s2">"postgresql://user:pass@localhost:5432/hierachain"</span><span class="p">)</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">get_chain_statistics</span><span class="p">(</span><span class="s2">"supply_chain_ledger"</span><span class="p">)</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="su-dung-redis">Sử dụng Redis</h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.redis_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisAdapter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.redis_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisStorageAdapter</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">RedisAdapter</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">RedisStorageAdapter</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">get_chain_statistics</span><span class="p">(</span><span class="s2">"supply_chain_ledger"</span><span class="p">)</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
@@ -4828,7 +4807,7 @@
 <p>Adapter ghi nhận truy vấn và sự kiện kết nối qua <code>SecureLogger</code>, tự động ẩn thông tin đăng nhập, token xác thực và dữ liệu nghiệp vụ nhạy cảm.</p>
 <h2 id="6-bao-tri-va-luu-giu-du-lieu">6. Bảo trì và lưu giữ dữ liệu</h2>
 <ul>
-<li>Dọn dẹp dữ liệu: Các adapter quan hệ hỗ trợ xóa các bản ghi sự kiện cũ vượt quá ngưỡng cấu hình qua <code>HRC_SQL_RETENTION_DAYS</code>.</li>
+<li><code>HRC_SQL_RETENTION_DAYS</code> được khai báo trong settings nhưng không có worker retention runtime sử dụng. Cấu hình này không tự xóa lịch sử event.</li>
 <li>Nhật ký và journal: Nhật ký nhị phân và dữ liệu kiểm toán lỗi sử dụng <code>hierachain/core/parquet_log.py</code> và <code>hierachain/error_mitigation/journal.py</code>, tách rời việc lưu trữ chuỗi khỏi hệ thống log chẩn đoán.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>
@@ -4837,6 +4816,7 @@
 <li><a href="../../reference/config/">Tham chiếu cấu hình</a></li>
 <li><a href=".././security/">Tổng quan bảo mật</a></li>
 </ul>
+<p>Redis adapters phục vụ indexing/truy vấn phụ trợ; <code>HierarchyManager</code> từ chối Redis làm storage block hierarchy bền vững. Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.</p>
 
 
 

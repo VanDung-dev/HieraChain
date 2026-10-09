@@ -33,7 +33,7 @@
     
     
       
-        <title>Fault-tolerance & Integrity - HieraChain Docs</title>
+        <title>Chịu lỗi và toàn vẹn - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fault-tolerance-integrity" class="md-skip">
+        <a href="#chiu-loi-va-toan-ven" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fault-tolerance & Integrity
+              Chịu lỗi và toàn vẹn
             
           </span>
         </div>
@@ -2582,10 +2582,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bao-ve-tai-nguyen-thuc-te" class="md-nav__link">
+  <a href="#bao-ve-tai-nguyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bảo vệ tài nguyên (thực tế)
+        Bảo vệ tài nguyên
       </span>
     </span>
   </a>
@@ -2593,10 +2593,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kiem-tra-toan-ven-thuc-te" class="md-nav__link">
+  <a href="#kiem-tra-toan-ven" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiểm tra toàn vẹn (thực tế)
+        Kiểm tra toàn vẹn
       </span>
     </span>
   </a>
@@ -4247,10 +4247,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bao-ve-tai-nguyen-thuc-te" class="md-nav__link">
+  <a href="#bao-ve-tai-nguyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bảo vệ tài nguyên (thực tế)
+        Bảo vệ tài nguyên
       </span>
     </span>
   </a>
@@ -4258,10 +4258,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kiem-tra-toan-ven-thuc-te" class="md-nav__link">
+  <a href="#kiem-tra-toan-ven" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiểm tra toàn vẹn (thực tế)
+        Kiểm tra toàn vẹn
       </span>
     </span>
   </a>
@@ -4310,28 +4310,27 @@
   
 
 
-<h1 id="fault-tolerance-integrity">Fault-tolerance &amp; Integrity</h1>
-<p>Trang này trước đây mô tả <code>security/resource_guard.py</code> và <code>security/integrity.py</code>, các file này không tồn tại trong <code>hierachain/</code>. Khả năng chịu lỗi trong codebase được phân tán ở nhiều nơi khác.</p>
-<h2 id="bao-ve-tai-nguyen-thuc-te">Bảo vệ tài nguyên (thực tế)</h2>
+<h1 id="chiu-loi-va-toan-ven">Chịu lỗi và toàn vẹn</h1>
+<p>Giới hạn tài nguyên và kiểm tra toàn vẹn ledger chạy tại API middleware, ordering service và block verifier.</p>
+<h2 id="bao-ve-tai-nguyen">Bảo vệ tài nguyên</h2>
 <ul>
-<li>Giới hạn rate và payload nằm trong <code>hierachain/api/middleware.py</code> (<code>add_rate_limit</code>, <code>add_payload_limit</code> với <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code>; payload được kiểm tra qua <code>request.stream()</code> với giới hạn 1MB).</li>
-<li>Guard cho event pool và RAM là <code>HRC_EVENT_POOL_MAX_SIZE</code> (10k) và <code>HRC_RAM_CRITICAL_THRESHOLD</code> (95%), được kiểm tra trong các đường dẫn ordering và storage.</li>
-<li>Không có <code>ResourceGuardMiddleware</code>. Bảng ngưỡng 70%/90% và việc shed tải trong <code>monitoring/performance_monitor.py</code> mô tả trước đây là bịa. Hãy dùng middleware của app kết hợp với giới hạn ở reverse proxy.</li>
+<li>Giới hạn rate và payload nằm trong <code>hierachain/api/middleware.py</code> (<code>add_rate_limit</code>, <code>add_payload_limit</code> với <code>HRC_RATE_LIMIT</code>, <code>HRC_RATE_LIMIT_RPM</code>, <code>HRC_RATE_LIMIT_BACKEND</code>, <code>HRC_TRUSTED_PROXIES</code>). Với request POST, PUT và PATCH, middleware kiểm tra <code>Content-Length</code> hợp lệ với giới hạn 1 MiB; chỉ đếm byte qua <code>request.stream()</code> khi thiếu header này.</li>
+<li><code>HRC_EVENT_POOL_MAX_SIZE</code> mặc định là 10.000 và giới hạn hàng đợi ordering. <code>HRC_RAM_CRITICAL_THRESHOLD</code> được khai báo với mặc định 95% nhưng không có runtime consumer trong <code>hierachain/</code>. Khi được gọi, <code>ResourceValidator</code> báo các ngưỡng CPU, memory và disk được cấu hình riêng; nó không thực thi ngưỡng RAM này trong ordering hay storage.</li>
+<li>Dùng middleware ứng dụng kết hợp giới hạn tại reverse proxy. <code>PerformanceMonitor</code> báo cáo metric; nó không cài guard CPU/RAM cho từng request.</li>
 </ul>
-<h2 id="kiem-tra-toan-ven-thuc-te">Kiểm tra toàn vẹn (thực tế)</h2>
-<p>Không có quét chữ ký lúc khởi động trong <code>security/integrity.py</code>. Cơ chế toàn vẹn thực tế là:</p>
+<h2 id="kiem-tra-toan-ven">Kiểm tra toàn vẹn</h2>
+<p>Việc nạp và xác minh ledger dùng các cơ chế sau:</p>
 <ul>
 <li>Merkle và chain link trong <code>hierachain/core/block.py</code> và <code>core/merkle_tree.py</code> (tiền tố phân tách domain <code>0x01</code>) và <code>consensus/ordering/storage.py:_verify_chain_links()</code> (chuỗi <code>previous_hash</code>).</li>
 <li>Xác minh proof trong <code>hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain</code> (quét fallback) và <code>security/verify/block_verifier.py</code>.</li>
 <li>Cơ chế toàn vẹn runtime dùng chain link, Merkle root, xác minh proof và consensus validation. Snapshot trạng thái và rollback thuộc trách nhiệm deployment.</li>
-<li><code>BlockVerifier.verify_chain()</code> xác minh toàn bộ chain: block đầu tiên phải là genesis ở index <code>0</code> với <code>previous_hash</code> bằng <code>"0"</code>. API này không nhận lịch sử một phần; bên gọi phải cung cấp toàn bộ chain.</li>
+<li><code>BlockVerifier.verify_chain()</code> kiểm tra chuỗi được truyền vào. Với chuỗi không rỗng, block đầu phải là genesis ở index <code>0</code> với <code>previous_hash</code> bằng <code>"0"</code>, và các liên kết giữa những block đã cung cấp được kiểm tra. Chuỗi rỗng trả <code>VALID</code>. API không nhận tip height hoặc hash dự kiến, nên một tiền tố hợp lệ nhưng thiếu các block phía sau vẫn có thể được chấp nhận.</li>
 </ul>
 <pre class="mermaid"><code>graph LR
     A[Block finalize] --&gt; B[previous_hash check]
     B --&gt; C[Merkle root verify]
     C --&gt; D[Proof verify on MainChain]
-    D --&gt; E[Phục hồi vận hành nếu cần]</code></pre>
-<hr />
+    D --&gt; E[Operational recovery if needed]</code></pre>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href="../../modules/error-mitigation/">Xử lý lỗi</a></li>

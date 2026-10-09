@@ -4284,9 +4284,9 @@
 <td>Khóa truy cập API; <code>hierachain/security/verify/api_key_verifier.py</code>.</td>
 </tr>
 <tr>
-<td>Resource Guard</td>
-<td>Resource Guard</td>
-<td>Middleware bảo vệ tài nguyên; <code>hierachain/security/brute_force_protector.py</code>.</td>
+<td>API-key brute-force protection</td>
+<td>Bảo vệ brute-force API key</td>
+<td>Theo dõi lần xác thực API key thất bại theo IP và khóa IP tạm thời; key prefix chỉ dùng để ghi log; <code>hierachain/security/brute_force_protector.py</code>.</td>
 </tr>
 <tr>
 <td>Entity Tracer</td>
@@ -4356,7 +4356,7 @@
 <tr>
 <td>Cross‑level State Sync</td>
 <td>Đồng bộ liên tầng</td>
-<td>Đồng bộ qua <code>hierachain/cluster/cross_level_sync.py</code> + <code>hierarchical/hierarchy_manager/</code> + <code>HRC_CROSS_LEVEL_*</code>.</td>
+<td>Đồng bộ qua <code>hierachain/cluster/cross_level_sync.py</code> + <code>hierachain/hierarchical/hierarchy_manager/</code> + <code>HRC_CROSS_LEVEL_*</code>.</td>
 </tr>
 <tr>
 <td>Identity Manager</td>

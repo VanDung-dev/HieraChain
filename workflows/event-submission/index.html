@@ -4400,9 +4400,8 @@
 
 <h1 id="event-submission">Event submission</h1>
 <h2 id="overview">Overview</h2>
-<p>The Ledger API validates each event request. <code>SubChain.add_event()</code> then sends the event to <code>OrderingService</code>, which journals and queues it before returning <code>event_id</code>. The ID confirms acceptance for ordering; block commitment happens later. A background processor certifies and batches events, builds blocks, and puts them in the commit queue. The Sub-Chain consumer finalizes and persists each block. By default, Sub-Chain batches 50 events and waits 1.0 second before creating a block. Configure Main-Chain consensus separately with <code>HRC_MAINCHAIN_CONSENSUS</code>.</p>
+<p>The Ledger API validates each event request. <code>SubChain.add_event()</code> then sends the event to <code>OrderingService</code>, which journals and queues it before returning <code>event_id</code>. The ID confirms acceptance for ordering; block commitment happens later. A background processor certifies and batches events. The orderer builds each block, assigns its index and previous hash, runs the configured consensus finalizer, signs the header, and persists the block before placing it in the commit queue. The Sub-Chain consumer applies that block unchanged to the local chain and WorldState. By default, Sub-Chain batches 50 events and waits 1.0 second before creating a block. Configure Main-Chain consensus separately with <code>HRC_MAINCHAIN_CONSENSUS</code>.</p>
 <p>For PoA and PoF diagrams, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
-<hr />
 <h2 id="flow-diagram">Flow diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
@@ -4432,25 +4431,26 @@
         OS-&gt;&gt;BM: create_block_async(raw_event_data)
         BM-&gt;&gt;BM: Build Block
         BM-&gt;&gt;BM: commit_block()
-        Note over BM: Persist ordered block and enqueue it in commit_queue
+        BM-&gt;&gt;BM: Assign index, previous_hash and creator_id
+        BM-&gt;&gt;PRF: finalize_block(block, previous_block)
+        PRF--&gt;&gt;BM: Finalized block
+        BM-&gt;&gt;BM: Sign block header
+        BM-&gt;&gt;DB: save_block(block, chain_name)
+        Note over BM: Enqueue persisted block in commit_queue
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 3 — Asynchronous finalization and persistence
+        Note over SC: Phase 3: Apply committed block
         Note over SC: Background consumer processes the commit_queue
 
         SC-&gt;&gt;OS: get_next_block()
         OS--&gt;&gt;SC: Block
-        SC-&gt;&gt;SC: Set block index and hash links
-        SC-&gt;&gt;PRF: finalize_block(block, chain_name)
-        PRF--&gt;&gt;SC: Finalized block
-        SC-&gt;&gt;DB: Persist finalized block
-        SC-&gt;&gt;SC: Add block to Sub-Chain
+        SC-&gt;&gt;SC: Validate and add unchanged block
+        SC-&gt;&gt;SC: WorldState.apply_block(block)
         SC-&gt;&gt;SC: auto_submit_proof_if_needed()
 
         Note over SC: → Triggers Proof Anchoring
     end</code></pre>
-<hr />
 <h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
 <table>
 <thead>
@@ -4461,40 +4461,39 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>1. API receive</strong></td>
+<td style="text-align: left;">1. API receive</td>
 <td style="text-align: left;"><code>POST /api/ledger/chains/{chain_name}/events</code> validates the request schema and passes the event to the Sub-Chain</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Enqueue</strong></td>
+<td style="text-align: left;">2. Enqueue</td>
 <td style="text-align: left;"><code>SubChain.add_event()</code> supplies missing internal defaults and validates the event structure before calling <code>OrderingService.receive_event()</code>; the orderer journals the event before queueing it and returns an <code>event_id</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Background certification</strong></td>
+<td style="text-align: left;">3. Background certification</td>
 <td style="text-align: left;">The Ordering Service processes queued events through its certifier; this occurs after the API acknowledgement</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>4. Batch</strong></td>
+<td style="text-align: left;">4. Batch</td>
 <td style="text-align: left;"><code>BlockBuilder.add_event()</code> adds certified events to a batch; size, timeout, or an explicit flush returns the batch data</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Build and order commit</strong></td>
-<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code> builds a <code>Block</code>; <code>commit_block()</code> persists the ordering block and puts it in <code>commit_queue</code></td>
+<td style="text-align: left;">5. Build</td>
+<td style="text-align: left;"><code>OrderingBlockManager.create_block_async()</code> builds a <code>Block</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Sub-Chain finalization</strong></td>
-<td style="text-align: left;">The consumer dequeues the block, sets its index and hash links, then calls the configured <code>finalize_block()</code> implementation (PoA by default)</td>
+<td style="text-align: left;">6. Finalize and persist</td>
+<td style="text-align: left;"><code>commit_block()</code> assigns index/link/creator, calls the consensus finalizer, signs the header and saves the block before queueing it</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>7. Chain persistence</strong></td>
-<td style="text-align: left;">The finalized block is saved through the configured storage handler and added to the Sub-Chain</td>
+<td style="text-align: left;">7. Apply</td>
+<td style="text-align: left;">The consumer validates and adds the unchanged block, then updates WorldState; it does not persist the block again</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. Proof trigger</strong></td>
+<td style="text-align: left;">8. Proof trigger</td>
 <td style="text-align: left;"><code>auto_submit_proof_if_needed()</code> may submit a proof to the Main Chain when its configured threshold is met</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="event-structure">Event structure</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">event</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">"entity_id"</span><span class="p">:</span> <span class="s2">"product-SKU-001"</span><span class="p">,</span>    <span class="c1"># Domain entity identifier</span>
@@ -4510,7 +4509,6 @@
 <blockquote>
 <p>The Ledger API requires <code>entity_id</code> and <code>event_type</code>, and maps <code>event_type</code> to the internal <code>event</code> field. Defaults in <code>SubChain.add_event()</code> apply to internal calls and do not make those API fields optional. <code>SubChain.add_event()</code> rejects malformed events and forbidden terminology before enqueueing. The returned <code>event_id</code> acknowledges acceptance for ordering, not block finalization.</p>
 </blockquote>
-<hr />
 <h2 id="error-handling">Error handling</h2>
 <table>
 <thead>
@@ -4541,12 +4539,15 @@
 <td style="text-align: left;">The error is logged and the Ordering Service enters <code>MAINTENANCE</code>; the block is not added to <code>commit_queue</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Block finalization or persistence fails</td>
-<td style="text-align: left;">The Sub-Chain consumer logs the error and continues its loop; the dequeued block is not explicitly requeued by that loop</td>
+<td style="text-align: left;">Consensus finalization or signing fails</td>
+<td style="text-align: left;">The orderer enters <code>MAINTENANCE</code> unless already in a terminal/restricted status; the block is not added to the commit queue</td>
+</tr>
+<tr>
+<td style="text-align: left;">Consumer rejects the committed block</td>
+<td style="text-align: left;"><code>add_block()</code> failure sets the orderer to <code>MAINTENANCE</code>, sets <code>should_stop</code>, and logs the rejected block</td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
@@ -4578,7 +4579,7 @@
 <td style="text-align: left;"><code>hierachain/consensus/ordering/block_manager.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Finalize and persist Sub-Chain block</td>
+<td style="text-align: left;">Apply persisted Sub-Chain block</td>
 <td style="text-align: left;"><code>_process_and_finalize_single_block()</code></td>
 <td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/block.py</code></td>
 </tr>
@@ -4589,14 +4590,13 @@
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a>: PoA and PoF sub-diagrams</li>
 <li><a href=".././proof-anchoring/">Proof Anchoring</a>: triggered after block finalized</li>
 <li><a href=".././bft-consensus/">BFT Consensus</a>: full 3-phase PBFT flow</li>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a>: gates access before <code>add_event()</code></li>
-<li><a href=".././msp-identity/">MSP Identity</a>: <code>authorize_action()</code> called before submission</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: policy checks for operations explicitly routed through <code>PolicyEngine</code></li>
+<li><a href=".././msp-identity/">MSP Identity</a>: membership checks for callers using <code>HierarchicalMSP</code></li>
 </ul>
 
 

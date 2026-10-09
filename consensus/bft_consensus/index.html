@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Byzantine fault-tolerant PBFT consensus with a View Change mechanism.">
+        <meta name="description" content="Separate PBFT library: signed phase votes, view changes and in-memory application retry.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2852,10 +2852,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -2863,10 +2863,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bft-module-architecture" class="md-nav__link">
+  <a href="#components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        BFT Module Architecture
+        Components
       </span>
     </span>
   </a>
@@ -2874,10 +2874,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pbft-protocol-flow" class="md-nav__link">
+  <a href="#pbft-phases" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        PBFT Protocol Flow
+        PBFT phases
       </span>
     </span>
   </a>
@@ -2885,60 +2885,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#advanced-protection-mechanisms" class="md-nav__link">
+  <a href="#application-and-retry" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Advanced Protection Mechanisms
+        Application and retry
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Advanced Protection Mechanisms">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-view-change-proof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. View Change Proof
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-sequence-number-nonce" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Sequence Number &amp; Nonce
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. ZK Integration
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bft-configuration" class="md-nav__link">
+  <a href="#view-changes-and-replay-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        BFT Configuration
+        View changes and replay limits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-zk-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional ZK check
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuration
       </span>
     </span>
   </a>
@@ -4319,10 +4302,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Scope
       </span>
     </span>
   </a>
@@ -4330,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bft-module-architecture" class="md-nav__link">
+  <a href="#components" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        BFT Module Architecture
+        Components
       </span>
     </span>
   </a>
@@ -4341,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pbft-protocol-flow" class="md-nav__link">
+  <a href="#pbft-phases" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        PBFT Protocol Flow
+        PBFT phases
       </span>
     </span>
   </a>
@@ -4352,60 +4335,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#advanced-protection-mechanisms" class="md-nav__link">
+  <a href="#application-and-retry" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Advanced Protection Mechanisms
+        Application and retry
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Advanced Protection Mechanisms">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-view-change-proof" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        1. View Change Proof
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-sequence-number-nonce" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        2. Sequence Number &amp; Nonce
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-zk-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        3. ZK Integration
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bft-configuration" class="md-nav__link">
+  <a href="#view-changes-and-replay-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        BFT Configuration
+        View changes and replay limits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-zk-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional ZK check
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuration
       </span>
     </span>
   </a>
@@ -4454,47 +4420,51 @@
   
 
 
-<h1 id="bft-consensus-hierachainconsensusbft">BFT Consensus (<code>hierachain/consensus/bft/*</code>)</h1>
-<h2 id="overview">Overview</h2>
-<p><strong>BFT Consensus</strong> is HieraChain's Byzantine fault-tolerant consensus mechanism. The protocol uses <code>n &gt;= 3f + 1</code> to tolerate up to <code>f</code> faulty or malicious nodes, including nodes that corrupt data or deny service. This implementation is separate from the MainChain and SubChain runtime paths.</p>
-<hr />
-<h2 id="bft-module-architecture">BFT Module Architecture</h2>
-<p>The module contains these components:</p>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>BFT Engine</strong></p>
-<hr />
-<p><strong>Files</strong>: <code>consensus.py</code>, <code>engine.py</code></p>
-<p><code>BFTConsensus.request()</code> starts the <strong>PBFT</strong> phases. <code>BFTConsensusEngine</code> validates PRE-PREPARE messages, records phase votes, and applies a committed operation when its application write succeeds.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m6 9h-5l1.81-1.81A3.94 3.94 0 0 0 12 8a4 4 0 1 0 3.86 5h2.05A6 6 0 1 1 12 6a5.9 5.9 0 0 1 4.22 1.78L18 6Z"/></svg></span> <strong>View Manager</strong></p>
-<hr />
-<p><strong>File</strong>: <code>view_change.py</code></p>
-<p>Detects when the Primary node is unresponsive and triggers <strong>View Change</strong> to elect a new Leader.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 10v3h6v5H8v3l-6-5.5zm14-1.5L16 3v3h-6v5h6v3z"/></svg></span> <strong>BFT Network</strong></p>
-<hr />
-<p><strong>File</strong>: <code>dispatcher.py</code></p>
-<p>Uses <strong>ZeroMQ</strong> to broadcast and route consensus messages.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 18v4h-4v-3h-3v-3h-3l-2.26-2.26c-.55.17-1.13.26-1.74.26a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6c0 .61-.09 1.19-.26 1.74zM7 5a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2"/></svg></span> <strong>BFT Crypto</strong></p>
-<hr />
-<p><strong>Files</strong>: <code>helpers.py</code>, <code>types.py</code></p>
-<p>Handles Ed25519 signing, hashing, and <strong>Zero-Knowledge (ZK)</strong> proof verification for each consensus message.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="pbft-protocol-flow">PBFT Protocol Flow</h2>
-<p>The standalone BFT component is separate from the current MainChain and SubChain runtime paths. The demo and library API use <code>BFTConsensus</code> explicitly.</p>
-<p>The primary hashes the complete request as canonical JSON. Each replica recomputes that digest before it accepts PRE-PREPARE, so changing any request field while retaining the original digest and signature is rejected. The digest is included in the signed BFT message.</p>
-<p>Canonical request encoding uses Python standard-library <code>json</code> through <code>hierachain.serialization.dumps_canonical_json</code>. It preserves the established BFT request digest format: sorted fields, compact separators, unescaped UTF-8 text and Python finite-number formatting. Non-finite numbers, circular values and unsupported JSON types are rejected.</p>
-<p>Local phase votes are tracked per sequence. An admitted request's PREPARE quorum can produce its local COMMIT even while another sequence has changed the displayed consensus state.</p>
-<p>Each node records its own signed PREPARE and COMMIT vote once before broadcasting it. Quorums count unique senders, including the local vote: <code>2f</code> PREPARE votes and <code>2f + 1</code> COMMIT votes.</p>
+<h1 id="bft-consensus-hierachainconsensusbft">BFT consensus (<code>hierachain/consensus/bft/*</code>)</h1>
+<h2 id="scope">Scope</h2>
+<p><code>BFTConsensus</code> is a separate library component. MainChain and SubChain do not instantiate it; running several API nodes or setting <code>BFT_ENABLED</code> does not connect PBFT to those chains. Callers supply a signing key or node identity, approved node public keys, transport and application integration.</p>
+<p>The constructor requires <code>n &gt;= 3f + 1</code>, where <code>n</code> is the length of <code>all_nodes</code>. Four nodes are required when <code>f=1</code>. Every node must agree on the ordered membership list because the primary is <code>all_nodes[view % n]</code>.</p>
+<h2 id="components">Components</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Component</th>
+<th style="text-align: left;">File</th>
+<th style="text-align: left;">Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>BFTConsensus</code></td>
+<td style="text-align: left;"><code>consensus.py</code></td>
+<td style="text-align: left;">Request admission, message dispatch and consensus state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTConsensusEngine</code></td>
+<td style="text-align: left;"><code>engine.py</code></td>
+<td style="text-align: left;">PRE-PREPARE validation, phase votes and application writes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTViewChangeManager</code></td>
+<td style="text-align: left;"><code>view_change.py</code></td>
+<td style="text-align: left;">Timeout, VIEW-CHANGE votes and NEW-VIEW proof validation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BFTMessageDispatcher</code></td>
+<td style="text-align: left;"><code>dispatcher.py</code></td>
+<td style="text-align: left;">Send through a supplied ZeroMQ node or caller-provided send function</td>
+</tr>
+<tr>
+<td style="text-align: left;">Signature and request helpers</td>
+<td style="text-align: left;"><code>helpers.py</code>, <code>types.py</code></td>
+<td style="text-align: left;">Signed message payloads, canonical request hashes and optional ZK checks</td>
+</tr>
+</tbody>
+</table>
+<h2 id="pbft-phases">PBFT phases</h2>
+<p><code>request()</code> starts a request at the primary. Other nodes forward it through their configured send function and return <code>False</code>; the primary's <code>True</code> response confirms admission, not quorum commitment.</p>
+<p>The primary hashes the complete request using <code>hierachain.serialization.dumps_canonical_json</code>. Replicas recompute the digest before accepting PRE-PREPARE. Canonical encoding sorts fields, uses compact separators and unescaped UTF-8, and preserves Python finite-number formatting. Non-finite numbers, circular values and unsupported JSON types are rejected.</p>
+<p>Each node records its own signed PREPARE and COMMIT once before broadcasting. Votes count unique senders, including the local vote: <code>2f</code> PREPARE votes and <code>2f + 1</code> COMMIT votes. Phase votes are tracked per sequence even when another sequence changes the displayed consensus state.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant C as Client
     participant P as Primary
@@ -4517,55 +4487,56 @@
     R1-&gt;&gt;P: COMMIT(view, seq, digest)
     R2-&gt;&gt;P: COMMIT(view, seq, digest)
     Note over P,R3: Apply after 2f+1 unique COMMIT votes</code></pre>
-<p>For a node with an attached application chain, a failed <code>chain.add_event()</code> leaves the commit quorum and a stable in-memory event, with a deterministic event ID, available for retry. A repeated valid COMMIT can retry the same event; the node advances <code>committed_sequence</code> only after the write succeeds. The component does not persist this retry state across process restarts. Recent sequence messages are retained; cleanup removes messages only when their sequence is more than 100 behind the committed sequence.</p>
-<p>When no application chain is attached, BFT runs in protocol-only mode and records consensus status without writing an application event. The standalone demo uses this mode.</p>
-<p>A later request cannot advance the committed sequence past an earlier unapplied or missing request. Application proceeds contiguously from sequence 1. Quorums already received for later requests are retained and attempted in order after the earlier write succeeds. Retry state remains in memory. If a backend persists an event and then raises, retry can duplicate that event unless the backend deduplicates the stable <code>event_id</code>; the current <code>SubChain.add_event()</code> does not use this BFT ID for deduplication. This component therefore does not guarantee exactly-once application across ambiguous writes or restarts.</p>
-<hr />
-<h2 id="advanced-protection-mechanisms">Advanced Protection Mechanisms</h2>
-<h3 id="1-view-change-proof">1. View Change Proof</h3>
-<p>When a node detects the current Leader is unresponsive (Timeout), it requests a View change. The new view requires a proof with at least <code>2f + 1</code> valid signatures from unique nodes, including the local vote when present, preventing unauthorized takeovers.</p>
-<h3 id="2-sequence-number-nonce">2. Sequence Number &amp; Nonce</h3>
-<p>Every BFT message has an incrementing sequence number and a unique random value (Nonce) to defend against <strong>Replay Attacks</strong>.</p>
-<h3 id="3-zk-integration">3. ZK Integration</h3>
-<p>The system supports Zero-Knowledge proof verification directly in the <code>Pre-prepare</code> phase, allowing data validity checking without revealing detailed content during the election process.</p>
-<hr />
-<h2 id="bft-configuration">BFT Configuration</h2>
+<h2 id="application-and-retry">Application and retry</h2>
+<p>With an attached application chain, a failed <code>chain.add_event()</code> keeps the commit quorum and the same in-memory event with a deterministic <code>event_id</code>. A repeated valid COMMIT retries the write; <code>committed_sequence</code> advances only after success. Future quorums are buffered and applied contiguously from sequence 1 after earlier writes succeed. Recent messages are retained; cleanup removes sequences more than 100 behind the committed sequence.</p>
+<p>Without an attached chain, the component records protocol commitment without writing an application event. The standalone demo uses this mode. Retry state is not persisted across restarts. If a backend persists an event and then raises, a retry can duplicate it unless that backend deduplicates <code>event_id</code>; the current <code>SubChain.add_event()</code> does not deduplicate by this BFT ID. The component does not guarantee exactly-once application after ambiguous writes or restarts.</p>
+<h2 id="view-changes-and-replay-limits">View changes and replay limits</h2>
+<p>The view-change timer initiates a new view when it expires. The new primary is selected from the ordered node list, and the new view requires <code>2f + 1</code> valid signatures from distinct nodes, including the local vote when present.</p>
+<p>Sequence numbers track request order; messages in different phases can share the same sequence. A message nonce and timestamp are signed, but the receive path does not maintain a nonce replay cache. Signature, age, view, sequence and phase checks apply; a repeated valid COMMIT can intentionally retry application. A signed nonce alone does not provide general replay rejection.</p>
+<h2 id="optional-zk-check">Optional ZK check</h2>
+<p><code>handle_pre_prepare()</code> calls <code>verify_operation_zk_proof(message.data)</code> when <code>HRC_ENABLE_ZK_PROOFS</code> is enabled. Missing-proof handling uses <code>HRC_ZK_REQUIRED_MAINCHAIN</code>. The helper reads a top-level operation from message data, while <code>request()</code> places its operation inside the request object; it does not automatically extract that nested operation. This path should not be treated as proof that every admitted operation was ZK-verified. Mock proofs are development fixtures, and production proving/verifying is unimplemented.</p>
+<h2 id="configuration">Configuration</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Setting</th>
+<th style="text-align: left;">Location</th>
 <th style="text-align: left;">Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><code>f</code></td>
-<td style="text-align: left;">Maximum tolerable faults</td>
-<td style="text-align: left;"><code>1</code> (Requires at least 4 nodes)</td>
+<td style="text-align: left;">Constructor argument</td>
+<td style="text-align: left;"><code>1</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>view_change_timeout</code></td>
-<td style="text-align: left;">Leader response wait time</td>
+<td style="text-align: left;">Instance attribute; the constructor starts a timer</td>
 <td style="text-align: left;"><code>30.0</code> seconds</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>strictness</code></td>
-<td style="text-align: left;">Signature verification level</td>
+<td style="text-align: left;"><code>verification_strictness</code></td>
+<td style="text-align: left;"><code>error_config["consensus"]["bft"]["verification_strictness"]</code>; controls rejection of slow messages</td>
 <td style="text-align: left;"><code>high</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>enable_zk_proofs</code></td>
-<td style="text-align: left;">Enable ZK verification in BFT</td>
+<td style="text-align: left;"><code>HRC_ENABLE_ZK_PROOFS</code></td>
+<td style="text-align: left;">Environment setting shared with other consensus paths</td>
+<td style="text-align: left;"><code>false</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>HRC_ZK_REQUIRED_MAINCHAIN</code></td>
+<td style="text-align: left;">Shared missing-proof policy</td>
 <td style="text-align: left;"><code>false</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p>There is no BFT constructor option named <code>enable_zk_proofs</code>. If changing the timeout after construction, reset the view-change timer to use the new interval. Call <code>shutdown()</code> when closing the component to cancel its timer.</p>
 <h2 id="related">Related</h2>
 <ul>
-<li><a href="../../modules/network/">P2P Network</a></li>
-<li><a href="../../security/encryption-keys/">Signature Verification (Security)</a></li>
+<li><a href="../../modules/network/">Network</a></li>
+<li><a href="../../security/encryption-keys/">Keys and signatures</a></li>
 <li><a href=".././ordering/">Ordering Service</a></li>
 </ul>
 

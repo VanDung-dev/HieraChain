@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giao diện chuẩn (Abstract Base Class) định nghĩa quy tắc đồng thuận và kiểm soát nội dung doanh nghiệp.">
+        <meta name="description" content="Giao diện trừu tượng PoA/PoF, kiểm tra nội dung sự kiện và xác minh ZK tùy chọn dùng chung.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Base Consensus Interface - HieraChain Docs</title>
+        <title>Giao diện đồng thuận cơ sở - HieraChain Docs</title>
       
     
     
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Base Consensus Interface
+              Giao diện đồng thuận cơ sở
             
           </span>
         </div>
@@ -2765,10 +2765,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -2776,10 +2776,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-nhiem-vu-cot-loi" class="md-nav__link">
+  <a href="#phuong-thuc-truu-tuong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các nhiệm vụ cốt lõi
+        Phương thức trừu tượng
       </span>
     </span>
   </a>
@@ -2787,10 +2787,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-truu-tuong-abstract-methods" class="md-nav__link">
+  <a href="#xac-thuc-noi-dung-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        API trừu tượng (Abstract Methods)
+        Xác thực nội dung sự kiện
       </span>
     </span>
   </a>
@@ -2798,21 +2798,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quy-tac-loc-su-kien-event-validation" class="md-nav__link">
+  <a href="#helper-zk-dung-chung" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quy tắc Lọc sự kiện (Event Validation)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tich-hop-zero-knowledge-zk" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tích hợp Zero-Knowledge (ZK)
+        Helper ZK dùng chung
       </span>
     </span>
   </a>
@@ -4280,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -4291,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-nhiem-vu-cot-loi" class="md-nav__link">
+  <a href="#phuong-thuc-truu-tuong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các nhiệm vụ cốt lõi
+        Phương thức trừu tượng
       </span>
     </span>
   </a>
@@ -4302,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-truu-tuong-abstract-methods" class="md-nav__link">
+  <a href="#xac-thuc-noi-dung-su-kien" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        API trừu tượng (Abstract Methods)
+        Xác thực nội dung sự kiện
       </span>
     </span>
   </a>
@@ -4313,21 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quy-tac-loc-su-kien-event-validation" class="md-nav__link">
+  <a href="#helper-zk-dung-chung" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quy tắc Lọc sự kiện (Event Validation)
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tich-hop-zero-knowledge-zk" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tích hợp Zero-Knowledge (ZK)
+        Helper ZK dùng chung
       </span>
     </span>
   </a>
@@ -4377,73 +4355,44 @@
 
 
 <h1 id="base-consensus-hierachainconsensusbase_consensuspy">Base Consensus (<code>hierachain/consensus/base_consensus.py</code>)</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p><code>BaseConsensus</code> là lớp cơ sở trừu tượng (Abstract Base Class) định nghĩa bộ khung tiêu chuẩn cho mọi thuật toán đồng thuận trong hệ thống HieraChain. Nó đảm bảo tính nhất quán giữa các giao thức khác nhau (PoA, PoF, BFT) và thực thi các quy tắc nghiệp vụ cốt lõi của một nền tảng blockchain doanh nghiệp.</p>
-<hr />
-<h2 id="cac-nhiem-vu-cot-loi">Các nhiệm vụ cốt lõi</h2>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>Định nghĩa Giao thức</strong></p>
-<hr />
-<p>Thiết lập các phương thức bắt buộc như <code>validate_block</code>, <code>finalize_block</code> và <code>can_create_block</code> để các module tầng trên (như Ordering Service) có thể tương tác đồng nhất.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12v7.88c.04.3-.06.62-.29.83a.996.996 0 0 1-1.41 0L8.29 18.7a.99.99 0 0 1-.29-.83V12h-.03L2.21 4.62a1 1 0 0 1 .17-1.4c.19-.14.4-.22.62-.22h14c.22 0 .43.08.62.22a1 1 0 0 1 .17 1.4L12.03 12zm5.75 9L15 18l1.16-1.16 1.59 1.59 3.59-3.59 1.16 1.41z"/></svg></span> <strong>Kiểm soát Nội dung (Enterprise Filtering)</strong></p>
-<hr />
-<p>Tự động quét và loại bỏ các sự kiện chứa thuật ngữ tiền điện tử cấm (<code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>). Đây là lớp bảo vệ quan trọng để duy trì mục đích sử dụng doanh nghiệp của HieraChain.</p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm2.28 13.08-2.02 2.02c-.6.6-1.39.9-2.18.9s-1.58-.3-2.18-.9a3.09 3.09 0 0 1 0-4.36l1.25-1.24-.01.56c0 .44.07.89.22 1.31l.05.13-.37.37c-.28.28-.44.66-.44 1.05 0 .4.16.77.44 1.05.56.56 1.53.56 2.09 0l2.01-2.01c.29-.29.44-.66.44-1.05 0-.41-.15-.77-.43-1.05a.83.83 0 0 1-.25-.57c0-.21.1-.41.25-.56.3-.31.85-.3 1.13 0 .58.58.9 1.35.9 2.17 0 .83-.32 1.6-.9 2.18m2.82-2.82-1.25 1.24.01-.56c0-.44-.07-.88-.22-1.3l-.04-.14.36-.37c.29-.28.44-.63.44-1.05 0-.39-.15-.76-.43-1.04-.57-.57-1.54-.57-2.1 0l-2.01 2.01c-.28.28-.44.65-.44 1.05s.15.76.44 1.04c.14.15.24.36.24.57 0 .22-.1.42-.25.57-.15.16-.35.22-.56.22-.2 0-.41-.07-.57-.22a3.054 3.054 0 0 1 0-4.36l2.02-2.02a3.09 3.09 0 0 1 4.36 0c.58.6.9 1.36.9 2.18s-.32 1.6-.9 2.18"/></svg></span> <strong>Xác thực Toàn vẹn</strong></p>
-<hr />
-<p>Tích hợp các cơ chế xác thực mã băm (Hash), chữ ký số và hỗ trợ Zero-Knowledge (ZK) Proof để đảm bảo dữ liệu khối không bị thay đổi.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="api-truu-tuong-abstract-methods">API trừu tượng (Abstract Methods)</h2>
-<p>Mọi thuật toán đồng thuận kế thừa từ <code>BaseConsensus</code> phải triển khai các phương thức sau:</p>
+<h2 id="pham-vi">Phạm vi</h2>
+<p><code>BaseConsensus</code> định nghĩa giao diện được PoA và PoF triển khai. <code>BFTConsensus</code> là lớp riêng, không kế thừa giao diện này. Lớp cơ sở lưu <code>name</code> và <code>config</code>; các triển khai cụ thể cung cấp việc xác thực và hoàn tất khối.</p>
+<h2 id="phuong-thuc-truu-tuong">Phương thức trừu tượng</h2>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Phương thức</th>
-<th style="text-align: left;">Ý nghĩa</th>
+<th style="text-align: left;">Quy tắc</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>validate_block(block, prev_block)</code></td>
-<td style="text-align: left;">Xác thực tính hợp lệ của khối mới so với khối trước đó.</td>
+<td style="text-align: left;"><code>validate_block(block, previous_block)</code></td>
+<td style="text-align: left;">Trả về khối có đáp ứng quy tắc của giao thức cụ thể hay không</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>finalize_block(block)</code></td>
-<td style="text-align: left;">Thực hiện các bước cuối cùng (ký số, gán nonce) trước khi lưu khối.</td>
+<td style="text-align: left;">Trả về khối sau bước hoàn tất riêng của giao thức</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>can_create_block(node_id)</code></td>
-<td style="text-align: left;">Kiểm tra xem nút hiện tại có quyền tạo khối hay không.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>get_consensus_info()</code></td>
-<td style="text-align: left;">Trả về thông tin trạng thái và cấu hình hiện tại của giao thức.</td>
+<td style="text-align: left;"><code>can_create_block(authority_id=None)</code></td>
+<td style="text-align: left;">Trả về việc tạo khối có được phép hay không</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="quy-tac-loc-su-kien-event-validation">Quy tắc Lọc sự kiện (Event Validation)</h2>
-<p>Hệ thống thực thi việc lọc từ khóa cấm một cách nghiêm ngặt:
-*   <strong>Dữ liệu bị kiểm tra</strong>: Tất cả các trường trong <code>details</code> và nội dung sự kiện.
-*   <strong>Trường loại trừ</strong>: Các trường mật mã như <code>signature</code>, <code>hash</code>, <code>merkle_root</code> và <code>zk_proof</code> được bỏ qua để tránh nhận diện nhầm các chuỗi ký tự ngẫu nhiên.
-*   <strong>Hành động</strong>: Nếu phát hiện từ khóa vi phạm, phương thức <code>validate_event_for_consensus</code> sẽ trả về <code>False</code>, dẫn đến việc khối bị từ chối.</p>
-<hr />
-<h2 id="tich-hop-zero-knowledge-zk">Tích hợp Zero-Knowledge (ZK)</h2>
-<p><code>BaseConsensus</code> cung cấp các hàm hỗ trợ xác thực bằng chứng ZK (<code>_verify_block_zk_proof</code>). Khi <code>settings.ENABLE_ZK_PROOFS</code> được bật, mọi khối đồng thuận phải mang theo bằng chứng hợp lệ để chứng minh tính đúng đắn của các thay đổi trạng thái mà không cần tiết lộ dữ liệu thô.</p>
-<hr />
+<p>PoA và PoF mở rộng <code>finalize_block()</code> bằng <code>authority_id</code> tùy chọn. Hàm finalizer đã cấu hình của orderer nối đồng thuận với việc tạo khối; block manager của ordering ký và lưu header đã hoàn tất riêng.</p>
+<p><code>get_validator_count()</code> là helper cụ thể trả về zero trong lớp cơ sở và được PoA/PoF ghi đè. Giao diện này không có phương thức <code>get_consensus_info()</code>.</p>
+<h2 id="xac-thuc-noi-dung-su-kien">Xác thực nội dung sự kiện</h2>
+<p><code>validate_event_for_consensus()</code> nhận dictionary có <code>event</code> và <code>timestamp</code>. Nó kiểm tra tên sự kiện và các giá trị nội dung được chọn theo <code>FORBIDDEN_TERMS</code>: <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code> và <code>fee</code>. Việc so khớp không phân biệt chữ hoa/thường và dùng ranh giới từ.</p>
+<p><code>EXCLUDED_CONTENT_FIELDS</code> bỏ qua <code>authority_signature</code>, <code>signature</code>, <code>hash</code>, <code>proof_hash</code>, <code>zk_proof</code>, <code>merkle_root</code>, <code>previous_state</code>, <code>current_state</code>, <code>details</code>, <code>event</code> và <code>timestamp</code> trong lượt kiểm tra trường chung. Tên sự kiện và details được kiểm tra riêng. Details dạng dictionary dùng cùng tập loại trừ; details dạng chuỗi được kiểm tra trực tiếp. Đây không phải xác thực lược đồ đệ quy hay kiểm tra quyền. Đầu vào Arrow Table và RecordBatch trả về <code>True</code> mà không qua các kiểm tra nội dung này.</p>
+<p>Kiểm tra thất bại trả về <code>False</code>. Bên gọi phải sử dụng kết quả đó; chỉ gọi helper không tự từ chối hay loại bỏ sự kiện trong hàng đợi.</p>
+<h2 id="helper-zk-dung-chung">Helper ZK dùng chung</h2>
+<p>Hàm cấp module <code>_verify_block_zk_proof()</code> được PoA và PoF gọi khi xác thực khối. <code>HRC_ENABLE_ZK_PROOFS</code> bật kiểm tra; xử lý bằng chứng thiếu phụ thuộc vào <code>HRC_ZK_REQUIRED_MAINCHAIN</code>. Mock phát triển kiểm tra commitment của public input; tạo/xác minh production chưa được triển khai. Kiểm tra hash và chữ ký thuộc các giao thức cụ thể và bộ xác minh khối.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././poa/">Đồng thuận PoA</a></li>
-<li><a href=".././pof/">Đồng thuận PoF</a></li>
-<li><a href=".././ordering/">Dịch vụ sắp xếp (Ordering)</a></li>
+<li><a href=".././poa/">PoA</a></li>
+<li><a href=".././pof/">PoF</a></li>
+<li><a href=".././ordering/">Dịch vụ ordering</a></li>
 </ul>
 
 

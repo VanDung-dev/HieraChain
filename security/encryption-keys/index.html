@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Encryption key lifecycle management, X.509 certificates, and secure key storage.">
+        <meta name="description" content="Signing keys, API keys, internal MSP certificates and operator-managed key storage.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#encryption-keys" class="md-skip">
+        <a href="#encryption-and-keys" class="md-skip">
           Skip to content
         </a>
       
@@ -2673,10 +2673,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-scope-actual" class="md-nav__link">
+  <a href="#key-scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key scope (actual)
+        Key scope
       </span>
     </span>
   </a>
@@ -2684,10 +2684,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#certificate-initialization-flow-actual" class="md-nav__link">
+  <a href="#certificate-initialization-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Certificate initialization flow (actual)
+        Certificate initialization flow
       </span>
     </span>
   </a>
@@ -4313,10 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-scope-actual" class="md-nav__link">
+  <a href="#key-scope" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key scope (actual)
+        Key scope
       </span>
     </span>
   </a>
@@ -4324,10 +4324,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#certificate-initialization-flow-actual" class="md-nav__link">
+  <a href="#certificate-initialization-flow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Certificate initialization flow (actual)
+        Certificate initialization flow
       </span>
     </span>
   </a>
@@ -4376,7 +4376,7 @@
   
 
 
-<h1 id="encryption-keys">Encryption &amp; Keys</h1>
+<h1 id="encryption-and-keys">Encryption and keys</h1>
 <p>This security layer manages system secrets. That includes encryption keys, signing key pairs and identity certificates.</p>
 <h2 id="key-manager-and-key-providers">Key manager and key providers</h2>
 <p>File: <code>hierachain/security/key_manager.py</code>, <code>key_provider.py</code></p>
@@ -4399,32 +4399,29 @@
 <p>This code manages lightweight internal identities, not X.509:</p>
 <ul>
 <li>Internal certificate is the <code>Certificate</code> dataclass with <code>cert_id</code>, <code>subject</code>, <code>public_key</code>, <code>signature</code> (Ed25519 via <code>_sign_certificate</code>) and <code>is_valid()</code> time check. There is no X.509 ASN.1 and no mTLS.</li>
-<li>CA operations are <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> and <code>verify_certificate()</code> with an in-memory <code>issued_certificates</code> set and <code>revoked_certificates</code> set. <code>HierarchicalMSP</code> uses this for org and entity registration.</li>
+<li>CA operations are <code>CertificateAuthority.issue_certificate()</code>, <code>revoke_certificate()</code> and <code>verify_certificate()</code> with an in-memory <code>issued_certificates</code> dictionary and <code>revoked_certificates</code> set. <code>HierarchicalMSP</code> uses this for org and entity registration.</li>
 <li>Limitation: MSP certificate revocation lives only in memory. There is no CRL distribution, no X.509 chain validation and no mutual TLS between components. TLS is expected at the reverse proxy per architecture rules.</li>
 </ul>
 <h2 id="key-backup-and-recovery">Key backup and recovery</h2>
 <p>Files: <code>hierachain/cli/key.py</code>, <code>hierachain/security/key_provider.py</code> (<code>FileVaultProvider</code>)</p>
-<p>There is no dedicated <code>key_backup_manager.py</code>. The actual mechanism is minimal:</p>
+<p>Operators manage backups through external tooling. The available key-file mechanisms are:</p>
 <ul>
-<li>Generation runs <code>python -m hierachain key generate --output validator_key.json</code> (CLI) to create an Ed25519 pair via <code>Ed25519PrivateKey.generate()</code> and write <code>{private_key, public_key}</code> hex JSON. The new file has mode <code>0600</code> on POSIX systems; generation refuses to overwrite an existing file. The <code>show</code> and <code>verify</code> commands inspect the result.</li>
+<li>Generation runs <code>hrc key generate --output validator_key.json</code> (CLI) to create an Ed25519 pair via <code>Ed25519PrivateKey.generate()</code> and write <code>{private_key, public_key}</code> hex JSON. The new file has mode <code>0600</code> on POSIX systems; generation refuses to overwrite an existing file. The <code>show</code> and <code>verify</code> commands inspect the result.</li>
 <li>Encrypted vault (dev and test only) uses <code>FileVaultProvider</code> to encrypt the vault file with <code>PBKDF2HMAC(SHA256, 310_000 iter)</code> and <code>Fernet(AES-128-CBC+HMAC)</code>. Its password is passed to the provider constructor. Production HSM or KMS support requires an application-specific <code>KeyProvider</code>; no built-in master-key provider exists. <code>HRC_VAULT_TOKEN</code> and <code>HRC_VAULT_PATH</code> configure the separate <code>SecretManager</code> Vault backend.</li>
 <li>There is no multi-location backup, no SHA-512 integrity check and no auto distribution or cleanup. Operators must copy <code>validator_key.json</code> or <code>.vault</code> with external backup tooling.</li>
 </ul>
-<hr />
-<h2 id="key-scope-actual">Key scope (actual)</h2>
+<h2 id="key-scope">Key scope</h2>
 <ul>
-<li>Validator and node key is a single Ed25519 <code>KeyPair</code> per node (via <code>LocalKeyProvider</code> or <code>FileVaultProvider</code>), referenced by <code>HRC_VALIDATOR_IDENTITY</code>. <code>HRC_MASTER_KEY_SOURCE=env</code> is only a compatibility alias; other values and nonempty <code>HRC_MASTER_KEY_FILE</code> are rejected because no master-key provider is implemented.</li>
+<li>Block signing loads a complete node identity through <code>HRC_VALIDATOR_IDENTITY</code>, including an Ed25519 signing pair and transport keys. The CLI file containing only <code>private_key</code> and <code>public_key</code> is a provider file, not that complete identity. Back up the identity and <code>HRC_BLOCK_TRUSTED_KEYS_FILE</code> together; see <a href="../../workflows/key-backup/">Key Backup</a>. <code>HRC_MASTER_KEY_SOURCE=env</code> is only a compatibility alias; other values and nonempty <code>HRC_MASTER_KEY_FILE</code> are rejected because no master-key provider is implemented.</li>
 <li>API keys are managed by <code>KeyManager</code> (create, revoke, permission, cached via <code>KeyStorage</code>/<code>KeyCacheManager</code>), not per-entity signing keys.</li>
 <li>There is no built-in hierarchy like Master to Domain to Entity. Domain isolation relies on Sub-Chain separation and MSP roles.</li>
 </ul>
-<hr />
-<h2 id="certificate-initialization-flow-actual">Certificate initialization flow (actual)</h2>
+<h2 id="certificate-initialization-flow">Certificate initialization flow</h2>
 <pre class="mermaid"><code>graph LR
     A[Generate Ed25519 Key Pair&lt;br/&gt;cli/key.py] --&gt; B[HierarchicalMSP.register_entity&lt;br/&gt;msp.py]
     B --&gt; C[CA.issue_certificate&lt;br/&gt;Ed25519 sign]
     C --&gt; D[Store in issued_certificates]
     D --&gt; E[verify_certificate / revoke_certificate]</code></pre>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
 <li><a href=".././authorization-access-control/">Authorization &amp; Access Control</a></li>

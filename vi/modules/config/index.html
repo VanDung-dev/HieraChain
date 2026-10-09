@@ -33,7 +33,7 @@
     
     
       
-        <title>Config Module - HieraChain Docs</title>
+        <title>Module cấu hình - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#config-module-hierachainconfig" class="md-skip">
+        <a href="#module-cau-hinh-hierachainconfig" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config Module
+              Module cấu hình
             
           </span>
         </div>
@@ -4454,27 +4454,26 @@
   
 
 
-<h1 id="config-module-hierachainconfig">Config Module (<code>hierachain/config/*</code>)</h1>
+<h1 id="module-cau-hinh-hierachainconfig">Module cấu hình (<code>hierachain/config/*</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Config</strong> quản lý các tham số vận hành, khóa bí mật và cấu hình ghi log của HieraChain.</p>
-<hr />
+<p>Module Config quản lý các tham số vận hành, khóa bí mật và cấu hình ghi log của HieraChain.</p>
 <h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z"/></svg></span> <strong>Settings Management</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z"/></svg></span> <strong>Quản lý thiết lập</strong></p>
 <hr />
-<p><strong>File</strong>: <code>settings.py</code></p>
+<p><strong>Tệp</strong>: <code>settings.py</code></p>
 <ul>
 <li>Hệ thống cấu hình dựa trên môi trường (<code>HRC_ENV</code>).</li>
-<li>Tự động kiểm chứng (validation) tính hợp lệ của tham số.</li>
+<li>Các helper cần gọi trực tiếp để kiểm tra tham số và lấy cảnh báo bảo mật.</li>
 <li>Phân tách cấu hình theo nhóm: Blockchain, Consensus, Storage, P2P, v.v.</li>
 </ul>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg></span> <strong>Secret Manager</strong></p>
 <hr />
-<p><strong>File</strong>: <code>secret_manager.py</code></p>
+<p><strong>Tệp</strong>: <code>secret_manager.py</code></p>
 <ul>
 <li>Truy xuất bí mật (secrets) độc lập với hạ tầng.</li>
 <li>Hỗ trợ backends: Environment, HashiCorp Vault, AWS Secrets Manager.</li>
@@ -4482,18 +4481,17 @@
 </ul>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9.5 7.5 14h-5zM3 4h4v4H3zm2 16a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2M9 5v2h12V5zm0 14h12v-2H9zm0-6h12v-2H9z"/></svg></span> <strong>Structured Logging</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9.5 7.5 14h-5zM3 4h4v4H3zm2 16a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2M9 5v2h12V5zm0 14h12v-2H9zm0-6h12v-2H9z"/></svg></span> <strong>Ghi log có cấu trúc</strong></p>
 <hr />
-<p><strong>File</strong>: <code>logging.py</code></p>
+<p><strong>Tệp</strong>: <code>logging.py</code></p>
 <ul>
-<li>Định dạng <strong>Text</strong> cho lập trình viên (màu sắc, dễ đọc).</li>
-<li>Định dạng <strong>JSON</strong> cho môi trường Production (phù hợp với ELK, Cloud Logging).</li>
+<li>Định dạng Text cho lập trình viên (màu sắc, dễ đọc).</li>
+<li>Định dạng JSON cho môi trường Production (phù hợp với ELK, Cloud Logging).</li>
 <li>Hỗ trợ nhúng Request ID để truy vết lỗi.</li>
 </ul>
 </li>
 </ul>
 </div>
-<hr />
 <h2 id="quan-ly-cau-hinh-theo-moi-truong">Quản lý cấu hình theo môi trường</h2>
 <p>HieraChain dùng <code>HRC_ENV</code> để chọn cấu hình và dùng <code>ENV</code> khi <code>HRC_ENV</code> không được đặt hoặc để trống. Nếu đặt cả hai, <code>HRC_ENV</code> được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu:</p>
 <table>
@@ -4506,17 +4504,17 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Development</strong></td>
+<td style="text-align: left;">Development</td>
 <td style="text-align: left;"><code>dev</code>, <code>development</code> (mặc định)</td>
 <td style="text-align: left;">Log level DEBUG, mặc định lưu trữ PostgreSQL, cho phép CORS từ mọi nơi.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Production</strong></td>
+<td style="text-align: left;">Production</td>
 <td style="text-align: left;"><code>production</code>, <code>prod</code>, <code>product</code></td>
-<td style="text-align: left;">Bật xác thực theo mặc định, HSTS, P2P Strict Trust.</td>
+<td style="text-align: left;">Bắt buộc xác thực; thiết lập tin cậy P2P cố định ở strict và bật yêu cầu chữ ký. HSTS được khai báo là bật; cấu hình HTTP header của nó tại reverse proxy.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Testing</strong></td>
+<td style="text-align: left;">Testing</td>
 <td style="text-align: left;"><code>test</code>, <code>testing</code></td>
 <td style="text-align: left;">Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory.</td>
 </tr>
@@ -4524,7 +4522,6 @@
 </table>
 <p>Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn development.</p>
 <p>Module settings nạp <code>.env</code> trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt <code>HRC_ENV_FILE</code> để nạp tệp dotenv khác; giá trị đã có trong môi trường tiến trình được ưu tiên.</p>
-<hr />
 <h2 id="secret-manager-quan-ly-bi-mat">Secret Manager (Quản lý Bí mật)</h2>
 <p>Đây là thành phần quan trọng để bảo vệ các khóa nhạy cảm như <code>HRC_CLUSTER_SECRET</code> hoặc <code>IPFS_ENCRYPTION_KEY</code>.</p>
 <h3 id="vi-du-su-dung-trong-ma-nguon">Ví dụ sử dụng trong mã nguồn:</h3>
@@ -4536,37 +4533,35 @@
 </code></pre></div>
 <h3 id="backends-ho-tro">Backends hỗ trợ:</h3>
 <ol>
-<li><strong>Environment (<code>env</code>)</strong>: Mặc định, đọc trực tiếp từ biến môi trường.</li>
-<li><strong>Vault (<code>vault</code>)</strong>: Kết nối tới HashiCorp Vault KV v2.</li>
-<li><strong>AWS (<code>aws</code>)</strong>: Đọc trường chuỗi từ JSON object trong AWS Secrets Manager.</li>
+<li>Environment (<code>env</code>): Mặc định, đọc trực tiếp từ biến môi trường.</li>
+<li>Vault (<code>vault</code>): Kết nối tới HashiCorp Vault KV v2.</li>
+<li>AWS (<code>aws</code>): Đọc trường chuỗi từ JSON object trong AWS Secrets Manager.</li>
 </ol>
 <p><code>get_secret(key, default=None)</code> nhận tên biến môi trường cho <code>env</code>, hoặc tên trường cho Vault/AWS. Với AWS, <code>key</code> không phải SecretId: đặt <code>HRC_AWS_SECRET_NAME</code> thành tên secret hoặc ARN và tùy chọn <code>HRC_AWS_REGION</code> (mặc định <code>us-east-1</code>). <code>SecretString</code> phải là JSON object với trường được yêu cầu có kiểu chuỗi; mỗi lần gọi chỉ trả trường đó, kể cả chuỗi rỗng đã lưu.</p>
 <p>Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, <code>SecretBinary</code> và lỗi backend đều trả <code>default</code> (hoặc <code>None</code>). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.</p>
 <p>Vault trả <code>default</code> (hoặc <code>None</code>) khi thiếu URL hoặc thông tin xác thực; trong trường hợp đó, nó không đọc biến môi trường cùng tên. Backend không được hỗ trợ sẽ gây <code>ValueError</code>. Caller phải gọi <code>SecretManager</code> trực tiếp: cấu hình backend không tự thay mọi lời gọi <code>os.getenv()</code> trong ứng dụng.</p>
 <p><code>SecretManager</code> độc lập với xử lý master key. <code>HRC_MASTER_KEY_SOURCE=env</code> vẫn được chấp nhận để tương thích với hành vi secret qua biến môi trường hiện có. Giá trị nguồn khác và mọi <code>HRC_MASTER_KEY_FILE</code> không rỗng đều gây lỗi cấu hình vì runtime chưa có master-key provider thay thế. Hãy xóa các thiết lập không được hỗ trợ trước khi khởi động.</p>
-<hr />
 <h2 id="ghi-log-chuan-hoa-observability">Ghi log chuẩn hóa (Observability)</h2>
 <p>Bạn có thể thay đổi định dạng log thông qua biến môi trường <code>HRC_LOG_FORMAT</code>:</p>
 <ul>
 <li>
-<p><strong>Dành cho Dev (<code>text</code>)</strong>:
+<p>Dành cho Dev (<code>text</code>):
     <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>INFO  hierachain.api.server  Starting HieraChain Node on localhost:2661...
 </code></pre></div></p>
 </li>
 <li>
-<p><strong>Dành cho Ops (<code>json</code>)</strong>:
+<p>Dành cho Ops (<code>json</code>):
     <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-03-20T10:00:00"</span><span class="p">,</span><span class="w"> </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w"> </span><span class="nt">"logger"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hierachain.api"</span><span class="p">,</span><span class="w"> </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Node started"</span><span class="p">,</span><span class="w"> </span><span class="nt">"request_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"abc-123"</span><span class="p">}</span>
 </code></pre></div></p>
 </li>
 </ul>
-<hr />
 <h2 id="kiem-chung-cau-hinh-validation">Kiểm chứng cấu hình (Validation)</h2>
-<p>HieraChain thực hiện kiểm tra cấu hình ngay khi khởi động để tránh các lỗi vận hành tiềm ẩn:</p>
+<p>Module settings cung cấp các helper để caller gọi trực tiếp:</p>
 <ul>
-<li><strong><code>validate_config()</code></strong>: Kiểm tra các giá trị logic (ví dụ: Port phải từ 1-65535, Block size &gt; 0).</li>
-<li><strong><code>check_security_config()</code></strong>: Cảnh báo nếu các thiết lập bảo mật trong môi trường Production không đủ an toàn (ví dụ: Tắt Auth hoặc bật CORS-all).</li>
+<li><code>settings.validate_config()</code> trả danh sách lỗi cho giá trị không hợp lệ, gồm port ngoài 1-65535 và block size không dương.</li>
+<li><code>check_security_config()</code> trả danh sách cảnh báo bảo mật cho cấu hình được chọn.</li>
 </ul>
-<hr />
+<p>Luồng khởi động API và CLI không gọi các helper này hoặc xử lý danh sách chúng trả về. Các kiểm tra riêng vẫn từ chối môi trường không hợp lệ, nguồn master key chưa được hỗ trợ và cấu hình xác thực hoặc lưu trữ production không hợp lệ. P2P client của API không tự áp dụng các thiết lập tin cậy strict và yêu cầu chữ ký; xem <a href="../network/">Network</a>.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li><a href="../../reference/config/">Biến môi trường (Reference)</a></li>

@@ -4266,8 +4266,8 @@
 <td>API access key; <code>hierachain/security/verify/api_key_verifier.py</code>.</td>
 </tr>
 <tr>
-<td>Resource Guard</td>
-<td>Resource protection middleware; <code>hierachain/security/brute_force_protector.py</code>.</td>
+<td>API-key brute-force protection</td>
+<td>Tracks failed API-key authentication attempts by IP and applies temporary IP lockouts; the key prefix is used only for logging; <code>hierachain/security/brute_force_protector.py</code>.</td>
 </tr>
 <tr>
 <td>Entity Tracer</td>

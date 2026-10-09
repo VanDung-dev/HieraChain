@@ -1601,10 +1601,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#divergence-scenarios" class="md-nav__link">
+  <a href="#comparison-and-rebuild" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Divergence scenarios
+        Comparison and rebuild
       </span>
     </span>
   </a>
@@ -1612,21 +1612,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#errors-and-operational-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Errors and operational limits
       </span>
     </span>
   </a>
@@ -4313,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#divergence-scenarios" class="md-nav__link">
+  <a href="#comparison-and-rebuild" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Divergence scenarios
+        Comparison and rebuild
       </span>
     </span>
   </a>
@@ -4324,21 +4313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-breakdown" class="md-nav__link">
+  <a href="#errors-and-operational-limits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step-by-step breakdown
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Error handling
+        Errors and operational limits
       </span>
     </span>
   </a>
@@ -4400,205 +4378,113 @@
 
 <h1 id="chain-rehydration">Chain rehydration</h1>
 <h2 id="overview">Overview</h2>
-<p>When a Sub-Chain node restarts or detects divergent state (local hash is different from the DB hash), it rehydrates the in-memory chain from persistent storage. This keeps the node consistent after crashes, restarts or network partitions.</p>
-<p>The DB is the authoritative source of truth. If local state diverges, it is discarded and rebuilt from the DB.</p>
-<hr />
+<p><code>SubChain.sync_chain()</code> rebuilds the local ledger from blocks supplied by its ordering service. Startup runs this synchronization before registering the chain or starting the commit consumer. There is no periodic <code>auto_sync</code> timer in this workflow; applications that call <code>sync_chain()</code> later must coordinate with active writers.</p>
+<p>The orderer supplies its bootstrap block list once. After that, synchronization reads all blocks through <code>storage_handler.get_blocks_from_db(start_index=0)</code>. It compares the local tip with the last supplied block before deciding whether to rebuild. It does not fetch only the missing delta.</p>
 <h2 id="flow-diagram">Flow diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
-    autonumber
-    participant SC as 📦 SubChain
-    participant OS as ⚙️ OrderingService
-    participant DB as 💾 Storage Backend
-
-    Note over SC: Startup OR divergence detected
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 1 — Detect Divergence
-        SC-&gt;&gt;SC: sync_chain()
-        SC-&gt;&gt;OS: get_latest_block()
-        OS-&gt;&gt;DB: Query latest persisted block
-        DB--&gt;&gt;OS: latest_block (index, hash)
-        OS--&gt;&gt;SC: latest_block_os
+    participant SC as SubChain
+    participant OS as OrderingService
+    participant DB as Storage handler
+    SC-&gt;&gt;OS: take_bootstrap_blocks()
+    alt Bootstrap already consumed
+        SC-&gt;&gt;DB: get_blocks_from_db(start_index=0)
+        DB--&gt;&gt;SC: All stored blocks
+    else Bootstrap available
+        OS--&gt;&gt;SC: Bootstrap blocks
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 2 — Comparison &amp; Rehydration
-        SC-&gt;&gt;SC: Compare: local_latest.index vs db_latest.index
-
-        alt Local == DB (same index + same hash)
-            SC-&gt;&gt;SC: Already up-to-date. No-op.
-        else Local &lt; DB (node missed blocks during downtime)
-            SC-&gt;&gt;DB: get_blocks_from_db(start_index=0)
-            DB--&gt;&gt;SC: All blocks []
-            SC-&gt;&gt;SC: Acquire write lock
-            SC-&gt;&gt;SC: Clear local chain, reset all counters
-            loop For each block from DB
-                SC-&gt;&gt;SC: chain.append(block)
-                SC-&gt;&gt;SC: _update_event_statistics(block)
-            end
-            SC-&gt;&gt;SC: Release write lock
-            SC-&gt;&gt;OS: Reset block_history &amp; blocks_created
-        else Local &gt; DB OR hash mismatch
-            SC-&gt;&gt;SC: Log WARNING: divergent state detected
-            SC-&gt;&gt;DB: Force full rehydration from DB
-        end
+    SC-&gt;&gt;SC: Compare local tip index/hash with supplied tip
+    opt Rebuild required
+        SC-&gt;&gt;SC: Lock, clear chain and WorldState
+        SC-&gt;&gt;SC: Append all supplied blocks and apply WorldState
+        SC-&gt;&gt;SC: Blockchain._rebuild_event_indexes()
+        SC-&gt;&gt;SC: Validate rebuilt chain
     end
-
-    SC-&gt;&gt;SC: _reset_ordering_service_state()
-    Note over SC: Chain now consistent with storage</code></pre>
-<hr />
-<h2 id="divergence-scenarios">Divergence scenarios</h2>
+    SC-&gt;&gt;SC: Reconcile commit queue against local index/hash</code></pre>
+<h2 id="comparison-and-rebuild">Comparison and rebuild</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Scenario</th>
-<th style="text-align: left;">Detection</th>
-<th style="text-align: left;">Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>Cold start</strong></td>
-<td style="text-align: left;"><code>local.index == 0</code></td>
-<td style="text-align: left;">Load all blocks from DB</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Crash recovery</strong></td>
-<td style="text-align: left;"><code>local.index &lt; db.index</code></td>
-<td style="text-align: left;">Append missing blocks only</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Hash mismatch</strong></td>
-<td style="text-align: left;"><code>local.hash != db.hash</code> (same index)</td>
-<td style="text-align: left;">Full rehydration from DB</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Already in sync</strong></td>
-<td style="text-align: left;"><code>local.index == db.index AND hash matches</code></td>
-<td style="text-align: left;">No-op</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Local ahead of DB</strong></td>
-<td style="text-align: left;"><code>local.index &gt; db.index</code></td>
-<td style="text-align: left;">WARNING: DB is authoritative; force rehydrate</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="step-by-step-breakdown">Step-by-step breakdown</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>1. Trigger</strong></td>
-<td style="text-align: left;">Node startup calls <code>sync_chain()</code>, or <code>auto_sync</code> timer fires</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>2. DB query</strong></td>
-<td style="text-align: left;"><code>OrderingService.get_latest_block()</code> fetches the latest persisted block from storage</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>3. Comparison</strong></td>
-<td style="text-align: left;">Compare local chain <code>(index, hash)</code> with DB <code>(index, hash)</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>4. Up-to-date</strong></td>
-<td style="text-align: left;">If identical: skip. Normal operations resume immediately</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>5. Partial sync</strong></td>
-<td style="text-align: left;">If <code>local &lt; db</code>: load only the delta blocks. Acquires write lock to prevent race conditions</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>6. Full rehydration</strong></td>
-<td style="text-align: left;">If hash mismatch or local ahead: discard local, rebuild entirely from DB</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>7. Statistics reset</strong></td>
-<td style="text-align: left;"><code>_update_event_statistics()</code> rebuilds <code>entity_event_index</code> from each block</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>8. OrderingService reset</strong></td>
-<td style="text-align: left;">Sync block counters between chain and ordering service</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="error-handling">Error handling</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Condition</th>
+<th style="text-align: left;">State</th>
 <th style="text-align: left;">Behavior</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">DB read fails during rehydration</td>
-<td style="text-align: left;">Exception logged, retry on next sync interval</td>
+<td style="text-align: left;">No supplied blocks</td>
+<td style="text-align: left;">Rehydration returns without clearing the local chain</td>
 </tr>
 <tr>
-<td style="text-align: left;">Write lock held too long</td>
-<td style="text-align: left;">Timeout after <code>lock_timeout</code> seconds; critical alert via Risk Alerts</td>
+<td style="text-align: left;">Local tip behind supplied tip</td>
+<td style="text-align: left;">Rebuild from the complete supplied block list</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>entity_event_index</code> inconsistent after rehydration</td>
-<td style="text-align: left;">Full index rebuild triggered</td>
+<td style="text-align: left;">Same index and same hash</td>
+<td style="text-align: left;">Keep the local chain</td>
 </tr>
 <tr>
-<td style="text-align: left;">Storage backend unreachable</td>
-<td style="text-align: left;">Node enters read-only mode; new events queued but not persisted</td>
+<td style="text-align: left;">Same index with different hash</td>
+<td style="text-align: left;">Rebuild from supplied blocks</td>
+</tr>
+<tr>
+<td style="text-align: left;">Local index ahead, different tip hash</td>
+<td style="text-align: left;">Log divergence and rebuild</td>
+</tr>
+<tr>
+<td style="text-align: left;">Local index ahead, same tip hash</td>
+<td style="text-align: left;">Keep the local chain</td>
 </tr>
 </tbody>
 </table>
-<hr />
+<p><code>_apply_rehydrated_blocks()</code> holds the chain lock while clearing and rebuilding the chain, WorldState and event indexes. It then calls <code>is_chain_valid()</code> and raises <code>ValueError</code> if validation fails. It does not reset an active orderer's block counters.</p>
+<p>Startup reconciliation drops queued blocks whose index and hash already match the rebuilt chain. Blocks absent from the chain remain queued. A queued block with a conflicting hash is retained and causes <code>ValueError</code>, preventing startup from accepting conflicting history.</p>
+<h2 id="errors-and-operational-limits">Errors and operational limits</h2>
+<p>Storage read errors propagate to the caller. Invalid rebuilt history and queue conflicts also raise errors. This path has no scheduled retry, lock-timeout alert or automatic read-only fallback. Restore storage access and the approved identity/trust configuration before restarting; inspect the failure before submitting more events.</p>
 <h2 id="key-classes-and-methods">Key classes and methods</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Step</th>
-<th style="text-align: left;">Class / Method</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Method</th>
 <th style="text-align: left;">File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Entry point</td>
+<td style="text-align: left;">Public entry</td>
 <td style="text-align: left;"><code>SubChain.sync_chain()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/base.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Latest DB block</td>
-<td style="text-align: left;"><code>OrderingService.get_latest_block()</code></td>
-<td style="text-align: left;"><code>consensus/ordering/service.py</code></td>
+<td style="text-align: left;">Synchronization</td>
+<td style="text-align: left;"><code>_sync_chain_for_sub_chain()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Load all blocks</td>
-<td style="text-align: left;"><code>storage.get_blocks_from_db()</code></td>
-<td style="text-align: left;"><code>adapters/database/sqlite_adapter.py</code></td>
+<td style="text-align: left;">Load and compare</td>
+<td style="text-align: left;"><code>_rehydrate_chain_from_ordering_service()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Rebuild index</td>
-<td style="text-align: left;"><code>SubChain._update_event_statistics()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
+<td style="text-align: left;">Rebuild</td>
+<td style="text-align: left;"><code>_apply_rehydrated_blocks()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
 </tr>
 <tr>
-<td style="text-align: left;">Reset OS counters</td>
-<td style="text-align: left;"><code>SubChain._reset_ordering_service_state()</code></td>
-<td style="text-align: left;"><code>hierarchical/sub_chain.py</code></td>
+<td style="text-align: left;">Queue reconciliation</td>
+<td style="text-align: left;"><code>_discard_rehydrated_blocks_from_queue()</code></td>
+<td style="text-align: left;"><code>hierachain/hierarchical/sub_chain/ordering.py</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Event indexes</td>
+<td style="text-align: left;"><code>Blockchain._rebuild_event_indexes()</code></td>
+<td style="text-align: left;"><code>hierachain/core/blockchain.py</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././error-recovery/">Error Mitigation</a>: rollback triggers rehydration when snapshot fails</li>
-<li><a href=".././integrity-validation/">System Integrity Validation</a>: validates chain consistency after rehydration</li>
+<li><a href=".././error-recovery/">Error Mitigation</a>: separate recovery mechanisms</li>
+<li><a href=".././integrity-validation/">System Integrity Validation</a>: caller-initiated integrity reports</li>
 </ul>
 
 

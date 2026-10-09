@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hệ thống đồng thuận đa giao thức: Ordering Service (CFT) và BFT Consensus (PBFT).">
+        <meta name="description" content="Hoàn tất khối PoA/PoF, sắp thứ tự sự kiện cục bộ và thành phần PBFT riêng.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Consensus Module - HieraChain Docs</title>
+        <title>Module đồng thuận - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#consensus-module-hierachainconsensus" class="md-skip">
+        <a href="#module-ong-thuan-hierachainconsensus" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Consensus Module
+              Module đồng thuận
             
           </span>
         </div>
@@ -1991,10 +1991,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -2002,10 +2002,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-giao-thuc-ong-thuan-ho-tro" class="md-nav__link">
+  <a href="#thanh-phan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các giao thức đồng thuận hỗ trợ
+        Thành phần
       </span>
     </span>
   </a>
@@ -2013,10 +2013,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-tong-the" class="md-nav__link">
+  <a href="#luong-ordering" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiến trúc Tổng thể
+        Luồng ordering
       </span>
     </span>
   </a>
@@ -2024,10 +2024,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tich-hop-vao-hierarchy" class="md-nav__link">
+  <a href="#cau-hinh-phan-cap" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tích hợp vào Hierarchy
+        Cấu hình phân cấp
       </span>
     </span>
   </a>
@@ -4269,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#pham-vi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tổng quan
+        Phạm vi
       </span>
     </span>
   </a>
@@ -4280,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cac-giao-thuc-ong-thuan-ho-tro" class="md-nav__link">
+  <a href="#thanh-phan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các giao thức đồng thuận hỗ trợ
+        Thành phần
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-tong-the" class="md-nav__link">
+  <a href="#luong-ordering" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Kiến trúc Tổng thể
+        Luồng ordering
       </span>
     </span>
   </a>
@@ -4302,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tich-hop-vao-hierarchy" class="md-nav__link">
+  <a href="#cau-hinh-phan-cap" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tích hợp vào Hierarchy
+        Cấu hình phân cấp
       </span>
     </span>
   </a>
@@ -4354,67 +4354,60 @@
   
 
 
-<h1 id="consensus-module-hierachainconsensus">Consensus Module (<code>hierachain/consensus/*</code>)</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>Consensus</strong> cung cấp các thành phần sắp xếp event và finalize block cho HieraChain.</p>
-<hr />
-<h2 id="cac-giao-thuc-ong-thuan-ho-tro">Các giao thức đồng thuận hỗ trợ</h2>
-<p>Ordering Service gom event thành batch; PoA và PoF finalize block của Sub-Chain. Repository cũng có thành phần BFT riêng. <code>HRC_CONSENSUS_TYPE</code> chọn <code>proof_of_authority</code> hoặc <code>proof_of_federation</code>, không chọn BFT:</p>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 3C3.79 3 2 4.79 2 7s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4m0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2m0 4c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4m6-8h10v2H12zm0 14v-2h10v2zm0-8h10v2H12z"/></svg></span> <strong>Ordering Service (CFT)</strong></p>
-<hr />
-<ul>
-<li>Phù hợp cho mạng Consortium hoặc Single-org.</li>
-<li>Chịu lỗi sập nút (<strong>Crash Fault Tolerance</strong>).</li>
-<li>Hiệu năng cực cao với cơ chế batching.</li>
-<li><a href="../../consensus/ordering/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m9 3c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4 9 4zm-9-5a3 3 0 0 0-3 3c0 1.31.83 2.42 2 2.83V18h2v-2h2v-2h-2v-2.17c1.17-.41 2-1.52 2-2.83a3 3 0 0 0-3-3"/></svg></span> <strong>BFT Consensus (PBFT)</strong></p>
-<hr />
-<ul>
-<li>Phù hợp cho môi trường không tin cậy hoàn toàn.</li>
-<li>Chịu lỗi Byzantine (<strong>Byzantine Fault Tolerance</strong>) với điều kiện <code>n &gt;= 3f + 1</code>.</li>
-<li>Đảm bảo tính toàn vẹn ngay cả khi có node bị tấn công.</li>
-<li><a href="../../consensus/bft_consensus/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4m4 10.54c0 1.06-.28 3.53-2.19 6.29L13 15l.94-1.88c-.62-.07-1.27-.12-1.94-.12s-1.32.05-1.94.12L11 15l-.81 4.83C8.28 17.07 8 14.6 8 13.54c-2.39.7-4 1.96-4 3.46v4h16v-4c0-1.5-1.6-2.76-4-3.46"/></svg></span> <strong>Proof of Authority / Federation</strong></p>
-<hr />
-<ul>
-<li><strong>PoA</strong>: Các nút có thẩm quyền (Authorized Nodes) ký xác nhận khối.</li>
-<li><strong>PoF</strong>: Cơ chế xoay vòng lãnh đạo trong liên minh.</li>
-<li>Phù hợp cho các chuỗi con (Sub-Chains) yêu cầu xử lý nhanh.</li>
-</ul>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="kien-truc-tong-the">Kiến trúc Tổng thể</h2>
+<h1 id="module-ong-thuan-hierachainconsensus">Module đồng thuận (<code>hierachain/consensus/*</code>)</h1>
+<h2 id="pham-vi">Phạm vi</h2>
+<p>Module cung cấp cơ chế hoàn tất khối PoA và PoF, dịch vụ sắp thứ tự sự kiện và thư viện BFT riêng. Các thành phần có quy tắc xác thực và yêu cầu tích hợp khác nhau.</p>
+<h2 id="thanh-phan">Thành phần</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Thành phần</th>
+<th style="text-align: left;">Hành vi</th>
+<th style="text-align: left;">Tham chiếu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Ordering Service</td>
+<td style="text-align: left;">Ghi nhật ký, xếp hàng, chứng nhận và gom lô sự kiện cục bộ; ký và lưu khối trước khi xếp hàng cho consumer</td>
+<td style="text-align: left;"><a href="../../consensus/ordering/">Ordering</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">PoA</td>
+<td style="text-align: left;">Kiểm tra thành viên authority đã đăng ký, chữ ký khối và giãn cách timestamp tùy chọn</td>
+<td style="text-align: left;"><a href="../../consensus/poa/">PoA</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">PoF</td>
+<td style="text-align: left;">Kiểm tra thành viên liên minh, leader theo lịch và chữ ký hoàn tất của leader; xác minh chữ ký quorum là helper riêng</td>
+<td style="text-align: left;"><a href="../../consensus/pof/">PoF</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">BFT</td>
+<td style="text-align: left;">Chạy các pha PBFT với <code>n &gt;= 3f + 1</code>; bên gọi cung cấp khóa ký, truyền tải và tích hợp ứng dụng</td>
+<td style="text-align: left;"><a href="../../consensus/bft_consensus/">BFT</a></td>
+</tr>
+</tbody>
+</table>
+<p>Khôi phục ordering dùng nhật ký cục bộ bền vững. Nó không bầu chọn cụm orderer nhân bản hay tự động chuyển dịch vụ khi lỗi. Các thiết lập đồng thuận MainChain/Sub-Chain không chọn BFT.</p>
+<h2 id="luong-ordering">Luồng ordering</h2>
 <pre class="mermaid"><code>graph TD
-    A[Event Submission] --&gt; B[Ordering Service]
-    B --&gt; C[Block Building]
-    C --&gt; D[Sub-Chain finalization: PoA or PoF]
-    D --&gt; E[Storage Commitment]
-    E --&gt; F[(Ledger Persistence)]
-    G[BFT Consensus component] -. separate component .-&gt; H[Consensus workflows]</code></pre>
-<hr />
-<h2 id="tich-hop-vao-hierarchy">Tích hợp vào Hierarchy</h2>
-<p>Trong mô hình phân cấp của HieraChain:</p>
-<ol>
-<li><strong>Main Chain</strong>: Mặc định dùng <strong>PoA</strong>, có thể cấu hình <strong>PoF</strong> qua <code>HRC_MAINCHAIN_CONSENSUS</code>. BFT là thành phần riêng; <code>MainChain</code> không chọn BFT làm mặc định.</li>
-<li><strong>Sub-Chains</strong>: Dùng <strong>Ordering Service</strong> để gom batch và có thể finalize block bằng consensus đã cấu hình (mặc định PoA). Sau đó có thể gửi proof lên Main Chain.</li>
-</ol>
-<hr />
+    A[Event Submission] --&gt; B[Journal and Queue]
+    B --&gt; C[Certification and Batching]
+    C --&gt; D[Configured PoA or PoF Finalizer]
+    D --&gt; E[Sign Header and Persist Block]
+    E --&gt; F[Commit Queue]
+    F --&gt; G[Sub-Chain Consumer and WorldState]
+    H[Explicit BFT Caller] --&gt; I[Separate PBFT Component]</code></pre>
+<p>ID lần gửi xác nhận nhật ký/hàng đợi đã tiếp nhận. Consumer xác thực và áp dụng khối đã lưu sau đó; phản hồi tiếp nhận không xác nhận khối đã hoàn tất.</p>
+<h2 id="cau-hinh-phan-cap">Cấu hình phân cấp</h2>
+<p>MainChain mặc định dùng PoA. <code>HRC_MAINCHAIN_CONSENSUS</code> chọn PoA hoặc PoF và dùng <code>HRC_CONSENSUS_TYPE</code> khi không được đặt. Sub-Chain mặc định dùng PoA và dùng <code>config</code> Python riêng để chọn PoF. <code>BFT_ENABLED</code> không nối BFT vào luồng của hai loại chuỗi.</p>
+<p>Cấp danh tính ký đầy đủ và khóa khối tin cậy đã được phê duyệt trước khi tạo chuỗi. PoF còn cần thống nhất thành viên liên minh và khóa công khai validator giữa các nút. Xem <a href="../../workflows/consensus_mechanisms/">Cơ chế đồng thuận</a> và <a href="../../getting-started/quickstart/">Khởi động nhanh</a>.</p>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././hierarchical/">Mô hình phân cấp (Hierarchical)</a></li>
-<li><a href=".././network/">Hệ thống mạng (Network)</a></li>
-<li><a href=".././error-mitigation/">Xử lý lỗi (Error Mitigation)</a></li>
+<li><a href=".././hierarchical/">Module phân cấp</a></li>
+<li><a href=".././network/">Mạng</a></li>
+<li><a href=".././error-mitigation/">Giảm thiểu lỗi</a></li>
 </ul>
 
 

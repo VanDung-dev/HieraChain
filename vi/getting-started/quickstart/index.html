@@ -926,10 +926,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cai-at-nhanh" class="md-nav__link">
+  <a href="#cai-at" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cài đặt nhanh
+        Cài đặt
       </span>
     </span>
   </a>
@@ -937,10 +937,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#khoi-ong-api-server" class="md-nav__link">
+  <a href="#tao-identity-ky-cuc-bo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Khởi động API server
+        Tạo identity ký cục bộ
       </span>
     </span>
   </a>
@@ -948,10 +948,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#su-dung-nhanh-trong-python" class="md-nav__link">
+  <a href="#ghi-event-va-neo-proof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sử dụng nhanh trong Python
+        Ghi event và neo proof
       </span>
     </span>
   </a>
@@ -959,10 +959,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dung-cli-tuy-chon" class="md-nav__link">
+  <a href="#khoi-ong-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dùng CLI (tuỳ chọn)
+        Khởi động API
       </span>
     </span>
   </a>
@@ -4269,10 +4269,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cai-at-nhanh" class="md-nav__link">
+  <a href="#cai-at" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Cài đặt nhanh
+        Cài đặt
       </span>
     </span>
   </a>
@@ -4280,10 +4280,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#khoi-ong-api-server" class="md-nav__link">
+  <a href="#tao-identity-ky-cuc-bo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Khởi động API server
+        Tạo identity ký cục bộ
       </span>
     </span>
   </a>
@@ -4291,10 +4291,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#su-dung-nhanh-trong-python" class="md-nav__link">
+  <a href="#ghi-event-va-neo-proof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sử dụng nhanh trong Python
+        Ghi event và neo proof
       </span>
     </span>
   </a>
@@ -4302,10 +4302,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dung-cli-tuy-chon" class="md-nav__link">
+  <a href="#khoi-ong-api" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dùng CLI (tuỳ chọn)
+        Khởi động API
       </span>
     </span>
   </a>
@@ -4355,58 +4355,89 @@
 
 
 <h1 id="bat-au-nhanh">Bắt đầu nhanh</h1>
-<p>Tài liệu này tóm tắt các bước tối thiểu để bạn chạy thử HieraChain.</p>
-<h2 id="cai-at-nhanh">Cài đặt nhanh</h2>
-<p>Để bắt đầu nhanh nhất, cài đặt HieraChain với tất cả dependencies (bao gồm dev) bằng một trong hai cách:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Cách 1: Sử dụng uv (khuyên dùng - nhanh nhất)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>sync
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Cách 2: Sử dụng pip</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<p>Ví dụ này dùng ledger SQLite mới và một signer PoA. Chạy trong thư mục làm việc trống sau khi cài package. Không dùng lại thư mục đã có ledger hoặc identity.</p>
+<h2 id="cai-at">Cài đặt</h2>
+<p>Từ bản checkout mã nguồn:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/VanDung-dev/HieraChain.git
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>HieraChain
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 </code></pre></div>
-<blockquote>
-<p><strong>Lưu ý:</strong> Để biết thêm chi tiết về cài đặt, xem <a href="../install/">Cài đặt chi tiết</a>.</p>
-</blockquote>
-<h2 id="khoi-ong-api-server">Khởi động API server</h2>
-<p>Sau khi cài đặt, bạn có thể khởi chạy server bằng lệnh:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<p><code>uv sync</code> cài dependency cơ bản; <code>--extra dev</code> bổ sung công cụ phát triển. Trên Windows, kích hoạt bằng <code>.venv\Scripts\Activate.ps1</code>.</p>
+<h2 id="tao-identity-ky-cuc-bo">Tạo identity ký cục bộ</h2>
+<p>Chạy đoạn Python sau một lần trong thư mục làm việc mới. Nó tạo identity đúng schema <code>NodeIdentity</code> và bản đồ public key tin cậy tương ứng. File đã tồn tại sẽ bị từ chối. Không đưa identity chứa private key vào Git.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">zmq</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.security_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyPair</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">signing</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">transport_public</span><span class="p">,</span> <span class="n">transport_secret</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">curve_keypair</span><span class="p">()</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">identity</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="s2">"node_id"</span><span class="p">:</span> <span class="s2">"local-node"</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="s2">"msp_id"</span><span class="p">:</span> <span class="s2">"LocalMSP"</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="s2">"signing_key"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">private_key</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="s2">"signing_public_key"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">public_key</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="s2">"transport_public_key"</span><span class="p">:</span> <span class="n">transport_public</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="s2">"transport_secret_key"</span><span class="p">:</span> <span class="n">transport_secret</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="p">}</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">(</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="p">(</span><span class="s2">"identity.json"</span><span class="p">,</span> <span class="n">identity</span><span class="p">),</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="p">(</span><span class="s2">"trusted_block_keys.json"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"local-node"</span><span class="p">:</span> <span class="n">signing</span><span class="o">.</span><span class="n">public_key</span><span class="p">}),</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="p">):</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_EXCL</span><span class="p">,</span> <span class="mo">0o600</span><span class="p">)</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 </code></pre></div>
-<p>Hoặc sử dụng CLI (nếu đã cài đặt qua pip):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>hrc<span class="w"> </span>server<span class="w"> </span>start
+<p>Đặt các biến sau trong cùng terminal <strong>trước khi import HieraChain</strong>. Ví dụ shell POSIX này tắt dotenv, P2P và xác thực API chỉ cho demo cục bộ biệt lập:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV</span><span class="o">=</span>dev
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV_FILE</span><span class="o">=</span>/dev/null
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>sqlite
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>sqlite:///local-ledger.db
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VALIDATOR_IDENTITY</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/identity.json"</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_BLOCK_TRUSTED_KEYS_FILE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/trusted_block_keys.json"</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_NODE_ID</span><span class="o">=</span>local-node
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_P2P_ENABLED</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_AUTH_ENABLED</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENABLE_ZK_PROOFS</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_MAINCHAIN_CONSENSUS</span><span class="o">=</span>proof_of_authority
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_BLOCK_INTERVAL</span><span class="o">=</span><span class="m">0</span>
 </code></pre></div>
-<p>Mặc định server phục vụ tại <code>http://localhost:2661</code>. Mở <code>http://localhost:2661/docs</code> để xem tài liệu OpenAPI và thử endpoint.</p>
-<h2 id="su-dung-nhanh-trong-python">Sử dụng nhanh trong Python</h2>
-<p>Ví dụ tối thiểu bên dưới minh họa cách tạo một <code>Sub-Chain</code>, ghi nhận sự kiện, và gửi bằng chứng lên <code>Main Chain</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
+<p>SQLite lưu block trong <code>local-ledger.db</code>; journal ordering nằm ở <code>data/&lt;chain-name&gt;</code> tính từ thư mục làm việc. Giữ cả hai để phục hồi. Production cần cấp identity và API key riêng; xem <a href="../../reference/config/">Cấu hình</a> và <a href="../../how-to/secure-deployment/">Triển khai an toàn</a>.</p>
+<h2 id="ghi-event-va-neo-proof">Ghi event và neo proof</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># 1. Initialize Hierarchy Manager</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 2. Create a sub-chain for a specific domain (e.g., supply chain)</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"generic"</span><span class="p">)</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># 3. Record a business operation (Event) into the Sub-Chain</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">success</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="s2">"supply_chain"</span><span class="p">,</span> 
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="s2">"PROD-100"</span><span class="p">,</span> 
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="s2">"production_start"</span><span class="p">,</span> 
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="p">{</span><span class="s2">"location"</span><span class="p">:</span> <span class="s2">"Factory-A"</span><span class="p">,</span> <span class="s2">"operator"</span><span class="p">:</span> <span class="s2">"user_01"</span><span class="p">}</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="p">)</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># 4. Anchor Proof from Sub-Chain to Main Chain</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">proof_success</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Event recorded: </span><span class="si">{</span><span class="s1">'Success'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Failure'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Proof anchored: </span><span class="si">{</span><span class="s1">'Success'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">proof_success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'Failure'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">create_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">chain</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_sub_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="k">assert</span> <span class="n">chain</span><span class="o">.</span><span class="n">register_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"product"</span><span class="p">:</span> <span class="s2">"sample"</span><span class="p">})</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"PROD-001"</span><span class="p">,</span> <span class="s2">"production_start"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">chain</span><span class="o">.</span><span class="n">flush_pending_and_finalize</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="n">event</span><span class="p">[</span><span class="s2">"event"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"operation_start"</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">chain</span><span class="o">.</span><span class="n">get_events_by_entity</span><span class="p">(</span><span class="s2">"PROD-001"</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="p">)</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="k">assert</span> <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
-<h2 id="dung-cli-tuy-chon">Dùng CLI (tuỳ chọn)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--help
+<p><code>start_operation()</code> xác nhận gửi vào ordering. <code>flush_pending_and_finalize()</code> xử lý công việc đang chờ; truy vấn entity kiểm tra event nghiệp vụ đã vào block hoàn tất. Gửi proof phải thành công sau khi MainChain lưu bền vững và đọc lại. <code>close()</code> đóng orderer và storage do manager sở hữu. Dùng tên chain khác khi mở rộng ledger có sẵn.</p>
+<p>PoA mặc định không thêm thời gian giãn cách block (<code>HRC_BLOCK_INTERVAL=0</code>). Ordering của Sub-Chain vẫn gom tối đa 50 event hoặc chờ tối đa 1 giây theo mặc định. PoF giữ cấu hình interval riêng là 5 giây.</p>
+<h2 id="khoi-ong-api">Khởi động API</h2>
+<p>Với cùng identity và database đã cấu hình, chạy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain
 </code></pre></div>
+<p>Lệnh CLI tương đương là <code>hrc node start</code>. Mở <code>http://localhost:2661/docs</code>. <code>/api/ledger/health</code> kiểm tra liveness; <code>/api/ledger/ready</code> khởi tạo/kiểm tra phục hồi hierarchy. Việc nhận event là bất đồng bộ; đọc block hoàn tất trước khi dựa vào proof anchor.</p>
 <h2 id="buoc-tiep-theo">Bước tiếp theo</h2>
 <ul>
-<li>Tìm hiểu chi tiết kiến trúc: <a href="../../architecture/overview/">Tổng quan</a></li>
-<li>Xem mô-đun cốt lõi: <a href="../../modules/core/">Core</a></li>
-<li>Xem thêm ví dụ kiểm thử trong <a href="../../dev/testing/">Kiểm thử</a></li>
+<li><a href="../../architecture/overview/">Kiến trúc</a></li>
+<li><a href="../../reference/api-ledger/">API Ledger</a></li>
+<li><a href="../../modules/hierarchical/">Phạm vi tính năng</a></li>
 </ul>
 
 

@@ -4706,13 +4706,13 @@
 <h3 id="main-roles">Main roles</h3>
 <ul>
 <li>Standardizes database read and write operations for chains, blocks, events, proofs, and entity state.</li>
-<li>Supports multiple environments, with PostgreSQL as the default and SQLite as the local fallback.</li>
+<li>Supports multiple environments, with PostgreSQL as the default and SQLite as an explicitly selected backend.</li>
 <li>Enforces data isolation and input sanitization across database engines.</li>
 </ul>
 <h2 id="2-available-database-adapters">2. Available database adapters</h2>
 <p>All storage adapters reside in <code>hierachain/adapters/database/</code>.</p>
 <h3 id="21-sqlite-database-adapter-sqlite_adapterpy">2.1 SQLite Database Adapter (<code>sqlite_adapter.py</code>)</h3>
-<p>The fallback adapter for environments where PostgreSQL is unavailable, and the explicit choice for lightweight single-node setups.</p>
+<p>An explicitly selected adapter for local deployments. PostgreSQL failure does not select SQLite automatically.</p>
 <ul>
 <li>Technology: SQLite3 via <code>sqlite3</code> and <code>hierachain/adapters/database/base/sql_adapter.py</code> (<code>SQLBase</code>).</li>
 <li>Schema: Initialized through <code>sqlite_schema.py</code>, creating tables for <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, and <code>chain_state</code>.</li>
@@ -4725,7 +4725,7 @@
 <li>Technology: PostgreSQL with connection pooling.</li>
 <li>Schema: Initialized through <code>postgres_schema.py</code> using identical schema semantics to SQLite.</li>
 <li>Strengths: High concurrent write capacity, connection pooling, enterprise backup tooling.</li>
-<li>Query features: Partition-aware queries and index scans for high-volume audit logs.</li>
+<li>Query support uses SQL event indexes; partitioning is not automatically configured by this adapter.</li>
 </ul>
 <h3 id="23-redis-database-adapter-redis_adapterpy">2.3 Redis Database Adapter (<code>redis_adapter.py</code>)</h3>
 <p>An in-memory adapter designed for high-throughput reads and real-time entity state lookups.</p>
@@ -4741,8 +4741,8 @@
 <tr>
 <th style="text-align: left;">Feature</th>
 <th style="text-align: left;">SQLiteAdapter</th>
-<th style="text-align: left;">PostgreSQLAdapter</th>
-<th style="text-align: left;">RedisAdapter</th>
+<th style="text-align: left;">PostgresAdapter</th>
+<th style="text-align: left;">RedisStorageAdapter</th>
 </tr>
 </thead>
 <tbody>
@@ -4758,32 +4758,11 @@
 <td style="text-align: left;">Production, multi-node clusters</td>
 <td style="text-align: left;">Low-latency state queries, caches</td>
 </tr>
-<tr>
-<td style="text-align: left;">Write latency</td>
-<td style="text-align: left;">Low</td>
-<td style="text-align: left;">Low to medium</td>
-<td style="text-align: left;">Very low</td>
-</tr>
-<tr>
-<td style="text-align: left;">Query flexibility</td>
-<td style="text-align: left;">Full SQL</td>
-<td style="text-align: left;">Full SQL</td>
-<td style="text-align: left;">Key and index lookups</td>
-</tr>
-<tr>
-<td style="text-align: left;">Persistence</td>
-<td style="text-align: left;">ACID local file</td>
-<td style="text-align: left;">ACID enterprise server</td>
-<td style="text-align: left;">RDB / AOF snapshot</td>
-</tr>
-<tr>
-<td style="text-align: left;">External service</td>
-<td style="text-align: left;">None</td>
-<td style="text-align: left;">PostgreSQL 13+</td>
-<td style="text-align: left;">Redis 6+</td>
-</tr>
 </tbody>
 </table>
+<p>| Query flexibility | Full SQL | Full SQL | Key and index lookups |
+| Persistence | ACID local file | ACID enterprise server | RDB / AOF snapshot |
+| External service | None | PostgreSQL | Redis |</p>
 <h2 id="4-configuration-and-usage">4. Configuration and usage</h2>
 <h3 id="configuration-via-settings">Configuration via settings</h3>
 <p>Set the storage backend using environment variables:</p>
@@ -4804,16 +4783,16 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="using-postgresql">Using PostgreSQL</h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.postgres_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">PostgreSQLAdapter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.postgres_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">PostgresAdapter</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">PostgreSQLAdapter</span><span class="p">(</span><span class="n">connection_string</span><span class="o">=</span><span class="s2">"postgresql://user:pass@localhost:5432/hierachain"</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">PostgresAdapter</span><span class="p">(</span><span class="n">database_url</span><span class="o">=</span><span class="s2">"postgresql://user:pass@localhost:5432/hierachain"</span><span class="p">)</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">get_chain_statistics</span><span class="p">(</span><span class="s2">"supply_chain_ledger"</span><span class="p">)</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="using-redis">Using Redis</h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.redis_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisAdapter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.redis_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisStorageAdapter</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">RedisAdapter</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">RedisStorageAdapter</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">get_chain_statistics</span><span class="p">(</span><span class="s2">"supply_chain_ledger"</span><span class="p">)</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_blocks'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
@@ -4828,7 +4807,7 @@
 <p>Adapters log queries and connection events through <code>SecureLogger</code>, redacting database credentials, auth tokens, and sensitive business details.</p>
 <h2 id="6-maintenance-and-retention">6. Maintenance and retention</h2>
 <ul>
-<li>Data cleanup: Relational adapters support purging historical event logs beyond retention thresholds set by <code>HRC_SQL_RETENTION_DAYS</code>.</li>
+<li><code>HRC_SQL_RETENTION_DAYS</code> is declared in settings but is not consumed by a runtime retention worker. No automatic event-history purge is wired to this setting.</li>
 <li>Logging and journals: Persistent binary journals and forensic error records use <code>hierachain/core/parquet_log.py</code> and <code>hierachain/error_mitigation/journal.py</code>, keeping chain persistence decoupled from diagnostic logging.</li>
 </ul>
 <h2 id="related">Related</h2>
@@ -4837,6 +4816,7 @@
 <li><a href="../../reference/config/">Configuration Reference</a></li>
 <li><a href=".././security/">Security Overview</a></li>
 </ul>
+<p>Redis adapters serve auxiliary indexing/queries; <code>HierarchyManager</code> rejects Redis as durable hierarchical block storage. Direct adapter callers manage connection lifetime.</p>
 
 
 
