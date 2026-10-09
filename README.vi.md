@@ -1,120 +1,113 @@
-# HieraChain - Sổ cái doanh nghiệp dựa trên công nghệ blockchain phân cấp
+# HieraChain - Ledger doanh nghiệp phân cấp
 
-![Phiên bản Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
-[![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
-[![Giấy phép](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-[![Phiên bản PyPI](https://img.shields.io/pypi/v/HieraChain.svg)](https://pypi.org/project/HieraChain/)
+![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13%20|%203.14-blue)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![PyPI version](https://img.shields.io/pypi/v/HieraChain.svg)](https://pypi.org/project/HieraChain/)
 
 [English](README.md) | **Tiếng Việt**
 
-## Tổng Quan
+## Tổng quan
 
-HieraChain là một sổ cái doanh nghiệp được xây dựng trên công nghệ blockchain phân cấp, được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Thay vì là một nền tảng blockchain mục đích chung tập trung vào tiền kỹ thuật số, HieraChain cung cấp một cấu trúc sổ cái phân cấp, an toàn để quản lý các hoạt động và quy trình kinh doanh.
+HieraChain là ledger Python dành cho event nghiệp vụ. Sub-Chain theo domain ghi event vào block có chữ ký và liên kết hash; MainChain neo proof của các block đó. `HierarchyManager` điều phối vòng đời chain, phục hồi và gửi proof.
 
-Sổ cái này triển khai kiến trúc đa tầng phân cấp trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "Event" thay vì "Giao dịch", nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
+## Các khả năng đã triển khai
 
-## Tính Năng Nổi Bật
+* Bảng event Apache Arrow, truy vấn entity/event qua index và gom batch ordering bất đồng bộ.
+* Chữ ký Ed25519 với bản đồ khóa tin cậy do operator cấp, storage SQLite/PostgreSQL bền vững và journal ordering.
+* PoA mặc định; có thể cấu hình PoF với luân phiên validator. Thành phần BFT tách biệt với runtime MainChain/Sub-Chain.
+* REST, GraphQL, WebSocket, client Python đồng bộ/bất đồng bộ và công cụ CLI.
+* Xác thực API key khi được bật, policy organization/channel, audit log và payload IPFS mã hóa AES-256-GCM tùy chọn.
 
-* **Cấu Trúc Phân Cấp**: Kiến trúc đa tầng với Main Chain (Giám sát viên) và Sub-Chain (Chuyên gia Domain).
-* **Cơ Chế Đồng Thuận**: Hỗ trợ Proof of Authority (PoA), Proof of Federation (PoF), và BFT.
-* **Hiệu Suất Cao**: Lưu trữ dạng cột bằng Apache Arrow, hybrid cache và xử lý sự kiện đa luồng.
-* **Độ Tin Cậy & Phục Hồi**: Ghi log sự kiện bền vững, tự động phục hồi lỗi, và khả năng khôi phục trạng thái linh hoạt.
-* **Kiến Trúc Bảo Mật Đa Tầng**: Biện pháp phòng vệ doanh nghiệp toàn diện, trải rộng trên toàn bộ vòng đời hệ thống (từ Gateway API tới Storage), được xây dựng trên 6 trụ cột cốt lõi:
+## Giới hạn hiện tại
 
-    * **Authorization** (Phân quyền bằng PolicyEngine ABAC & MSP định danh)
-    * **Lockdown & Logging** (Giao thức Phong tỏa Quorum & Log bất biến)
-    * **Fault-tolerance** (Chống chịu lỗi Byzantine và Liên minh PoF)
-    * **Risk Analyzer** (Theo dõi dị thường với thuật toán Z-score)
-    * **Encryption** (Mã hóa lưu trữ AES-256-GCM & kênh truyền ZMQ)
-    * **Decentralized Zero-Knowledge Proofs** (Neo bằng chứng ZK phi tín nhiệm lên Mainchain)
+* Tạo/xác minh ZK chỉ hỗ trợ mock phát triển; backend production chưa triển khai.
+* Đăng ký contract giữ implementation hoặc tham chiếu CID và metadata trong bộ nhớ tiến trình API. Thực thi contract và ghi private data trả HTTP 501 cho tài nguyên đã đăng ký, hoặc HTTP 404 nếu contract/collection không tồn tại, sau khi kiểm tra request và quyền truy cập.
+* Connector SAP/Oracle/Dynamics có sẵn yêu cầu `simulation_mode=True` và cung cấp fixture mô phỏng. Ứng dụng phải cung cấp adapter ERP thật.
+* Redis hỗ trợ adapter phụ trợ nhưng chưa làm backend block bền vững cho hierarchy.
+* Xác thực block PoF thông thường kiểm tra chữ ký leader; đường này chưa tự thu thập quorum nhiều bên hoặc cung cấp failover.
+* Subscription WebSocket nhận thông báo qua các hàm broadcast; ứng dụng phải nối các hàm này với event ledger và quá trình commit block.
+* Route REST cho event và contract nhận dữ liệu inline hoặc tham chiếu CID IPFS đã có. Ứng dụng phải chủ động upload payload off-chain; các route này chưa tự chuyển payload lớn lên IPFS.
 
-## Tài Liệu (Documentation)
+Xem [phạm vi tính năng](docs/vi/modules/hierarchical.md) và [phạm vi đồng thuận](docs/vi/workflows/consensus_mechanisms.md).
 
-Kho tài liệu chi tiết có sẵn tại trang web chính thức **[docs.hierachain.org](https://docs.hierachain.org/)**:
+## Bắt đầu nhanh
 
-* [Bắt đầu nhanh (Getting Started)](https://docs.hierachain.org/getting-started/install/) - Cài đặt và thiết lập cơ bản
-* [Kiến trúc (Architecture)](https://docs.hierachain.org/architecture/overview/) - Thiết kế hệ thống và mô hình phân cấp
-* [Thành phần hệ thống (Modules)](https://docs.hierachain.org/modules/core/) - Chi tiết về các module của hệ thống
-* [Hướng dẫn (How-to Guides)](https://docs.hierachain.org/how-to/integrate-web2/) - Các bước hướng dẫn triển khai
-* [Tài liệu tham khảo (Reference)](https://docs.hierachain.org/reference/code-map/) - API REST và cấu hình chi tiết
-
-## Bắt Đầu Nhanh
-
-### Cài Đặt
-
-**Qua PIP (khuyên dùng)**
-
-```bash
-pip install HieraChain
-```
-
-**Từ mã nguồn (dành cho phát triển)**
-
-*Phương pháp truyền thống với `pip`:*
+### Cài từ mã nguồn
 
 ```bash
 git clone https://github.com/VanDung-dev/HieraChain.git
 cd HieraChain
-python -m venv venv
-source venv/bin/activate  # Linux/macOS (hoặc venv\Scripts\activate trên Windows)
-
-# Cài đặt dependencies và dự án ở chế độ dev
-pip install -e .[dev]
-```
-
-*Phương pháp hiện đại và nhanh với `uv` (khuyên dùng):*
-
-```bash
-git clone https://github.com/VanDung-dev/HieraChain.git
-cd HieraChain
-
-# Cài đặt uv nếu chưa có
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Tự động tạo môi trường ảo + cài đặt TẤT CẢ dependencies chỉ với 1 lệnh
-uv sync
-
+uv sync --frozen --extra dev
 source .venv/bin/activate
 ```
 
-### Sử Dụng Cơ Bản
+Nếu không dùng uv, tạo và kích hoạt `.venv`, rồi cài:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+```
+
+Với package đã phát hành, dùng `python -m pip install HieraChain`. Bản phát hành có thể khác checkout mã nguồn hiện tại. Dependency cơ bản và extra `dev`/`doc` được khai báo trong `pyproject.toml`.
+
+### Cấu hình và sử dụng ledger
+
+Trước tiên hoàn thành [thiết lập identity ký và SQLite cục bộ](docs/vi/getting-started/quickstart.md). Hướng dẫn tạo identity cố định, bản đồ khóa tin cậy và biến môi trường. Chạy phần thiết lập và ví dụ trong cùng một thư mục làm việc trống; đường dẫn SQLite và journal ordering được tính theo thư mục đó:
 
 ```python
 from hierachain.hierarchical import HierarchyManager
 
 manager = HierarchyManager()
-manager.create_sub_chain("supply_chain")
-
-# Thêm một sự kiện
-manager.add_event("supply_chain", {
-    "entity_id": "PROD-001",
-    "event": "production_complete",
-    "timestamp": 1703088000.0,
-    "details": {"quantity": 100}
-})
-
-# Gửi bằng chứng đến main chain
-manager.submit_proof("supply_chain")
+try:
+    assert manager.create_sub_chain("supply_chain", "supply_chain")
+    chain = manager.get_sub_chain("supply_chain")
+    assert chain.register_entity("PROD-001", {"product": "sample"})
+    assert manager.start_operation(
+        "supply_chain", "PROD-001", "production_start", {"quantity": 100}
+    )
+    chain.flush_pending_and_finalize(timeout=10.0)
+    assert any(
+        event["event"] == "operation_start"
+        for event in chain.get_events_by_entity("PROD-001")
+    )
+    assert manager.submit_proof_to_main_chain("supply_chain")
+finally:
+    manager.close()
 ```
 
-Chạy API Server:
+Xác nhận nhận event là xác nhận ordering, chưa phải block finality. Ví dụ này chủ động xử lý ordering và kiểm tra event entity đã hoàn tất trước khi gửi proof bền vững.
+
+PoA mặc định `HRC_BLOCK_INTERVAL=0`; batching vẫn ảnh hưởng latency. PoF giữ interval riêng là 5 giây. Đo throughput event đã commit và latency p95/p99 theo [hướng dẫn hiệu năng](docs/vi/guides/performance.md).
+
+### Khởi động API
+
+Dùng môi trường đã cấu hình theo hướng dẫn bắt đầu nhanh:
 
 ```bash
 python -m hierachain
 ```
 
-API có sẵn tại `http://localhost:2661/docs`
+Mở `http://localhost:2661/docs`. Kiểm tra `/api/ledger/ready` để xác nhận phục hồi hierarchy. Quickstart cục bộ tắt xác thực API key bằng `HRC_AUTH_ENABLED=false`; production yêu cầu bật xác thực, cấp API key và identity ký. Xem [cấu hình](docs/vi/reference/config.md).
 
-## Thông Số Kỹ Thuật
+## Tài liệu
 
-| Thông số | Giá trị                |
-|----------|------------------------|
-| Test Cases | >700                   |
-| Hỗ trợ Python | 3.10, 3.11, 3.12, 3.13 |
-| Loại đồng thuận | PoA, PoF, BFT          |
-| Thuật toán ký | Ed25519                |
-| Mã hóa | AES-256-GCM            |
+* [Tài liệu tiếng Anh](https://docs.hierachain.org/) · [Tài liệu tiếng Việt](https://docs.hierachain.org/vi/)
+* [Cài đặt](docs/vi/getting-started/install.md) · [Kiến trúc](docs/vi/architecture/overview.md)
+* [REST Ledger API](docs/vi/reference/api-ledger.md) · [Python SDK](docs/vi/reference/sdk-reference.md)
+* [Kiểm thử](docs/vi/dev/testing.md) · [Build tài liệu](docs/README.md)
 
-## Giấy Phép
+## Phạm vi kỹ thuật
 
-Dự án này được cấp phép kép theo [Giấy phép Apache-2.0](LICENSE-APACHE) hoặc [Giấy phép MIT](LICENSE-MIT). Bạn có thể chọn một trong hai giấy phép.
+| Thành phần | Triển khai hiện tại |
+|------------|---------------------|
+| Python | 3.10, 3.11, 3.12, 3.13, 3.14 |
+| Đồng thuận phân cấp | PoA / PoF; thành phần BFT riêng |
+| Chữ ký block | Ed25519, kể cả genesis |
+| Storage hierarchy | SQLite / PostgreSQL |
+| Mã hóa off-chain | IPFS AES-256-GCM tùy chọn |
+
+## Giấy phép
+
+Cấp phép kép theo [Apache-2.0](LICENSE-APACHE) hoặc [MIT](LICENSE-MIT). Bạn có thể chọn một trong hai.
