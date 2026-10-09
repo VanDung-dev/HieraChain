@@ -24,7 +24,7 @@ icon: material/alphabetical
 | Proof of Authority | PoA; Intra-Organization consensus; `hierachain/consensus/proof_of_authority.py`. |
 | Proof of Federation | PoF; Inter-Organization P2P MainChain Alliance consensus; `hierachain/consensus/proof_of_federation.py`. |
 | API Key | API access key; `hierachain/security/verify/api_key_verifier.py`. |
-| Resource Guard | Resource protection middleware; `hierachain/security/brute_force_protector.py`. |
+| API-key brute-force protection | Tracks failed API-key authentication attempts by IP and applies temporary IP lockouts; the key prefix is used only for logging; `hierachain/security/brute_force_protector.py`. |
 | Entity Tracer | Event tracing by entity; `hierachain/domains/utils/entity_tracer.py`. |
 | Zero-Knowledge Proof | ZK Proof; `hierachain/security/zk_prover.py`, `hierachain/security/verify/zk_verifier.py`. |
 | Channel | Inter-organization private channel; `hierachain/hierarchical/channel/channel.py`. |

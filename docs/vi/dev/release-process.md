@@ -1,36 +1,35 @@
 ---
 title: "Quy trình phát hành"
-description: "Quy trình phát hành phiên bản và tài liệu: versioning bằng setuptools_scm, chuẩn bị gói, ghi chú phát hành."
+description: "Chuẩn bị phát hành, quản lý phiên bản từ hierachain/config/version.py, đóng gói và build tài liệu."
 icon: material/rocket
 ---
 
 # Quy trình phát hành
 
-## Versioning
+## Quản lý phiên bản
 
-* Dùng `setuptools_scm` (xem `pyproject.toml`) để suy luận phiên bản từ thẻ Git.
-* Tạo thẻ theo mẫu: `vX.Y.Z` hoặc `vX.Y.Z.devN` cho bản phát triển.
+`pyproject.toml` đọc `hierachain.config.version.__version__`, được tính từ tuple `VERSION` trong `hierachain/config/version.py`. Chỉ tạo Git tag không đổi version package; dự án không dùng `setuptools_scm`.
 
-## Chuẩn bị phát hành
+## Chuẩn bị và đóng gói
 
-1. Đảm bảo test xanh: `pytest -v`.
-2. Soát tài liệu: liên kết/chỉ mục/nav cập nhật.
-3. Cập nhật `docs/vi/changelog.md` với nội dung phát hành.
-
-## Đóng gói
+1. Chạy từng file test liên quan, cùng các kiểm tra CI bắt buộc về static analysis và backend thật.
+2. Đồng bộ tài liệu Anh/Việt tương ứng. Changelog mô tả thay đổi thư viện cốt lõi, không ghi riêng chỉnh sửa tài liệu.
+3. Cập nhật tuple version Python và tag phát hành thống nhất.
 
 ```bash
-python -m build
-twine check dist/*
-# (tuỳ chọn) twine upload dist/*
+uv build
+python -m twine check dist/*
 ```
 
-## Phát hành tài liệu
+Xuất bản là bước phát hành riêng. Xem `.github/workflows/` về yêu cầu workflow đã cấu hình.
 
-* Build site tĩnh bằng MkDocs (thực hiện sau khi nội dung ổn định).
-* CI (sau): build preview trên PR, publish khi merge `main`.
+## Tài liệu
 
-## Ghi chú phát hành
+Build bằng Zensical, tiếng Anh trước và tiếng Việt sau:
 
-* Tóm tắt thay đổi chính của mã và tài liệu.
-* Link tới các PR liên quan; liệt kê điểm phá vỡ (breaking changes) nếu có.
+```bash
+zensical build -f zensical.toml
+zensical build -f zensical.vi.toml
+```
+
+`.github/workflows/docs.yml` build cả hai ngôn ngữ với pull request khớp bộ lọc và deploy GitHub Pages khi push khớp bộ lọc lên `main`.

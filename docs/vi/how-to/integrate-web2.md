@@ -20,11 +20,11 @@ Có 3 mô hình tích hợp chính:
 
 ```mermaid
 graph TD
-    Web2[Ứng dụng Web2 / Frontend] -->|REST HTTP| API[API HieraChain]
-    Legacy[Hệ thống cũ / Legacy] -->|Adapter| SDK[SDK Tích hợp]
-    ERP[Hệ thống ERP] -->|Pull/Push| Adapter
-    
-    API --> Core[Hệ thống lõi HieraChain]
+    Web2[Web2 App / Frontend] -->|REST HTTP| API[HieraChain API]
+    Legacy[Legacy System] -->|Adapter| SDK[Integration SDK]
+    ERP[ERP System] -->|Pull/Push| Adapter
+
+    API --> Core[HieraChain Core]
     SDK --> Core
 ```
 
@@ -38,15 +38,15 @@ Bạn có một Website Thương mại điện tử (Node.js/React) và muốn g
 
 ```mermaid
 sequenceDiagram
-    participant Web as Ứng dụng Web2 (Node/React)
-    participant API as API HieraChain
-    participant Sub as Sub-Chain (Đơn hàng)
+    participant Web as Web2 App (Node/React)
+    participant API as HieraChain API
+    participant Sub as Sub-Chain (Orders)
 
     Web->>API: POST /chains/orders/events
     Note right of Web: Payload: {order_id, items...}
-    API->>API: Xác thực API Key
-    API->>Sub: Ghi nhận sự kiện (Thêm sự kiện)
-    Sub-->>API: Trả về Event ID
+    API->>API: Validate API Key
+    API->>Sub: Record Event (Add Event)
+    Sub-->>API: Return Event ID
     API-->>Web: 200 OK (Event ID)
 ```
 
@@ -57,13 +57,13 @@ import requests
 import json
 
 API_URL = "http://localhost:2661/api/ledger"
-API_KEY = "your-api-key-here"  # Nếu có bật xác thực API Key
+API_KEY = "your-api-key-here"  # If AUTH is enabled
 
 def log_order_to_chain(order_id, items):
-    # 1. Tạo Sub-Chain cho đơn hàng (hoặc dùng chung chuỗi 'orders' đã có)
-    # Giả định dùng chung chuỗi 'orders'
-    
-    # 2. Gửi sự kiện
+    # 1. Create Sub-Chain for orders (or use shared 'orders' chain)
+    # Assuming using shared 'orders' chain
+
+    # 2. Submit event
     payload = {
         "entity_id": order_id,
         "event_type": "order_completed",
@@ -72,24 +72,24 @@ def log_order_to_chain(order_id, items):
             "total_value": sum(i['price'] for i in items)
         }
     }
-    
+
     headers = {
         "Content-Type": "application/json",
         "X-API-Key": API_KEY
     }
-    
+
     try:
         response = requests.post(
-            f"{API_URL}/chains/orders/events", 
-            json=payload, 
+            f"{API_URL}/chains/orders/events",
+            json=payload,
             headers=headers,
             timeout=5
         )
         response.raise_for_status()
-        print(f"Thành công: {response.json()}")
+        print(f"Success: {response.json()}")
         return response.json().get("event_id")
     except requests.exceptions.RequestException as e:
-        print(f"Lỗi khi lưu vào blockchain: {e}")
+        print(f"Error logging to blockchain: {e}")
         return None
 ```
 
@@ -112,60 +112,63 @@ async function logOrder(orderId, items) {
         details: { count: items.length }
       })
     });
-    
-    if (!response.ok) throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const result = await response.json();
-    console.log("Đã ghi nhận sự kiện:", result.event_id);
+    console.log("Logged event:", result.event_id);
     return result.event_id;
-    
+
   } catch (error) {
-    console.error("Lỗi tích hợp Blockchain:", error);
+    console.error("Blockchain integration error:", error);
   }
 }
 ```
 
-## Cách 2: Sử dụng SDK Tích hợp (Python Backend)
+Thiết lập identity ký và SQL storage theo [Bắt đầu nhanh](../getting-started/quickstart.md) trước khi dùng `HierarchyManager`. SDK HTTP trong `hierachain/sdk/` là lựa chọn khác với lời gọi thư viện trực tiếp dưới đây.
 
-Nếu bạn đang xây dựng một dịch vụ Python trong cùng mạng nội bộ hoặc cluster, việc sử dụng trực tiếp SDK sẽ mang lại hiệu năng cao hơn (bỏ qua hao phí xử lý HTTP).
+## Cách 2: Tích hợp thư viện trực tiếp trong cùng process (Python Backend)
+
+Ví dụ này import và gọi trực tiếp `HierarchyManager` trong process của dịch vụ. Dùng `HieraChainClient` khi dịch vụ cần gọi API qua SDK HTTP.
 
 ```mermaid
 sequenceDiagram
-    participant Service as Dịch vụ Python
+    participant Service as Python Service
     participant Manager as HierarchyManager
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
     Service->>Manager: start_operation(sub_chain, data)
-    Manager->>Sub: Ghi nhận sự kiện & Đóng Block
+    Manager->>Sub: Journal and queue event
     Service->>Manager: submit_proof_to_main_chain()
-    Manager->>Sub: Lấy Proof
-    Manager->>Main: Gửi Proof (Dữ liệu Neo - Anchor)
-    Main-->>Manager: Xác nhận (Ack)
+    Manager->>Sub: Get Proof
+    Manager->>Main: Submit Proof (Anchor Data)
+    Main-->>Manager: Acknowledge (Ack)
 ```
 
 ```python
 from hierachain.hierarchical import HierarchyManager
 
-# Khởi tạo manager (kết nối trực tiếp tới DB hoặc qua ZMQ nội bộ)
 manager = HierarchyManager()
-
-def process_batch_data(batch_items):
-    # Ghi trực tiếp vào hàng đợi xử lý
-    for item in batch_items:
-        manager.start_operation(
-            sub_chain_name="supply_chain",
-            entity_id=item["id"],
-            operation_type="ingest",
-            details=item["metadata"]
-        )
-    
-    # Kích hoạt gửi proof ngay lập tức lên Main Chain (tùy chọn)
-    manager.submit_proof_to_main_chain("supply_chain")
+try:
+    assert manager.create_sub_chain("supply_chain", "supply_chain")
+    chain = manager.get_sub_chain("supply_chain")
+    assert chain.register_entity("PROD-001", {"product": "sample"})
+    assert manager.start_operation(
+        "supply_chain", "PROD-001", "production_start", {"quantity": 100}
+    )
+    chain.flush_pending_and_finalize(timeout=10.0)
+    assert any(
+        event["event"] == "operation_start"
+        for event in chain.get_events_by_entity("PROD-001")
+    )
+    assert manager.submit_proof_to_main_chain("supply_chain")
+finally:
+    manager.close()
 ```
 
 ## Cách 3: ERP Adapter
 
-Sử dụng sổ cái tích hợp `hierachain/integration` để xây dựng các adapter đồng bộ dữ liệu hai chiều.
+Dùng thư viện mapping/scheduler với adapter ERP do ứng dụng cấp. Connector vendor có sẵn chỉ mô phỏng.
 
 Xem chi tiết tại: [Mô-đun Tích hợp](../modules/integration.md).
 

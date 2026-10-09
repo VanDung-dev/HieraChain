@@ -4,90 +4,60 @@ description: "Định nghĩa cấu trúc dữ liệu (Apache Arrow) và giao th�
 icon: material/file-tree
 ---
 
-# Data Schema & Giao thức
+# Lược đồ dữ liệu và giao thức
 
-Tài liệu này định nghĩa chi tiết cấu trúc dữ liệu (Data Schema) và các giao thức trao đổi thông tin (Protocol) trong HieraChain. Hệ thống sử dụng **Apache Arrow** làm định dạng lưu trữ và truyền tải chính để đảm bảo hiệu năng cao.
+HieraChain dùng JSON cho yêu cầu REST và bảng Apache Arrow để lưu sự kiện trong khối. Payload sự kiện nhị phân chuẩn hóa giữ nguyên kiểu dữ liệu của details; các cột metadata Arrow phục vụ lọc và lập chỉ mục. Xem [Mô hình dữ liệu](./data-models.md) để biết quy tắc tuần tự hóa và tính hash.
 
-## Cấu trúc dữ liệu lõi
+## Sự kiện
 
-HieraChain tuân thủ nghiêm ngặt các định nghĩa Schema sau đây để đảm bảo tính nhất quán trên toàn mạng lưới (Main Chain & Sub Chains).
+Arrow `EVENT_SCHEMA` được định nghĩa trong `hierachain/core/block.py`.
 
-### Event
+| Trường | Kiểu Arrow | Mô tả |
+|:------|:-----------|:------------|
+| `entity_id` | `string` | Mã định danh thực thể nghiệp vụ |
+| `event` | `string` | Loại sự kiện nội bộ |
+| `timestamp` | `float64` | Dấu thời gian Unix |
+| `details` | `map<string, string>` | Biểu diễn giá trị details dưới dạng chuỗi cho metadata Arrow |
+| `details_cid` | `string` | Tham chiếu IPFS ngoài chuỗi, tùy chọn |
+| `details_nonce` | `string` | Nonce AES-GCM công khai cho đối tượng ngoài chuỗi đã mã hóa |
+| `data` | `binary` | Payload JSON chuẩn hóa của sự kiện giữ trường JSON và kiểu dữ liệu của details; bỏ trường byte cấp cao nhất |
 
-Event là đơn vị dữ liệu nhỏ nhất, đại diện cho một hành động nghiệp vụ cụ thể.
+`details_nonce` không phải khóa giải mã. Để truy xuất dữ liệu IPFS đã mã hóa, còn cần khóa mã hóa ổn định và metadata đã dùng làm AAD, nếu có. Xem [Lưu trữ IPFS](../workflows/ipfs-storage.md).
 
-**Schema Definition (`hierachain.core.schemas.EVENT_SCHEMA`):**
+### Dữ liệu đầu vào REST
 
-| Field Name | Type (Arrow) | Mô tả |
-|------------|--------------|-------|
-| `entity_id` | `string` | **Metadata Field**. Định danh thực thể chịu tác động (ví dụ: ProductID, OrderID). **Lưu ý:** Không dùng làm định danh Block. |
-| `event` | `string` | Loại sự kiện (ví dụ: `CREATED`, `UPDATED`, `TRANSFERRED`). |
-| `timestamp` | `float64` | Thời điểm xảy ra sự kiện (Unix timestamp). |
-| `details` | `map<string, string>` | Các thông tin bổ sung dạng Key-Value (On-chain data). |
-| `details_cid` | `string` | **IPFS CID**. Tham chiếu dữ liệu lớn được lưu off-chain. |
-| `details_nonce` | `string` | **Encryption Nonce**. Khóa giải mã dữ liệu off-chain (dùng cho AES-GCM). |
-| `data` | `binary` | Payload dữ liệu chính (thành phần JSON nội bộ, bao gồm cả on-chain và off-chain refs). |
+`EventRequest` trong `hierachain/api/ledger/schemas.py` yêu cầu `entity_id` và `event_type`. Trường tùy chọn gồm `details`, `details_cid`, `details_nonce`, `details_metadata`, `sender` và `signature`. Schema không có trường `timestamp`. Ledger API ánh xạ `event_type` sang trường nội bộ `event` và gán thời gian hiện tại của server.
 
-### Giao thức Cấu trúc Sự kiện (Event Schema)
+Lược đồ Arrow bảy cột không có cột riêng cho `signature`, `zk_proof` hay `zk_public_inputs`. Trường JSON bổ sung vẫn có thể được lưu trong byte chuẩn hóa của sự kiện; riêng việc có trường đó không chứng minh rằng dữ liệu đã được xác minh mật mã.
 
-Các sự kiện (Event) được đóng gói cùng chữ ký số (Ed25519) và bằng chứng Zero-Knowledge trước khi gửi vào chuỗi:
+HTTP SDK gửi dữ liệu sự kiện của bên gọi đến Ledger API dưới dạng JSON. SDK không bọc dữ liệu trong một đối tượng có chữ ký riêng hay tạo bằng chứng ZK. Việc gửi bằng chứng MainChain và ký header khối có quy tắc xác thực riêng.
 
-**Định nghĩa Cấu trúc (`hierachain.core.schemas.EVENT_SCHEMA`):**
+## Khối
 
-| Tên trường | Kiểu dữ liệu (Arrow) | Mô tả |
-|------------|--------------|-------------|
-| `entity_id` | `string` | Mã định danh thực thể ảnh hưởng (ProductID, OrderID...). |
-| `event` | `string` | Tên loại sự kiện. |
-| `signature` | `string` | Chữ ký số của bên khởi tạo sự kiện. |
-| `timestamp` | `float64` | Thời gian khởi tạo sự kiện. |
-| `zk_proof` | `binary` | (Tùy chọn) Dữ liệu bằng chứng Zero-Knowledge. |
-| `zk_public_inputs` | `binary` | (Tùy chọn) Dữ liệu public inputs cho việc xác minh ZK Proof. |
+`Block.events` là một `pyarrow.Table`. Khi tuần tự hóa khối, các trường header sau được đưa vào:
 
-### Block
+| Trường | Ý nghĩa |
+|:------|:--------|
+| `index` | Vị trí khối trong chuỗi |
+| `timestamp` | Thời điểm tạo khối |
+| `previous_hash` | Hash của khối trước |
+| `nonce` | Trường header được đưa vào tuần tự hóa và tính hash; PoA/PoF không dùng trường này cho đồng thuận dựa trên công việc tính toán |
+| `merkle_root` | Gốc được tính từ các sự kiện của khối |
+| `hash` | Hash đã tính của khối |
+| `creator_id` | Danh tính nút ký khối |
+| `signature` | Chữ ký Ed25519 của header khối chuẩn hóa |
 
-Block là tập hợp các Event đã được sắp xếp thứ tự và đóng gói lại.
+Các trường header không phải một lược đồ sự kiện Arrow bổ sung. Bộ xác minh dùng bảng ánh xạ bên tạo khối sang khóa công khai đã được người vận hành phê duyệt để kiểm tra chữ ký.
 
-**Block Header Schema:**
+## Tiếp nhận và ghi khối
 
-| Field Name | Type (Arrow) | Mô tả |
-|------------|--------------|-------|
-| `index` | `int64` | Số thứ tự của Block trong chuỗi (Height). |
-| `timestamp` | `float64` | Thời điểm Block được tạo. |
-| `previous_hash` | `string` | Hash SHA-256 của Block liền trước (tạo liên kết chuỗi). |
-| `nonce` | `int64` | Số ngẫu nhiên dùng trong Proof-of-Work (nếu có) hoặc để đảm bảo tính duy nhất. |
-| `merkle_root` | `string` | Hash gốc của cây Merkle, đại diện cho toàn bộ Event trong Block. |
-| `hash` | `string` | Hash định danh của chính Block này. |
+1. Ledger API xác thực JSON đầu vào và gọi `SubChain.add_event()`.
+2. Dịch vụ ordering ghi nhật ký và xếp hàng sự kiện. ID sự kiện được trả về xác nhận đã tiếp nhận; việc ghi khối diễn ra bất đồng bộ sau đó.
+3. Bộ xử lý nền chứng nhận và gom sự kiện thành lô. Block manager gán chỉ số và liên kết khối, chạy bước hoàn tất đồng thuận, ký header và lưu khối bền vững trước khi xếp hàng cho consumer của Sub-Chain.
+4. Consumer xác thực và áp dụng nguyên trạng khối đã lưu, cập nhật WorldState và kiểm tra đã đến lúc gửi bằng chứng hay chưa.
 
-**Block Body:**
+Xem [Gửi sự kiện](../workflows/event-submission.md) để biết cách xử lý lỗi. BFT là triển khai thư viện riêng; runtime MainChain/SubChain chọn PoA hoặc PoF.
 
-* Chứa danh sách các **Event** (được lưu dưới dạng `pyarrow.Table` để tối ưu truy xuất).
+## Tuần tự hóa và truyền tải
 
-## Giao thức dòng dữ liệu
-
-Quy trình xử lý dữ liệu từ Client đến khi được lưu vào Chain:
-
-1. **Submission (Gửi dữ liệu)**:
-
-    * Client tạo `Event`.
-    * SDK đóng gói Event thành `Transaction`, ký số (`signature`) và có thể tạo `zk_proof`.
-    * Gửi `Transaction` tới **Ordering Service**.
-
-2. **Ordering (Sắp xếp)**:
-
-    * **Ordering Service** nhận Transaction, kiểm tra chữ ký và tính hợp lệ cơ bản.
-    * Xếp Transaction vào hàng đợi để đảm bảo thứ tự nhất quán.
-    * Gom nhóm các Transaction thành một lô (Batch) để tạo Block.
-
-3. **Consensus & Commit (Đồng thuận & Ghi nhận)**:
-
-    * Node tạo Block mới từ lô Transaction đã sắp xếp.
-    * Tính toán `Merkle Root` và `Block Hash`.
-    * Thực hiện thuật toán đồng thuận (PoA/PoF/BFT) để xác nhận Block.
-    * Sau khi đồng thuận, Block được thêm vào `MainChain` hoặc `SubChain`.
-    * Trạng thái `World State` được cập nhật.
-
-## Serialization Standards
-
-* **Apache Arrow**: Dùng cho lưu trữ nội bộ (Internal Storage) và truyền tải giữa các Node (Performance).
-* **JSON**: Dùng cho Client API (REST) để dễ dàng tích hợp với Web/Mobile App.
-* **Protobuf/gRPC**: (Tùy chọn) Dùng cho giao tiếp nội bộ giữa các microservices hiệu năng cao.
+REST dùng JSON. Bảng sự kiện nội bộ và nhật ký sự kiện dùng biểu diễn Arrow với byte sự kiện chuẩn hóa để kiểm tra tính toàn vẹn. Mã truyền thông mạng nằm trong `hierachain/network/`; gói không cung cấp truyền tải Protobuf/gRPC. Không nên suy ra giao thức truyền tải từ định dạng bảng sự kiện.

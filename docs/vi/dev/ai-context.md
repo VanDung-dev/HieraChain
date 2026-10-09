@@ -38,19 +38,17 @@ Khi phân tích mã nguồn hoặc viết tài liệu, AI **TUYỆT ĐỐI KHÔN
 
 ## Ngữ cảnh mã nguồn
 
-Hệ thống có cơ chế **Hard Enforcement** (Cưỡng chế cứng) ngay trong code để chặn các thuật ngữ tiền ảo.
+Kiểm tra event có bước duyệt đệ quy các key và value của dictionary để tìm thuật ngữ tiền mã hóa đứng riêng thành từ.
 
 * **File**: `hierachain/core/utils.py`
 * **Function**: `validate_no_cryptocurrency_terms`
-* **Logic**: Nếu Event chứa từ khóa như `coin`, `token`, `wallet` -> Hệ thống sẽ từ chối xử lý (Raise Error).
+* **Logic**: `validate_no_cryptocurrency_terms()` trả `False` khi tìm thấy thuật ngữ bị cấm. `validate_event_structure()` cũng trả `False` cho event không hợp lệ; từng caller quyết định cách báo việc từ chối.
 
 ```python
-# Trích đoạn thực tế từ hierachain/core/utils.py
+# Terms matched as standalone words by validate_no_cryptocurrency_terms
 crypto_terms = [
-    "mining", "coin", "token", "wallet", "address",
-    "fee", "reward", "coinbase" 
-    # Lưu ý: "transaction" có thể được dùng với nghĩa "Database Transaction", 
-    # nhưng cần thận trọng ngữ cảnh.
+    "transaction", "mining", "coin", "token", "wallet", "address",
+    "sender", "receiver", "amount", "fee", "reward", "coinbase",
 ]
 ```
 

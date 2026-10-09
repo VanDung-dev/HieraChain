@@ -1,122 +1,41 @@
 ---
-title: "Entity Tracing"
-description: "Cross-chain entity auditing and tracking utility to reconstruct complete event lineages."
+title: "Entity tracing"
+description: "Query finalized entity histories across registered Sub-Chains, assemble timelines and understand query costs."
 icon: material/map-marker-path
 ---
 
 # Entity tracing
 
-## Overview
+## Query path
 
-The same physical entity (for example product `SKU-001` or contract `C-2024`) can produce events on several Sub-Chains during its lifecycle. HieraChain provides cross-chain tracing to rebuild a complete and immutable audit trail for any `entity_id`.
+`HierarchyManager.trace_entity_across_chains(entity_id)` delegates to `_trace_entity_history()` in `hierachain/hierarchical/hierarchy_manager/organization.py`. It visits registered Sub-Chains sequentially and returns a dictionary containing chains with nonempty histories. It does not merge or sort a global timeline itself.
 
-Each Sub-Chain keeps an in-memory `entity_event_index` keyed by `entity_id`, so lookup is O(1) without scanning the whole chain.
+`SubChain.get_entity_history()` retrieves finalized events and sorts that chain's result by timestamp. Native `Blockchain` stores entity-index entries containing block/row positions and cached event payloads. The index avoids a full block scan, but copying m matching events costs O(m), and per-chain sorting costs O(m log m). Cross-chain lookup also visits each registered chain. Indexes are rebuilt during recovery.
 
----
+## Example
 
-## Flow diagram
-
-```mermaid
-flowchart TB
-    CLIENT["🖥️ Client / Auditor\ntrace_entity_across_chains(entity_id)"]
-    HM["🏛️ HierarchyManager"]
-
-    subgraph SubChains["All Registered Sub-Chains (parallel query)"]
-        SC1["📦 supply_chain\nget_entity_history(entity_id)"]
-        SC2["📦 logistics\nget_entity_history(entity_id)"]
-        SC3["📦 finance\nget_entity_history(entity_id)"]
-        SCN["📦 ..."]
-    end
-
-    AGG["🔀 Aggregate Results\n{ chain_name: [events] }"]
-    SORT["🕒 Sort by timestamp\nacross all chains"]
-    OUT["📋 Complete Entity Timeline"]
-
-    CLIENT --> HM
-    HM --> SC1
-    HM --> SC2
-    HM --> SC3
-    HM --> SCN
-    SC1 --> AGG
-    SC2 --> AGG
-    SC3 --> AGG
-    SCN --> AGG
-    AGG --> SORT --> OUT
-```
-
----
-
-## Real-world example
-
-```
-Entity: product-SKU-001 (Industrial sensor batch)
-
-Timeline reconstructed across chains:
-────────────────────────────────────────────────────────
-[supply_chain]  block 3   quality_check      → passed
-[supply_chain]  block 7   packaging_complete → confirmed
-[logistics]     block 2   shipment_dispatch  → warehouse A → B
-[logistics]     block 9   customs_cleared    → port XYZ
-[finance]       block 4   invoice_issued     → INV-2024-0471
-[finance]       block 12  payment_confirmed  → ref: WIRE-9821
-────────────────────────────────────────────────────────
-```
-
----
-
-## Entity index structure
-
-Each Sub-Chain keeps an in-memory `entity_event_index`:
+After [Quickstart](../getting-started/quickstart.md), the application can merge results:
 
 ```python
-entity_event_index = {
-    "product-SKU-001": [
-        {"block_index": 3, "event": {"event": "quality_check", "timestamp": 1714000000.0, ...}},
-        {"block_index": 7, "event": {"event": "packaging_complete", "timestamp": 1714003600.0, ...}},
-    ]
-}
+# manager is the configured HierarchyManager from the quickstart.
+history_by_chain = manager.trace_entity_across_chains("PROD-001")
+timeline = sorted(
+    (
+        {"chain": name, **event}
+        for name, events in history_by_chain.items()
+        for event in events
+    ),
+    key=lambda event: event.get("timestamp", 0),
+)
 ```
 
-Events are indexed on write in `add_block()`, so reads are O(1) per chain. Aggregation across n chains is O(n).
+## Errors and HTTP interface
 
----
+An unknown entity produces an empty dictionary. The manager ignores a chain lacking the history API (`AttributeError`); it does not catch every storage or query error and promise partial success.
 
-## Step-by-step breakdown
-
-| Step | Description |
-|:-----|:------------|
-| **1. Call** | Client calls `HierarchyManager.trace_entity_across_chains(entity_id)` |
-| **2. Fan-out** | HierarchyManager queries all registered Sub-Chains in parallel |
-| **3. Per-chain lookup** | Each Sub-Chain calls `get_entity_history(entity_id)` → O(1) index lookup |
-| **4. Aggregate** | Results collected as `{ chain_name: [event_list] }` |
-| **5. Sort** | Events sorted by `timestamp` across all chains to form chronological timeline |
-| **6. Return** | Full timeline returned to caller |
-
----
-
-## Error handling
-
-| Condition | Behavior |
-|:----------|:---------|
-| Entity not found in any chain | Returns empty dict `{}` |
-| Sub-Chain unavailable | That chain's result is `[]`; other chains still queried |
-| Entity index not yet built (startup) | Falls back to full chain scan; logs warning |
-
----
-
-## Key classes and methods
-
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Entry point | `HierarchyManager.trace_entity_across_chains()` | `hierarchical/hierarchy_manager.py` |
-| Per-chain trace | `SubChain.get_entity_history()` | `hierarchical/sub_chain.py` |
-| Advanced trace | `EntityTracer.trace_entity()` | `domains/generic/utils/entity_tracer.py` |
-| Index update | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
-| REST API | `GET /ledger/entities/{entity_id}/trace` | `api/ledger/routes.py` |
-
----
+`EntityTracer` in `hierachain/domains/utils/entity_tracer.py` provides richer tracing and timeline aggregation. REST uses `GET /api/ledger/entities/{entity_id}/trace`, optionally with `chain_name` and `resolve_cid`. Pending Sub-Chain events are not finalized history. See [Ledger API](../reference/api-ledger.md).
 
 ## Related
 
-- [System Integrity Validation](./integrity-validation.md): validates the chains being traced
-- [ERP Integration Sync](./erp-integration.md): ERP events are what gets traced
+* [Integrity validation](integrity-validation.md)
+* [ERP integration](erp-integration.md)

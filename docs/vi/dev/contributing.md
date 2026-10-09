@@ -7,31 +7,31 @@ icon: material/account-group
 # Hướng dẫn đóng góp
 
 !!! note "Lưu ý"
-    Tài liệu này là hướng dẫn chi tiết dành cho nhà phát triển. Để xem quy định đóng góp tóm tắt (bản gốc tiếng Anh), vui lòng xem **[CONTRIBUTING.md](https://github.com/VanDung-dev/HieraChain/blob/main/CONTRIBUTING.md)**.
+    Tài liệu này là hướng dẫn chi tiết dành cho nhà phát triển. Để xem quy định đóng góp tóm tắt (bản gốc tiếng Anh), vui lòng xem [CONTRIBUTING.md](https://github.com/VanDung-dev/HieraChain/blob/main/CONTRIBUTING.md).
 
 Cảm ơn bạn đã quan tâm đóng góp cho HieraChain! Chúng tôi hoan nghênh mọi đóng góp, từ báo lỗi, đề xuất tính năng, sửa đổi tài liệu đến gửi mã nguồn.
 
-## Quy trình đóng góp (Contribution Workflow)
+## Quy trình đóng góp
 
-Chúng tôi sử dụng quy trình **Fork & Pull** tiêu chuẩn:
+Chúng tôi sử dụng quy trình Fork & Pull tiêu chuẩn:
 
-1. **Fork** dự án về tài khoản GitHub của bạn.
-2. **Clone** bản fork về máy cá nhân:
+1. Fork dự án về tài khoản GitHub của bạn.
+2. Clone bản fork về máy cá nhân:
 
     ```bash
     git clone https://github.com/VanDung-dev/HieraChain.git
     cd HieraChain
     ```
 
-3. Tạo **Branch** mới cho tính năng hoặc sửa lỗi của bạn:
+3. Tạo Branch mới cho tính năng hoặc sửa lỗi của bạn:
 
     ```bash
-    git checkout -b feature/ten-tinh-nang-moi
-    # hoặc
-    git checkout -b fix/loi-can-sua
+    git checkout -b feature/your-feature-name
+    # or
+    git checkout -b fix/bug-to-fix
     ```
 
-4. Thay đổi code và **Commit**. Chúng tôi khuyến khích tuân thủ [Conventional Commits](https://www.conventionalcommits.org/):
+4. Thay đổi code và Commit. Chúng tôi khuyến khích tuân thủ [Conventional Commits](https://www.conventionalcommits.org/):
 
     * `feat: ...`: Tính năng mới
     * `fix: ...`: Sửa lỗi
@@ -40,30 +40,30 @@ Chúng tôi sử dụng quy trình **Fork & Pull** tiêu chuẩn:
     * `refactor: ...`: Tái cấu trúc mã
     * `test: ...`: Thêm hoặc sửa test
 
-5. **Push** branch lên fork của bạn.
-6. Tạo **Pull Request (PR)** từ branch của bạn vào branch `main` của repo gốc HieraChain.
+5. Push branch lên fork của bạn.
+6. Tạo Pull Request (PR) từ branch của bạn vào branch `main` của repo gốc HieraChain.
 
 ## Môi trường phát triển
 
-Để thiết lập môi trường, cài đặt dependencies và chạy test, vui lòng xem hướng dẫn chi tiết tại: **[Cài đặt](../getting-started/install.md)** hoặc **[Kiểm thử](testing.md)**.
+Để thiết lập môi trường, cài đặt dependencies và chạy test, vui lòng xem hướng dẫn chi tiết tại: [Cài đặt](../getting-started/install.md) hoặc [Kiểm thử](testing.md).
 
-## Tiêu chuẩn mã nguồn (Coding Standards)
+## Tiêu chuẩn mã nguồn
 
-* Tuân thủ tiêu chuẩn **PEP 8**.
+* Tuân thủ tiêu chuẩn PEP 8.
 * Đảm bảo mã vượt qua các kiểm tra phân tích tĩnh (static analysis) trong thư mục `scripts/`.
-* Mã mới phải có **Type Hints** đầy đủ (Python >= 3.10).
+* Mã mới phải có Type Hints đầy đủ (Python >= 3.10).
 
-## Quy tắc cấm (Forbidden Patterns)
+## Quy tắc cấm
 
-Để đảm bảo tính nhất quán và triết lý của HieraChain, các nhà phát triển **TUYỆT ĐỐI KHÔNG**:
+Để đảm bảo tính nhất quán và triết lý của HieraChain, các nhà phát triển không được:
 
-* ❌ **Sử dụng thuật ngữ tiền điện tử**: Không dùng các từ như `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `amount`, `fee`. Thay vào đó, hãy dùng `event`, `entity_id`, `details`.
-* ❌ **Sử dụng `print()`**: Luôn sử dụng `logging.getLogger(__name__)`.
-* ❌ **Truy cập DB trực tiếp**: Không gọi trực tiếp `sqlite3` hay `redis` bên ngoài thư mục `adapters/storage/`.
-* ❌ **Bỏ qua Journal**: Không bỏ qua bước ghi `TransactionJournal` khi thiết lập luồng ordering mới.
-* ❌ **Lưu secret trong code**: Luôn sử dụng biến môi trường hoặc Secret Manager.
+* ❌ Sử dụng thuật ngữ tiền điện tử: Không dùng các từ như `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `amount`, `fee`. Thay vào đó, hãy dùng `event`, `entity_id`, `details`.
+* ❌ Sử dụng `print()`: Luôn sử dụng `logging.getLogger(__name__)`.
+* ❌ Truy cập DB trực tiếp: Không gọi trực tiếp `sqlite3` hoặc `redis` bên ngoài thư mục `adapters/database/`.
+* ❌ Bỏ qua Journal: Không bỏ qua bước ghi `TransactionJournal` khi thiết lập luồng ordering mới.
+* ❌ Lưu secret trong code: Luôn sử dụng biến môi trường hoặc Secret Manager.
 
-## Kiểm thử (Testing)
+## Kiểm thử
 
 HieraChain duy trì tiêu chuẩn cao về chất lượng mã. Mọi đóng góp đều phải vượt qua các bài kiểm tra tự động.
 
@@ -75,23 +75,25 @@ HieraChain duy trì tiêu chuẩn cao về chất lượng mã. Mọi đóng gó
 
 ### Chạy test
 
-Bạn có thể chạy toàn bộ test bằng lệnh:
+Chạy lần lượt các file test liên quan bằng môi trường của repository:
 
 ```bash
-python -m pytest tests -v
+.venv/bin/python -m pytest tests/unit/test_reported_issue_regressions.py -v
 ```
 
-Để chạy từng phần hoặc tìm hiểu thêm, vui lòng xem chi tiết tại **[Kiểm thử](testing.md)**.
+Chọn file kiểm tra phần bạn thay đổi. Tránh chạy toàn bộ suite cùng lúc vì các test có thể tranh chấp tài nguyên dùng chung.
+
+Để chạy từng phần hoặc tìm hiểu thêm, vui lòng xem chi tiết tại [Kiểm thử](testing.md).
 
 ### Yêu cầu đóng góp
 
-1. **Viết test mới**: Nếu bạn thêm tính năng mới, hãy viết test case tương ứng (thường trong `tests/unit`).
-2. **Không làm hỏng test cũ**: Đảm bảo mã của bạn không gây lỗi cho các test hiện có.
-3. **Docs**: Docs liên quan phải được cập nhật và không bị gãy link.
+1. Viết test mới: Nếu bạn thêm tính năng mới, hãy viết test case tương ứng (thường trong `tests/unit`).
+2. Không làm hỏng test cũ: Đảm bảo mã của bạn không gây lỗi cho các test hiện có.
+3. Docs: Docs liên quan phải được cập nhật và không bị gãy link.
 
 ## Báo lỗi và Đề xuất
 
-Sử dụng tab **Issues** trên GitHub để báo lỗi hoặc yêu cầu tính năng.
+Sử dụng tab Issues trên GitHub để báo lỗi hoặc yêu cầu tính năng.
 
 Khi báo lỗi, vui lòng cung cấp:
 
@@ -101,7 +103,7 @@ Khi báo lỗi, vui lòng cung cấp:
 
 ## Chính sách bảo mật (Security Policy)
 
-Nếu bạn phát hiện vấn đề bảo mật trong HieraChain, vui lòng **KHÔNG** báo cáo qua Issues công khai.
+Nếu bạn phát hiện vấn đề bảo mật trong HieraChain, vui lòng KHÔNG báo cáo qua Issues công khai.
 
 ### Quy trình báo cáo
 

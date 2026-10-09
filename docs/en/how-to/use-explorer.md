@@ -28,8 +28,8 @@ The Explorer supports visualizing data stored off-chain:
     * **Yellow**: Unresolved CID data.
     * **Green**: Data has been fetched and decrypted (Resolved).
 
-* **Data Loading**: The **"Load Details"** button fetches data from IPFS through the API Server without reloading the page.
-* **Decryption**: The Server decrypts data before displaying it in the user interface.
+* **Data Loading**: The current **"Load Details"** handler requests block data with `resolve_cid=true`, but reads a top-level `details` field. The blocks endpoint returns resolved records inside `blocks`, so this handler does not display those event details.
+* **Decryption**: When IPFS is enabled, the API can resolve and decrypt details in block responses. The current Explorer handler does not render those resolved details.
 
 ### 2. Render the Dashboard via API
 

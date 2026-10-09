@@ -1,76 +1,44 @@
 ---
-title: "Key Backup & Restoration"
-description: "Actual key backup/restore paths in HieraChain: CLI-generated Ed25519 keys and FileVaultProvider."
+title: "Sao lưu và khôi phục khóa"
+description: "Các luồng sao lưu và khôi phục khóa hiện có trong HieraChain: khóa Ed25519 tạo bằng CLI và FileVaultProvider."
 icon: material/key
 ---
 
-# Key Backup & Restoration
+# Sao lưu và khôi phục khóa
 
-## Overview
+## Sao lưu danh tính nút
 
-HieraChain does **not** have a `security/key_backup_manager.py` or `MasterKeyProvider`. Key backup is operator-managed via two real paths: plain JSON key files produced by the CLI and the optional encrypted `FileVaultProvider` vault. No automatic AES-256-GCM multi-vault distribution or SHA-512 integrity chain exists in code.
+Việc ký khối yêu cầu danh tính nút cố định và bảng khóa khối tin cậy được người vận hành phê duyệt. `HRC_VALIDATOR_IDENTITY` trỏ đến JSON danh tính; `HRC_BLOCK_TRUSTED_KEYS_FILE` trỏ đến bảng khóa công khai tin cậy. Làm theo [Khởi động nhanh](../getting-started/quickstart.md) để chuẩn bị cả hai tệp.
 
----
+Danh tính chứa `node_id`, `msp_id`, `signing_key`, `signing_public_key`, `transport_secret_key` và `transport_public_key`. Dùng công cụ bên ngoài để sao lưu đầy đủ danh tính và bảng khóa tin cậy với quyền truy cập hạn chế. Khôi phục chúng về đường dẫn đã cấu hình trước khi khởi chạy nút. Khóa ký riêng/công khai phải khớp nhau, và bảng tin cậy phải chứa khóa ký công khai đã được phê duyệt của nút đó.
 
-## Actual Paths
+Tạo khóa mới sẽ thay đổi khóa có thẩm quyền ký của danh tính. Cập nhật bảng tin cậy của mọi bộ xác minh bị ảnh hưởng qua quy trình cấp phát của hệ thống triển khai; chỉ sao chép khóa riêng mới không cấp quyền sử dụng khóa đó.
 
-### 1. CLI Plain Backup (default)
+## Tệp cặp khóa CLI
 
-**File**: `hierachain/cli/key.py`
+`hierachain/cli/key.py` cung cấp các lệnh sau qua `hrc`:
 
 ```bash
-python -m hierachain key generate --output validator_key.json  # Ed25519 hex JSON
-python -m hierachain key show --input validator_key.json
-python -m hierachain key verify --input validator_key.json
+hrc key generate --output validator_key.json
+hrc key show --input validator_key.json
+hrc key verify --input validator_key.json
 ```
 
-* Output is `{private_key, public_key}` hex. Backup = copy `validator_key.json` to secure external storage. Restore = copy back and set `HRC_VALIDATOR_IDENTITY=validator_key.json`.
-* No encryption, no hash, no auto-rotation. Operator handles rotation by re-running `generate`.
+JSON đầu ra mặc định chứa `private_key` và `public_key` dưới dạng chuỗi thập lục phân. Tệp được tạo với quyền `0600` trên hệ thống POSIX, và lệnh tạo khóa từ chối ghi đè tệp đã tồn tại. `show` che khóa riêng; `verify` kiểm tra khóa công khai có khớp với khóa riêng hay không.
 
-### 2. Encrypted Vault (dev/test)
+Tệp hai trường này được `LocalKeyProvider.from_file()` chấp nhận. Nó không phải danh tính nút đầy đủ và không thể dùng trực tiếp làm `HRC_VALIDATOR_IDENTITY`. `python -m hierachain` khởi chạy API server; dùng `hrc` cho các lệnh khóa.
 
-**File**: `hierachain/security/key_provider.py` (`FileVaultProvider`)
+Sao lưu và khôi phục tệp khóa CLI là thao tác thủ công. Sau khi khôi phục tệp, chạy `hrc key verify --input validator_key.json`. CLI không cung cấp mã hóa, luân chuyển khóa tự động hay phân phối bản sao lưu.
 
-* Tạo file `.vault` mã hóa bằng `PBKDF2HMAC(SHA256, 310k iter)` rồi dùng `Fernet` (AES-128-CBC với HMAC, không phải AES-256-GCM). Password được truyền vào constructor của `FileVaultProvider`.
-* Explicitly documented as *dev/test only*, production should implement `KeyProvider` via HSM/KMS.
-* No distribution to multiple vaults, no `metadata.json`, no `retention_period`, no `auto_restore_threshold`.
-* `HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` cấu hình backend Vault riêng của `SecretManager`; chúng không cung cấp password cho `FileVaultProvider`.
+## Kho khóa mã hóa cho phát triển và kiểm thử
 
-```mermaid
-sequenceDiagram
-    participant CLI as CLI generate
-    participant File as validator_key.json / .vault
-    participant Op as Operator / HSM
+`FileVaultProvider` trong `hierachain/security/key_provider.py` lưu cặp khóa trong kho được bảo vệ bằng mật khẩu. Nó dẫn xuất khóa Fernet bằng `PBKDF2HMAC(SHA256, 310_000 iterations)`; Fernet dùng AES-128-CBC và HMAC. Cấp mật khẩu cho hàm khởi tạo provider và giữ bản sao có thể khôi phục trong hệ thống quản lý bí mật của ứng dụng.
 
-    CLI->>File: write private_key/public_key hex
-    File->>Op: manual copy to backup / KMS
-    Op-->>File: restore copy back
-    File->>CLI: verify / LocalKeyProvider.from_file()
-```
+Provider này dùng mã hóa dẫn xuất từ mật khẩu cho tệp vault cục bộ. Phát triển và kiểm thử là phạm vi sử dụng được tài liệu nguồn nêu, nhưng mã không có điều kiện môi trường để chặn sử dụng trong production; mức độ phù hợp phụ thuộc vào biện pháp kiểm soát và yêu cầu của hệ thống triển khai. Tích hợp HSM hoặc KMS trong production cần `KeyProvider` riêng của ứng dụng. Kho khóa là một key provider, không thay thế JSON danh tính nút đầy đủ.
 
----
+`HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` cấu hình backend Vault riêng của `SecretManager`. Chúng không cung cấp mật khẩu cho `FileVaultProvider`. Việc cấp chứng chỉ MSP và thay đổi đồng thuận không kích hoạt sao lưu tự động.
 
-## What Is NOT Implemented
+## Liên quan
 
-| Documented claim (removed) | Reality |
-|---|---|
-| `KeyBackupManager.backup_keys()` / `_encrypt_backup_data()` / `SHA-512` / `_distribute_to_locations()` | No such class/methods exist |
-| AES-256-GCM + nonce\|\|ciphertext + 3-vault failover | Vault uses `Fernet`; multi-location is manual copy |
-| `MasterKeyProvider.get_master_key()` | Không có provider này; chỉ `HRC_MASTER_KEY_SOURCE=env` được chấp nhận làm alias tương thích, còn giá trị nguồn khác và `HRC_MASTER_KEY_FILE` không rỗng sẽ dừng nạp cấu hình |
-| Auto backup on MSP cert issue or consensus rotation | No hook; certs in `security/msp.py` are in-memory only |
-
----
-
-## Operator Checklist
-
-1. Generate: `python -m hierachain key generate -o validator_key.json`
-2. Backup: `cp validator_key.json /secure/backup/` (+ encrypt externally if needed)
-3. Restore: `cp /secure/backup/validator_key.json ./ && python -m hierachain key verify`
-4. Với vault mã hóa: `FileVaultProvider.create_vault(vault_path, password)` và truyền password qua luồng quản lý secret của ứng dụng. `HRC_VAULT_TOKEN` là credential của dịch vụ Vault, không phải password của file vault.
-
----
-
-## Related
-
-- [MSP Identity](./msp-identity.md): `security/msp.py` issues in-memory certs; no trigger to key backup
-- [Encryption & Keys](../security/encryption-keys.md): corrected description of `msp.py`/`key_provider.py`
+- [Danh tính MSP](./msp-identity.md): vòng đời chứng chỉ nội bộ
+- [Mã hóa và khóa](../security/encryption-keys.md): provider và phạm vi sử dụng khóa

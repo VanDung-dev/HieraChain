@@ -1,134 +1,96 @@
 ---
 title: "Policy Enforcement"
-description: "Attribute-Based Access Control (ABAC) execution model guarding all access-sensitive operations."
+description: "Typed ABAC policy evaluation, caller enforcement, caching and audit behavior."
 icon: material/gavel
 ---
 
 # Policy enforcement
 
-## Overview
+## Scope
 
-Every access sensitive operation goes through `PolicyEngine`. Policies are sets of typed `PolicyRule` objects ordered by priority. Results are cached with a 5 minute TTL and LRU eviction to keep latency low. All evaluations are written to an in-memory audit log.
+`PolicyEngine` evaluates operations that the caller explicitly routes through it. HTTP routes and direct Python calls do not share an automatic ABAC check. `HierarchicalMSP` uses its separate `OrganizationPolicies`; it does not invoke this engine.
 
-`PolicyEngine` is the single authorization gateway. MSP calls it after identity is verified and before `SubChain.add_event()` runs.
+A `Policy` contains typed `PolicyRule` objects sorted by descending priority. Each rule combines `PolicyCondition` results with `LogicalOperator.AND`, `OR` or `NOT`. The first applicable rule whose effect differs from the policy default determines the result. If no rule overrides the default, that default remains in effect. Missing or disabled policies return `DENY`.
 
----
-
-## Flow diagram
+## Evaluation flow
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / Internal Module
-    participant PE as ⚖️ PolicyEngine
-    participant Cache as ⚡ EvaluationCache
-    participant Policy as 📋 Policy
-
+    participant Caller as Application
+    participant PE as PolicyEngine
+    participant Policy as Policy
     Caller->>PE: evaluate_policy(policy_id, context)
-    PE->>PE: cache_key = "{policy_id}:{SHA256(context)[:8]}"
-    PE->>Cache: lookup(cache_key)
-
-    alt Cache HIT (within 5-min TTL)
-        Cache-->>PE: Cached result
-        PE-->>Caller: result { effect: allow|deny }
-
-    else Cache MISS
-        PE->>Policy: policy.evaluate(context)
-        Policy->>Policy: _check_disabled()
-        Policy->>Policy: Sort rules by priority (desc)
-        loop Each PolicyRule
-            Policy->>Policy: rule.evaluate(context)
-            Note right of Policy: AND/OR/NOT over PolicyConditions<br/>Operators: equals, contains, matches, in, ...
-            alt Rule applies AND effect != default
-                Policy->>Policy: Append to applicable_rules<br/>Record decision_path
-                Policy->>Policy: Break — first overriding rule wins
-            end
-        end
-        Policy-->>PE: EvaluationResult { effect, applicable_rules, decision_path }
-        PE->>Cache: store(cache_key, result, cached_at=now)
-        PE->>PE: _log_audit_event("policy_evaluated", ...)
-        PE->>PE: _update_statistics(effect)
-        PE-->>Caller: result { effect: allow|deny }
+    PE->>PE: Key = policy ID + version + context hash
+    alt Cached result within TTL
+        PE-->>Caller: Cached result
+    else No valid cached result
+        PE->>Policy: evaluate(context), or DENY if missing
+        Policy-->>PE: effect, applicable_rules, decision_path
+        PE->>PE: Update statistics and cache if enabled
+        PE->>PE: Audit uncached evaluation if enabled
+        PE-->>Caller: Result
     end
+    Note over Caller: Enforce the returned effect before performing the operation
 ```
 
----
+The cache TTL defaults to 300 seconds with a maximum of 1,000 entries. The key includes policy version and the first eight hexadecimal characters of a SHA-256 hash of canonical context JSON. When full, the cache evicts the entry with the oldest `cached_at` timestamp; a cache hit does not refresh it. Cached evaluations return before writing a new audit entry. Audit records remain in memory.
 
-## Policy rule structure
+## Policy example
 
 ```python
-# Example policy: restrict event submission to authorized operators only
+from hierachain.security.policy_engine import (
+    ComparisonOperator,
+    LogicalOperator,
+    Policy,
+    PolicyCondition,
+    PolicyEffect,
+    PolicyEngine,
+    PolicyRule,
+    PolicyType,
+)
+
 policy = Policy(
     policy_id="event_submission_policy",
-    name="Event Submission Access",
-    effect=PolicyEffect.DENY,       # Default effect if no rule overrides
+    policy_type=PolicyType.ACCESS_CONTROL,
+    default_effect=PolicyEffect.DENY,
     rules=[
         PolicyRule(
             rule_id="allow_operators",
             priority=100,
             effect=PolicyEffect.ALLOW,
             conditions=[
-                PolicyCondition(field="role", operator="in", value=["admin", "operator"])
+                PolicyCondition(
+                    attribute="role",
+                    operator=ComparisonOperator.IN,
+                    value=["admin", "operator"],
+                )
             ],
-            logic=RuleLogic.AND
+            logical_operator=LogicalOperator.AND,
         )
-    ]
+    ],
 )
+engine = PolicyEngine()
+engine.register_policy(policy)
+result = engine.evaluate_policy(policy.policy_id, {"role": "operator"})
+assert result["effect"] == PolicyEffect.ALLOW.value
 ```
 
----
+Use the returned effect to allow or reject the operation. Creating or evaluating a policy does not automatically protect `SubChain.add_event()`.
 
-## Step-by-step breakdown
+## Condition operators
 
-| Step | Description |
-|:-----|:------------|
-| **1. Cache check** | `cache_key = "{policy_id}:{SHA256(context)[:8]}"`. If cache HIT and TTL valid → return immediately |
-| **2. Rule sort** | All rules sorted by `priority` descending (higher priority evaluated first) |
-| **3. Rule evaluation** | Each rule checks its `PolicyCondition` list using AND/OR/NOT logic |
-| **4. First override** | The first rule whose effect differs from the policy default wins; remaining rules skipped |
-| **5. Cache store** | Result cached with `cached_at` timestamp for 5-minute TTL |
-| **6. Audit log** | Every evaluation logged with `policy_id`, `context`, `effect`, and `decision_path` |
-
----
-
-## Supported condition operators
-
-| Operator | Description | Example |
-|:---------|:------------|:--------|
-| `equals` | Exact match | `role == "admin"` |
-| `not_equals` | Negation | `status != "revoked"` |
-| `contains` | String/list containment | `permissions contains "submit_events"` |
-| `matches` | Regex match | `entity_id matches "^product-.*"` |
-| `in` | Set membership | `role in ["admin", "operator"]` |
-| `greater_than` | Numeric comparison | `risk_score > 0.8` |
-
----
-
-## Error handling
-
-| Condition | Behavior |
-|:----------|:---------|
-| Policy not found | Returns `DENY` (fail-closed) |
-| Policy disabled | Returns default effect immediately (no rule eval) |
-| Context missing required field | Condition evaluates to `False`; logged as partial match |
-| Cache evicted (LRU) | Next request triggers fresh evaluation |
-
----
+`ComparisonOperator` supports equality/inequality, greater/less comparisons (including inclusive variants), containment, membership and regular-expression matching, including their negated forms. Conditions use `attribute`, `operator` and `value`. A missing context attribute or a failed comparison returns `False`.
 
 ## Key classes and methods
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Entry point | `PolicyEngine.evaluate_policy()` | `security/policy_engine.py` |
-| Multi-policy eval | `PolicyEngine.evaluate_policy_set()` | `security/policy_engine.py` |
-| Rule evaluation | `PolicyRule.evaluate()` | `security/policy_engine.py` |
-| Condition check | `PolicyCondition.evaluate()` | `security/policy_engine.py` |
-| Cache lookup | `_get_cached_result()` | `security/policy_engine.py` |
-| Cache store | `_cache_result()` | `security/policy_engine.py` |
-
----
+| Operation | Method | File |
+|:----------|:-------|:-----|
+| Single policy | `PolicyEngine.evaluate_policy()` | `hierachain/security/policy_engine.py` |
+| Policy set | `PolicyEngine.evaluate_policy_set()` | `hierachain/security/policy_engine.py` |
+| Policy evaluation | `Policy.evaluate()` | `hierachain/security/policy_engine.py` |
+| Rule and condition evaluation | `PolicyRule.evaluate()` / `PolicyCondition.evaluate()` | `hierachain/security/policy_types.py` |
 
 ## Related
 
-- [MSP Identity](./msp-identity.md): MSP calls `evaluate_policy()` after identity verified
-- [Event Submission](./event-submission.md): `add_event()` guarded by policy evaluation
+- [MSP Identity](./msp-identity.md): organization-specific membership policies
+- [Event Submission](./event-submission.md): ingestion and route scope checks

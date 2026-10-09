@@ -4,17 +4,17 @@ description: "Core concepts of HieraChain: Chain, Block, Event, Proof, Main/Sub-
 icon: material/lightbulb
 ---
 
-# Core Concepts
+# Core concepts
 
-This page summarizes the foundational concepts for reading and using HieraChain effectively. When encountering new terms, see the [Glossary](../glossary.md).
+These concepts describe the ledger's data and hierarchy. See the [Glossary](../glossary.md) for other terms.
 
-## Key Concepts
+## Key concepts
 
-* Chain: A collection of Blocks linked by `previous_hash`. HieraChain has two chain layers: `Main Chain` and domain-specific `Sub-Chains`.
-* Block: A group of Events with metadata (header). See `hierachain/core/block.py`.
-* Event: A business operation (not a cryptocurrency transaction). Stored as Arrow tables per schema in `hierachain/core/block.py:261` (`EVENT_SCHEMA`).
-* Proof: A cryptographic footprint (e.g. Merkle root/hash) representing Sub-Chain state, anchored to the Main Chain.
-* Hierarchy: Architecture where Main Chain supervises multiple Sub-Chains. Managed by `HierarchyManager`.
+* Chain: A sequence of blocks linked by `previous_hash`. HieraChain has a `Main Chain` and domain-specific `Sub-Chains`.
+* Block: A group of events stored in an Arrow table, with a header containing the block index, timestamp, previous hash, nonce, Merkle root and creator identity. See `hierachain/core/block.py`.
+* Event: A business record with `entity_id`, `event` and `timestamp`. Details can describe the operation. `EVENT_SCHEMA` in `hierachain/core/block.py` defines storage columns; canonical event bytes preserve JSON fields and typed details.
+* Proof: An anchor containing a Sub-Chain block hash and summary metadata, including its Merkle root. A ZK proof can be included under the configured proof policy. This anchor is distinct from an individual event inclusion proof.
+* Hierarchy: The MainChain and registered SubChains coordinated by `HierarchyManager`.
 
 ```mermaid
 graph TD
@@ -27,12 +27,14 @@ graph TD
     Main --> A
     Main --> B
     Main --> C
-    
+
     note[Main Chain stores Proofs <br/> Sub-Chain stores detailed Events]
     Main -.- note
 ```
 
-### Data Structure
+### Data structure
+
+The diagram shows runtime classes and a conceptual event record. `Block.events` is a `pyarrow.Table`; exported event snapshots are lists of dictionaries.
 
 ```mermaid
 classDiagram
@@ -50,10 +52,10 @@ classDiagram
     }
     class Block {
         +int index
-        +hash hash
-        +hash previous_hash
-        +list events
-        +hash merkle_root
+        +string hash
+        +string previous_hash
+        +pyarrow.Table events
+        +string merkle_root
     }
     class Event {
         +string entity_id
@@ -61,20 +63,20 @@ classDiagram
         +float timestamp
         +dict details
     }
-    
+
     HierarchyManager "1" *-- "1" Blockchain : main_chain
     HierarchyManager "1" *-- "many" Blockchain : sub_chains
     Blockchain "1" *-- "many" Block
     Block "1" *-- "many" Event
 ```
 
-## Basic Flow
+## Basic flow
 
-1. Write Event to Sub-Chain → batch into Block by conditions (size/time).
-2. Generate Proof from Block (e.g. Merkle root) → submit to Main Chain for anchoring.
-3. Trace/Statistics: API allows entity tracking, Block/Chain viewing, and system information aggregation.
+1. Submit an event to a Sub-Chain. The event ID confirms acceptance into ordering; size and time settings determine when events are batched into a block.
+2. Ordering finalizes, signs and persists the block. The Sub-Chain consumer validates and applies it. Proof submission anchors a finalized block hash and summary metadata to the MainChain according to the proof schedule or an explicit request.
+3. Query committed events by entity or inspect blocks and chain statistics through the API.
 
-## Related Source Files
+## Related source files
 
 * Core: `hierachain/core/block.py`, `hierachain/core/blockchain.py`
 * Hierarchical: `hierachain/hierarchical/main_chain/base.py`, `hierachain/hierarchical/sub_chain/base.py`, `hierachain/hierarchical/hierarchy_manager/base.py`

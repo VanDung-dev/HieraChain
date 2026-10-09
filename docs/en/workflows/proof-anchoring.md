@@ -28,7 +28,7 @@ sequenceDiagram
 
     alt ZK Proofs Enabled (HRC_ENABLE_ZK_PROOFS=true)
         SC->>ZKP: generate_proof(old_state_root, new_state_root, block_index, events)
-        ZKP->>ZKP: Compute proof (Mock SHA-256 or ZoKrates circuit)
+        ZKP->>ZKP: Compute proof (Mock SHA-256; production backend unavailable)
         ZKP-->>SC: ProofResult { proof: bytes, success: bool }
         SC->>SC: Retry up to 3× with exponential backoff on failure
     else ZK Proofs Disabled
@@ -65,7 +65,7 @@ sequenceDiagram
 | Mode | Mechanism | Use Case |
 |:-----|:----------|:---------|
 | `mock` | SHA-256 hash simulation | Development / Testing |
-| `production` | ZoKrates ZK-SNARKs circuits | Production deployment |
+| `production` | Unimplemented proving/verifying backend | Unavailable |
 
 ---
 

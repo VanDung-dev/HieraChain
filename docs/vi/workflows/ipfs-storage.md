@@ -8,129 +8,69 @@ icon: material/harddisk
 
 ## Tổng quan
 
-Dữ liệu lớn hoặc nhạy cảm ngoài chuỗi (ví dụ tệp đính kèm, bằng chứng kiểm toán, tài sản nhị phân) được lưu trên swarm IPFS riêng với mã hóa bắt buộc AES-256-GCM. Chỉ node có chung khóa mới giải mã được. CID do IPFS trả về được lưu trên chuỗi làm tham chiếu; plaintext không rời khỏi ranh giới mã hóa.
+`IPFSClient` tải byte hoặc JSON lên Kubo daemon đã cấu hình và trả về CID. `upload_bytes()` và `upload_json()` mặc định mã hóa bằng AES-256-GCM. Bên gọi trực tiếp có thể truyền `encrypt=False` để gửi dữ liệu rõ lên IPFS. Cấu hình daemon và quyền truy cập mạng riêng; client không bắt buộc sử dụng private swarm.
 
-Điểm an toàn cốt lõi: ngay cả khi storage IPFS bị lộ vật lý, dữ liệu vẫn không đọc được nếu không có khóa AES-256-GCM.
+`create_ipfs_client_from_env()` yêu cầu `HRC_IPFS_ENCRYPTION_KEY` chứa đúng 64 ký tự thập lục phân (32 byte). Khóa thiếu hoặc sai định dạng gây `IPFSError`. Giữ khóa này qua các lần khởi động lại để đọc được các đối tượng đã mã hóa trước đó. Client được khởi tạo trực tiếp có thể tạo khóa trong bộ nhớ khi không được cấp khóa; khóa đó không phải cơ chế khôi phục bền vững.
 
----
-
-## Biểu đồ luồng: tải lên (mã hóa và ghim)
+## Tải lên và tải xuống
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller->>IC: upload_json(data, encrypt=True, metadata)
-
-    IC->>IC: json.dumps(data) → raw_bytes
-    IC->>AES: encrypt(raw_bytes, aad=json(metadata))
-    Note right of AES: Mã hóa AES-256-GCM<br/>nonce = ngẫu nhiên 96-bit (secrets.token_bytes(12))<br/>ciphertext = AESGCM.encrypt(nonce, plaintext, aad)<br/>output = nonce || ciphertext
-    AES-->>IC: ciphertext, nonce
-
-    IC->>IPFS: add_bytes(ciphertext)
-    IPFS-->>IC: CID (Content Identifier - Mã định danh nội dung)
-
-    alt auto_pin=True (mặc định)
-        IC->>IPFS: pin.add(CID)
-        Note right of IPFS: Ngăn chặn cơ chế dọn rác (GC) xóa file
-    end
-
-    IC-->>Caller: { cid, size, encrypted: True, nonce: hex(nonce) }
-    Note over Caller: Lưu trữ CID + nonce lên chuỗi để truy xuất sau này
-```
-
----
-
-## Biểu đồ luồng: tải về (truy xuất và giải mã)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / SubChain
-    participant IC as 🗄️ IPFSClient
-    participant AES as 🔐 AESEncryption
-    participant IPFS as 🌐 IPFS Daemon
-
-    Caller->>IC: download_json(cid, encrypted=True, nonce=hex, metadata)
-    IC->>IPFS: cat(cid) → ciphertext bytes
+    participant Caller as Application
+    participant IC as IPFSClient
+    participant AES as AESEncryption
+    participant IPFS as Kubo daemon
+    Caller->>IC: upload_json(data, encrypt=True, metadata=metadata)
+    IC->>IC: Serialize JSON to bytes
+    IC->>AES: encrypt(bytes, canonical metadata AAD)
+    AES-->>IC: ciphertext, random 12-byte nonce
+    IC->>IPFS: POST /api/v0/add (pin=auto_pin)
+    IPFS-->>IC: CID
+    IC-->>Caller: cid, size, encrypted, nonce, metadata if provided
+    Note over Caller: Retain CID, nonce and metadata; protect key separately
+    Caller->>IC: download_json(cid, nonce=nonce, metadata=metadata)
+    IC->>IPFS: POST /api/v0/cat?arg=cid
     IPFS-->>IC: ciphertext
-
-    IC->>AES: decrypt(ciphertext, nonce_bytes, aad=json(metadata))
-    Note right of AES: Xác thực thẻ GCM trước<br/>Nếu thẻ không hợp lệ → ném lỗi DecryptionError
-    AES-->>IC: plaintext bytes
-
-    IC->>IC: json.loads(plaintext) → dict
-    IC-->>Caller: Dữ liệu đã giải mã ✅
+    IC->>AES: decrypt(ciphertext, nonce, same metadata AAD)
+    AES-->>IC: Authenticated plaintext
+    IC-->>Caller: Decoded JSON
 ```
 
----
+Dữ liệu mã hóa bao gồm thẻ xác thực GCM. Nonce được trả về riêng dưới dạng 24 ký tự thập lục phân. Đây là metadata công khai, không phải khóa mã hóa. Nếu metadata đã được dùng làm dữ liệu xác thực bổ sung (AAD), hãy cung cấp cùng metadata khi tải xuống; client tuần tự hóa nó bằng `dumps_canonical_json()`.
 
-## Xử lý lỗi: IPFS ngoại tuyến
+Khi tải lên, client truyền `pin` vào RPC add của Kubo theo `auto_pin` (mặc định `True`). Có thể gọi `IPFSClient.pin()` để ghim rõ ràng. Duy trì các pin và bản sao lưu theo chính sách vận hành daemon.
 
-`IPFSClient.is_available(cid)` kiểm tra `/api/v0/files/stat` với `arg=/ipfs/<cid>`. Hàm trả về `False` khi phản hồi không thành công hoặc kết nối lỗi; không dùng endpoint `/api/v0/object/stat` đã bị loại bỏ.
+## Bảo mật và tích hợp
 
-```mermaid
-flowchart LR
-    CALL["upload_json(data)"]
-    CONN["Kết nối tới IPFS daemon\n(HRC_IPFS_HOST)"]
-    FAIL["❌ Kết nối bị từ chối\nhoặc hết hạn chờ"]
-    RETRY["Thử lại với khoảng chờ tăng dần\n(tối đa 3 lần)"]
-    ERR["Ném lỗi IPFSConnectionError\nGhi nhật ký + Cảnh báo qua Risk Alerts"]
-    OK["✅ Nhận lại mã CID"]
+| Thuộc tính | Triển khai |
+|:---------|:---------------|
+| Tính bí mật | AES-256-GCM khi `encrypt=True` |
+| Tính toàn vẹn | Xác minh thẻ GCM với cùng khóa, nonce và AAD |
+| Nonce | Nonce ngẫu nhiên 96 bit cho mỗi lần mã hóa; phát hiện phát lại cần trạng thái của ứng dụng |
+| Cấu hình khóa | Factory từ môi trường yêu cầu `HRC_IPFS_ENCRYPTION_KEY` ổn định |
+| Phân quyền | Bên gọi thực thi quyền; client không gọi `PolicyEngine` |
 
-    CALL --> CONN
-    CONN -->|Thành công| OK
-    CONN -->|Thất bại| FAIL --> RETRY
-    RETRY -->|Quá số lần thử| ERR
-    RETRY -->|Kết nối lại được| OK
-```
+Giữ khóa trong hệ thống quản lý bí mật. Lưu CID, nonce, cờ mã hóa và metadata AAD cần thiết cho việc truy xuất. Mã hóa không ngăn người có khả năng phát lại CID cũ yêu cầu lại cùng đối tượng.
 
----
+## Lỗi
 
-## Các bước chi tiết
+Lỗi HTTP khi tải lên/tải xuống gây `IPFSError`; lỗi mã hóa được truyền ra dưới dạng `EncryptionError`. Client không tự động thử lại ba lần hay tích hợp cảnh báo rủi ro. Ứng dụng quyết định có thử lại hay không và cách báo cáo lỗi.
 
-| Bước | Mô tả |
-|:-----|:------|
-| **1. Tuần tự hóa** | `json.dumps(data)` thành bytes thô. |
-| **2. Mã hóa** | AES-256-GCM với nonce ngẫu nhiên 96-bit. AAD được tạo từ metadata JSON. |
-| **3. Tải lên** | Bytes mã hóa được gửi tới IPFS daemon qua Kubo RPC API (`httpx`). |
-| **4. Ghim** | `pin.add(CID)` giữ dữ liệu trên đĩa, tránh GC của IPFS xóa. |
-| **5. Trả kết quả** | Bên gọi nhận `{ cid, nonce }`; cả hai phải lưu trên chuỗi để truy xuất sau. |
-| **6. Truy xuất** | `cat(cid)` tải bytes mã hóa; `decrypt()` kiểm tra thẻ GCM trước khi giải mã. |
-
----
-
-## Thuộc tính an toàn
-
-| Thuộc tính | Cơ chế |
-|:-----------|:-------|
-| **Bảo mật** | AES-256-GCM |
-| **Toàn vẹn** | Xác thực thẻ GCM (authenticated encryption) |
-| **Chống replay** | Mỗi lần tải lên dùng nonce 96-bit ngẫu nhiên riêng |
-| **Quản lý khóa** | Cấu hình qua `HRC_IPFS_ENCRYPTION_KEY`; tự sinh nếu thiếu |
-| **Kiểm soát quyền** | Policy engine kiểm soát quyền gọi API upload/download |
-
----
+`IPFSClient.is_available(cid)` kiểm tra `/api/v0/files/stat` với `arg=/ipfs/<cid>` và trả về `False` khi phản hồi không thành công hoặc kết nối thất bại. Kết quả này không chứng minh bên gọi có khóa giải mã đúng.
 
 ## Lớp và phương thức chính
 
-| Bước | Lớp / Phương thức | Tệp |
-|:-----|:--------------|:-----|
-| Điểm tải lên | `IPFSClient.upload_json()` | `api/storage/ipfs_client.py` |
-| Mã hóa | `AESEncryption.encrypt()` | `api/storage/encryption.py` |
-| Tải bytes thô | `IPFSClient.upload_bytes()` | `api/storage/ipfs_client.py` |
-| Ghim | `IPFSClient.pin()` | `api/storage/ipfs_client.py` |
-| Tải về và giải mã | `IPFSClient.download_json()` | `api/storage/ipfs_client.py` |
-| Tạo client | `create_ipfs_client_from_env()` | `api/storage/ipfs_client.py` |
-
----
+| Thao tác | Phương thức | Tệp |
+|:----------|:-------|:-----|
+| Tải JSON lên | `IPFSClient.upload_json()` | `hierachain/api/storage/ipfs_client.py` |
+| Tải byte lên | `IPFSClient.upload_bytes()` | `hierachain/api/storage/ipfs_client.py` |
+| Mã hóa | `AESEncryption.encrypt()` | `hierachain/api/storage/encryption.py` |
+| Ghim | `IPFSClient.pin()` | `hierachain/api/storage/ipfs_client.py` |
+| Tải JSON xuống | `IPFSClient.download_json()` | `hierachain/api/storage/ipfs_client.py` |
+| Factory từ môi trường | `create_ipfs_client_from_env()` | `hierachain/api/storage/ipfs_client.py` |
 
 ## Liên quan
 
-- [Thực thi Chính sách](./policy-enforcement.md): kiểm soát quyền upload/download
-- [Cảnh báo Rủi ro](./risk-alerts.md): lỗi kết nối IPFS kích hoạt cảnh báo
-- [Sao lưu & Khôi phục Khóa](./key-backup.md): cùng mô hình mã hóa AES-256-GCM cho bản sao lưu khóa
+- [Thực thi chính sách](./policy-enforcement.md): phân quyền do bên gọi quản lý
+- [Phân tích rủi ro và cảnh báo](./risk-alerts.md): báo cáo lỗi do ứng dụng quản lý
+- [Sao lưu khóa](./key-backup.md): lưu khóa do người vận hành quản lý

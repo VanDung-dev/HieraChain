@@ -4,7 +4,7 @@ description: "Environment variables and settings in hierachain/config/settings.p
 icon: material/tune
 ---
 
-# System Configuration
+# System configuration
 
 ## Purpose
 
@@ -36,17 +36,19 @@ print(settings.AUTH_ENABLED)
 
 * `HRC_API_HOST` (default: `localhost` in dev, `127.0.0.1` in production)
 * `HRC_API_PORT` (default: `2661`)
-* `API_VERSION` (constant: `ledger` as defined in `hierachain/config/settings.py:189`, not `admin`)
+* `API_VERSION` (constant: `ledger`; business/admin routes have their own prefixes)
 
 ### Consensus and blockchain
 
 * `HRC_CONSENSUS_TYPE` / `HRC_MAINCHAIN_CONSENSUS` (alias, default: `proof_of_authority`; supported: `proof_of_authority`, `proof_of_federation`)
+
+* `HRC_BLOCK_INTERVAL` (default `0.0` seconds): additional PoA spacing; a positive interval requires at least half that spacing during validation. It does not control PoF. Default Sub-Chain batching still uses 50 events and a 1-second timeout.
 * `CONSENSUS_FEDERATION_CONFIG`: federation config (min_validators: 3, block_interval: 5.0). This is a Settings attribute, not an env var.
 * `VALIDATOR_TIMEOUT` (default: `30` seconds). Settings attribute.
 * `BFT_ENABLED` (default: `True`), `BFT_FAULT_TOLERANCE` (default: `1`), `BFT_NODE_COUNT` (default: `4`). Settings attributes (no `HRC_BFT_ENABLED` env var).
 * Block limits: `BLOCK_SIZE_LIMIT` (default: `1000` events/block in dev, `10` in test)
 * `PROOF_SUBMISSION_INTERVAL` (default: `300` seconds in dev, `10` in test)
-* `HRC_VALIDATOR_IDENTITY`: validator identity file path (default: `validator_key.json`)
+* `HRC_VALIDATOR_IDENTITY`: complete node identity file path (default: `validator_key.json`). It requires node/MSP IDs, signing private/public keys and transport private/public keys; the two-field `hrc key generate` output alone is insufficient. See [Quickstart](../getting-started/quickstart.md).
 * `HRC_BLOCK_TRUSTED_KEYS_FILE`: required JSON file mapping `creator_id` to Ed25519 public-key hex. The local key in `HRC_VALIDATOR_IDENTITY` must match its entry. Missing or mismatched files stop chain/API startup. Every block, including genesis, requires a trusted signature. Existing unsigned chains need migration before startup.
 
 ### Storage and cache
@@ -66,11 +68,12 @@ print(settings.AUTH_ENABLED)
 * `HRC_IPFS_HOST` (default: `/ip4/127.0.0.1/tcp/5001`). IPFS daemon address.
 * `HRC_IPFS_AUTO_PIN` (default: `true`). Pins data after upload so it is not garbage collected.
 * `HRC_IPFS_TIMEOUT` (default: `120` seconds). Max wait for IPFS calls.
-* `HRC_IPFS_ENCRYPTION_KEY`: AES-256 key (32-byte hex). All nodes in the same channel or organization must use the same value.
+* `HRC_IPFS_ENCRYPTION_KEY`: required by the IPFS environment factory, exactly 64 hex characters (32 bytes). Missing or invalid values raise `IPFSError`. Nodes reading the same encrypted object need the same key, nonce and metadata AAD; preserve the key across restarts.
 
 ### Parallel processing and resources
 
-* DoS protection: `HRC_EVENT_POOL_MAX_SIZE` (default: `10000`), `HRC_RAM_CRITICAL_THRESHOLD` (`95.0` %)
+* `HRC_EVENT_POOL_MAX_SIZE` (default: `10000`) bounds the ordering event queue.
+* `HRC_RAM_CRITICAL_THRESHOLD` (default: `95.0` %) is declared in settings but has no runtime consumer in ordering or storage.
 
 ### Security and authentication
 
@@ -86,7 +89,7 @@ print(settings.AUTH_ENABLED)
     * `HRC_BF_MAX_FAILURES` (default: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (default: `900` = 15 minutes)
     * `HRC_BF_WINDOW_SECONDS` (default: `300` = 5 minutes)
-    * Redis lockout TTL follows `HRC_BF_LOCKOUT_SECONDS`; lockout checks read the shared key on each request. Failure counts remain process-local.
+    * Redis lockout TTL follows `HRC_BF_LOCKOUT_SECONDS`; lockout checks read the shared key on each request. SQLite and Redis count failures atomically across workers. Redis uses its server time and an atomic Lua update for the failure window and lockout threshold. Memory/file attempt counts remain local to one process.
 * Identity and organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
 ### P2P network security
@@ -95,6 +98,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_P2P_TRUST_POLICY` (default: `open` in dev, `strict` in production; values: `open|strict`)
 * `HRC_P2P_PEER_ALLOWLIST` (comma-separated peer IDs for strict mode)
 * `HRC_P2P_REQUIRE_SIGNATURES` (`false` in dev, `true` in production)
+
+Production fixes the trust policy to `strict` and the signature requirement to `True`; environment values do not override those production attributes. `SecureConnectionManager` uses these settings. The API startup path constructs `NetworkClient` with seed peers and transport keys, without wiring this manager, the trust policy or signature verification into that client. See [Network](../modules/network.md).
 
 ### CORS
 
@@ -108,6 +113,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_HSTS_ENABLED` (`false` in dev/test; `true` in production)
 * `HRC_HSTS_MAX_AGE` (default: `31536000` = 1 year)
 
+These settings are declared and checked for configuration warnings, but the API middleware does not add `Strict-Transport-Security`. Configure the header at the HTTPS reverse proxy.
+
 ### Rate limiting
 
 * `HRC_RATE_LIMIT` (`false` in dev/test; `true` in production)
@@ -117,7 +124,7 @@ print(settings.AUTH_ENABLED)
 
 ### Monitoring and metrics
 
-* `HRC_METRICS_ENABLED` (default: `false`). Enables `/metrics` for Prometheus.
+* `HRC_METRICS_ENABLED` (default: `false`). Enables `/metrics` to export the default Prometheus registry. No HTTP latency/request counters or ledger collectors are registered by the API.
 * `HRC_TRUSTED_PROXIES` (default: `127.0.0.1`). Trusted reverse proxy IPs (for HTTP/2, HTTP/3).
 
 ### Multi-organization
@@ -134,6 +141,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_ZK_VERIFICATION_KEY`, `HRC_ZK_PROVING_KEY`, `HRC_ZK_CIRCUIT` (file paths)
 * `HRC_ZK_REQUIRED_MAINCHAIN` (default: `false`)
 
+Mock is for development only; `production` proving/verifying is unimplemented. Enabling flags or configuring keys/circuits does not supply a production backend.
+
 ### Cross-level state sync
 
 * `HRC_CROSS_LEVEL_SYNC` (default: `true`)
@@ -145,12 +154,20 @@ print(settings.AUTH_ENABLED)
 * `ERP_INTEGRATION_ENABLED` (`True`)
 * `SUPPORTED_ERP_SYSTEMS` (list: `sap`, `oracle`, `microsoft_dynamics`)
 
+These attributes do not start ERP sync in the API. Built-in vendor connectors are `simulation_mode=True` fixtures; applications must provide real adapters.
+
+### Declared settings without runtime consumers
+
+`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` and `HRC_SQL_RETENTION_DAYS` are read into settings but have no runtime consumers under `hierachain/`. Setting them does not change batching, rotate Parquet, start a SQL batch worker or purge old events automatically. Configure batching on the ordering service/Sub-Chain itself.
+
 ### Logging
 
-* `LOG_LEVEL` (default: `DEBUG` in dev, `DEBUG` in test, `WARNING` in production)
+* `LOG_LEVEL`: the selected environment class fixes this attribute to `DEBUG` in dev/test and `WARNING` in production. Setting the `LOG_LEVEL` environment variable does not override those class values.
 * `LOG_FORMAT` (standard Python logging format string).
 * `HRC_LOG_FORMAT`: `text` (default) or `json` (for centralized logging like ELK/Loki).
 * `HRC_LOG_SQL_DETAIL` (default: `false`)
+
+The launchers configure Uvicorn separately: `python -m hierachain` selects `debug` for a DEBUG settings level and `info` otherwise; `hrc node start` uses `info`. `HRC_LOG_FORMAT` controls the application formatter.
 
 ### CLI
 
@@ -158,6 +175,8 @@ print(settings.AUTH_ENABLED)
 * `CLI_LOG_LEVEL` (default: `INFO`)
 
 ## Example .env (development)
+
+Add a signing identity and trusted-key map from the [Quickstart](../getting-started/quickstart.md) before initializing chains.
 
 ```dotenv
 HRC_ENV=dev
@@ -167,13 +186,17 @@ HRC_CONSENSUS_TYPE=proof_of_authority
 HRC_AUTH_ENABLED=false
 HRC_CORS_ALLOW_ALL=true
 DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
-LOG_LEVEL=DEBUG
 ```
 
 ## Recommended production configuration (minimum)
 
 ```dotenv
 HRC_ENV=production
+HRC_API_KEYS_FILE=/run/secrets/api_keys.json
+HRC_VALIDATOR_IDENTITY=/run/secrets/identity.json
+HRC_BLOCK_TRUSTED_KEYS_FILE=/run/secrets/trusted_block_keys.json
+HRC_API_KEY_REVOCATIONS_DB=/var/lib/hierachain/api_key_revocations.sqlite3
+HRC_NODE_ID=node1
 HRC_API_HOST=0.0.0.0
 HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false

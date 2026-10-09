@@ -8,149 +8,75 @@ icon: material/check-decagram
 
 ## Overview
 
-This workflow checks cryptographic consistency across all chains. It verifies that every block links correctly and that proofs stored on the Main Chain match the latest blocks on each Sub-Chain. It is the main way the system detects tampering and stays audit ready.
+`HierarchyManager` exposes two Python methods with different results. `get_system_integrity_report()` summarizes chain validity and system statistics. `validate_cross_chain_consistency()` verifies blocks with trusted signing keys and compares each Sub-Chain tip with its latest MainChain proof.
 
-The check runs three layers in parallel: Main Chain validity, Sub-Chain validity and proof consistency between the two tiers.
-
----
+Both methods inspect registered chains sequentially. The caller decides when to run them and how to handle failures. Neither method invokes `CrossChainValidator`, schedules recovery or sends Risk Alerts. The API has no `/api/ledger/system/integrity` endpoint.
 
 ## Flow diagram
 
 ```mermaid
-flowchart TB
-    TRIGGER["🔍 Trigger\nvalidate_cross_chain_consistency()\nor get_system_integrity_report()"]
-
-    subgraph Validation["Validation Layers (parallel)"]
-        direction TB
-        MC_VAL["🔗 Main Chain\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        SC_VAL["📦 All Sub-Chains\nBlockVerifier.verify_chain()\nis_chain_valid()"]
-        PROOF["📋 Proof Consistency\n_compute_proof_consistency()\nLatest SubChain block.hash\n== MainChain latest_proofs[name]"]
-    end
-
-    REPORT["📊 System Integrity Report"]
-    HEALTHY["✅ HEALTHY\nAll chains valid\nAll proofs consistent"]
-    DEGRADED["⚠️ DEGRADED\nChain invalid OR\nProof missing/mismatch"]
-    ALERT["🚨 Alert via Risk Alerts"]
-
-    TRIGGER --> MC_VAL
-    TRIGGER --> SC_VAL
-    TRIGGER --> PROOF
-
-    MC_VAL --> REPORT
-    SC_VAL --> REPORT
-    PROOF --> REPORT
-
-    REPORT --> HEALTHY
-    REPORT --> DEGRADED --> ALERT
+flowchart TD
+    Caller[Operator or application] --> Health[get_system_integrity_report]
+    Health --> Validity[MainChain and SubChain is_chain_valid checks]
+    Validity --> Summary[Health summary and statistics]
+    Caller --> Consistency[validate_cross_chain_consistency]
+    Consistency --> Verify[BlockVerifier with trusted keys, sequentially]
+    Verify --> Proofs[Compare current tips with latest MainChain proofs]
+    Proofs --> Report[Block and proof consistency report]
+    Summary --> Handle[Caller handles results]
+    Report --> Handle
 ```
 
----
+## Health report
 
-## Tamper detection flow
+`get_system_integrity_report()` returns:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant OP as 👤 Operator / Monitor
-    participant HM as 🏛️ HierarchyManager
-    participant BV as 🔍 BlockVerifier
-    participant CCV as 🛡️ CrossChainValidator
+| Field | Meaning |
+|:------|:--------|
+| `timestamp` | Report time |
+| `overall_status`, `integrity_status` | `HEALTHY` or `DEGRADED` based on chain validity |
+| `system_overview` | Sub-Chain totals and system uptime |
+| `main_chain` | MainChain validity and height |
+| `sub_chains` | Per-chain validity and height |
+| `sub_chain_details` | Domain type, blocks, events, entities, operations and validity |
+| `issues` | Chain validation failure descriptions |
 
-    OP->>HM: validate_cross_chain_consistency()
-    HM->>BV: verify_chain(main_chain.chain)
-    BV->>BV: For each block: hash(prev_block) == block.previous_hash?
-    BV-->>HM: { valid: True/False, tampered_blocks: [] }
+This result has no `proof_consistency` field. A healthy chain report does not establish that every current Sub-Chain tip has a matching MainChain anchor.
 
-    loop Each Sub-Chain
-        HM->>BV: verify_chain(sub_chain.chain)
-        BV-->>HM: { valid: True/False }
-        HM->>HM: _compute_proof_consistency(sub_chain_name)
-        Note right of HM: sub_chain.latest_block.hash == main_chain.proofs[name]
-    end
+## Cross-chain consistency report
 
-    HM->>CCV: validate_system_integrity()
-    CCV->>CCV: Scan all events for forbidden crypto terms
-    CCV-->>HM: { issues: [], forbidden_found: [] }
+`validate_cross_chain_consistency()` returns `timestamp`, `main_chain_valid`, `overall_consistent`, `sub_chain_validation`, `block_verification` and `proof_consistency`. Block verification uses `BlockVerifier.verify_chain(chain.chain, chain.trusted_public_keys)` for the MainChain and each registered Sub-Chain.
 
-    HM-->>OP: IntegrityReport { overall_status, per_chain, proof_consistency, issues }
-```
+Each proof result contains `consistent`, `pending`, `reason`, `chain_height` and `last_block_index`. When a proof exists, it also reports `latest_proof_hash`, `latest_block_hash` and `latest_proof_block_index`. Consistency means the stored proof hash equals the current Sub-Chain tip hash.
 
----
-
-## Integrity report structure
+`pending=True` explains a missing or older anchor when the next submission is not due under the chain's configured proof schedule. It still sets `consistent=False` and makes `overall_consistent=False`. A scheduled delay is not, by itself, evidence of tampering.
 
 ```python
-{
-    "timestamp": 1714000000.0,
-    "overall_status": "HEALTHY",          # or "DEGRADED"
-    "system_overview": {
-        "total_sub_chains": 3,
-        "total_sub_chain_blocks": 142,
-        "total_sub_chain_events": 3580,
-        "system_uptime": 86400.0
-    },
-    "main_chain": {
-        "valid": True,
-        "height": 47
-    },
-    "sub_chains": {
-        "supply_chain": {"valid": True, "height": 61},
-        "logistics":    {"valid": True, "height": 48},
-        "finance":      {"valid": True, "height": 33}
-    },
-    "proof_consistency": {
-        "supply_chain": {
-            "consistent": True,
-            "latest_proof_hash": "a3f8b2...",
-            "chain_height": 61
-        }
-    },
-    "issues": []
-}
+# manager is the application's configured HierarchyManager.
+health = manager.get_system_integrity_report()
+consistency = manager.validate_cross_chain_consistency()
+
+for chain_name, proof in consistency["proof_consistency"].items():
+    if not proof["consistent"]:
+        print(chain_name, proof["pending"], proof["reason"])
 ```
 
----
+## Caller responsibilities
 
-## Step-by-step breakdown
-
-| Step | Description |
-|:-----|:------------|
-| **1. Trigger** | Periodic timer, operator call, or Risk Alerts anomaly detection |
-| **2. Main Chain verify** | `BlockVerifier.verify_chain()` recomputes every block hash and checks `previous_hash` linkage |
-| **3. Sub-Chain verify** | Same verification applied to all registered Sub-Chains in parallel |
-| **4. Proof consistency** | Compares `sub_chain.latest_block.hash` with `main_chain.proofs[chain_name]` |
-| **5. Forbidden term scan** | `CrossChainValidator` scans all event payloads for cryptocurrency terminology |
-| **6. Report assembly** | All results merged into `IntegrityReport` |
-| **7. Alert on DEGRADED** | If any check fails, Risk Alerts alert triggered with issue details |
-
----
-
-## Error handling
-
-| Condition | Status | Action |
-|:----------|:-------|:-------|
-| Block hash mismatch in Main Chain | `DEGRADED` | Flag tampered block index; alert |
-| Proof missing for Sub-Chain | `DEGRADED` | Log missing proof; alert |
-| Sub-Chain proof hash ≠ Main Chain proof | `DEGRADED` | Tamper detected; immediate alert |
-| Forbidden term found in event | `DEGRADED` | Flag event, log with full path |
-
----
+Run domain terminology checks separately through `CrossChainValidator` if the application needs them. Connect report handling to `AlertManager` or operational recovery explicitly. There is no built-in report-to-alert or report-to-rehydration hook.
 
 ## Key classes and methods
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Full report | `HierarchyManager.get_system_integrity_report()` | `hierarchical/hierarchy_manager.py` |
-| Consistency check | `HierarchyManager.validate_cross_chain_consistency()` | `hierarchical/hierarchy_manager.py` |
-| Chain verify | `BlockVerifier.verify_chain()` | `security/verify/block_verifier.py` |
-| Per-block verify | `BlockVerifier.verify_block()` | `security/verify/block_verifier.py` |
-| Forbidden scan | `CrossChainValidator.validate_system_integrity()` | `domains/generic/utils/cross_chain_validator.py` |
-| REST API | `GET /ledger/system/integrity` | `api/ledger/routes.py` |
-
----
+| Operation | Method | File |
+|:----------|:-------|:-----|
+| Public methods | `HierarchyManager.get_system_integrity_report()` / `validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/base.py` |
+| Report implementation | `_compute_system_integrity_report()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
+| Consistency implementation | `_validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
+| Signature/hash verification | `BlockVerifier.verify_chain()` | `hierachain/security/verify/block_verifier.py` |
+| Separate domain checks | `CrossChainValidator.validate_system_integrity()` | `hierachain/domains/utils/cross_chain_validator.py` |
 
 ## Related
 
-- [Proof Anchoring](./proof-anchoring.md): creates the proofs validated here
-- [Chain Rehydration](./chain-rehydration.md): called if inconsistency triggers rehydration
-- [Risk Analysis & Alerts](./risk-alerts.md): receives DEGRADED alerts from this workflow
+- [Proof Anchoring](./proof-anchoring.md): creates the stored anchors
+- [Chain Rehydration](./chain-rehydration.md): explicit chain synchronization
+- [Risk Analysis & Alerts](./risk-alerts.md): caller-managed alert dispatch

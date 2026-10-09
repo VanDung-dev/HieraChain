@@ -6,15 +6,15 @@ icon: material/lightbulb
 
 # Khái niệm cơ bản
 
-Trang này tóm tắt các khái niệm nền tảng để đọc và sử dụng HieraChain hiệu quả. Khi gặp thuật ngữ mới, xem thêm trang [Thuật ngữ](../glossary.md).
+Các khái niệm này mô tả dữ liệu và cấu trúc phân cấp của sổ cái. Xem [Thuật ngữ](../glossary.md) để tra các thuật ngữ khác.
 
 ## Các khái niệm chính
 
-* Chain: Tập hợp các Block được liên kết bằng `previous_hash`. HieraChain có hai lớp chuỗi: `Main Chain` và các `Sub-Chain` theo domain.
-* Block: Nhóm nhiều Event và siêu dữ liệu (header). Xem `hierachain/core/block.py`.
-* Event: Hoạt động nghiệp vụ (không phải giao dịch tiền mã hóa). Được lưu dưới dạng bảng Arrow theo schema trong `hierachain/core/block.py:261`.
-* Proof: Dấu vết mật mã (ví dụ Merkle root/hash) đại diện cho trạng thái Sub-Chain, được neo lên Main Chain.
-* Hierarchy: Kiến trúc Main Chain giám sát nhiều Sub-Chain. Quản lý bởi `HierarchyManager`.
+* Chain: Dãy khối liên kết bằng `previous_hash`. HieraChain có một `Main Chain` và các `Sub-Chains` theo domain.
+* Block: Nhóm sự kiện lưu trong bảng Arrow, kèm header chứa chỉ số khối, timestamp, hash khối trước, nonce, Merkle root và danh tính bên tạo khối. Xem `hierachain/core/block.py`.
+* Event: Bản ghi nghiệp vụ có `entity_id`, `event` và `timestamp`. Details có thể mô tả thao tác. `EVENT_SCHEMA` trong `hierachain/core/block.py` định nghĩa các cột lưu trữ; byte sự kiện chuẩn hóa giữ trường JSON và kiểu dữ liệu của details.
+* Proof: Anchor chứa hash khối Sub-Chain và metadata tóm tắt, bao gồm Merkle root. Có thể kèm bằng chứng ZK theo chính sách proof đã cấu hình. Anchor này khác với inclusion proof cho từng sự kiện.
+* Hierarchy: MainChain và các SubChain đã đăng ký được `HierarchyManager` điều phối.
 
 ```mermaid
 graph TD
@@ -27,12 +27,14 @@ graph TD
     Main --> A
     Main --> B
     Main --> C
-    
-    note[Main Chain lưu Proof <br/> Sub-Chain lưu Event chi tiết]
+
+    note[Main Chain stores Proofs <br/> Sub-Chain stores detailed Events]
     Main -.- note
 ```
 
 ### Cấu trúc dữ liệu
+
+Sơ đồ biểu diễn các lớp runtime và bản ghi sự kiện ở mức khái niệm. `Block.events` là `pyarrow.Table`; snapshot sự kiện xuất ra là list các dictionary.
 
 ```mermaid
 classDiagram
@@ -50,10 +52,10 @@ classDiagram
     }
     class Block {
         +int index
-        +hash hash
-        +hash previous_hash
-        +list events
-        +hash merkle_root
+        +string hash
+        +string previous_hash
+        +pyarrow.Table events
+        +string merkle_root
     }
     class Event {
         +string entity_id
@@ -61,7 +63,7 @@ classDiagram
         +float timestamp
         +dict details
     }
-    
+
     HierarchyManager "1" *-- "1" Blockchain : main_chain
     HierarchyManager "1" *-- "many" Blockchain : sub_chains
     Blockchain "1" *-- "many" Block
@@ -70,9 +72,9 @@ classDiagram
 
 ## Dòng chảy cơ bản
 
-1. Ghi Event ở Sub-Chain → gom thành Block theo điều kiện (kích thước/thời gian).
-2. Sinh Proof từ Block (ví dụ: Merkle root) → gửi lên Main Chain để neo.
-3. Truy vết/thống kê: API cho phép theo dõi thực thể, xem Block/Chain, và tổng hợp thông tin hệ thống.
+1. Gửi sự kiện đến Sub-Chain. ID sự kiện xác nhận đã tiếp nhận vào ordering; cấu hình kích thước và thời gian quyết định lúc gom sự kiện thành khối.
+2. Ordering hoàn tất, ký và lưu khối bền vững. Consumer của Sub-Chain xác thực và áp dụng khối. Việc gửi proof neo hash khối đã hoàn tất cùng metadata tóm tắt lên MainChain theo lịch proof hoặc yêu cầu rõ ràng.
+3. Truy vấn sự kiện đã ghi theo thực thể hoặc xem khối và thống kê chuỗi qua API.
 
 ## Tệp mã nguồn liên quan
 

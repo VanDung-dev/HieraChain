@@ -42,7 +42,7 @@ Tip: use existing DI (e.g. `Depends(get_hierarchy_manager)`) if the endpoint nee
 ## Step 3: Run Server and Quick Test
 
 ```bash
-python -m hierachain.api.server
+python -m hierachain
 ```
 
 Open `http://localhost:2661/docs` to try on Swagger UI or use `curl`:

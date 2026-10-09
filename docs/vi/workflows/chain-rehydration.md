@@ -8,112 +8,65 @@ icon: material/water
 
 ## Tổng quan
 
-Khi node Sub-Chain khởi động lại hoặc phát hiện lệch trạng thái (hash cục bộ không khớp hash trong DB), node nạp lại chuỗi trong bộ nhớ từ backend lưu trữ. Cơ chế này giữ sổ cái nhất quán sau crash, restart hoặc chia mạng.
+`SubChain.sync_chain()` dựng lại ledger cục bộ từ các khối do dịch vụ ordering cung cấp. Quá trình khởi động chạy bước đồng bộ này trước khi đăng ký chuỗi hoặc khởi chạy commit consumer. Quy trình không có bộ hẹn giờ `auto_sync` định kỳ; ứng dụng gọi `sync_chain()` sau đó phải phối hợp với các bên đang ghi dữ liệu.
 
-DB là nguồn chân lý có thẩm quyền. Nếu trạng thái cục bộ lệch, nó bị bỏ và dựng lại hoàn toàn từ DB.
-
----
+Orderer cung cấp danh sách khối bootstrap một lần. Sau đó, quá trình đồng bộ đọc toàn bộ khối qua `storage_handler.get_blocks_from_db(start_index=0)`. Nó so sánh khối cuối cục bộ với khối cuối được cung cấp để quyết định có dựng lại hay không. Nó không chỉ lấy phần dữ liệu còn thiếu.
 
 ## Biểu đồ luồng
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant SC as 📦 SubChain
-    participant OS as ⚙️ OrderingService
-    participant DB as 💾 Storage Backend
-
-    Note over SC: Khởi động nút HOẶC phát hiện lệch trạng thái
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 1 — Phát hiện Sai lệch
-        SC->>SC: sync_chain()
-        SC->>OS: get_latest_block()
-        OS->>DB: Truy vấn khối mới nhất đã ghi
-        DB-->>OS: Khối mới nhất (index, hash)
-        OS-->>SC: Khối mới nhất từ hệ thống
+    participant SC as SubChain
+    participant OS as OrderingService
+    participant DB as Storage handler
+    SC->>OS: take_bootstrap_blocks()
+    alt Bootstrap already consumed
+        SC->>DB: get_blocks_from_db(start_index=0)
+        DB-->>SC: All stored blocks
+    else Bootstrap available
+        OS-->>SC: Bootstrap blocks
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 2 — So đối & Nạp lại trạng thái
-        SC->>SC: So đối: local_latest.index vs db_latest.index
-
-        alt Cục bộ == DB (cùng chỉ số index + trùng khớp mã băm hash)
-            SC->>SC: Đã đồng bộ mới nhất. Không xử lý thêm (No-op).
-        else Cục bộ < DB (nút bị lỡ các khối trong thời gian offline)
-            SC->>DB: get_blocks_from_db(start_index=0)
-            DB-->>SC: Toàn bộ danh sách khối []
-            SC->>SC: Yêu cầu khóa ghi (Write Lock)
-            SC->>SC: Xóa chuỗi cục bộ cũ, đặt lại các bộ đếm
-            loop Duyệt qua từng khối nhận từ DB
-                SC->>SC: chain.append(block)
-                SC->>SC: _update_event_statistics(block)
-            end
-            SC->>SC: Giải phóng khóa ghi
-            SC->>OS: Đặt lại block_history & blocks_created
-        else Cục bộ > DB HOẶC lệch mã băm hash
-            SC->>SC: Ghi log CẢNH BÁO: phát hiện trạng thái sai lệch
-            SC->>DB: Ép buộc nạp lại toàn bộ chuỗi từ DB
-        end
+    SC->>SC: Compare local tip index/hash with supplied tip
+    opt Rebuild required
+        SC->>SC: Lock, clear chain and WorldState
+        SC->>SC: Append all supplied blocks and apply WorldState
+        SC->>SC: Blockchain._rebuild_event_indexes()
+        SC->>SC: Validate rebuilt chain
     end
-
-    SC->>SC: _reset_ordering_service_state()
-    Note over SC: Trạng thái chuỗi đã nhất quán với DB lưu trữ
+    SC->>SC: Reconcile commit queue against local index/hash
 ```
 
----
+## So sánh và dựng lại
 
-## Các kịch bản lệch trạng thái
+| Trạng thái | Hành vi |
+|:------|:---------|
+| Không có khối được cung cấp | Quá trình khôi phục trả về mà không xóa chuỗi cục bộ |
+| Khối cuối cục bộ đứng sau khối cuối được cung cấp | Dựng lại từ toàn bộ danh sách khối được cung cấp |
+| Cùng chỉ số và cùng hash | Giữ chuỗi cục bộ |
+| Cùng chỉ số nhưng khác hash | Dựng lại từ các khối được cung cấp |
+| Chỉ số cục bộ cao hơn, hash khối cuối khác | Ghi log phân kỳ và dựng lại |
+| Chỉ số cục bộ cao hơn, hash khối cuối giống nhau | Giữ chuỗi cục bộ |
 
-| Kịch bản | Cách phát hiện | Hành động khắc phục |
-|:---------|:-------------------|:--------------------|
-| **Khởi động lạnh** | `local.index == 0` | Nạp toàn bộ danh sách khối từ DB |
-| **Phục hồi sau crash** | `local.index < db.index` | Chỉ lấy và ghép thêm khối thiếu |
-| **Lệch hash** | `local.hash != db.hash` (cùng index) | Buộc nạp lại toàn bộ từ DB |
-| **Đã đồng bộ** | Cùng index và hash khớp | Không làm gì (No-op) |
-| **Cục bộ chạy trước DB** | `local.index > db.index` | Cảnh báo: DB là chuẩn; buộc nạp lại từ DB |
+`_apply_rehydrated_blocks()` giữ khóa chuỗi trong khi xóa và dựng lại chuỗi, WorldState và chỉ mục sự kiện. Sau đó, nó gọi `is_chain_valid()` và phát sinh `ValueError` nếu xác thực thất bại. Nó không đặt lại bộ đếm khối của orderer đang hoạt động.
 
----
+Bước đối soát lúc khởi động loại bỏ các khối trong hàng đợi có chỉ số và hash đã trùng với chuỗi vừa dựng lại. Các khối chưa có trong chuỗi vẫn ở hàng đợi. Khối có hash xung đột được giữ lại và gây `ValueError`, ngăn quá trình khởi động chấp nhận lịch sử xung đột.
 
-## Các bước chi tiết
+## Lỗi và giới hạn vận hành
 
-| Bước | Mô tả |
-|:-----|:------|
-| **1. Kích hoạt** | Node khởi động gọi `sync_chain()`, hoặc timer `auto_sync` tự kích hoạt. |
-| **2. Truy vấn DB** | `OrderingService.get_latest_block()` lấy khối mới nhất từ DB. |
-| **3. So sánh**| So sánh cặp `(index, hash)` của chuỗi cục bộ với DB. |
-| **4. Đã đồng bộ**| Nếu khớp hoàn toàn: bỏ qua và tiếp tục hoạt động bình thường. |
-| **5. Đồng bộ một phần**| Nếu `local < db`: chỉ tải khối thiếu. Lấy khóa ghi để tránh xung đột luồng. |
-| **6. Nạp lại toàn bộ** | Nếu lệch hash hoặc local lớn hơn DB: xóa bộ nhớ cục bộ, dựng lại toàn bộ từ DB. |
-| **7. Đặt lại chỉ mục** | `_update_event_statistics()` dựng lại `entity_event_index` từ khối vừa nạp. |
-| **8. Đồng bộ bộ đếm** | Đồng bộ lại bộ đếm khối giữa chuỗi và ordering service. |
-
----
-
-## Xử lý lỗi
-
-| Tình huống | Hành vi |
-|:-----------|:--------|
-| Lỗi đọc DB khi nạp lại | Ghi log exception, thử lại ở chu kỳ đồng bộ tiếp theo |
-| Khóa ghi giữ quá lâu | Tự hết hạn sau `lock_timeout` giây; gửi cảnh báo qua Risk Alerts |
-| `entity_event_index` không nhất quán sau nạp | Kích hoạt dựng lại chỉ mục toàn phần |
-| DB không kết nối được | Node chuyển sang chỉ đọc; sự kiện mới vào hàng đợi nhưng không ghi xuống đĩa |
-
----
+Lỗi đọc storage được truyền đến bên gọi. Lịch sử dựng lại không hợp lệ và xung đột hàng đợi cũng gây lỗi. Luồng này không có lịch thử lại, cảnh báo hết thời gian chờ khóa hay tự động chuyển sang chế độ chỉ đọc. Khôi phục quyền truy cập storage và cấu hình danh tính/tin cậy đã được phê duyệt trước khi khởi động lại; kiểm tra lỗi trước khi gửi thêm sự kiện.
 
 ## Lớp và phương thức chính
 
-| Bước | Lớp / Phương thức | Tệp |
-|:-----|:--------------|:-----|
-| Hàm khởi tạo | `SubChain.sync_chain()` | `hierarchical/sub_chain/base.py` |
-| Đọc khối mới nhất từ DB | `OrderingService.get_latest_block()` | `consensus/ordering/service.py` |
-| Tải toàn bộ khối | `storage.get_blocks_from_db()` | `adapters/database/sqlite_adapter.py` |
-| Cập nhật chỉ mục | `SubChain._update_event_statistics()` | `hierarchical/sub_chain/base.py` |
-| Đặt lại bộ đếm OS | `SubChain._reset_ordering_service_state()` | `hierarchical/sub_chain/base.py` |
-
----
+| Thao tác | Phương thức | Tệp |
+|:----------|:-------|:-----|
+| Điểm vào công khai | `SubChain.sync_chain()` | `hierachain/hierarchical/sub_chain/base.py` |
+| Đồng bộ | `_sync_chain_for_sub_chain()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Nạp và so sánh | `_rehydrate_chain_from_ordering_service()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Dựng lại | `_apply_rehydrated_blocks()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Đối soát hàng đợi | `_discard_rehydrated_blocks_from_queue()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Chỉ mục sự kiện | `Blockchain._rebuild_event_indexes()` | `hierachain/core/blockchain.py` |
 
 ## Liên quan
 
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): khôi phục snapshot lỗi kích hoạt nạp lại chuỗi
-- [Xác thực Tính toàn vẹn](./integrity-validation.md): kiểm tra nhất quán chuỗi sau khi nạp lại
+- [Giảm thiểu lỗi](./error-recovery.md): các cơ chế khôi phục riêng
+- [Kiểm tra tính toàn vẹn hệ thống](./integrity-validation.md): báo cáo tính toàn vẹn do bên gọi chủ động yêu cầu

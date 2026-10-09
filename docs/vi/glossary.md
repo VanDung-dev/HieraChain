@@ -26,7 +26,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Proof of Authority | PoA | Đồng thuận trong một tổ chức; `hierachain/consensus/proof_of_authority.py`. |
 | Proof of Federation | PoF | Đồng thuận liên minh P2P giữa các MainChain độc lập; `hierachain/consensus/proof_of_federation.py`. |
 | API Key | API key | Khóa truy cập API; `hierachain/security/verify/api_key_verifier.py`. |
-| Resource Guard | Resource Guard | Middleware bảo vệ tài nguyên; `hierachain/security/brute_force_protector.py`. |
+| API-key brute-force protection | Bảo vệ brute-force API key | Theo dõi lần xác thực API key thất bại theo IP và khóa IP tạm thời; key prefix chỉ dùng để ghi log; `hierachain/security/brute_force_protector.py`. |
 | Entity Tracer | Truy vết thực thể | Truy vết sự kiện theo entity; `hierachain/domains/utils/entity_tracer.py`. |
 | Zero‑Knowledge Proof | Bằng chứng ZK | ZK Proof; `hierachain/security/zk_prover.py`, `hierachain/security/verify/zk_verifier.py`. |
 | Channel | Kênh | Kênh riêng tư giữa các tổ chức; `hierachain/hierarchical/channel/channel.py`. |
@@ -40,7 +40,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | API Ledger | API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
 | API business | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | API Admin | REST API Admin; `hierachain/api/admin/*`. |
-| Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ qua `hierachain/cluster/cross_level_sync.py` + `hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*`. |
+| Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ qua `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*`. |
 | Identity Manager | Quản lý danh tính | Quản lý tổ chức/người dùng/role; `hierachain/security/identity.py`. |
 | Certificate | Chứng chỉ | Dataclass `Certificate` nội bộ trong `hierachain/security/msp.py` (không phải X.509, không có `certificate.py`). |
 

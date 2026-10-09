@@ -6,111 +6,66 @@ icon: material/numeric-3-circle
 
 # API Admin
 
-## Mục đích
+## Endpoint và quyền truy cập
 
-Mô tả các endpoint REST trong phiên bản API Admin (System & Admin) dùng cho các tác vụ quản trị hệ thống: xác minh danh tính node, kiểm tra trạng thái hoạt động (uptime, version, active chains).
+Router được định nghĩa trong `hierachain/api/admin/endpoints.py`; các mô hình yêu cầu và phản hồi nằm trong `schemas.py`.
 
-## Tổng quan endpoint
+| Endpoint | Quyền truy cập và hành vi |
+|:---------|:--------------------|
+| `POST /api/admin/verify-identity` | Yêu cầu phạm vi `chains` khi bật xác thực bằng API key; ký thử thách có tiền tố phân biệt miền |
+| `GET /api/admin/status` | Được miễn xác thực API key toàn cục; trả về trạng thái nút khi hierarchy manager khả dụng |
+| `POST /api/admin/chains/{chain_name}/secure-events` | Yêu cầu phạm vi `chains` khi xác thực; kiểm tra chữ ký sự kiện trước khi gửi vào chuỗi |
 
-* POST `/api/admin/verify-identity`: Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
-* GET `/api/admin/status`: Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
+Nếu triển khai cần hạn chế truy cập công khai vào trạng thái, hãy bảo vệ endpoint này tại reverse proxy. Route trạng thái không có dependency `require_chain_access`.
 
-## Schema chính (trích từ `hierachain/api/admin/schemas.py`)
+## Xác minh danh tính nút
 
-* `VerifyIdentityRequest`
+`VerifyIdentityRequest` chứa chuỗi `challenge`. Handler ký các byte sau:
 
-    * `challenge: str` (Chuỗi challenge cần ký, hex encoded)
-
-* `VerifyIdentityResponse`
-
-    * `status: str` ("success")
-    * `node_id: str` (Định danh của node)
-    * `signature: str` (Chữ ký số của challenge)
-    * `challenge: str` (Challenge gốc đã nhận)
-
-* `NodeStatusResponse`
-
-    * `status: str` ("active")
-    * `version: str` (Phiên bản Ledger)
-    * `chains_active: int` (Số lượng sub-chain đang hoạt động)
-    * `license_active: bool` (Trạng thái bản quyền)
-    * `uptime: str` (Thời gian hoạt động của hệ thống)
-
-## Ví dụ sử dụng
-
-Giả định server đang chạy tại `http://localhost:2661`:
-
-### Xác minh danh tính node (Verify Identity)
-
-Endpoint này thường được sử dụng bởi các công cụ quản lý để xác nhận node này là thành viên hợp lệ của mạng lưới.
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Node
-    
-    Client->>Node: POST /verify-identity {challenge: "abcd"}
-    Note over Node: Ký challenge bằng Private Key
-    Node-->>Client: 200 OK {signature: "..."}
-    Note over Client: Verify signature bằng Node Public Key
+```python
+payload = b"HRC_IDENTITY_CHALLENGE:" + challenge.encode("utf-8")
 ```
 
-**Request:**
+Handler không giải mã thử thách thành byte từ chuỗi thập lục phân. Phản hồi chứa `status`, `node_id`, `signature` và `challenge` ban đầu. Xác minh chữ ký trên cùng dữ liệu UTF-8 có tiền tố bằng khóa công khai đã được phê duyệt của nút. Nếu cần chống phát lại, client phải tạo thử thách mới và theo dõi việc sử dụng nó.
 
 ```bash
 curl -X POST http://localhost:2661/api/admin/verify-identity \
   -H "Content-Type: application/json" \
-  -d '{
-        "challenge": "abcd1234"
-      }'
+  -H "X-API-Key: <your-key>" \
+  -d '{"challenge": "abcd1234"}'
 ```
 
-**Phản hồi (200 OK):**
+Dependency nạp `LocalKeyProvider.from_file()` từ `HRC_VALIDATOR_IDENTITY`. Provider này đọc trường `private_key`. Trong khi đó, bộ nạp khóa ký khối yêu cầu đầy đủ các trường danh tính nút được mô tả tại [Sao lưu khóa](../workflows/key-backup.md). Nếu cả hai bộ nạp dùng chung một tệp, tệp phải đáp ứng cả hai định dạng và dùng cùng khóa ký. Tệp khóa bị thiếu hoặc không đọc được trả về HTTP 401; endpoint này không tạo khóa tạm thời.
 
-```json
-{
-  "status": "success",
-  "node_id": "node_1",
-  "signature": "3045022100...", 
-  "challenge": "abcd1234"
-}
-```
-
-*(Lưu ý: `signature` sẽ là chuỗi hex thực tế được ký bởi private key của node)*
-
-### Kiểm tra trạng thái node (Node Status)
-
-Lấy thông tin tổng quan về sức khỏe và trạng thái của node.
-
-**Request:**
+## Trạng thái nút
 
 ```bash
 curl -s http://localhost:2661/api/admin/status
 ```
 
-**Phản hồi (200 OK):**
+`NodeStatusResponse` chứa `status`, `version`, `chains_active`, `license_active` và `uptime`. Phiên bản lấy từ `hierachain/config/version.py`; thời gian hoạt động được định dạng từ thời điểm khởi động manager. Hiện tại, `license_active` được gán cố định là `True`, không phải kết quả từ dịch vụ xác minh giấy phép.
 
-```json
-{
-  "status": "active",
-  "version": "0.1.0",
-  "chains_active": 5,
-  "license_active": true,
-  "uptime": "1d 2h 30m"
-}
-```
+## Gửi sự kiện có chữ ký
 
-## Mã trạng thái & lỗi phổ biến
+`SecureEventRequest` yêu cầu `entity_id`, `event_type`, `sender` và `signature`; `details` mặc định là đối tượng rỗng. `sender` và `signature` phải chứa dữ liệu thập lục phân với tiền tố `0x`. Các trường tùy chọn gồm `nonce`, `timestamp` và `chain_id`; trường không được định nghĩa sẽ bị từ chối. Details bị giới hạn ở 1 MiB JSON sau tuần tự hóa và độ sâu 10.
 
-* 200 OK: Thành công.
-* 500 Internal Server Error: Lỗi xác thực danh tính (ví dụ: lỗi crypto khi ký) hoặc lỗi nội bộ khi tính toán trạng thái.
+Handler từ chối `chain_id` khác với tên chuỗi trong đường dẫn, hoặc timestamp lệch quá 300 giây so với thời gian máy chủ. Nó gọi `SignatureVerifier.verify_event_signature()` trước `chain.add_event()`.
 
-## Ghi chú triển khai (rút gọn từ `endpoints.py`)
+`SecureEventResponse` chứa `status`, `event_hash` và `timestamp` của máy chủ. Dù giá trị trạng thái là `committed`, handler gọi luồng tiếp nhận bất đồng bộ của Sub-Chain. `event_hash` là mã định danh lần gửi được trả về; cần đọc các khối đã hoàn tất để xác nhận đã ghi bền vững. Việc route chấp nhận chữ ký không khiến quá trình tạo khối trở thành đồng bộ.
 
-* **Identity Provider**: Sử dụng `LocalKeyProvider` để tải identity từ file (đường dẫn trong settings) hoặc tạo key tạm thời nếu file không tồn tại.
-* **Hierarchy Manager**: Được inject vào `get_status` để đếm số lượng chain active và tính toán uptime.
+## Mã trạng thái
+
+| Mã | Ý nghĩa |
+|:-----|:--------|
+| 200 | Handler trả về thành công |
+| 401 | Xác thực API key thất bại hoặc provider danh tính không nạp được khóa |
+| 403 | Khóa đã xác thực thiếu phạm vi quyền yêu cầu |
+| 404 | Chuỗi đích của sự kiện có chữ ký không tồn tại |
+| 422 | Mô hình yêu cầu, tên chuỗi, khoảng thời gian hoặc chữ ký sự kiện không hợp lệ |
+| 500 | Quá trình ký, tính trạng thái hoặc gửi sự kiện phát sinh lỗi nội bộ |
 
 ## Liên quan
 
-* Config: [Config](config.md) (Xem cấu hình `VALIDATOR_IDENTITY_PATH`)
-* Security: [Security](../modules/security.md) (Về Key Provider và Identity)
+* [Cấu hình](config.md)
+* [Bảo mật](../modules/security.md)
+* [Gửi sự kiện](../workflows/event-submission.md)

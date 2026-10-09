@@ -1,6 +1,6 @@
 ---
 title: "Ordering Service"
-description: "Dịch vụ sắp xếp thứ tự sự kiện: Đảm bảo tính xác định, Crash Fault Tolerance và Tích hợp Journaling."
+description: "Sắp thứ tự sự kiện cục bộ, khôi phục journal bền vững, chứng nhận, gom lô và lưu khối có chữ ký."
 icon: material/order-bool-ascending
 ---
 
@@ -8,27 +8,23 @@ icon: material/order-bool-ascending
 
 ## Tổng quan
 
-**Ordering Service** là thành phần trung tâm trong kiến trúc đồng thuận của HieraChain, chịu trách nhiệm nhận các sự kiện (Events) thô, sắp xếp chúng theo một thứ tự duy nhất và đóng thành khối (Blocks). Đây là cơ chế **Crash Fault Tolerance (CFT)**, đảm bảo hệ thống vẫn hoạt động ổn định khi một số nút bị sập.
-
----
+Ordering Service nhận sự kiện cục bộ, ghi nhật ký và xếp hàng, sau đó chứng nhận và gom thành khối có chữ ký. Phát lại journal hỗ trợ khôi phục sau lỗi tiến trình. Dịch vụ không triển khai bầu chọn orderer nhân bản hay tự chuyển sang nút khác khi lỗi.
 
 ## Kiến trúc Hệ thống
 
-Ordering Service được thiết kế theo mô hình **Facade**, điều phối nhiều thành phần chuyên biệt:
+Ordering Service được thiết kế theo mô hình Facade, điều phối nhiều thành phần chuyên biệt:
 
 | Thành phần | Vai trò | Tệp tin |
 | :--- | :--- | :--- |
-| **OrderingService** | Điểm truy cập chính, quản lý vòng đời và cấu hình. | `service.py` |
-| **Processor** | Thu thập bất đồng bộ, xác minh chữ ký theo batch, chứng nhận và xử lý sự kiện. | `processor.py` |
-| **Block Builder** | Gom nhóm sự kiện (Batching) và xây dựng cấu trúc khối. | `block_builder.py` |
-| **Certifier** | Xác thực chữ ký và quyền hạn của sự kiện trước khi sắp xếp. | `certifier.py` |
-| **Storage** | Quản lý lưu trữ bền vững cho các sự kiện đang chờ (Pending). | `storage.py` |
-| **Recovery** | Khôi phục trạng thái từ **Event Journal** sau sự cố. | `recovery.py` |
-| **Journal lookup** | Lập index commitment ID/kênh/nội dung bền vững để nhận stable ID. | `journal_lookup.py` |
+| OrderingService | Điểm truy cập chính, quản lý vòng đời và cấu hình. | `service.py` |
+| Processor | Thu thập bất đồng bộ, xác minh chữ ký theo batch, chứng nhận và xử lý sự kiện. | `processor.py` |
+| Block Builder | Gom lô sự kiện; block manager dựng khối. | `block_builder.py` |
+| Certifier | Chạy quy tắc tùy chỉnh, kiểm tra cấu trúc và kiểm tra chữ ký/ZK có điều kiện. | `certifier.py` |
+| Storage | Lưu khối có chữ ký và đọc lịch sử đã hoàn tất. | `storage.py` |
+| Recovery | Khôi phục trạng thái từ Event Journal sau sự cố. | `recovery.py` |
+| Journal lookup | Lập index commitment ID/kênh/nội dung bền vững để nhận stable ID. | `journal_lookup.py` |
 
 `OrderingService` sở hữu hàng đợi sự kiện, pending events, certifier, block builder, storage và metrics. `OrderingProcessor` truy cập các dependency này qua service và trực tiếp xử lý cả batch mới lẫn sự kiện replay. Việc tạo và commit block vẫn nằm trong `OrderingBlockManager`; replay journal vẫn nằm trong `OrderingRecovery`.
-
----
 
 ## Luồng xử lý Sự kiện (Ordering Pipeline)
 
@@ -39,17 +35,16 @@ graph TD
     C --> D[Event Certifier]
     D -- Valid --> E[Ordering Processor]
     E --> F[Block Builder]
-    F -- Batch Full / Timeout --> G[Block Creation]
-    G --> H[Commit to Storage]
-    H --> I[Notify Listeners]
+    F -- Batch Full / Timeout --> G[Create Block and Run Configured Finalizer]
+    G --> S[Sign Block Header]
+    S --> H[Commit to Storage]
+    H --> I[Commit Queue for Consumer]
 ```
-
----
 
 ## Các tính năng cốt lõi
 
 ### 1. Persistence & Durability (Tính bền vững)
-Sự kiện được ghi đồng bộ vào **Event Journal** và fsync trước khi được đưa vào hàng đợi. Fsync luôn được bật và không thể tắt qua cấu hình. Khi khởi động lại, `Recovery` replay các entry journal và ghi các event đã khôi phục vào block storage trước khi Ordering Service hoạt động. Frame cuối chưa hoàn chỉnh trong journal đang hoạt động sẽ bị cắt bỏ trước khi mở file để ghi tiếp. Frame hoàn chỉnh nhưng chứa Arrow data lỗi khiến recovery thất bại; lỗi replay, chứng thực hoặc xử lý block giữ service ở trạng thái `MAINTENANCE` thay vì kích hoạt khi còn thiếu event.
+Sự kiện được ghi đồng bộ vào Event Journal và fsync trước khi được đưa vào hàng đợi. Fsync luôn được bật và không thể tắt qua cấu hình. Khi khởi động lại, `Recovery` replay các entry journal và ghi các event đã khôi phục vào block storage trước khi Ordering Service hoạt động. Frame cuối chưa hoàn chỉnh trong journal đang hoạt động sẽ bị cắt bỏ trước khi mở file để ghi tiếp. Frame hoàn chỉnh nhưng chứa Arrow data lỗi khiến recovery thất bại; lỗi replay, chứng thực hoặc xử lý block giữ service ở trạng thái `MAINTENANCE` thay vì kích hoạt khi còn thiếu event.
 
 Endpoint `GET /api/ledger/ready` trả HTTP 200 chỉ khi Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái `ACTIVE`; endpoint trả HTTP 503 khi bất kỳ service nào còn đang recovery hoặc ở trạng thái maintenance.
 
@@ -64,13 +59,10 @@ Nhận vào hàng đợi chờ tối đa `enqueue_timeout` giây (mặc định 
 
 Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:
 *   `OrderingService` khởi tạo trực tiếp mặc định dùng `batch_size=100` và `batch_timeout=2.0` giây.
-*   SubChain mặc định dùng `block_size=50` và `batch_timeout=1.0` giây; cấu hình riêng có thể thay đổi hai giá trị này.
+*   Sub-Chain mặc định dùng `block_size=50` và `batch_timeout=1.0` giây; cấu hình tường minh có thể đổi cả hai.
 
 ### 3. Event Certification
-Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** để kiểm tra:
-*   Định dạng dữ liệu (Schema Validation).
-*   Chữ ký số của node gửi (Identity Verification).
-*   Quyền truy cập vào kênh (Policy Enforcement).
+`EventCertifier` chạy quy tắc xác thực do bên gọi thêm và kiểm tra các trường bắt buộc `entity_id`, `event` cùng timestamp hữu hạn. Sự kiện mới phải nằm trong khoảng 300 giây so với thời gian máy chủ; replay có thể cho phép timestamp cũ hơn. Helper chữ ký chỉ xác minh khi có sender/signature dạng chuỗi và payload details dạng chuỗi, trừ khi xác minh theo batch đã thành công. Nó cũng chạy kiểm tra ZK tùy chọn. Nó không gọi MSP hay `PolicyEngine`; ứng dụng phải thực thi quyền channel tại điểm tích hợp.
 
 Certifier mặc định giữ 10.000 kết quả gần nhất (`EventCertifier(max_history=...)`). Event bị từ chối được xóa khỏi pending map. Sau khi kết quả bị loại khỏi cache, `get_event_status()` tra storage bền vững cho event đã commit và trả `ordered` không kèm kết quả certification; event bị từ chối từ lâu có thể trả `None`. Lịch sử này không phải bằng chứng certification bền vững.
 
@@ -80,33 +72,38 @@ Certifier mặc định giữ 10.000 kết quả gần nhất (`EventCertifier(m
 
 Gán block index, liên kết previous hash, ký và commit storage vẫn được tuần tự hóa theo từng Ordering Service. Xác minh chữ ký giữ batch thread pool và các kiểm tra certification hiện có. Coordinator 2PC giữ record pha bền vững và đọc lại trước khi commit participant; quyết định COMMIT không rõ kết quả vẫn ở trạng thái nghi vấn và không cho phép rollback. Giảm đọc lại journal không loại bỏ các ranh giới toàn vẹn này hay biến ACK nhận event thành block finality. Các chain độc lập có thể chia tải bằng journal owner riêng; gom block không gom ACK lưu bền vững của event.
 
----
-
 ## Ví dụ sử dụng
 
+Cấp danh tính ký đầy đủ và khóa tin cậy đã được phê duyệt theo [Khởi động nhanh](../getting-started/quickstart.md), đồng thời chọn backend lưu trữ bền vững được hỗ trợ trước khi chạy ví dụ. `batch_size` giới hạn lượt thu thập của processor; `block_size` giới hạn sự kiện mỗi khối. ID trả về xác nhận đã tiếp nhận, còn `force_block_creation()` yêu cầu flush; đọc các khối đã lưu để xác nhận commit.
+
 ```python
+import time
 from hierachain.consensus.ordering.service import OrderingService
 
-# Initialize with enterprise configuration
 config = {
     "batch_size": 200,
+    "block_size": 100,
     "batch_timeout": 1.5,
-    "storage_dir": "/data/ordering"
+    "storage_dir": "data/ordering-example",
 }
-
 service = OrderingService(config=config)
-
-# Submit event; the returned ID acknowledges journaling and enqueueing, not block finality
-event_id = service.receive_event(
-    event_data={"item": "container_45", "status": "shipped"},
-    channel_id="logistics_chain",
-    submitter_org="ORG_SUPPLY"
-)
+try:
+    event_id = service.receive_event(
+        event_data={
+            "entity_id": "CONTAINER-45",
+            "event": "shipped",
+            "timestamp": time.time(),
+            "details": {"status": "shipped"},
+        },
+        channel_id="logistics_chain",
+        submitter_org="ORG_SUPPLY",
+    )
+    service.force_block_creation()
+finally:
+    service.shutdown()
 ```
 
----
-
-## Quyền sở hữu journal cục bộ
+## Quyền sở hữu journal cục bộ {#local-journal-ownership}
 
 Mỗi đường dẫn journal cục bộ chỉ có một instance/process sở hữu tại một thời điểm, được bảo vệ bằng POSIX advisory writer lock không chờ. Owner thứ hai không mở được journal cho đến khi owner đầu đóng hoặc thoát; guard này không biến journal thành log nhiều writer dùng chung. Các thread phải dùng chung một instance `TransactionJournal`. Writer độc lập cần node identity và thư mục lưu trữ riêng, hoặc volume riêng trên filesystem hỗ trợ POSIX lock và directory fsync. Mẫu PVC theo từng pod của Kubernetes StatefulSet giúp tách journal giữa các node. Cần nâng cấp mọi process dùng đường dẫn đó trước khi ghi format journal mới; phiên bản cũ chưa lấy writer lock.
 

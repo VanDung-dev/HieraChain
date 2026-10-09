@@ -21,7 +21,7 @@ HieraChain exposes prover and verifier interfaces for cross-chain proof flows. T
 **File**: `hierachain/security/verify/zk_verifier.py`
 
 * Mock verification compares the commitment with a hash of the public inputs. A matching hash establishes no mathematical proof of a valid transition.
-* Production verification raises `ZKVerificationError` wrapping the unimplemented backend error for well-formed inputs; malformed inputs return `False` before backend dispatch.
+* For well-formed inputs, production verification raises `ZKVerificationError` wrapping the unimplemented backend error. Current checks return `False` for malformed values they recognize, but wrong-typed roots or block indices can raise before backend dispatch.
 * Loading a verification key does not make production verification available.
 
 ## 3. Configuration and runtime boundary

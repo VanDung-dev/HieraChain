@@ -40,7 +40,7 @@ Mẹo: Sử dụng Dependency Injection có sẵn (ví dụ: `Depends(get_hierar
 ## Bước 3: Khởi chạy Server và Kiểm thử Nhanh
 
 ```bash
-python -m hierachain.api.server
+python -m hierachain
 ```
 
 Mở `http://localhost:2661/docs` để thử nghiệm trên Swagger UI hoặc sử dụng `curl`:

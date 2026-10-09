@@ -6,111 +6,66 @@ icon: material/numeric-3-circle
 
 # API Admin
 
-## Purpose
+## Endpoints and access
 
-Describes the REST endpoints in API Admin (System & Admin) used for system administration tasks: node identity verification, health status checks (uptime, version, active chains).
+The router is defined in `hierachain/api/admin/endpoints.py` with request/response models in `schemas.py`.
 
-## Endpoint Overview
+| Endpoint | Access and behavior |
+|:---------|:--------------------|
+| `POST /api/admin/verify-identity` | Requires `chains` scope when API-key authentication is enabled; signs a domain-prefixed challenge |
+| `GET /api/admin/status` | Exempt from global API-key authentication; reports node status when the hierarchy manager is available |
+| `POST /api/admin/chains/{chain_name}/secure-events` | Requires `chains` scope when authenticated; verifies the event signature before submitting it to the chain |
 
-* POST `/api/admin/verify-identity`: verify node identity by signing a challenge string. (Requires authentication)
-* GET `/api/admin/status`: get a detailed report on node status. (Requires API Key if `AUTH_ENABLED=true`)
+Protect public status access at the reverse proxy if the deployment requires it. The status route has no `require_chain_access` dependency.
 
-## Main Schemas (from `hierachain/api/admin/schemas.py`)
+## Verify node identity
 
-* `VerifyIdentityRequest`
+`VerifyIdentityRequest` contains a `challenge` string. The handler signs these bytes:
 
-    * `challenge: str` (Challenge string to sign, hex encoded)
-
-* `VerifyIdentityResponse`
-
-    * `status: str` ("success")
-    * `node_id: str` (Node identifier)
-    * `signature: str` (Digital signature of the challenge)
-    * `challenge: str` (Original challenge received)
-
-* `NodeStatusResponse`
-
-    * `status: str` ("active")
-    * `version: str` (Ledger version)
-    * `chains_active: int` (Number of active sub-chains)
-    * `license_active: bool` (License status)
-    * `uptime: str` (System uptime)
-
-## Usage Examples
-
-Assuming the server is running at `http://localhost:2661`:
-
-### Verify Identity
-
-This endpoint is typically used by management tools to confirm that a node is a valid member of the network.
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Node
-    
-    Client->>Node: POST /verify-identity {challenge: "abcd"}
-    Note over Node: Sign challenge with Private Key
-    Node-->>Client: 200 OK {signature: "..."}
-    Note over Client: Verify signature with Node Public Key
+```python
+payload = b"HRC_IDENTITY_CHALLENGE:" + challenge.encode("utf-8")
 ```
 
-**Request:**
+It does not decode the challenge as hexadecimal bytes. The response contains `status`, `node_id`, `signature` and the original `challenge`. Verify the signature over the same prefixed UTF-8 payload using the node's approved public key. Choose a fresh challenge and track it in the client if replay protection is required.
 
 ```bash
 curl -X POST http://localhost:2661/api/admin/verify-identity \
   -H "Content-Type: application/json" \
-  -d '{
-        "challenge": "abcd1234"
-      }'
+  -H "X-API-Key: <your-key>" \
+  -d '{"challenge": "abcd1234"}'
 ```
 
-**Response (200 OK):**
+The dependency loads `LocalKeyProvider.from_file()` from `HRC_VALIDATOR_IDENTITY`. That provider reads the `private_key` field. The block-signing loader instead expects the complete node identity fields described in [Key Backup](../workflows/key-backup.md). If both loaders use one file, it must satisfy both formats and use the same signing key. A missing or unreadable key file returns HTTP 401; this endpoint does not generate temporary keys.
 
-```json
-{
-  "status": "success",
-  "node_id": "node_1",
-  "signature": "3045022100...", 
-  "challenge": "abcd1234"
-}
-```
-
-*(Note: `signature` will be the actual hex string signed by the node's private key)*
-
-### Node Status
-
-Get an overview of node health and status.
-
-**Request:**
+## Node status
 
 ```bash
 curl -s http://localhost:2661/api/admin/status
 ```
 
-**Response (200 OK):**
+`NodeStatusResponse` contains `status`, `version`, `chains_active`, `license_active` and `uptime`. Version comes from `hierachain/config/version.py`; uptime is formatted from the manager's start time. `license_active` is currently hardcoded to `True`, not the result of a license verification service.
 
-```json
-{
-  "status": "active",
-  "version": "0.1.0",
-  "chains_active": 5,
-  "license_active": true,
-  "uptime": "1d 2h 30m"
-}
-```
+## Secure event submission
 
-## Status Codes & Common Errors
+`SecureEventRequest` requires `entity_id`, `event_type`, `sender` and `signature`; `details` defaults to an empty object. `sender` and `signature` must contain hexadecimal data with a `0x` prefix. Optional fields are `nonce`, `timestamp` and `chain_id`; unknown fields are rejected. Details are limited to 1 MiB of serialized JSON and depth 10.
 
-* 200 OK: Success.
-* 500 Internal Server Error: identity verification error (e.g., crypto error during signing) or internal error when computing status.
+The handler rejects a supplied `chain_id` that differs from the path, and a supplied timestamp more than 300 seconds from server time. It calls `SignatureVerifier.verify_event_signature()` before `chain.add_event()`.
 
-## Implementation Notes (abbreviated from `endpoints.py`)
+`SecureEventResponse` contains `status`, `event_hash` and server `timestamp`. Although the literal status is `committed`, the handler calls the asynchronous Sub-Chain ingestion path. `event_hash` is the returned submission identifier; read finalized blocks to establish durable commitment. A signature accepted at this route does not make block creation synchronous.
 
-* **Identity Provider**: Uses `LocalKeyProvider` to load identity from file (path in settings) or generate temporary keys if file does not exist.
-* **Hierarchy Manager**: Injected into `get_status` to count active chains and compute uptime.
+## Status codes
+
+| Code | Meaning |
+|:-----|:--------|
+| 200 | Successful handler response |
+| 401 | API-key authentication fails or the identity provider cannot load its key |
+| 403 | Authenticated key lacks the required scope |
+| 404 | Secure-event target chain does not exist |
+| 422 | Invalid request model, chain mismatch, timestamp window or event signature |
+| 500 | Signing, status computation or event submission raises an internal error |
 
 ## Related
 
-* Config: [Config](config.md) (See `VALIDATOR_IDENTITY_PATH` configuration)
-* Security: [Security](../modules/security.md) (About Key Provider and Identity)
+* [Config](config.md)
+* [Security](../modules/security.md)
+* [Event Submission](../workflows/event-submission.md)

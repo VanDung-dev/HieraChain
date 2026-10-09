@@ -1,134 +1,96 @@
 ---
 title: "Thực thi Chính sách"
-description: "Mô hình thực thi kiểm soát truy cập dựa trên thuộc tính (ABAC) bảo vệ tất cả các hoạt động nhạy cảm."
+description: "Đánh giá chính sách ABAC có kiểu, thực thi bởi bên gọi, bộ nhớ đệm và hành vi ghi nhật ký kiểm toán."
 icon: material/gavel
 ---
 
 # Thực thi chính sách
 
-## Tổng quan
+## Phạm vi
 
-Mọi thao tác nhạy cảm trong HieraChain đều qua `PolicyEngine`. Chính sách gồm nhóm `PolicyRule` sắp xếp theo ưu tiên. Để giảm độ trễ, kết quả đánh giá được cache (TTL 5 phút, LRU). Mọi kết quả đều được ghi vào log kiểm toán trong bộ nhớ.
+`PolicyEngine` đánh giá các thao tác được bên gọi chuyển rõ ràng qua nó. Route HTTP và lời gọi Python trực tiếp không có bước kiểm tra ABAC tự động dùng chung. `HierarchicalMSP` dùng `OrganizationPolicies` riêng; nó không gọi engine này.
 
-`PolicyEngine` là cổng ủy quyền duy nhất. Nó được MSP gọi sau khi xác minh danh tính và ngay trước khi gọi `SubChain.add_event()`.
+Một `Policy` chứa các đối tượng `PolicyRule` có kiểu, được sắp theo độ ưu tiên giảm dần. Mỗi quy tắc kết hợp kết quả `PolicyCondition` bằng `LogicalOperator.AND`, `OR` hoặc `NOT`. Quy tắc áp dụng đầu tiên có hiệu lực khác với mặc định của chính sách sẽ quyết định kết quả. Nếu không quy tắc nào ghi đè mặc định, mặc định tiếp tục có hiệu lực. Chính sách bị thiếu hoặc bị tắt trả về `DENY`.
 
----
-
-## Biểu đồ luồng
+## Luồng đánh giá
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API / Module nội bộ
-    participant PE as ⚖️ PolicyEngine
-    participant Cache as ⚡ EvaluationCache
-    participant Policy as 📋 Policy
-
+    participant Caller as Application
+    participant PE as PolicyEngine
+    participant Policy as Policy
     Caller->>PE: evaluate_policy(policy_id, context)
-    PE->>PE: cache_key = "{policy_id}:{SHA256(context)[:8]}"
-    PE->>Cache: lookup(cache_key)
-
-    alt Cache HIT (trong khoảng 5 phút TTL)
-        Cache-->>PE: Kết quả lưu trong cache
-        PE-->>Caller: result { effect: allow|deny }
-
-    else Cache MISS
-        PE->>Policy: policy.evaluate(context)
-        Policy->>Policy: _check_disabled()
-        Policy->>Policy: Sắp xếp các quy tắc theo thứ tự ưu tiên giảm dần
-        loop Trên từng quy tắc PolicyRule
-            Policy->>Policy: rule.evaluate(context)
-            Note right of Policy: Thực hiện phép toán AND/OR/NOT trên các PolicyCondition<br/>Các phép so sánh: equals, contains, matches, in,...
-            alt Quy tắc khớp VÀ hiệu lực tác động != mặc định
-                Policy->>Policy: Ghi nhận vào applicable_rules<br/>Lưu thông tin decision_path
-                Policy->>Policy: Ngắt vòng lặp — quy tắc ưu tiên cao hơn đè hiệu lực
-            end
-        end
-        Policy-->>PE: EvaluationResult { effect, applicable_rules, decision_path }
-        PE->>Cache: store(cache_key, result, cached_at=now)
-        PE->>PE: _log_audit_event("policy_evaluated", ...)
-        PE->>PE: _update_statistics(effect)
-        PE-->>Caller: result { effect: allow|deny }
+    PE->>PE: Key = policy ID + version + context hash
+    alt Cached result within TTL
+        PE-->>Caller: Cached result
+    else No valid cached result
+        PE->>Policy: evaluate(context), or DENY if missing
+        Policy-->>PE: effect, applicable_rules, decision_path
+        PE->>PE: Update statistics and cache if enabled
+        PE->>PE: Audit uncached evaluation if enabled
+        PE-->>Caller: Result
     end
+    Note over Caller: Enforce the returned effect before performing the operation
 ```
 
----
+TTL bộ nhớ đệm mặc định là 300 giây với tối đa 1.000 mục. Khóa gồm phiên bản chính sách và tám ký tự thập lục phân đầu tiên của hash SHA-256 từ JSON ngữ cảnh chuẩn hóa. Khi đầy, bộ nhớ đệm loại mục có `cached_at` cũ nhất; cache hit không làm mới thời điểm này. Đánh giá lấy từ cache trả về trước khi ghi mục kiểm toán mới. Bản ghi kiểm toán được giữ trong bộ nhớ.
 
-## Cấu trúc quy tắc chính sách
+## Ví dụ chính sách
 
 ```python
-# Ví dụ: chỉ cho phép operator hợp lệ gửi sự kiện
+from hierachain.security.policy_engine import (
+    ComparisonOperator,
+    LogicalOperator,
+    Policy,
+    PolicyCondition,
+    PolicyEffect,
+    PolicyEngine,
+    PolicyRule,
+    PolicyType,
+)
+
 policy = Policy(
     policy_id="event_submission_policy",
-    name="Event Submission Access",
-    effect=PolicyEffect.DENY,       # hiệu lực mặc định nếu không có quy tắc nào khớp
+    policy_type=PolicyType.ACCESS_CONTROL,
+    default_effect=PolicyEffect.DENY,
     rules=[
         PolicyRule(
             rule_id="allow_operators",
             priority=100,
             effect=PolicyEffect.ALLOW,
             conditions=[
-                PolicyCondition(field="role", operator="in", value=["admin", "operator"])
+                PolicyCondition(
+                    attribute="role",
+                    operator=ComparisonOperator.IN,
+                    value=["admin", "operator"],
+                )
             ],
-            logic=RuleLogic.AND
+            logical_operator=LogicalOperator.AND,
         )
-    ]
+    ],
 )
+engine = PolicyEngine()
+engine.register_policy(policy)
+result = engine.evaluate_policy(policy.policy_id, {"role": "operator"})
+assert result["effect"] == PolicyEffect.ALLOW.value
 ```
 
----
+Dùng hiệu lực trả về để cho phép hoặc từ chối thao tác. Việc tạo hay đánh giá chính sách không tự động bảo vệ `SubChain.add_event()`.
 
-## Các bước chi tiết
+## Toán tử điều kiện
 
-| Bước | Mô tả |
-|:-----|:------|
-| **1. Kiểm tra cache** | Tạo khóa `cache_key = "{policy_id}:{SHA256(context)[:8]}"`. Nếu hit và TTL hợp lệ thì trả về ngay. |
-| **2. Sắp xếp quy tắc** | Sắp xếp theo `priority` giảm dần (ưu tiên cao đánh giá trước). |
-| **3. Đánh giá quy tắc** | Mỗi quy tắc kiểm tra `PolicyCondition` theo logic AND/OR/NOT. |
-| **4. Ghi đè đầu tiên** | Quy tắc khớp đầu tiên có effect khác mặc định sẽ thắng; các quy tắc còn lại bỏ qua. |
-| **5. Lưu cache** | Lưu kết quả kèm `cached_at` để hết hạn sau 5 phút. |
-| **6. Log kiểm toán**| Ghi `policy_id`, `context`, `effect` và `decision_path` vào log kiểm toán. |
-
----
-
-## Phép so sánh điều kiện
-
-| Phép so sánh | Mô tả | Ví dụ |
-|:-------------|:------|:------|
-| `equals` | Khớp tuyệt đối | `role == "admin"` |
-| `not_equals` | Phủ định | `status != "revoked"` |
-| `contains` | Tìm chuỗi hoặc phần tử trong danh sách | `permissions contains "submit_events"` |
-| `matches` | Biểu thức chính quy | `entity_id matches "^product-.*"` |
-| `in` | Thuộc tập hợp | `role in ["admin", "operator"]` |
-| `greater_than` | So sánh lớn hơn | `risk_score > 0.8` |
-
----
-
-## Xử lý lỗi
-
-| Tình huống | Hành vi |
-|:-----------|:--------|
-| Không tìm thấy chính sách | Trả về `DENY` (fail-closed) |
-| Chính sách bị tắt | Trả về ngay effect mặc định (không chạy quy tắc) |
-| Context thiếu trường yêu cầu | Điều kiện trả về `False`; ghi log là khớp một phần |
-| Cache bị giải phóng (LRU) | Request tiếp theo tính lại chính sách |
-
----
+`ComparisonOperator` hỗ trợ so sánh bằng/khác, lớn hơn/nhỏ hơn (kể cả bằng), chứa, thuộc tập hợp và khớp biểu thức chính quy, bao gồm các dạng phủ định. Điều kiện dùng `attribute`, `operator` và `value`. Thuộc tính ngữ cảnh bị thiếu hoặc phép so sánh thất bại trả về `False`.
 
 ## Lớp và phương thức chính
 
-| Bước | Lớp / Phương thức | Tệp |
-|:-----|:--------------|:-----|
-| Điểm gọi chính | `PolicyEngine.evaluate_policy()` | `security/policy_engine.py` |
-| Đánh giá đa chính sách | `PolicyEngine.evaluate_policy_set()` | `security/policy_engine.py` |
-| Đánh giá quy tắc | `PolicyRule.evaluate()` | `security/policy_engine.py` |
-| Kiểm tra điều kiện | `PolicyCondition.evaluate()` | `security/policy_engine.py` |
-| Đọc cache | `_get_cached_result()` | `security/policy_engine.py` |
-| Ghi cache | `_cache_result()` | `security/policy_engine.py` |
-
----
+| Thao tác | Phương thức | Tệp |
+|:----------|:-------|:-----|
+| Một chính sách | `PolicyEngine.evaluate_policy()` | `hierachain/security/policy_engine.py` |
+| Tập chính sách | `PolicyEngine.evaluate_policy_set()` | `hierachain/security/policy_engine.py` |
+| Đánh giá chính sách | `Policy.evaluate()` | `hierachain/security/policy_engine.py` |
+| Đánh giá quy tắc và điều kiện | `PolicyRule.evaluate()` / `PolicyCondition.evaluate()` | `hierachain/security/policy_types.py` |
 
 ## Liên quan
 
-- [Danh tính MSP](./msp-identity.md): MSP gọi `evaluate_policy()` sau khi xác minh danh tính
-- [Gửi Sự kiện](./event-submission.md): `add_event()` được bảo vệ bởi engine chính sách
+- [Danh tính MSP](./msp-identity.md): chính sách thành viên riêng của tổ chức
+- [Gửi sự kiện](./event-submission.md): tiếp nhận và kiểm tra phạm vi quyền của route

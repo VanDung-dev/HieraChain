@@ -8,9 +8,9 @@ icon: material/connection
 
 ## Purpose
 
-Connect to HieraChain over WebSocket to receive event and new block notifications.
+Connect to HieraChain over WebSocket to register subscriptions and receive messages sent through its broadcast helpers. The ledger commit/event paths do not invoke those helpers automatically; the application must supply that integration. See [WebSocket workflow](../workflows/websocket-streaming.md).
 
-## WebSocket Connection
+## WebSocket connection
 
 ### Endpoint
 
@@ -20,7 +20,7 @@ Connect to `/ws`; optionally pass `chain_name` as a query parameter to select a 
 ws://localhost:2661/ws?chain_name=supply_chain
 ```
 
-Omit the query parameter to connect to all chains:
+Without a `chain_name` query parameter, the connection uses the `all` subscription. It receives messages sent explicitly with `broadcast_to_all()`; per-chain block and event helpers require a named chain subscription:
 
 ```
 ws://localhost:2661/ws
@@ -30,11 +30,11 @@ When API-key authentication is enabled, include the configured API-key header (d
 
 The HTTP `GET /ws/status` endpoint requires `chains` permission when authenticated, because its statistics include chain names and subscriber counts.
 
-### Message Format
+### Message format
 
 All messages are JSON.
 
-**Client → Server:**
+Client → Server:
 
 ```json
 // Subscribe to all events/blocks from a chain
@@ -50,14 +50,14 @@ All messages are JSON.
 {"type": "ping", "timestamp": 1234567890}
 ```
 
-**Server → Client:**
+Server → Client:
 
 ```json
-// Block committed
-{"type": "block_added", "chain_name": "supply_chain", "data": {"hash": "...", "index": 10}}
+// Block added notification (example payload)
+{"type": "block_added", "chain_name": "supply_chain", "data": {"hash": "...", "index": 10}, "optimized": true, "timestamp": "2026-10-09T12:00:00"}
 
 // Event notification
-{"type": "event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event": "production_complete"}}
+{"type": "event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event": "production_complete"}, "optimized": true, "timestamp": "2026-10-09T12:00:00"}
 
 // Pong response
 {"type": "pong", "timestamp": 1234567890}
@@ -75,13 +75,13 @@ const ws = new WebSocket('ws://localhost:2661/ws?chain_name=supply_chain');
 // Handle connection
 ws.onopen = () => {
   console.log('✅ Connected to HieraChain WebSocket');
-  
+
   // Subscribe to 'supply_chain'
   ws.send(JSON.stringify({
     type: 'subscribe',
     chain_name: 'supply_chain'
   }));
-  
+
   // Or subscribe by event type
   ws.send(JSON.stringify({
     type: 'subscribe',
@@ -93,7 +93,7 @@ ws.onopen = () => {
 // Receive messages
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  
+
   switch (data.type) {
     case 'block_added':
       console.log('🆕 New block:', data.data.hash);
@@ -137,7 +137,7 @@ import json
 
 async def listen():
     uri = "ws://localhost:2661/ws?chain_name=supply_chain"
-    
+
     async with websockets.connect(uri) as ws:
         # Subscribe to chain
         await ws.send(json.dumps({
@@ -145,11 +145,11 @@ async def listen():
             "event_types": ["production_complete"],
             "chain_name": "supply_chain"
         }))
-        
+
         # Listen for messages
         async for message in ws:
             data = json.loads(message)
-            
+
             if data["type"] == "block_added":
                 print(f"🆕 New block: {data['data']['hash']}")
             elif data["type"] == "event":
@@ -187,12 +187,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Received: {:?}", data);
         }
     }
-    
+
     Ok(())
 }
 ```
 
-## Connection Health
+## Connection health
 
 Check connection count:
 
@@ -204,22 +204,25 @@ Response:
 
 ```json
 {
-  "total_connections": 5,
-  "max_connections": 1000,
-  "chains": {
-    "supply_chain": 3,
-    "orders": 2
-  },
-  "event_types_count": 1
+  "status": "running",
+  "stats": {
+    "total_connections": 5,
+    "max_connections": 1000,
+    "chains": {
+      "supply_chain": 3,
+      "orders": 2
+    },
+    "event_types_count": 1
+  }
 }
 ```
 
-## Common Error Handling
+## Common error handling
 
 | Error | Cause | Solution |
 |------|-------------|------------|
-| Connection refused | Server not running | Run `python -m hierachain.api.server` |
-| No messages received | Not subscribed | Send subscribe message first |
+| Connection refused | Server not running | Run `python -m hierachain` |
+| No ledger messages received | Missing subscription or broadcast integration | Confirm subscription and ensure the application calls the broadcast helpers |
 | Sudden disconnect | Server restart | Auto-reconnect in client |
 
 ## Related

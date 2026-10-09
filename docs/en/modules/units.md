@@ -15,7 +15,7 @@ The versioning module defines the release version for HieraChain. It formats a s
 HieraChain defines the current system version as a five-element tuple in `hierachain/config/version.py`:
 
 ```python
-VERSION: tuple[int, int, int, str, int] = (0, 1, 0, "final", 0)
+VERSION: tuple[int, int, int, str, int] = (0, 2, 0, "final", 0)
 ```
 
 The tuple elements represent:
@@ -30,9 +30,9 @@ The tuple elements represent:
 
 The module provides formatting helpers to convert the tuple into a standard version string:
 
-* `final` releases omit the suffix, producing clean semantic strings such as `0.1.0`.
+* `final` releases omit the suffix, producing clean semantic strings such as `0.2.0`.
 * Pre-release levels append standard PEP 440 suffixes, such as `-alpha1` or `-beta2`.
-* `dev` levels format as `.devN`.
+* `dev` levels use `.devN` when serial is positive, or `.dev` when serial is zero.
 
 ## 4. Usage in code
 

@@ -1,94 +1,46 @@
 ---
 title: "Proof of Federation (PoF)"
-description: "Federation consensus protocol: Deterministic leader election, Quorum voting, and multi-organization governance."
-icon: material/account-group-outline
+description: "PoF validator membership, deterministic leader rotation, signature validation and the limits of quorum integration."
+icon: "material/account-group-outline"
 ---
 
-# Proof of Federation (`hierachain/consensus/proof_of_federation.py`)
+# Proof of Federation (PoF)
 
-## Overview
+`hierachain/consensus/proof_of_federation.py` implements sorted validator membership, deterministic leader rotation and Ed25519 finalization signatures. Select it explicitly for MainChain with `HRC_MAINCHAIN_CONSENSUS=proof_of_federation`. PoA remains the default.
 
-**Proof of Federation (PoF)** is an Inter-MainChain consensus protocol designed specifically for **Consortium Alliance** networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z), each operating their own autonomous MainChain, to securely exchange, verify, and reach consensus on cross-organizational event proofs **without requiring a central RootChain or single authority**.
+## Configuration
 
----
+| Python configuration key | Default | Meaning |
+|--------------------------|---------|---------|
+| `min_validators` | `3` | Minimum membership for `can_create_block()` |
+| `block_interval` | `5.0` | Validation requires at least 80% of this spacing |
+| `enforce_rotation` | `True` | Validate the signer against `validators[index % count]` |
 
-## Architectural Position: PoA vs. PoF
+These keys belong to the consensus instance's configuration. The current MainChain/SubChain constructors do not apply `CONSENSUS_FEDERATION_CONFIG` automatically.
 
-| Consensus Mechanism | Scope & Purpose | Target Layer & Governance |
-| :--- | :--- | :--- |
-| **Proof of Authority (PoA)** | **Intra-Organization** (Internal Domain Sub-Chains) | **SubChain Level** (Default for all internal domain events; single-entity control) |
-| **Proof of Federation (PoF)** | **Inter-Organization** (Peer-to-Peer MainChain Alliance) | **MainChain Level** (Configured via `HRC_MAINCHAIN_CONSENSUS=proof_of_federation` for multi-party alliance) |
+Supply each validator's real public key when calling `add_validator(validator_id, metadata={"public_key": ...})`. Membership and keys must agree across nodes. Setting the selector alone does not provision a federation.
 
----
-
-## How It Works
-
-PoF uses a peer-to-peer federation rotation model combined with multi-signature verification:
-1.  **Leader Rotation**: The Leader with block proposal rights for a federation round is determined by a deterministic mathematical formula: `Leader = Validators[BlockIndex % TotalValidators]`. This prevents any single MainChain from monopolizing block creation.
-2.  **Quorum Voting**: For a cross-organizational block to be valid across independent MainChains, it requires multi-signature confirmation from a minimum threshold of consortium members (typically **2/3 + 1**).
-3.  **Sorted Validator List**: The list of participating MainChains is deterministically sorted across all nodes to guarantee schedule synchronization.
-
----
-
-## Key Features
-
-<div class="grid cards" markdown>
-
-*   :material-account-group:{ .lg .middle } __Multi-party Governance__
-
-    ---
-
-    Eliminates Single Point of Failure. If the current Leader fails, block creation rights automatically transfer to the next node in the cycle.
-
-*   :material-vote-outline:{ .lg .middle } __Quorum Voting__
-
-    ---
-
-    Provides an additional security layer by requiring consensus from the majority of member organizations before committing data.
-
-*   :material-scale-balance:{ .lg .middle } __Fairness & Transparency__
-
-    ---
-
-    Every member organization has equal opportunity to contribute and control the ledger through the predetermined schedule.
-
-</div>
-
----
-
-## Configuration Parameters
-
-| Parameter | Description | Default |
-| :--- | :--- | :--- |
-| `min_validators` | Minimum number of nodes for network operation. | `3` |
-| `block_interval` | Target block creation cycle. | `5.0` seconds |
-| `enforce_rotation` | Mandatory leader rotation after each block. | `True` |
-
----
-
-## Block Verification Flow
+## Validation flow
 
 ```mermaid
-graph TD
-    A[Block Proposed by Leader] --> B{Verify Leader Identity}
-    B -- Correct Leader --> C[Collect Quorum Signatures]
-    C --> D{Signatures >= 2/3 + 1?}
-    D -- Yes --> E[Commit Block to Ledger]
-    D -- No --> F[Reject & Wait for Next Leader]
-    B -- Wrong Leader --> G[Reject Block]
+flowchart TD
+    A[Proposed finalized block] --> B{Structure and timestamp spacing valid?}
+    B -->|Yes| C{Expected leader when rotation enabled?}
+    C -->|Yes| D{Leader signature matches reconstructed payload?}
+    D -->|Yes| E{Shared optional ZK check passes?}
+    E -->|Yes| F[Validation succeeds]
+    B -->|No| R[Reject]
+    C -->|No| R
+    D -->|No| R
+    E -->|No| R
 ```
 
----
+The ordinary `_verify_block_quorum()` helper checks the leader signature, not multi-party quorum signatures. The separate `verify_quorum_signatures(message, signatures, required_count=None)` counts distinct registered validators and defaults to `floor(2n/3)+1`. It is not automatically invoked to collect votes during block finalization. This class does not implement automatic failover or timeout-based leader replacement.
 
-## Advantages and Limitations
-
-*   **Advantages**: Suitable for multi-party consortium networks, resistant to domination by a small group, high availability.
-*   **Limitations**: Requires additional network bandwidth for Quorum signature collection compared to PoA, performance slightly degrades when the number of Validators grows too large.
-
----
+ZK verification is optional and shared with PoA. Development mock proofs are not zero-knowledge guarantees; production proving/verifying is unavailable. `HRC_BLOCK_INTERVAL` changes PoA spacing and does not change PoF's interval.
 
 ## Related
 
-*   [Proof of Authority (PoA)](./poa.md)
-*   [P2P Network Architecture](../modules/network.md)
-*   [Security System](../security/authorization-access-control.md)
+* [PoA](poa.md)
+* [Consensus runtime scope](../workflows/consensus_mechanisms.md)
+* [ZK implementation](../architecture/zk-proofs.md)

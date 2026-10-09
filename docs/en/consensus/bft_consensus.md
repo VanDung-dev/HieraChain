@@ -1,70 +1,34 @@
 ---
 title: "BFT Consensus"
-description: "Byzantine fault-tolerant PBFT consensus with a View Change mechanism."
+description: "Separate PBFT library: signed phase votes, view changes and in-memory application retry."
 icon: material/shield-key
 ---
 
-# BFT Consensus (`hierachain/consensus/bft/*`)
+# BFT consensus (`hierachain/consensus/bft/*`)
 
-## Overview
+## Scope
 
-**BFT Consensus** is HieraChain's Byzantine fault-tolerant consensus mechanism. The protocol uses `n >= 3f + 1` to tolerate up to `f` faulty or malicious nodes, including nodes that corrupt data or deny service. This implementation is separate from the MainChain and SubChain runtime paths.
+`BFTConsensus` is a separate library component. MainChain and SubChain do not instantiate it; running several API nodes or setting `BFT_ENABLED` does not connect PBFT to those chains. Callers supply a signing key or node identity, approved node public keys, transport and application integration.
 
----
+The constructor requires `n >= 3f + 1`, where `n` is the length of `all_nodes`. Four nodes are required when `f=1`. Every node must agree on the ordered membership list because the primary is `all_nodes[view % n]`.
 
-## BFT Module Architecture
+## Components
 
-The module contains these components:
+| Component | File | Responsibility |
+|:----------|:-----|:---------------|
+| `BFTConsensus` | `consensus.py` | Request admission, message dispatch and consensus state |
+| `BFTConsensusEngine` | `engine.py` | PRE-PREPARE validation, phase votes and application writes |
+| `BFTViewChangeManager` | `view_change.py` | Timeout, VIEW-CHANGE votes and NEW-VIEW proof validation |
+| `BFTMessageDispatcher` | `dispatcher.py` | Send through a supplied ZeroMQ node or caller-provided send function |
+| Signature and request helpers | `helpers.py`, `types.py` | Signed message payloads, canonical request hashes and optional ZK checks |
 
-<div class="grid cards" markdown>
+## PBFT phases
 
-*   :material-gavel:{ .lg .middle } __BFT Engine__
+`request()` starts a request at the primary. Other nodes forward it through their configured send function and return `False`; the primary's `True` response confirms admission, not quorum commitment.
 
-    ---
+The primary hashes the complete request using `hierachain.serialization.dumps_canonical_json`. Replicas recompute the digest before accepting PRE-PREPARE. Canonical encoding sorts fields, uses compact separators and unescaped UTF-8, and preserves Python finite-number formatting. Non-finite numbers, circular values and unsupported JSON types are rejected.
 
-    __Files__: `consensus.py`, `engine.py`
-
-    `BFTConsensus.request()` starts the **PBFT** phases. `BFTConsensusEngine` validates PRE-PREPARE messages, records phase votes, and applies a committed operation when its application write succeeds.
-
-*   :material-refresh-circle:{ .lg .middle } __View Manager__
-
-    ---
-
-    __File__: `view_change.py`
-
-    Detects when the Primary node is unresponsive and triggers **View Change** to elect a new Leader.
-
-*   :material-swap-horizontal-bold:{ .lg .middle } __BFT Network__
-
-    ---
-
-    __File__: `dispatcher.py`
-
-    Uses **ZeroMQ** to broadcast and route consensus messages.
-
-*   :material-key-variant:{ .lg .middle } __BFT Crypto__
-
-    ---
-
-    __Files__: `helpers.py`, `types.py`
-
-    Handles Ed25519 signing, hashing, and **Zero-Knowledge (ZK)** proof verification for each consensus message.
-
-</div>
-
----
-
-## PBFT Protocol Flow
-
-The standalone BFT component is separate from the current MainChain and SubChain runtime paths. The demo and library API use `BFTConsensus` explicitly.
-
-The primary hashes the complete request as canonical JSON. Each replica recomputes that digest before it accepts PRE-PREPARE, so changing any request field while retaining the original digest and signature is rejected. The digest is included in the signed BFT message.
-
-Canonical request encoding uses Python standard-library `json` through `hierachain.serialization.dumps_canonical_json`. It preserves the established BFT request digest format: sorted fields, compact separators, unescaped UTF-8 text and Python finite-number formatting. Non-finite numbers, circular values and unsupported JSON types are rejected.
-
-Local phase votes are tracked per sequence. An admitted request's PREPARE quorum can produce its local COMMIT even while another sequence has changed the displayed consensus state.
-
-Each node records its own signed PREPARE and COMMIT vote once before broadcasting it. Quorums count unique senders, including the local vote: `2f` PREPARE votes and `2f + 1` COMMIT votes.
+Each node records its own signed PREPARE and COMMIT once before broadcasting. Votes count unique senders, including the local vote: `2f` PREPARE votes and `2f + 1` COMMIT votes. Phase votes are tracked per sequence even when another sequence changes the displayed consensus state.
 
 ```mermaid
 sequenceDiagram
@@ -91,40 +55,36 @@ sequenceDiagram
     Note over P,R3: Apply after 2f+1 unique COMMIT votes
 ```
 
-For a node with an attached application chain, a failed `chain.add_event()` leaves the commit quorum and a stable in-memory event, with a deterministic event ID, available for retry. A repeated valid COMMIT can retry the same event; the node advances `committed_sequence` only after the write succeeds. The component does not persist this retry state across process restarts. Recent sequence messages are retained; cleanup removes messages only when their sequence is more than 100 behind the committed sequence.
+## Application and retry
 
-When no application chain is attached, BFT runs in protocol-only mode and records consensus status without writing an application event. The standalone demo uses this mode.
+With an attached application chain, a failed `chain.add_event()` keeps the commit quorum and the same in-memory event with a deterministic `event_id`. A repeated valid COMMIT retries the write; `committed_sequence` advances only after success. Future quorums are buffered and applied contiguously from sequence 1 after earlier writes succeed. Recent messages are retained; cleanup removes sequences more than 100 behind the committed sequence.
 
-A later request cannot advance the committed sequence past an earlier unapplied or missing request. Application proceeds contiguously from sequence 1. Quorums already received for later requests are retained and attempted in order after the earlier write succeeds. Retry state remains in memory. If a backend persists an event and then raises, retry can duplicate that event unless the backend deduplicates the stable `event_id`; the current `SubChain.add_event()` does not use this BFT ID for deduplication. This component therefore does not guarantee exactly-once application across ambiguous writes or restarts.
+Without an attached chain, the component records protocol commitment without writing an application event. The standalone demo uses this mode. Retry state is not persisted across restarts. If a backend persists an event and then raises, a retry can duplicate it unless that backend deduplicates `event_id`; the current `SubChain.add_event()` does not deduplicate by this BFT ID. The component does not guarantee exactly-once application after ambiguous writes or restarts.
 
----
+## View changes and replay limits
 
-## Advanced Protection Mechanisms
+The view-change timer initiates a new view when it expires. The new primary is selected from the ordered node list, and the new view requires `2f + 1` valid signatures from distinct nodes, including the local vote when present.
 
-### 1. View Change Proof
-When a node detects the current Leader is unresponsive (Timeout), it requests a View change. The new view requires a proof with at least `2f + 1` valid signatures from unique nodes, including the local vote when present, preventing unauthorized takeovers.
+Sequence numbers track request order; messages in different phases can share the same sequence. A message nonce and timestamp are signed, but the receive path does not maintain a nonce replay cache. Signature, age, view, sequence and phase checks apply; a repeated valid COMMIT can intentionally retry application. A signed nonce alone does not provide general replay rejection.
 
-### 2. Sequence Number & Nonce
-Every BFT message has an incrementing sequence number and a unique random value (Nonce) to defend against **Replay Attacks**.
+## Optional ZK check
 
-### 3. ZK Integration
-The system supports Zero-Knowledge proof verification directly in the `Pre-prepare` phase, allowing data validity checking without revealing detailed content during the election process.
+`handle_pre_prepare()` calls `verify_operation_zk_proof(message.data)` when `HRC_ENABLE_ZK_PROOFS` is enabled. Missing-proof handling uses `HRC_ZK_REQUIRED_MAINCHAIN`. The helper reads a top-level operation from message data, while `request()` places its operation inside the request object; it does not automatically extract that nested operation. This path should not be treated as proof that every admitted operation was ZK-verified. Mock proofs are development fixtures, and production proving/verifying is unimplemented.
 
----
+## Configuration
 
-## BFT Configuration
+| Setting | Location | Default |
+|:--------|:---------|:--------|
+| `f` | Constructor argument | `1` |
+| `view_change_timeout` | Instance attribute; the constructor starts a timer | `30.0` seconds |
+| `verification_strictness` | `error_config["consensus"]["bft"]["verification_strictness"]`; controls rejection of slow messages | `high` |
+| `HRC_ENABLE_ZK_PROOFS` | Environment setting shared with other consensus paths | `false` |
+| `HRC_ZK_REQUIRED_MAINCHAIN` | Shared missing-proof policy | `false` |
 
-| Parameter | Description | Default |
-| :--- | :--- | :--- |
-| `f` | Maximum tolerable faults | `1` (Requires at least 4 nodes) |
-| `view_change_timeout` | Leader response wait time | `30.0` seconds |
-| `strictness` | Signature verification level | `high` |
-| `enable_zk_proofs` | Enable ZK verification in BFT | `false` |
-
----
+There is no BFT constructor option named `enable_zk_proofs`. If changing the timeout after construction, reset the view-change timer to use the new interval. Call `shutdown()` when closing the component to cancel its timer.
 
 ## Related
 
-*   [P2P Network](../modules/network.md)
-*   [Signature Verification (Security)](../security/encryption-keys.md)
-*   [Ordering Service](./ordering.md)
+* [Network](../modules/network.md)
+* [Keys and signatures](../security/encryption-keys.md)
+* [Ordering Service](./ordering.md)

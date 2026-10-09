@@ -1,241 +1,73 @@
 ---
-title: Installing HieraChain
-description: Guide to installing HieraChain from source for development environment.
+title: "Installing HieraChain"
+description: "Guide to installing HieraChain from source for development environment."
 icon: material/download
 ---
 
 # Installing HieraChain
 
-This document guides you through various ways to install and set up HieraChain.
+The package requires Python 3.10 or newer; the compatibility workflow tests Python 3.10–3.14. Use the source checkout when following documentation for the current implementation.
 
-## Installation via PIP (Recommended)
+## Source installation with uv
 
-This is the fastest and simplest way to start using HieraChain as a library or running the server.
-
-```bash
-# Note: The project is currently in development phase, source installation is recommended.
-pip install .
-```
-
-After installation, you can verify with:
+Run from the repository root:
 
 ```bash
+git clone https://github.com/VanDung-dev/HieraChain.git
+cd HieraChain
+uv sync --frozen --extra dev --extra doc
+source .venv/bin/activate
 hrc --help
 ```
 
-### Using `uv` (Recommended for High Performance)
+`uv sync` installs the base package. The optional `dev` extra supplies test/analysis tools; `doc` supplies Zensical. On Windows, use `.venv\Scripts\Activate.ps1` to activate the environment.
 
-`uv` is a modern Python package manager written in Rust, 10-100x faster than pip.
+## Source installation with pip
 
-**Installing uv:**
-=== "Linux/macOS"
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-=== "Windows (PowerShell)"
-    ```powershell
-    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-    ```
-
-**Setting up project with uv:**
-```bash
-# Create virtual environment and sync base dependencies
-uv sync
-
-# Install with specific tool groups (extras):
-uv sync --extra dev --extra doc
-
-# Or install ALL extras available in the project:
-uv sync --all-extras
-
-# If you only want production environment (skip dev dependencies):
-uv sync --no-dev
-
-# Activate virtual environment
-source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\Activate.ps1  # Windows
-```
-
-## Installation from Source (For Developers)
-
-If you want to contribute to the project or customize the source code, follow these steps:
-
-1. Clone repository and create virtual environment
-
-    ```bash
-    git clone https://github.com/VanDung-dev/HieraChain.git
-    cd HieraChain
-    ```
-    
-    Create & activate venv
-    
-    === "Linux/macOS"
-    
-        ```bash
-        python -m venv .venv
-        source .venv/bin/activate
-        ```
-    
-    === "Windows (PowerShell)"
-    
-        ```powershell
-        python -m venv .venv
-        .venv\Scripts\Activate.ps1
-        ```
-
-2. Install dependencies and set up development mode
-
-    === "Using UV (Recommended)"
-    
-        ```bash
-        # Sync dependencies with dev environment
-        uv sync --extra dev
-        
-        # Or if you want to add doc, test
-        uv sync --all-extras
-        ```
-    
-    === "Using pip"
-    
-        ```bash
-        # Install all dependencies (production + dev + test) in editable mode
-        pip install -e ".[dev]"
-        ```
-
-3. Verify installation
-
-    ```bash
-    # Check version via importlib.metadata
-    python -c "import importlib.metadata as m; print(m.version('HieraChain'))"
-    
-    # Check CLI is in PATH
-    hrc --help
-    
-    # Start API server (optional)
-    python -m hierachain.api.server
-    ```
-
-If the server starts successfully, you can open the interactive documentation at: `http://localhost:2661/docs`.
-
-## Running Tests
-
-!!! warning "Warning"
-
-    Do not run all tests simultaneously to avoid resource conflicts. Recommended to run per file or per unit/integration directory.
+After cloning and entering the repository:
 
 ```bash
-# Run unit tests
-python -m pytest tests/unit -v
-
-# Run integration tests
-python -m pytest tests/integration -v
-
-# Run scenarios tests
-python -m pytest tests/scenarios -v
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev,doc]"
 ```
 
-## Running the Server
+For library use from a published release, install `python -m pip install HieraChain`. Published releases can differ from this checkout.
 
-To start the HieraChain API server:
+## Configure before starting
+
+A fixed signing identity and matching `HRC_BLOCK_TRUSTED_KEYS_FILE` are required for chain initialization, including genesis. Development defaults to PostgreSQL; it does not fall back to SQLite if PostgreSQL fails. Follow the [Quickstart](quickstart.md) for an isolated SQLite example. Production additionally requires a provisioned API-key file and explicit database configuration; see [Configuration](../reference/config.md).
+
+After setup, launch with `python -m hierachain` or `hrc node start`. The API defaults to `http://localhost:2661`; `/docs` exposes OpenAPI and `/api/ledger/ready` checks hierarchy readiness.
+
+## Tests
+
+Run files separately to avoid shared resource conflicts. Use temporary storage and journals; fixtures may clean the local `data/` directory. Example:
 
 ```bash
-python -m hierachain.api.server
+python -m pytest tests/unit/core/test_block.py -v
 ```
 
-## Library Usage
+See [Testing](../dev/testing.md) for required PostgreSQL/Redis contracts and isolated Docker workloads.
 
-After installation, you can import components from the package in your Python code:
+## Demos
 
-```python
-from hierachain.core.block import Block
-from hierachain.core.blockchain import Blockchain
-```
-
-## Running Demos
-
-Demo files are in the `demo/` directory. Before running, ensure you have installed the package and dependencies.
-
-* **Main Demo** - Illustrates core features: hierarchical chains, MSP, channels, private data:
-
-    ```bash
-    python demo/demo.py
-    ```
-
-* **Key Backup & Recovery Demo** - Illustrates key backup/recovery functionality:
-
-    ```bash
-    python demo/demo_key_backup.py
-    ```
-
-* **ZeroMQ BFT Consensus Demo** - Illustrates Byzantine Fault Tolerance consensus over ZeroMQ:
-
-    ```bash
-    python demo/demo_zmq_consensus.py
-    ```
-
-!!! note "Note"
-
-    To clean up old data before re-running demos:
-
-    === "Linux/macOS"
-
-        ```bash
-        rm -rf demo/data demo/hierachain.db 2>/dev/null
-        ```
-
-    === "Windows (PowerShell)"
-
-        ```powershell
-        Remove-Item -Recurse -Force demo/data, demo/hierachain.db -ErrorAction SilentlyContinue
-        ```
+See [Demo Guide](../how-to/use-demos.md). Demo code is illustrative; private-data persistence, contract execution, production ZK and real vendor ERP transports are not enabled by installing dependencies.
 
 ## Documentation
 
-The project uses [Zensical](https://zensical.org/) to build documentation.
-
-### Requirements
-
-Ensure Zensical is installed (docs dependencies):
-
-=== "Using UV"
-
-    ```bash
-    uv sync --extra doc
-    ```
-
-=== "Using pip"
-
-    ```bash
-    pip install -e ".[doc]"
-    ```
-
-### Running Documentation Server (Local)
-
-To view documentation with live-reload:
+Preview one language with `zensical serve -f zensical.toml` or `zensical serve -f zensical.vi.toml`. Build English first, then Vietnamese:
 
 ```bash
-zensical serve
+zensical build -f zensical.toml
+zensical build -f zensical.vi.toml
 ```
 
-Access `http://127.0.0.1:8000`.
-
-### Building Static Site
-
-To build static HTML (to `site/` directory):
-
-```bash
-zensical build
-```
-
-## Uninstall / Clean Environment
-
-```bash
-pip uninstall -y HieraChain
-deactivate  # exit virtual environment (if active)
-```
+The output is `site/` and `site/vi/`. See [documentation build instructions](https://github.com/VanDung-dev/HieraChain/blob/main/docs/README.md).
 
 ## Troubleshooting
 
-* `hrc` command not found: check that venv is activated and `pip install -e .` succeeded.
-* Dependency compilation errors: ensure appropriate build tools exist (e.g., on Windows install Build Tools for Visual Studio if needed).
-* API port 2661 busy: adjust configuration in `hierachain/config/settings.py` or terminate the process occupying the port.
+* Missing `hrc`: activate `.venv` and confirm installation succeeded.
+* Missing/untrusted identity: check the identity path, node ID and matching trusted public key.
+* Database connection failure: start PostgreSQL or explicitly select SQLite; do not expect fallback.
+* Port 2661 occupied: set `HRC_API_PORT` before importing/starting the application.

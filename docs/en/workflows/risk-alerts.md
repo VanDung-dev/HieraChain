@@ -6,110 +6,70 @@ icon: material/alert
 
 # Risk alerts
 
-## Overview
+## Scope
 
-HieraChain monitors health across four risk domains: consensus, security, performance and storage. When a metric crosses its threshold, `AlertManager` creates an alert, suppresses duplicates during cooldown, sends notifications by email or webhook, and escalates alerts that stay unacknowledged past the timeout.
+`AlertManager` in `hierachain/monitoring/alert_system.py` evaluates metric values supplied through `check_metric()`. The host application connects its metric collectors to this method. It does not automatically receive every consensus, certificate, storage or integrity-report failure.
 
----
+The manager keeps active alerts and bounded history in memory. Rule settings control cooldown, duplicate suppression and escalation. Notifications use one worker with a queue of at most 128 alerts; that worker calls configured notifiers sequentially.
 
 ## Flow diagram
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant PM as 📊 PerformanceMonitor
-    participant AM as 🚨 AlertManager
-    participant AD as 📈 AnomalyDetector
-    participant NTF as 📧 Email / Webhook Notifier
-
-    PM->>AM: check_metric(metric_name, value, source)
-    AM->>AD: add_data_point(metric_name, value)
-    AM->>AM: _evaluate_rule_condition(rule, value)
-    AM->>AM: _is_in_cooldown(rule)
-
-    alt Threshold breached AND not in cooldown
-        AM->>AM: _create_alert(rule, value, source)
-        AM->>AM: _is_duplicate_alert() → suppress if duplicate
-        AM->>AM: active_alerts[alert_id] = Alert
-        AM->>NTF: _send_notifications(alert)
-        NTF-->>AM: sent / failed
-
-        Note over AM: Escalation timer starts (default 30 min)
-
-        alt Alert not acknowledged within escalation_time
-            AM->>AM: _escalate_alert(alert_id)<br/>alert.escalation_level += 1
-            AM->>NTF: Re-notify with ESCALATED prefix
-        end
+    participant App as Application metric source
+    participant AM as AlertManager
+    participant Worker as Notification worker
+    participant Notifier as Email or webhook
+    App->>AM: check_metric(metric_name, value, source_component)
+    AM->>AM: Record anomaly baseline data
+    AM->>AM: Evaluate matching enabled rules and cooldown
+    opt Rule condition passes and not suppressed
+        AM->>AM: create_alert(rule, value, source_component)
+        AM->>AM: Store alert and queue notification
+        Worker->>Notifier: send_alert(), one notifier at a time
+        Notifier-->>Worker: Success or failure
+        Worker->>AM: Update notification statistics
+        AM->>AM: Schedule escalation if escalation_time > 0
     end
-
-    Note over AM: Operator acknowledges or system auto-resolves
-
-    AM->>AM: acknowledge_alert(alert_id) → ACKNOWLEDGED
-    AM->>AM: resolve_alert(alert_id) → RESOLVED + remove from active_alerts
+    opt Timer fires while alert remains ACTIVE
+        AM->>AM: Increment escalation level
+        AM->>Worker: Queue critical escalation notification
+    end
+    App->>AM: acknowledge_alert() or resolve_alert()
 ```
 
----
+## Default metric rules
 
-## Alert severity levels
+| Rule | Condition | Severity |
+|:-----|:----------|:---------|
+| `CPU_HIGH` | `cpu_usage > 85` | `WARNING` |
+| `CPU_CRITICAL` | `cpu_usage > 95` | `CRITICAL` |
+| `MEMORY_HIGH` | `memory_usage > 85` | `WARNING` |
+| `CONSENSUS_FAILURE` | `consensus_success_rate < 95` | `CRITICAL` |
+| `RISK_DETECTED` | `risk_count > 0` | `WARNING` |
 
-| Severity | Trigger Example | Auto-Escalate After |
-|:---------|:---------------|:--------------------|
-| `INFO` | Normal metric fluctuation | Never |
-| `WARNING` | CPU > 85%, minor risk detected | 30 minutes |
-| `CRITICAL` | CPU > 95%, consensus success < 95% | Immediate (5 min) |
-| `EMERGENCY` | Manual declaration or compound failure | Immediate |
+These values must be supplied by the application. Add rules for other metrics through `add_alert_rule()`. `check_metric()` records each value as anomaly baseline data before evaluating matching enabled rules and cooldown. Default rules do not use anomaly detection as a trigger. A rule explicitly configured with `condition="anomaly"` can call `AnomalyDetector.is_anomaly()` through `check_metric()` and trigger an alert when its condition passes.
 
----
+`AlertRule` defaults to a 300-second cooldown, 1,800-second escalation time, duplicate suppression enabled and `auto_resolve=False`. Severity alone does not select a five-minute or immediate escalation. Acknowledgement or resolution cancels the pending timer. Metric recovery does not automatically resolve a default alert.
 
-## Risk domains
+## Notification failures
 
-| Domain | Key Metrics Checked |
-|:-------|:--------------------|
-| **Consensus** | `node_count >= 3f+1`, leader election time, message verification rate |
-| **Security** | Certificate expiry (days remaining), failed authentication rate, encryption algorithm strength |
-| **Performance** | CPU %, memory %, event pool queue size, block finalization latency |
-| **Storage** | World state DB size, backup staleness (hours since last backup) |
+Email and webhook operations have a 10-second timeout. The webhook notifier makes one request; there is no built-in retry. A failed notifier increments `notifications_failed`, and the next configured notifier is still attempted. There is no `notification_failed` alert status.
 
----
-
-## Step-by-step breakdown
-
-| Step | Description |
-|:-----|:------------|
-| **1. Metric check** | `AlertManager.check_metric()` evaluates each incoming metric against defined rules |
-| **2. Anomaly detection** | `AnomalyDetector` uses statistical baseline to flag outliers |
-| **3. Cooldown check** | Rules have configurable cooldown period to suppress alert storms |
-| **4. Duplicate check** | `_is_duplicate_alert()` suppresses if same rule + same source already active |
-| **5. Notification** | Email and/or Webhook notifiers dispatch concurrently |
-| **6. Escalation** | Unacknowledged alerts auto-escalate: `escalation_level += 1`, re-notified |
-| **7. Lifecycle end** | Operator acknowledges → `ACKNOWLEDGED`; metric recovers → `RESOLVED` |
-
----
-
-## Error handling
-
-| Condition | Behavior |
-|:----------|:---------|
-| Email notification fails | Logged as warning; Webhook notifier still attempted |
-| Webhook endpoint unreachable | Retry once; log failure; alert marked `notification_failed` |
-| Alert storm (too many duplicates) | Cooldown mechanism suppresses duplicates per rule |
-
----
+If the notification queue is full, the manager records a failed notification while retaining the alert in history. Call `AlertManager.close()` to stop accepting new notifications and wait for bounded delivery work. Abrupt process exit can lose queued notifications and in-memory alert state.
 
 ## Key classes and methods
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Metric check | `AlertManager.check_metric()` | `monitoring/alert_system.py` |
-| Anomaly detection | `AnomalyDetector.is_anomaly()` | `monitoring/alert_system.py` |
-| Create alert | `AlertManager._create_alert()` | `monitoring/alert_system.py` |
-| Email notify | `EmailNotifier.send_alert()` | `monitoring/alert_system.py` |
-| Webhook notify | `WebhookNotifier.send_alert()` | `monitoring/alert_system.py` |
-| Escalate | `AlertManager._escalate_alert()` | `monitoring/alert_system.py` |
-| Acknowledge | `AlertManager.acknowledge_alert()` | `monitoring/alert_system.py` |
-
----
+| Operation | Method | File |
+|:----------|:-------|:-----|
+| Metric check | `AlertManager.check_metric()` | `hierachain/monitoring/alert_system.py` |
+| Baseline query | `AnomalyDetector.is_anomaly()` | `hierachain/monitoring/alert_system.py` |
+| Create alert | `AlertManager.create_alert()` | `hierachain/monitoring/alert_system.py` |
+| Notification | `EmailNotifier.send_alert()` / `WebhookNotifier.send_alert()` | `hierachain/monitoring/alert_system.py` |
+| Escalation | `AlertManager._escalate_alert()` | `hierachain/monitoring/alert_system.py` |
+| Rule defaults | `AlertRule` | `hierachain/monitoring/types.py` |
 
 ## Related
 
-- [System Integrity Validation](./integrity-validation.md): DEGRADED integrity status triggers alerts here
+- [System Integrity Validation](./integrity-validation.md): reports the application can route to alerts
+- [Monitoring](../modules/monitoring.md): metric collectors and callback integration

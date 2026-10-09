@@ -1,6 +1,6 @@
 ---
 title: "Workflows Overview"
-description: "Comprehensive guide and developer reference for HieraChain's 16 system workflows across core operations, security, consensus, and recovery."
+description: "Comprehensive guide and developer reference for HieraChain system workflows across core operations, security, consensus, and recovery."
 icon: material/routes
 ---
 
@@ -8,24 +8,20 @@ icon: material/routes
 
 HieraChain is a pure Python hierarchical ledger that works as a plugin layer for existing Web2 infrastructure. It does not replace the enterprise network stack, which already handles TLS/SSL, firewalls and WAF at the API gateway. HieraChain is focused on immutability, distributed trust, tamper evidence and non-repudiation.
 
-This document is the central reference for 16 system workflows in 6 functional groups. It describes how they interact at runtime and how to read, maintain or add workflows.
-
----
+This document lists workflows in six functional groups. It describes how they interact at runtime and how to read, maintain or add workflows.
 
 ## 1. Core development guardrails
 
 When you work on HieraChain workflows, follow these guardrails:
 
-* **Strict term censorship**: HieraChain tracks business process ledgers, not cryptocurrency. Do not use crypto terms in event payloads, variable names, database keys or comments.
+* Strict term censorship: HieraChain tracks business process ledgers, not cryptocurrency. Do not use crypto terms in event payloads, variable names, database keys or comments.
 
     * Forbidden terms: `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `sender`, `receiver`, `amount`, `fee`.
     * Required terms: `event` for ledger entries, `node` for peers, `msp_id` for identity, `entity_id` for domain assets.
-    * Note: `CrossChainValidator` scans commits and rejects code that contains forbidden terms.
+    * `CrossChainValidator` checks supplied ledger/domain data; it is not a source-code commit hook.
 
-* **Minimal latency constraint**: HieraChain keeps base latency at 10 to 20ms. Keep workflow code short and fast. Do not add transport level encryption or extra wrappers that add CPU overhead.
-* **No direct storage access**: Do not query SQL or Redis directly. Use storage adapters under `adapters/database/` (for example `adapters/database/sqlite_adapter.py`).
-
----
+* Minimal latency constraint: The architecture targets low latency; actual latency depends on batching, durability and deployment. Keep workflow code short and fast. Do not add transport level encryption or extra wrappers that add CPU overhead.
+* No direct storage access: Do not query SQL or Redis directly. Use storage adapters under `adapters/database/` (for example `adapters/database/sqlite_adapter.py`).
 
 ## 2. All workflows: quick reference
 
@@ -40,16 +36,14 @@ This table lists all workflows for quick lookup:
 | [Error Mitigation](./error-recovery.md) | C | Validation error / leader timeout / interrupted event | Classified error, journal replay, or BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
-| [Integrity Validation](./integrity-validation.md) | D | Periodic / manual / Risk Alerts anomaly | `IntegrityReport` (HEALTHY / DEGRADED) | `security/verify/block_verifier.py` |
-| [Policy Enforcement](./policy-enforcement.md) | E | Any access-sensitive operation | `allow` or `deny` with decision path | `security/policy_engine.py` |
-| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws`, optionally passing `chain_name` as a query parameter | Real-time block/event push | `api/websocket/manager.py` |
+| [Integrity Validation](./integrity-validation.md) | D | Explicit application call | Health summary or block/proof consistency report | `hierarchical/hierarchy_manager/validation.py` |
+| [Policy Enforcement](./policy-enforcement.md) | E | Explicit `PolicyEngine` call | `allow` or `deny` with decision path | `security/policy_engine.py` |
+| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws`, optionally passing `chain_name` as a query parameter | Subscriptions; notifications require application broadcast calls | `api/websocket/manager.py` |
 | [IPFS Encrypted Storage](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | CID returned; ciphertext on IPFS | `api/storage/ipfs_client.py` |
-| [Risk Analysis & Alerts](./risk-alerts.md) | E | `PerformanceMonitor` schedule | Alerts dispatched; escalation on no-ack | `monitoring/alert_system.py` |
+| [Risk Analysis & Alerts](./risk-alerts.md) | E | Application calls `AlertManager.check_metric()` | Queued notifications and rule-configured escalation | `monitoring/alert_system.py` |
 | [ERP Integration Sync](./erp-integration.md) | E | `SyncScheduler` timer | ERP events submitted to Sub-Chain | `integration/erp_ledger.py` |
-| [MSP Identity & Auth](./msp-identity.md) | F | Entity registration / API auth | Identity confirmed + action authorized | `security/msp.py` |
-| [Key Backup & Restoration](./key-backup.md) | F | Key generation (`cli/key.py`) | Key file / vault backed up; restored via CLI | `cli/key.py` + `security/key_provider.py` (no `key_backup_manager.py`) |
-
----
+| [MSP Identity & Auth](./msp-identity.md) | F | Explicit MSP registration/validation calls | Identity confirmed + action authorized | `security/msp.py` |
+| [Key Backup & Restoration](./key-backup.md) | F | Operator-managed file/vault backup | Restored identity/provider files | `cli/key.py` + `security/key_provider.py` (no `key_backup_manager.py`) |
 
 ## 3. Functional groups and subsystems
 
@@ -116,53 +110,39 @@ Workflows are grouped into six areas. Use the dashboard to find the group that m
 
 </div>
 
----
-
 ## 4. How workflows interact
 
-The diagram shows runtime relationships and triggers between workflows. Solid lines are synchronous or blocking operations. Dashed lines are asynchronous or event driven.
+The diagram separates runtime paths from integrations supplied by the application. Dashed lines identify caller-managed connections.
 
 ```mermaid
 flowchart TD
-    ERP["🏢 ERP System\n(SAP / Oracle)"]
-    CLIENT["🖥️ Client / SDK"]
-
-    WF14["ERP Sync"] -->|add_event| WF1
-    CLIENT -->|POST /events| WF1
-
-    WF15["🪪 MSP Identity"] -->|authorize_action| WF1
-    WF15 -->|validate_identity| WF10["⚖️ Policy Enforcement"]
-    WF10 -->|allow/deny gate| WF1
-
-    WF1["📦 Event Submission"] -->|block finalized| WF2["Proof Anchoring"]
-    WF1 -->|broadcast_new_block| WF11["🔌 WebSocket"]
-    WF1 -->|upload large data| WF12["🗄️ IPFS Storage"]
-
-    WF1 -->|cross-chain op| WF3["2PC Cross-Chain"]
-    WF1 -->|BFT mode| WF4["👑 BFT Consensus"]
-
-    WF9["🔍 Integrity Scan"] -->|DEGRADED| WF13["🚨 Risk & Alerts"]
-    WF13 -->|critical alert| WF6["🔧 Error Recovery"]
-    WF6 -.->|snapshot fail| WF8["♻️ Rehydration"]
-    WF8 -.->|restore state| WF1
-
-    WF15 -.->|cert issued| WF16
-
-    WF7["🗂️ Entity Tracing"] -.->|reads| WF1
-
-    ERP --> WF14
+    CLIENT[Client or SDK] -->|Ledger API| WF1[Event submission]
+    ERP[Application ERP sink] -->|add_event| WF1
+    WF1 -->|Apply committed block, proof due| WF2[Proof anchoring]
+    App -.->|Upload via IPFSClient.upload_json()| WF12[IPFS storage]
+    WF12 -.->|Return CID to caller| App
+    App -.->|Submit event with details_cid| WF1
+    App[Application integration] -.-> MSP[MSP checks]
+    App -.-> Policy[PolicyEngine checks]
+    App -.-> WS[WebSocket broadcast helpers]
+    App -.-> Integrity[Integrity reports]
+    Integrity -.->|Caller handles report| Alerts[AlertManager]
+    App -.-> Backup[Identity backup]
+    App --> Rehydrate[Explicit sync_chain]
+    Rehydrate -->|Rebuild chain and indexes| WF1
+    Trace[Entity tracing] -->|Read finalized history| WF1
+    App --> BFT[Separate BFT library]
+    App --> TwoPC[Cross-chain 2PC coordinator]
 ```
 
 ### Core developer integration paths
 
 | Ingestion & Security Chain | Description |
 |:---|:---|
-| **ERP → ERP Sync → Event Submission → Proof Anchoring** | Ingestion pipeline: business change → local event → Sub-Chain block → proof hash anchored to root chain. |
-| **MSP Identity → Policy Enforcement → Event Submission** | Security validation path: verify internal cert (`msp.py:verify_certificate`) → check ABAC policies → accept/reject event. |
-| **Integrity Scan → Risk & Alerts → Error Recovery** | Anomaly detection path: `block_verifier` → alert dispatch → operational recovery. |
-| **Error Recovery → Rehydration** | State sync fallback: journal replay and chain reload rebuild in-memory state from durable storage. |
-
----
+| ERP → ERP Sync → Event Submission → Proof Anchoring | Ingestion pipeline: business change → local event → Sub-Chain block → proof hash anchored to root chain. |
+| MSP Identity → Policy Enforcement → Event Submission | Caller-managed integration: MSP checks organization roles/policies; a separate `PolicyEngine` check may be added by the application before submission. |
+| Integrity Scan → Risk & Alerts → Error Recovery | Caller-managed integration: inspect integrity results, supply an alert metric or rule, then choose an operational recovery action. |
+| Error Recovery → Rehydration | Ordering startup replay and Sub-Chain synchronization restore local state; there is no automatic snapshot-failure-to-rehydration hook. |
 
 ## 5. Developer guide: how to maintain workflows
 
@@ -171,21 +151,21 @@ Keep workflow documentation in sync with the code when you add features or fix b
 ### Anatomy of a workflow document
 Each workflow page (for example `event-submission.md`) has this layout. It must contain:
 
-1. **Zensical front-matter**: YAML metadata with `title`, `description` and `icon`. No WF-number prefixes.
-2. **Clean H1 header**: `# [Title]` that matches front-matter.
-3. **Overview**: What the workflow does and when it is used.
-4. **Flow diagram**: Mermaid sequence or flowchart that shows runtime interactions.
-5. **Step-by-step breakdown**: Table that maps sequence numbers to developer actions.
-6. **Error handling**: Table that maps failures (node offline, verification failure) to mitigations.
-7. **Key classes and methods**: Pointers from workflow steps to code (for example `SubChain.add_event()`).
-8. **Related**: Links to sibling or downstream workflows.
+1. Zensical front-matter: YAML metadata with `title`, `description` and `icon`. No WF-number prefixes.
+2. Clean H1 header: `# [Title]` that matches front-matter.
+3. Overview: What the workflow does and when it is used.
+4. Flow diagram: Mermaid sequence or flowchart that shows runtime interactions.
+5. Step-by-step breakdown: Table that maps sequence numbers to developer actions.
+6. Error handling: Table that maps failures (node offline, verification failure) to mitigations.
+7. Key classes and methods: Pointers from workflow steps to code (for example `SubChain.add_event()`).
+8. Related: Links to sibling or downstream workflows.
 
 ### Process for adding or modifying a workflow
 
-1. **Write clean Markdown**: Save new flows under `docs/en/workflows/name.md` using the design system.
-2. **Register in zensical.toml**: Add the workflow to the `Workflows` tree in [zensical.toml](../../zensical.toml) with a clean name.
-3. **Run term scanner**: Check that no forbidden cryptocurrency vocabulary was added.
-4. **Compile and verify**: Run the Zensical build in the HieraChain environment to check formatting and links:
+1. Write clean Markdown: Save new flows under `docs/en/workflows/name.md` using the design system.
+2. Register in zensical.toml: Add the workflow to the `Workflows` tree in [zensical.toml](https://github.com/VanDung-dev/HieraChain/blob/main/zensical.toml) with a clean name.
+3. Run term scanner: Check that no forbidden cryptocurrency vocabulary was added.
+4. Compile and verify: Run the Zensical build in the HieraChain environment to check formatting and links:
 
     ```bash
     zensical build -f zensical.toml

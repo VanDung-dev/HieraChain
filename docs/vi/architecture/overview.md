@@ -14,16 +14,16 @@ HieraChain dùng kiến trúc phân cấp. Main Chain là gốc và chỉ giữ 
 
 ```mermaid
 graph BT
-    Main[Main Chain - Giám sát viên]
-    subgraph SubChains [Các Sub-Chain Domain]
+    Main[Main Chain - Supervisor]
+    subgraph SubChains [Domain Sub-Chains]
         SC_A[Sub-Chain A - Domain A]
         SC_B[Sub-Chain B - Domain B]
         SC_C[Sub-Chain C - Domain C]
     end
-    
-    SC_A -->|Gửi Proof| Main
-    SC_B -->|Gửi Proof| Main
-    SC_C -->|Gửi Proof| Main
+
+    SC_A -->|Submit Proof| Main
+    SC_B -->|Submit Proof| Main
+    SC_C -->|Submit Proof| Main
 ```
 
 * Sub-Chain ghi nhận event theo domain, sắp xếp thành block và giữ world state riêng.
@@ -35,7 +35,7 @@ graph BT
 * `hierachain/hierarchical/main_chain/base.py` là Main Chain. Nó lưu và xác minh proof từ Sub-Chain và tổng hợp báo cáo toàn vẹn.
 * `hierachain/hierarchical/sub_chain/base.py` là Sub-Chain. Nó ghi nhận event theo domain, sắp xếp thành block, tạo proof và gửi lên Main Chain.
 * `hierachain/hierarchical/hierarchy_manager/base.py` là HierarchyManager. Nó điều phối hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, gửi proof tự động và kiểm tra tính nhất quán liên chuỗi.
-* `hierachain/api/storage/ipfs_client.py` là lưu trữ IPFS off-chain. Nó giữ dữ liệu nghiệp vụ lớn hoặc nhạy cảm ngoài chuỗi và chỉ neo CID trên blockchain.
+* `hierachain/api/storage/ipfs_client.py` cung cấp lưu trữ IPFS off-chain. Chi tiết nghiệp vụ lớn hoặc nhạy cảm được giữ ngoài chuỗi; event trong sổ cái lưu `details_cid`, `details_nonce`, `details_metadata` tùy chọn và các trường event thông thường.
 * `hierachain/consensus/ordering/service.py` là Ordering Service. Nó sắp xếp event trước khi tạo block và được Sub-Chain khởi tạo.
 
 ### Luồng tiêu biểu
@@ -46,13 +46,13 @@ sequenceDiagram
     participant Sub as Sub-Chain
     participant Order as Ordering Service
     participant Main as Main Chain
-    
-    Event->>Sub: Ghi nhận sự kiện (add_event)
-    Sub->>Order: Sắp xếp sự kiện
-    Order-->>Sub: Sự kiện đã sắp xếp
-    Sub->>Sub: Đóng gói Block (finalize_block)
-    Sub->>Main: Gửi Proof (submit_proof_to_main)
-    Main->>Main: Xác minh & Lưu Proof
+
+    Event->>Sub: Record event (add_event)
+    Sub->>Order: Order events
+    Order-->>Sub: Ordered events
+    Sub->>Sub: Package Block (finalize_block)
+    Sub->>Main: Submit Proof (submit_proof_to_main)
+    Main->>Main: Verify & Store Proof
     Main-->>Sub: Acknowledge
 ```
 

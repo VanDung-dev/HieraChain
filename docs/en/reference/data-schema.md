@@ -4,90 +4,60 @@ description: "Defines data structures (Apache Arrow) and data flow protocols in 
 icon: material/file-tree
 ---
 
-# Data Schema & Protocol
+# Data schema and protocol
 
-This document defines in detail the Data Schema and communication protocols within HieraChain. The system uses **Apache Arrow** as the primary storage and transport format to ensure high performance.
+HieraChain uses JSON for REST requests and Apache Arrow tables for block event storage. The canonical binary event payload preserves typed details; the Arrow metadata columns support filtering and indexing. See [Data Models](./data-models.md) for serialization and hash contracts.
 
-## Core Data Structures
+## Event
 
-HieraChain strictly adheres to the following Schema definitions to ensure consistency across the entire network (Main Chain & Sub Chains).
+The Arrow `EVENT_SCHEMA` is defined in `hierachain/core/block.py`.
 
-### Event
+| Field | Arrow type | Description |
+|:------|:-----------|:------------|
+| `entity_id` | `string` | Business entity identifier |
+| `event` | `string` | Internal event type |
+| `timestamp` | `float64` | Unix timestamp |
+| `details` | `map<string, string>` | String projection of detail values for Arrow metadata |
+| `details_cid` | `string` | Optional off-chain IPFS reference |
+| `details_nonce` | `string` | Public AES-GCM nonce for an encrypted off-chain object |
+| `data` | `binary` | Canonical JSON event payload preserving JSON fields and typed details; top-level byte fields are omitted |
 
-Event is the smallest data unit, representing a specific business action.
+`details_nonce` is not a decryption key. Encrypted IPFS retrieval also requires the stable encryption key and any metadata supplied as AAD. See [IPFS Storage](../workflows/ipfs-storage.md).
 
-**Schema Definition (`hierachain.core.schemas.EVENT_SCHEMA`):**
+### REST input
 
-| Field Name | Type (Arrow) | Description |
-|------------|--------------|-------------|
-| `entity_id` | `string` | **Metadata Field**. Identifier of the affected entity (e.g., ProductID, OrderID). **Note:** Not used as Block identifier. |
-| `event` | `string` | Event type (e.g., `CREATED`, `UPDATED`, `TRANSFERRED`). |
-| `timestamp` | `float64` | Time of event occurrence (Unix timestamp). |
-| `details` | `map<string, string>` | Additional Key-Value information (On-chain data). |
-| `details_cid` | `string` | **IPFS CID**. Reference to large data stored off-chain. |
-| `details_nonce` | `string` | **Encryption Nonce**. Decryption key for off-chain data (used for AES-GCM). |
-| `data` | `binary` | Main data payload (internal JSON component, includes both on-chain and off-chain refs). |
+`EventRequest` in `hierachain/api/ledger/schemas.py` requires `entity_id` and `event_type`. Optional fields are `details`, `details_cid`, `details_nonce`, `details_metadata`, `sender` and `signature`. It has no `timestamp` field. The Ledger API maps `event_type` to the internal `event` field and assigns the current server time.
 
-### Event Schema Protocol
+The seven-column Arrow schema has no dedicated columns for `signature`, `zk_proof` or `zk_public_inputs`. Additional JSON fields can still be stored in canonical event bytes; their presence alone does not establish cryptographic verification.
 
-Events are wrapped with cryptographic digital signatures (Ed25519) and zero-knowledge proofs before submission:
+The HTTP SDK sends the caller's event data to the Ledger API as JSON. It does not wrap it in a separate signed object or generate a ZK proof. MainChain proof submissions and signed block headers have separate validation contracts.
 
-**Event Validation Schema (`hierachain.core.schemas.EVENT_SCHEMA`):**
+## Block
 
-| Field Name | Type (Arrow) | Description |
-|------------|--------------|-------------|
-| `entity_id` | `string` | Affected entity identifier (e.g., ProductID, OrderID). |
-| `event` | `string` | Event type name. |
-| `signature` | `string` | Digital signature of the event creator. |
-| `timestamp` | `float64` | Event creation timestamp. |
-| `zk_proof` | `binary` | (Optional) Zero-Knowledge proof payload. |
-| `zk_public_inputs` | `binary` | (Optional) Public inputs for ZK Proof verification. |
+`Block.events` is a `pyarrow.Table`. Block serialization includes these header fields:
 
-### Block
+| Field | Meaning |
+|:------|:--------|
+| `index` | Block position in the chain |
+| `timestamp` | Block creation timestamp |
+| `previous_hash` | Previous block hash |
+| `nonce` | Header field included in serialization and hashing; PoA/PoF do not use it for work-based consensus |
+| `merkle_root` | Root derived from the block's events |
+| `hash` | Calculated block hash |
+| `creator_id` | Node identity of the block signer |
+| `signature` | Ed25519 signature of the canonical block header |
 
-Block is a collection of ordered and packaged Events.
+Header fields are not an additional Arrow event schema. Verifiers use the operator-approved creator-to-public-key map to validate signatures.
 
-**Block Header Schema:**
+## Submission and commitment
 
-| Field Name | Type (Arrow) | Description |
-|------------|--------------|-------------|
-| `index` | `int64` | Block sequence number in the chain (Height). |
-| `timestamp` | `float64` | Block creation time. |
-| `previous_hash` | `string` | SHA-256 hash of the previous block (creates chain link). |
-| `nonce` | `int64` | Random number used in Proof-of-Work (if applicable) or to ensure uniqueness. |
-| `merkle_root` | `string` | Root hash of the Merkle tree, representing all Events in the Block. |
-| `hash` | `string` | Identifier hash of this Block. |
+1. The Ledger API validates JSON input and calls `SubChain.add_event()`.
+2. The ordering service journals and queues the event. The returned event ID confirms acceptance; commitment follows asynchronously.
+3. The background processor certifies events and batches them. The block manager assigns the block index and link, runs consensus finalization, signs the header and persists the block before queueing it for the Sub-Chain consumer.
+4. The consumer validates and applies the persisted block unchanged, updates WorldState, and checks whether proof submission is due.
 
-**Block Body:**
+See [Event Submission](../workflows/event-submission.md) for failure handling. BFT is a separate library implementation; MainChain/SubChain runtime selection uses PoA or PoF.
 
-* Contains a list of **Events** (stored as `pyarrow.Table` for optimized access).
+## Serialization and transport
 
-## Data Flow Protocol
-
-Data processing flow from Client to Chain storage:
-
-1. **Submission**:
-
-    * Client creates an `Event`.
-    * SDK wraps the Event into a `Transaction`, signs it (`signature`), and optionally generates `zk_proof`.
-    * Sends `Transaction` to the **Ordering Service**.
-
-2. **Ordering**:
-
-    * **Ordering Service** receives the Transaction, verifies signature and basic validity.
-    * Places the Transaction in a queue to ensure consistent ordering.
-    * Groups Transactions into a Batch for Block creation.
-
-3. **Consensus & Commit**:
-
-    * Node creates a new Block from the ordered Transaction batch.
-    * Computes `Merkle Root` and `Block Hash`.
-    * Executes consensus algorithm (PoA/PoF/BFT) to confirm the Block.
-    * After consensus, the Block is added to `MainChain` or `SubChain`.
-    * `World State` is updated.
-
-## Serialization Standards
-
-* **Apache Arrow**: Used for internal storage and inter-Node transport (Performance).
-* **JSON**: Used for Client API (REST) for easy integration with Web/Mobile Apps.
-* **Protobuf/gRPC**: (Optional) Used for high-performance internal communication between microservices.
+REST uses JSON. Internal event tables and the event journal use Arrow representations with canonical event bytes for integrity checks. Network messaging is implemented under `hierachain/network/`; the package does not provide a Protobuf/gRPC transport. Do not infer a transport protocol from the event table format.

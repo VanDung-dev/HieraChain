@@ -41,8 +41,8 @@ Filter events by chain name, event type, and result limit.
 ```graphql
 query FilterEvents {
   events(
-    chainName: "main_chain", 
-    limit: 10, 
+    chainName: "main_chain",
+    limit: 10,
     eventType: "user_registered"
   ) {
     entityId
@@ -109,3 +109,5 @@ mutation CreateNewEvent {
   }
 }
 ```
+
+A Sub-Chain mutation acknowledges submission. `blockIndex` can be the latest existing block index, not the new event's committed position; read finalized events/blocks to verify. The schema supplies no finality or idempotency contract for mutations.

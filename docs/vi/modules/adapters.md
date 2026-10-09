@@ -13,7 +13,7 @@ Module `adapters` cung cấp lớp lưu trữ bền vững cho HieraChain. Hệ 
 ### Vai trò chính
 
 * Chuẩn hóa thao tác đọc và ghi dữ liệu cho chuỗi, khối, sự kiện, bằng chứng và trạng thái thực thể.
-* Hỗ trợ nhiều môi trường, với PostgreSQL là mặc định và SQLite là backend fallback cục bộ.
+* Hỗ trợ nhiều môi trường, với PostgreSQL là mặc định và SQLite là backend được chọn rõ ràng.
 * Đảm bảo phân lập dữ liệu và kiểm tra tính hợp lệ của đầu vào trên các hệ quản trị cơ sở dữ liệu.
 
 ## 2. Các adapter cơ sở dữ liệu hiện có
@@ -22,7 +22,7 @@ Toàn bộ adapter lưu trữ nằm tại `hierachain/adapters/database/`.
 
 ### 2.1 SQLite Database Adapter (`sqlite_adapter.py`)
 
-Adapter fallback khi PostgreSQL không khả dụng, đồng thời là lựa chọn tường minh cho thiết lập một node nhẹ.
+Adapter được chọn rõ ràng cho triển khai cục bộ. PostgreSQL lỗi không tự chuyển sang SQLite.
 
 * Công nghệ: SQLite3 qua `sqlite3` và `hierachain/adapters/database/base/sql_adapter.py` (`SQLBase`).
 * Lược đồ dữ liệu: Khởi tạo qua `sqlite_schema.py`, tạo các bảng `chains`, `blocks`, `events`, `proofs` và `chain_state`.
@@ -36,7 +36,7 @@ Adapter cơ sở dữ liệu quan hệ cho các triển khai đa node và doanh 
 * Công nghệ: PostgreSQL với cơ chế connection pooling.
 * Lược đồ dữ liệu: Khởi tạo qua `postgres_schema.py` với cấu trúc tương thích hoàn toàn với SQLite.
 * Điểm mạnh: Khả năng ghi đồng thời lớn, quản lý kết nối hiệu quả, hỗ trợ công cụ sao lưu doanh nghiệp.
-* Tính năng truy vấn: Tối ưu cho phân vùng dữ liệu và quét chỉ mục cho các bản ghi kiểm toán dung lượng lớn.
+* Truy vấn dùng index event SQL; adapter không tự cấu hình partitioning.
 
 ### 2.3 Redis Database Adapter (`redis_adapter.py`)
 
@@ -49,14 +49,14 @@ Adapter trên bộ nhớ phục vụ đọc dữ liệu tốc độ cao và tra 
 
 ## 3. So sánh các adapter
 
-| Đặc điểm | SQLiteAdapter | PostgreSQLAdapter | RedisAdapter |
+| Đặc điểm | SQLiteAdapter | PostgresAdapter | RedisStorageAdapter |
 | :--- | :--- | :--- | :--- |
 | Loại lưu trữ | File quan hệ | Máy chủ quan hệ | Key-value trong bộ nhớ |
 | Môi trường phù hợp | Phát triển, kiểm thử, node biên | Môi trường sản xuất, cụm đa node | Truy vấn trạng thái độ trễ thấp, cache |
-| Độ trễ ghi | Thấp | Thấp đến trung bình | Rất thấp |
+
 | Độ linh hoạt truy vấn | Toàn bộ SQL | Toàn bộ SQL | Tra cứu khóa và chỉ mục |
 | Tính bền vững | ACID trên file cục bộ | ACID trên máy chủ doanh nghiệp | Snapshot RDB / AOF |
-| Dịch vụ bên ngoài | Không | PostgreSQL 13+ | Redis 6+ |
+| Dịch vụ bên ngoài | Không | PostgreSQL | Redis |
 
 ## 4. Cấu hình và sử dụng
 
@@ -65,11 +65,11 @@ Adapter trên bộ nhớ phục vụ đọc dữ liệu tốc độ cao và tra 
 Thiết lập backend lưu trữ bằng biến môi trường:
 
 ```bash
-# Các backend hỗ trợ: sqlite, postgres, redis, memory
+# Available backends: sqlite, postgres, redis, memory
 export HRC_STORAGE_BACKEND=sqlite
 export DATABASE_URL="sqlite:///data/ledger.db"
 
-# Hoặc đối với PostgreSQL
+# Or for PostgreSQL
 # export HRC_STORAGE_BACKEND=postgres
 # export DATABASE_URL="postgresql://user:pass@localhost:5432/hierachain"
 ```
@@ -89,9 +89,9 @@ print(f"Total blocks: {stats['total_blocks']}")
 #### Sử dụng PostgreSQL
 
 ```python
-from hierachain.adapters.database.postgres_adapter import PostgreSQLAdapter
+from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 
-adapter = PostgreSQLAdapter(connection_string="postgresql://user:pass@localhost:5432/hierachain")
+adapter = PostgresAdapter(database_url="postgresql://user:pass@localhost:5432/hierachain")
 stats = adapter.get_chain_statistics("supply_chain_ledger")
 print(f"Total blocks: {stats['total_blocks']}")
 ```
@@ -99,9 +99,9 @@ print(f"Total blocks: {stats['total_blocks']}")
 #### Sử dụng Redis
 
 ```python
-from hierachain.adapters.database.redis_adapter import RedisAdapter
+from hierachain.adapters.database.redis_adapter import RedisStorageAdapter
 
-adapter = RedisAdapter(host="localhost", port=6379, db=0)
+adapter = RedisStorageAdapter(host="localhost", port=6379, db=0)
 stats = adapter.get_chain_statistics("supply_chain_ledger")
 print(f"Total blocks: {stats['total_blocks']}")
 ```
@@ -121,7 +121,7 @@ Adapter ghi nhận truy vấn và sự kiện kết nối qua `SecureLogger`, t�
 
 ## 6. Bảo trì và lưu giữ dữ liệu
 
-* Dọn dẹp dữ liệu: Các adapter quan hệ hỗ trợ xóa các bản ghi sự kiện cũ vượt quá ngưỡng cấu hình qua `HRC_SQL_RETENTION_DAYS`.
+* `HRC_SQL_RETENTION_DAYS` được khai báo trong settings nhưng không có worker retention runtime sử dụng. Cấu hình này không tự xóa lịch sử event.
 * Nhật ký và journal: Nhật ký nhị phân và dữ liệu kiểm toán lỗi sử dụng `hierachain/core/parquet_log.py` và `hierachain/error_mitigation/journal.py`, tách rời việc lưu trữ chuỗi khỏi hệ thống log chẩn đoán.
 
 ## Liên quan
@@ -129,3 +129,5 @@ Adapter ghi nhận truy vấn và sự kiện kết nối qua `SecureLogger`, t�
 * [Storage Module](./storage.md)
 * [Tham chiếu cấu hình](../reference/config.md)
 * [Tổng quan bảo mật](./security.md)
+
+Redis adapters phục vụ indexing/truy vấn phụ trợ; `HierarchyManager` từ chối Redis làm storage block hierarchy bền vững. Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.

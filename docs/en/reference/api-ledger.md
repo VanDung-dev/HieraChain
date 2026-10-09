@@ -57,7 +57,8 @@ sequenceDiagram
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/ledger/health`: Health check.
+* GET `/api/ledger/health`: Liveness.
+* GET `/api/ledger/ready`: Hierarchy initialization/recovery readiness; HTTP 503 while unavailable.
 * GET `/api/ledger/chains`: List Main Chain and all Sub-Chains.
 * POST `/api/ledger/chains/{chain_name}/create`: Create a new Sub-Chain (auto-creates Main Chain if not exists).
 * POST `/api/ledger/chains/{chain_name}/events`: Add an event to a Sub-Chain.
@@ -83,7 +84,7 @@ curl -X POST "http://localhost:2661/api/ledger/channels/supply_chain/organizatio
      }'
 ```
 
-Unknown channels return `404`; an absent authenticated user or a user outside the organization's allowed write role returns `403`. API-key authentication must be enabled and the key must have `events` permission. The active `HierarchyManager` must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Channel event ledger data remains in memory across manager restarts.
+Unknown channels return `404`; an absent authenticated user or a user outside the organization's allowed write role returns `403`. API-key authentication must be enabled and the key must have `events` permission. The active `HierarchyManager` must restore the channel and member registry from configured persistent storage, or have them provisioned in memory before the request. Managed SQLite/PostgreSQL channels persist event and signed-block records in a separate append-only stream, refreshed by sequence on restart or across workers. Event writes do not rewrite the full registry. The memory backend is process-local.
 
 ## Main Schemas (from `hierachain/api/ledger/schemas.py`)
 
@@ -95,6 +96,8 @@ Unknown channels return `404`; an absent authenticated user or a user outside th
     * `details_cid: str | None` (Off-chain CID reference)
     * `details_nonce: str | None` (Encryption nonce)
     * `details_metadata: dict[str, Any] | None`
+    * `sender: str | None`
+    * `signature: str | None`
 
 * `EventResponse`
 
@@ -169,11 +172,13 @@ curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
 
 Response:
 
+The event ID below is illustrative; generated IDs are 16-character lowercase hexadecimal strings.
+
 ```json
 {
   "success": true,
   "message": "Event added to chain 'supply_chain'",
-  "event_id": "supply_chain_1_1"
+  "event_id": "a1b2c3d4e5f67890"
 }
 ```
 
@@ -187,11 +192,13 @@ curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 
 Response:
 
+This response example assumes a chain length of two; the proof ID suffix is the chain length.
+
 ```json
 {
   "success": true,
   "message": "Proof submitted from 'supply_chain' to main chain",
-  "proof_id": "supply_chain_1"
+  "proof_id": "supply_chain_2"
 }
 ```
 

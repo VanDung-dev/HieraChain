@@ -1,6 +1,6 @@
 ---
 title: "BFT Consensus"
-description: "Byzantine Fault Tolerant (PBFT) consensus flow for adversarial environment block finalization."
+description: "Explicit PBFT library integration: signed phase votes, application writes and view changes."
 icon: material/shield-key
 ---
 
@@ -8,13 +8,13 @@ icon: material/shield-key
 
 ## Overview
 
+This component requires explicit caller integration. Running multiple API nodes or setting `BFT_ENABLED` does not connect PBFT to MainChain/Sub-Chain automatically.
+
 The exported BFT library component and its standalone demo use 3-phase PBFT. It needs `n >= 3f + 1` nodes to tolerate `f` faulty or malicious nodes. The current MainChain and SubChain runtime paths do not instantiate BFT; callers use `BFTConsensus.request()` explicitly.
 
 For PoA and PoF flows, see [Consensus Mechanisms](./consensus_mechanisms.md).
 
 You need at least 4 nodes to tolerate 1 Byzantine failure (n=4, f=1: 3×1+1=4).
-
----
 
 ## Flow diagram: 3-phase PBFT
 
@@ -61,7 +61,7 @@ The primary and replicas count their own signed phase vote once. A PRE-PREPARE i
 
 Without an attached application chain, the component runs in protocol-only mode and records consensus status without writing an event, as in the standalone demo.
 
----
+Request admission is earlier than commitment. Retry state remains in memory and does not guarantee exactly-once application after ambiguous writes or restarts. See [BFT component](../consensus/bft_consensus.md) for transport, configuration, replay and ZK limitations.
 
 ## Flow diagram: view change (leader failure)
 
@@ -82,28 +82,22 @@ sequenceDiagram
     NEW->>NEW: Activate the new view
 ```
 
----
-
 ## Step-by-step breakdown
 
 | Step | Description |
 |:-----|:------------|
-| **PRE-PREPARE** | Primary assigns a sequence number, hashes the complete canonical request, signs the digest, and broadcasts the request |
-| **PREPARE** | Each node recomputes the digest and records its own PREPARE once. Each node moves to COMMIT after `2f` unique PREPARE votes, including its own |
-| **COMMIT** | Each prepared node records and broadcasts its own COMMIT once. A node applies the event after `2f + 1` unique COMMIT votes, including its own |
-| **View Change** | If the leader is silent past the timeout, the manager collects `2f + 1` signed VIEW-CHANGE votes before accepting the new view |
-
----
+| PRE-PREPARE | Primary assigns a sequence number, hashes the complete canonical request, signs the digest, and broadcasts the request |
+| PREPARE | Each node recomputes the digest and records its own PREPARE once. Each node moves to COMMIT after `2f` unique PREPARE votes, including its own |
+| COMMIT | Each prepared node records and broadcasts its own COMMIT once. A node applies the event after `2f + 1` unique COMMIT votes, including its own |
+| View Change | If the leader is silent past the timeout, the manager collects `2f + 1` signed VIEW-CHANGE votes before accepting the new view |
 
 ## Consensus comparison
 
 | Algorithm | Mechanism | Fault Tolerance | Use Case |
 |:----------|:----------|:----------------|:---------|
-| **PoA** | Identity-based, authority signs | Validator reputation | Private / internal networks |
-| **PoF** | Rotating leader, quorum `height % n` | Distributed trust | Consortium / multi-org |
-| **BFT** | 3-phase PBFT library component | Up to `f` Byzantine nodes in `3f+1` | Explicit callers and the standalone demo |
-
----
+| PoA | Identity-based, authority signs | Validator reputation | Private / internal networks |
+| PoF | Rotating leader `height % n`; ordinary validation checks its signature | Distributed trust | Consortium / multi-org |
+| BFT | 3-phase PBFT library component | Up to `f` Byzantine nodes in `3f+1` | Explicit callers and the standalone demo |
 
 ## Error handling
 
@@ -111,11 +105,9 @@ sequenceDiagram
 |:----------|:---------|
 | Leader timeout | View Change triggered; the new primary is `all_nodes[new_view % n]` |
 | Validator sends invalid digest | Vote discarded, not counted toward quorum |
-| Network partition < f nodes | Protocol continues if quorum (2f+1) still reachable |
-| Network partition ≥ f+1 nodes | Protocol halts until partition heals (safety over liveness) |
+| Reachable signed COMMIT quorum | Application requires `2f + 1` distinct votes for the same request |
+| Too few COMMIT votes | The request remains unapplied until enough valid votes arrive |
 | Attached chain write fails | Keep the current commit quorum and retry the same event when a valid COMMIT is repeated |
-
----
 
 ## Key classes and methods
 
@@ -127,8 +119,6 @@ sequenceDiagram
 | COMMIT quorum and event apply | `BFTConsensusEngine.process_commit_quorum()` | `consensus/bft/engine.py` |
 | View Change | `BFTViewChangeManager.initiate_view_change()` | `consensus/bft/view_change.py` |
 | Transport | `BFTMessageDispatcher.broadcast_msg()` | `consensus/bft/dispatcher.py` |
-
----
 
 ## Related
 

@@ -30,19 +30,19 @@ config = HieraChainClientConfig(
 
 Submit a new event to a specific sub-chain.
 
-*   **Example**: `client.submit_event("supply_chain", {"entity_id": "P001", "event": "check"})`
+*   **Example**: `client.submit_event("supply_chain", {"entity_id": "P001", "event_type": "check"})`
 
 #### `get_block(chain_name: str, index_or_hash: str | int, resolve_cid: bool = False) -> dict`
 
 Get detailed information about a block.
 
-*   **resolve_cid**: If `True`, the SDK will automatically load data from IPFS for events that have `details_cid`.
+*   **resolve_cid**: If `True`, the SDK asks the API to resolve `details_cid`. The API must have IPFS enabled; otherwise the CID remains unresolved.
 
 #### `get_node_status() -> NodeStatus`
 
 Get system status from API Admin. Returns an object containing `version`, `uptime`, `chains_active`, etc.
 
-#### `trace_entity(entity_id: str, chain_name: str = None, resolve_cid: bool = False) -> EntityTrace`
+#### `trace_entity(entity_id: str, chain_name: str | None = None, resolve_cid: bool = False) -> EntityTrace`
 
 Trace the history of an entity across chains.
 
@@ -58,9 +58,9 @@ When submitting events with large or sensitive data, HieraChain recommends using
 # 1. Submit event with CID from IPFS (uploaded beforehand)
 client.submit_event("supply_chain", {
     "entity_id": "LARGE-DOC-001",
-    "event": "document_notarization",
+    "event_type": "document_notarization",
     "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-    "details_nonce": "12345"
+    "details_nonce": "00112233445566778899aabb"
 })
 
 # 2. Query and auto-decrypt data
@@ -99,9 +99,10 @@ For a web server or FastAPI application, use the async client:
 ```python
 from hierachain.sdk.client import HieraChainAsyncClient
 
-async with HieraChainAsyncClient(config) as async_client:
-    status = await async_client.get_chain_status()
-    print("Network:", status.block_height)
+async def read_node_status(config: HieraChainClientConfig) -> None:
+    async with HieraChainAsyncClient(config) as async_client:
+        status = await async_client.get_node_status()
+        print("Network:", status.chains_active)
 ```
 
 ### 2. Core Network Resilience Features
@@ -109,7 +110,7 @@ async with HieraChainAsyncClient(config) as async_client:
 The SDK retries network failures and uses a circuit breaker to limit requests when the API is unavailable:
 
 #### a. Auto-retry (Exponential Backoff)
-Read requests (`GET`) retry transport failures and HTTP 5xx with `initial_delay * (backoff_multiplier ^ attempt)`, up to `max_retries = 5` times by default. HTTP 3xx/4xx raises `HieraChainAPIError` immediately; its `status_code` contains the response status. Submission requests (`POST`) are sent once, including after a timeout or 503, because the server has no idempotency contract. The SDK does not follow POST redirects.
+Read requests (`GET`) retry transport failures and HTTP 5xx with `initial_delay * (backoff_multiplier ^ attempt)`, up to `max_retries = 5` times by default. A non-2xx response returned to the client raises `HieraChainAPIError` with its `status_code`; returned 3xx and 4xx responses are not retried. Sync and async clients follow redirects for unauthenticated `GET`, `HEAD`, and `OPTIONS` requests. They disable redirects for those methods when `X-API-Key` is configured, and for `POST` requests. Submission requests are sent once, including after a timeout or 503, because the server has no idempotency contract.
 
 #### b. Circuit Breaker
 Fail-fast operation (prioritizes early error reporting):
@@ -124,14 +125,14 @@ If the Node server returns the `X-Lockdown-Mode: true` header or HTTP `503 Servi
 
 ```python
 # Submit Event for transaction
-result = client.submit_event("main_chain", {
+result = client.submit_event("supply_chain", {
     "entity_id": "user_sysadmin",
-    "event": "update_config"
+    "event_type": "update_config"
 })
 print("Event accepted, event_id:", result.event_id)
 
 # Get Block by hash
-block = client.get_block(block_id="8f2a9d...")
+block = client.get_block("supply_chain", "8f2a9d...")
 ```
 
 ### JSON transport

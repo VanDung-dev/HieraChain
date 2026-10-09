@@ -91,30 +91,30 @@ Các lệnh này kiểm tra block đã lưu. Lệnh tạo chain và event dùng 
 ### 1. Khởi tạo hệ thống và tạo chuỗi cung ứng
 
 ```bash
-# Khởi tạo dữ liệu node
+# Initialize node data
 hrc node init --data-dir ./my_data
 
-# Tạo chuỗi cung ứng linh kiện
+# Create a component supply chain
 hrc --config ./my_data/config.yaml chain create supply_chain --name logistics_01 --parent main
 ```
 
 ### 2. Ghi nhận quy trình sản xuất
 
 ```bash
-# Bắt đầu sản xuất thực thể ITEM-99
+# Start production of entity ITEM-99
 hrc --config ./my_data/config.yaml event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
 
-# Khởi chạy API với cùng cấu hình node
+# Start the API with the same node configuration
 hrc --config ./my_data/config.yaml node start
 
-# Gửi proof qua REST API có xác thực và SQL storage bền vững
+# Submit proofs through the authenticated REST API backed by durable SQL storage
 curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 ```
 
 ### 3. Kiểm định an toàn dữ liệu
 
 ```bash
-# Kiểm tra 100 block gần nhất xem có bị sửa đổi không
+# Check the 100 most recent blocks for tampering
 hrc verify signatures --limit 100
 ```
 

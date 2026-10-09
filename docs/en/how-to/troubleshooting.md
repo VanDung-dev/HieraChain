@@ -13,7 +13,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
 * Check the server process:
 
     ```bash
-    python -m hierachain.api.server
+    python -m hierachain
     ```
 
 * Default listens on `http://localhost:2661`. Open `http://localhost:2661/docs` to verify.
@@ -21,10 +21,10 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 ## 401/403 when calling API
 
-* Production may enable AUTH: `settings.AUTH_ENABLED`. In that case, you need to send an API key:
+* Production requires `settings.AUTH_ENABLED=True`. Protected routes need an API key with the required scope; health/status routes may be exempt. Check a protected route:
 
     ```bash
-    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/ledger/health
+    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/ledger/chains
     ```
 
 * Header name depends on `settings.API_KEY_NAME` (default `X-API-Key`).
@@ -41,8 +41,8 @@ This page provides a checklist and quick diagnostic steps for common errors when
     }
     ```
 
-* `details` is a map<string,string>. Non-string values will be converted to strings.
-* Timestamps are server-generated; no need to send from the client.
+* REST `details` is a JSON object and preserves supported typed values in the canonical event payload. Arrow's `details` metadata column is a string projection; it does not replace the original payload.
+* The API request model has no timestamp field, and the event builder sets the timestamp from server time. A client-supplied timestamp is not used.
 
 ## Cannot create a Sub-Chain
 
@@ -52,7 +52,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
     curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
     ```
 
-* Chain name must match regex `[a-zA-Z0-9_\-]+` (see validation in `api/ledger/endpoints.py`).
+* Chain name must match regex `[a-zA-Z0-9_\-]+` (see validation in `hierachain/api/ledger/chains.py`).
 
 ## Events not appearing in returned blocks
 
@@ -62,16 +62,12 @@ This page provides a checklist and quick diagnostic steps for common errors when
     curl "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&offset=0"
     ```
 
-* Some chains need to be finalized or have a proof submitted to see new blocks. Try submitting a proof:
-
-    ```bash
-    curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
-    ```
+* Submission acknowledges ordering acceptance. Wait for batch size/timeout and the commit consumer, then read blocks again. Inspect the orderer status and storage/finalization errors if the event remains absent. MainChain proof submission is separate; it does not force a pending Sub-Chain batch to commit.
 
 ## Poor performance / 503 Service Unavailable
 
-* If `ResourceGuardMiddleware` is integrated, 503 may be due to CPU/RAM exceeding thresholds.
-* Check rate limit/HSTS/CORS configuration in `settings.py`.
+* Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
+* Check API rate limits and CORS in `settings.py`; configure HSTS at the HTTPS proxy.
 * Reduce event batch sizes; tune existing cache instances only after profiling their usage.
 
 ## Redis/SQLite not connecting
@@ -81,7 +77,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
   * `DATABASE_URL` (SQLite/PostgreSQL)
   * `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`
 
-* Switch `DEFAULT_STORAGE_BACKEND` to `memory` to isolate storage issues.
+* Set `HRC_STORAGE_BACKEND=memory` only for isolated tests; it does not retain ledger data. Use `sqlite` or `postgres` for durable signed-block storage.
 
 ## business endpoints return errors
 

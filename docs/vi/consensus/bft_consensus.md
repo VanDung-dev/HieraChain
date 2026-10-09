@@ -1,64 +1,34 @@
 ---
-title: "BFT Consensus"
-description: "Đồng thuận PBFT chịu lỗi Byzantine với cơ chế View Change."
+title: "Đồng thuận BFT"
+description: "Thư viện PBFT riêng: phiếu các pha có chữ ký, thay đổi view và thử lại việc áp dụng trong bộ nhớ."
 icon: material/shield-key
 ---
 
-# BFT Consensus (`hierachain/consensus/bft/*`)
+# Đồng thuận BFT (`hierachain/consensus/bft/*`)
 
-## Tổng quan
+## Phạm vi
 
-**BFT Consensus** là cơ chế đồng thuận chịu lỗi Byzantine của HieraChain. Giao thức dùng công thức `n >= 3f + 1` để chịu được tối đa `f` nút lỗi hoặc có hành vi độc hại như làm sai lệch dữ liệu hay từ chối dịch vụ. Triển khai này tách khỏi luồng runtime của MainChain và SubChain.
+`BFTConsensus` là thành phần thư viện riêng. MainChain và SubChain không khởi tạo nó; chạy nhiều nút API hoặc đặt `BFT_ENABLED` không nối PBFT vào các chuỗi đó. Bên gọi cung cấp khóa ký hoặc danh tính nút, khóa công khai nút đã được phê duyệt, truyền tải và tích hợp ứng dụng.
 
----
+Hàm khởi tạo yêu cầu `n >= 3f + 1`, trong đó `n` là độ dài `all_nodes`. Khi `f=1`, cần bốn nút. Mọi nút phải thống nhất danh sách thành viên có thứ tự vì primary là `all_nodes[view % n]`.
 
-## Kiến trúc Module BFT
+## Thành phần
 
-Module gồm các thành phần sau:
+| Thành phần | Tệp | Trách nhiệm |
+|:-----------|:----|:------------|
+| `BFTConsensus` | `consensus.py` | Tiếp nhận yêu cầu, phân phối thông điệp và trạng thái đồng thuận |
+| `BFTConsensusEngine` | `engine.py` | Xác thực PRE-PREPARE, phiếu các pha và ghi ứng dụng |
+| `BFTViewChangeManager` | `view_change.py` | Thời gian chờ, phiếu VIEW-CHANGE và xác thực bằng chứng NEW-VIEW |
+| `BFTMessageDispatcher` | `dispatcher.py` | Gửi qua nút ZeroMQ được cung cấp hoặc hàm gửi của bên gọi |
+| Helper chữ ký và yêu cầu | `helpers.py`, `types.py` | Payload thông điệp có chữ ký, hash yêu cầu chuẩn hóa và kiểm tra ZK tùy chọn |
 
-<div class="grid cards" markdown>
+## Các pha PBFT
 
-*   :material-gavel:{ .lg .middle } __BFT Engine__
+`request()` bắt đầu yêu cầu tại primary. Các nút khác chuyển tiếp qua hàm gửi đã cấu hình và trả về `False`; phản hồi `True` của primary xác nhận đã tiếp nhận, không xác nhận đã commit theo quorum.
 
-    ---
+Primary băm toàn bộ yêu cầu bằng `hierachain.serialization.dumps_canonical_json`. Replica tính lại digest trước khi chấp nhận PRE-PREPARE. Mã hóa chuẩn hóa sắp xếp trường, dùng dấu phân cách gọn và UTF-8 không escape, đồng thời giữ cách biểu diễn số hữu hạn của Python. Số không hữu hạn, dữ liệu vòng lặp và kiểu không được JSON hỗ trợ bị từ chối.
 
-    __Files__: `consensus.py`, `engine.py`
-
-    `BFTConsensus.request()` khởi chạy các pha **PBFT**. `BFTConsensusEngine` xác thực PRE-PREPARE, ghi nhận phiếu bầu và áp dụng hoạt động đã cam kết khi thao tác ghi ứng dụng thành công.
-
-*   :material-refresh-circle:{ .lg .middle } __View Manager__
-
-    ---
-
-    __File__: `view_change.py`
-
-    Phát hiện khi nút Primary không phản hồi và kích hoạt **View Change** để bầu chọn Leader mới.
-
-*   :material-swap-horizontal-bold:{ .lg .middle } __BFT Network__
-
-    ---
-
-    __File__: `dispatcher.py`
-
-    Dùng **ZeroMQ** để quảng bá và định tuyến thông điệp đồng thuận.
-
-*   :material-key-variant:{ .lg .middle } __BFT Crypto__
-
-    ---
-
-    __Files__: `helpers.py`, `types.py`
-
-    Xử lý ký số Ed25519, băm (Hashing) và xác thực bằng chứng **Zero-Knowledge (ZK)** cho từng thông điệp đồng thuận.
-
-</div>
-
----
-
-## Quy trình Đồng thuận PBFT (Protocol Flow)
-
-Thành phần BFT độc lập với luồng runtime MainChain và SubChain hiện tại. Demo và API thư viện sử dụng `BFTConsensus` một cách tường minh.
-
-JSON chuẩn hóa của request dùng `json` chuẩn của Python thông qua `hierachain.serialization.dumps_canonical_json`. Định dạng digest BFT hiện có được giữ: sắp xếp trường, dấu phân cách gọn, văn bản UTF-8 không escape Unicode và cách biểu diễn số hữu hạn của Python. Số không hữu hạn, dữ liệu vòng lặp và kiểu không được JSON hỗ trợ bị từ chối.
+Mỗi nút ghi nhận đúng một phiếu PREPARE và COMMIT có chữ ký của mình trước khi phát. Phiếu được đếm theo bên gửi duy nhất, gồm phiếu cục bộ: `2f` phiếu PREPARE và `2f + 1` phiếu COMMIT. Phiếu các pha được theo dõi theo từng sequence ngay cả khi sequence khác thay đổi trạng thái đồng thuận hiển thị.
 
 ```mermaid
 sequenceDiagram
@@ -70,7 +40,6 @@ sequenceDiagram
     C->>P: request(operation)
     P->>P: Hash canonical request and record local PREPARE
     P->>R1: PRE-PREPARE(view, seq, digest, request)
-
     P->>R2: PRE-PREPARE(view, seq, digest, request)
     P->>R3: PRE-PREPARE(view, seq, digest, request)
     R1->>R1: Recompute digest, record local PREPARE
@@ -86,46 +55,36 @@ sequenceDiagram
     Note over P,R3: Apply after 2f+1 unique COMMIT votes
 ```
 
-Primary băm toàn bộ request dưới dạng JSON chuẩn. Mỗi replica tính lại digest trước khi chấp nhận PRE-PREPARE, vì vậy thay đổi bất kỳ trường nào trong request mà vẫn giữ digest và chữ ký ban đầu sẽ bị từ chối. Digest được đưa vào thông điệp BFT đã ký.
+## Áp dụng và thử lại
 
-Phiếu giai đoạn cục bộ được theo dõi theo từng sequence. Quorum PREPARE của một request đã nhận vẫn tạo được COMMIT cục bộ dù sequence khác đã thay đổi trạng thái consensus hiển thị.
+Khi có chuỗi ứng dụng được gắn vào, `chain.add_event()` thất bại sẽ giữ quorum COMMIT và cùng sự kiện trong bộ nhớ với `event_id` xác định. COMMIT hợp lệ được gửi lại sẽ thử ghi lại; `committed_sequence` chỉ tăng sau khi thành công. Quorum của yêu cầu sau được giữ và áp dụng liên tiếp từ sequence 1 sau khi các lần ghi trước thành công. Thông điệp gần đây được giữ; bước dọn dẹp loại các sequence cũ hơn committed sequence trên 100.
 
-Mỗi node ghi nhận đúng một phiếu PREPARE và COMMIT có chữ ký của chính mình trước khi phát phiếu. Quorum đếm các sender duy nhất, bao gồm phiếu cục bộ: `2f` phiếu PREPARE và `2f + 1` phiếu COMMIT.
+Khi không gắn chuỗi, thành phần ghi nhận commit giao thức mà không ghi sự kiện ứng dụng. Demo độc lập dùng chế độ này. Trạng thái thử lại không được lưu qua lần khởi động lại. Nếu backend đã lưu sự kiện rồi phát sinh lỗi, thử lại có thể ghi trùng trừ khi backend khử trùng theo `event_id`; `SubChain.add_event()` hiện không khử trùng bằng ID BFT này. Thành phần không bảo đảm áp dụng đúng một lần sau kết quả ghi không rõ ràng hoặc khởi động lại.
 
-Với node được gắn application chain, nếu `chain.add_event()` thất bại thì quorum COMMIT và event ổn định trong bộ nhớ, cùng event ID xác định, vẫn sẵn sàng để thử lại. Một COMMIT hợp lệ được gửi lại có thể ghi lại cùng event; node chỉ tăng `committed_sequence` sau khi ghi thành công. Thành phần không lưu trạng thái thử lại qua lần khởi động lại tiến trình. Các message gần đây được giữ lại; cleanup chỉ xóa message khi sequence cũ hơn committed sequence trên 100.
+## Thay đổi view và giới hạn chống phát lại
 
-Khi không gắn application chain, BFT chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event ứng dụng. Demo độc lập sử dụng chế độ này.
+Bộ hẹn giờ view change khởi xướng view mới khi hết thời gian. Primary mới được chọn từ danh sách nút có thứ tự, và view mới cần `2f + 1` chữ ký hợp lệ từ các nút khác nhau, gồm phiếu cục bộ nếu có.
 
-Request sau không thể nâng committed sequence vượt qua request trước chưa áp dụng hoặc chưa nhận được. Việc áp dụng diễn ra liên tiếp từ sequence 1. Quorum đã nhận cho các request sau được giữ lại và thử áp dụng theo thứ tự sau khi thao tác ghi trước thành công. Trạng thái thử lại vẫn nằm trong bộ nhớ. Nếu backend đã lưu event rồi phát sinh lỗi, retry có thể ghi trùng trừ khi backend khử trùng bằng `event_id` ổn định; `SubChain.add_event()` hiện không dùng ID BFT này để khử trùng. Vì vậy thành phần không bảo đảm event được áp dụng đúng một lần khi kết quả ghi không rõ ràng hoặc qua restart.
+Sequence theo dõi thứ tự yêu cầu; thông điệp ở các pha khác nhau có thể dùng cùng sequence. Nonce và timestamp của thông điệp được ký, nhưng luồng tiếp nhận không duy trì cache nonce để chống phát lại. Các bước kiểm tra chữ ký, tuổi thông điệp, view, sequence và pha được áp dụng; COMMIT hợp lệ lặp lại có thể chủ động thử áp dụng lại. Chỉ ký nonce không cung cấp cơ chế từ chối phát lại tổng quát.
 
----
+## Kiểm tra ZK tùy chọn
 
-## Các cơ chế Bảo vệ Nâng cao
+`handle_pre_prepare()` gọi `verify_operation_zk_proof(message.data)` khi bật `HRC_ENABLE_ZK_PROOFS`. Xử lý bằng chứng thiếu dùng `HRC_ZK_REQUIRED_MAINCHAIN`. Helper đọc operation ở cấp trên cùng của dữ liệu thông điệp, còn `request()` đặt operation trong đối tượng request; helper không tự trích operation lồng bên trong. Không nên xem luồng này là bằng chứng mọi thao tác được tiếp nhận đều đã qua xác minh ZK. Mock proof là dữ liệu kiểm thử cho phát triển; tạo/xác minh production chưa được triển khai.
 
-### 1. View Change Proof
-Khi một nút nhận thấy Leader hiện tại không hoạt động (Timeout), nó yêu cầu thay đổi View. View mới cần bằng chứng có ít nhất `2f + 1` chữ ký hợp lệ từ các node duy nhất, bao gồm phiếu cục bộ nếu có, nhằm ngăn chặn việc chiếm quyền trái phép.
+## Cấu hình
 
-### 2. Sequence Number & Nonce
-Mỗi thông điệp BFT đều có số thứ tự tăng dần và một giá trị ngẫu nhiên (Nonce) duy nhất để chống lại các cuộc tấn công phát lại (**Replay Attacks**).
+| Thiết lập | Vị trí | Mặc định |
+|:-----------|:-------|:---------|
+| `f` | Tham số hàm khởi tạo | `1` |
+| `view_change_timeout` | Thuộc tính instance; hàm khởi tạo khởi chạy bộ hẹn giờ | `30.0` giây |
+| `verification_strictness` | `error_config["consensus"]["bft"]["verification_strictness"]`; điều khiển việc từ chối thông điệp chậm | `high` |
+| `HRC_ENABLE_ZK_PROOFS` | Thiết lập môi trường dùng chung với các luồng đồng thuận khác | `false` |
+| `HRC_ZK_REQUIRED_MAINCHAIN` | Chính sách dùng chung cho bằng chứng thiếu | `false` |
 
-### 3. ZK Integration
-Hệ thống hỗ trợ xác thực bằng chứng Zero-Knowledge ngay trong pha `Pre-prepare`, cho phép kiểm tra tính hợp lệ của dữ liệu mà không cần tiết lộ nội dung chi tiết trong quá trình bầu chọn.
-
----
-
-## Cấu hình BFT
-
-| Tham số | Ý nghĩa | Mặc định |
-| :--- | :--- | :--- |
-| `f` | Số lượng lỗi tối đa có thể chịu đựng | `1` (Yêu cầu ít nhất 4 nodes) |
-| `view_change_timeout` | Thời gian chờ Leader phản hồi | `30.0` giây |
-| `strictness` | Mức độ kiểm tra chữ ký | `high` |
-| `enable_zk_proofs` | Bật xác thực ZK trong BFT | `false` |
-
----
+Không có tùy chọn hàm khởi tạo BFT tên `enable_zk_proofs`. Nếu đổi timeout sau khi khởi tạo, hãy đặt lại bộ hẹn giờ view change để dùng khoảng thời gian mới. Gọi `shutdown()` khi đóng thành phần để hủy bộ hẹn giờ.
 
 ## Liên quan
 
-*   [Mạng lưới P2P (Network)](../modules/network.md)
-*   [Xác thực chữ ký (Security)](../security/encryption-keys.md)
-*   [Dịch vụ sắp xếp (Ordering)](./ordering.md)
+* [Mạng](../modules/network.md)
+* [Khóa và chữ ký](../security/encryption-keys.md)
+* [Dịch vụ ordering](./ordering.md)

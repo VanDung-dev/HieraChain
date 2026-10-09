@@ -1,19 +1,19 @@
 ---
 title: "Triển khai an toàn"
-description: "Bật xác thực, CORS/HSTS, Rate Limit, API Key và Resource Guard; hướng dẫn cấu hình môi trường sản xuất cho HieraChain."
+description: "Bật xác thực, CORS/HSTS, Rate Limit, API Key và ordering limits; hướng dẫn cấu hình môi trường sản xuất cho HieraChain."
 icon: material/shield-check
 ---
 
 # Triển khai an toàn
 
-Cấu hình HieraChain ở môi trường production với các biện pháp bảo vệ cơ bản (AUTH, CORS/HSTS, Rate Limit, API key) và bảo vệ tài nguyên (Resource Guard).
+Cấu hình xác thực API key, CORS, giới hạn tốc độ và giới hạn ordering trong HieraChain. Kết thúc HTTPS và cấu hình HSTS tại reverse proxy hoặc API gateway doanh nghiệp. Cấp signing identity và bản đồ khóa đáng tin cậy theo [Quickstart](../getting-started/quickstart.md) trước khi khởi tạo chain.
 
 ## Chuẩn bị môi trường
 
 * Quản lý secrets bằng biến môi trường/secret manager (không commit .env lên VCS).
 * Bật logging phù hợp (`LOG_LEVEL=INFO` hoặc `WARNING`).
 
-## Bật xác thực API Key
+## Bật xác thực API key
 
 Trong production, xác thực API key là bắt buộc. `HRC_AUTH_ENABLED=false`, thiếu file key hoặc file key không hợp lệ đều chặn khởi động. Cấu hình:
 
@@ -74,9 +74,9 @@ HRC_CORS_ALLOW_ALL=false
 HRC_CORS_ORIGINS=https://admin.example.com,https://console.example.com
 ```
 
-## Bật HSTS (HTTPS)
+## Cấu hình HSTS tại proxy HTTPS
 
-Thêm header HSTS để trình duyệt cưỡng bức HTTPS:
+Đặt `Strict-Transport-Security` trên response HTTPS tại reverse proxy hoặc API gateway. HieraChain khai báo các cấu hình sau, nhưng HTTP middleware không dùng chúng để thêm header này:
 
 ```dotenv
 # .env
@@ -96,19 +96,19 @@ HRC_RATE_LIMIT_RPM=100
 
 Lưu ý: triển khai thực tế nên kết hợp rate limit ở reverse proxy (Nginx/Envoy/API Gateway).
 
-## Bảo vệ tài nguyên (Lưu ý)
+## Giới hạn ordering
 
 Không có `ResourceGuardMiddleware` hay `security/resource_guard.py` trong code. Bảo vệ DoS/limit thực tế là: `api/middleware.py:add_rate_limit` / `add_payload_limit`, và kiểm tra `HRC_RAM_CRITICAL_THRESHOLD` / `HRC_EVENT_POOL_MAX_SIZE` trong ordering/storage. Đừng import `ResourceGuardMiddleware` không tồn tại; hãy kết hợp rate limiting ở app với reverse-proxy.
 
 ## Khởi động dịch vụ
 
 ```bash
-python -m hierachain.api.server
+python -m hierachain
 ```
 
 Mặc định phục vụ tại `http://localhost:2661`. Đặt `HRC_API_HOST`/`HRC_API_PORT` nếu cần.
 
-## Kiểm chứng nhanh
+## Kiểm tra
 
 1. Thiếu API key → kỳ vọng 401:
 
@@ -122,59 +122,64 @@ Mặc định phục vụ tại `http://localhost:2661`. Đặt `HRC_API_HOST`/`
     curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/chains
     ```
 
-3. Tải nặng → ResourceGuard có thể trả 503 (nếu ngưỡng vượt quá).
+3. Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
 
-## Secrets & cấu hình an toàn
+## Bí mật và cấu hình
 
 * Không ghi secret vào log của dịch vụ hoặc CI. Lệnh cấp key in key ban đầu một lần trên terminal của operator; lưu key vào kho secret của client.
 * Dùng `python-dotenv` chỉ trong dev; production dùng hệ thống secrets (K8s Secret, Vault…).
 * Kiểm tra `hierachain/security/secure_logging.py` và `security/sanitization.py` để tránh rò rỉ dữ liệu nhạy cảm.
 
-## Production Checklist
+## Danh sách kiểm tra production
 
 Dưới đây là checklist nhanh để triển khai HieraChain trong production:
 
 ### Bắt buộc
 
 ```bash
-# Thiết lập môi trường production
+# Set production environment
 export HRC_ENV=production
 
-# Cấu hình PostgreSQL tường minh khi dùng backend PostgreSQL
+# Configure PostgreSQL explicitly when using the PostgreSQL storage backend
 export HRC_STORAGE_BACKEND=postgres
 export DATABASE_URL=postgresql+psycopg://user:password@db:5432/hierachain
-# Có thể dùng HRC_DATABASE_URL thay cho DATABASE_URL
+# HRC_DATABASE_URL may be used instead of DATABASE_URL
 
-# Bật xác thực
+# Enable authentication
 export HRC_AUTH_ENABLED=true
 export HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
 
-# Chính sách tin cậy P2P nghiêm ngặt
+# Provisioned signing identity and trusted block keys
+export HRC_VALIDATOR_IDENTITY=/absolute/path/to/identity.json
+export HRC_BLOCK_TRUSTED_KEYS_FILE=/absolute/path/to/trusted-block-keys.json
+
+# Strict P2P trust policy
 export HRC_P2P_TRUST_POLICY=strict
 ```
 
 ### Khuyến nghị
 
 ```bash
-# Sử dụng biến môi trường cho master key
+# Use environment variable for master key
 export HRC_MASTER_KEY_SOURCE=env
 
-# Bật rate limiting
+# Enable rate limiting
 export HRC_RATE_LIMIT=true
 export HRC_RATE_LIMIT_RPM=100
 
-# Bật HSTS
+# HSTS header must be configured at the HTTPS reverse proxy.
+# This declared setting does not add the header in HieraChain.
 export HRC_HSTS_ENABLED=true
 ```
 
-### Optional (Enterprise)
+### Tích hợp doanh nghiệp tùy chọn
 
 ```bash
-# Sử dụng Vault bên ngoài (biến thực tế là HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, không phải HRC_VAULT_ADDR)
+# Use external Vault (actual envs are HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, not HRC_VAULT_ADDR)
 export HRC_VAULT_TOKEN=your_token
 export HRC_VAULT_PATH=/path/to/vault
 
-# HSM không có cờ boolean HRC_HSM_ENABLED trong code; dùng interface KeyProvider + HRC_VAULT_* / tích hợp HSM bên ngoài
+# HSM is not a boolean HRC_HSM_ENABLED flag in code; use KeyProvider interface + HRC_VAULT_* / HSM integration externally
 ```
 
 ### Kiểm tra cấu hình
@@ -189,9 +194,7 @@ for w in warnings:
     print(f"WARNING: {w}")
 ```
 
-!!! tip "Mẹo"
-    * Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)
-    * Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài
+`check_security_config()` trả cảnh báo cấu hình; nó không kiểm tra header proxy hay kết nối backend. Khi khởi động production, ứng dụng kiểm tra riêng và từ chối cấu hình tắt xác thực hoặc thiếu/sai API key. Cấu hình tích hợp LDAP, HSM và SIEM tại ứng dụng chủ hoặc môi trường triển khai.
 
 ## Liên quan
 

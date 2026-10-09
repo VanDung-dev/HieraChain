@@ -8,112 +8,65 @@ icon: material/water
 
 ## Overview
 
-When a Sub-Chain node restarts or detects divergent state (local hash is different from the DB hash), it rehydrates the in-memory chain from persistent storage. This keeps the node consistent after crashes, restarts or network partitions.
+`SubChain.sync_chain()` rebuilds the local ledger from blocks supplied by its ordering service. Startup runs this synchronization before registering the chain or starting the commit consumer. There is no periodic `auto_sync` timer in this workflow; applications that call `sync_chain()` later must coordinate with active writers.
 
-The DB is the authoritative source of truth. If local state diverges, it is discarded and rebuilt from the DB.
-
----
+The orderer supplies its bootstrap block list once. After that, synchronization reads all blocks through `storage_handler.get_blocks_from_db(start_index=0)`. It compares the local tip with the last supplied block before deciding whether to rebuild. It does not fetch only the missing delta.
 
 ## Flow diagram
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant SC as 📦 SubChain
-    participant OS as ⚙️ OrderingService
-    participant DB as 💾 Storage Backend
-
-    Note over SC: Startup OR divergence detected
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 1 — Detect Divergence
-        SC->>SC: sync_chain()
-        SC->>OS: get_latest_block()
-        OS->>DB: Query latest persisted block
-        DB-->>OS: latest_block (index, hash)
-        OS-->>SC: latest_block_os
+    participant SC as SubChain
+    participant OS as OrderingService
+    participant DB as Storage handler
+    SC->>OS: take_bootstrap_blocks()
+    alt Bootstrap already consumed
+        SC->>DB: get_blocks_from_db(start_index=0)
+        DB-->>SC: All stored blocks
+    else Bootstrap available
+        OS-->>SC: Bootstrap blocks
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over SC: Phase 2 — Comparison & Rehydration
-        SC->>SC: Compare: local_latest.index vs db_latest.index
-
-        alt Local == DB (same index + same hash)
-            SC->>SC: Already up-to-date. No-op.
-        else Local < DB (node missed blocks during downtime)
-            SC->>DB: get_blocks_from_db(start_index=0)
-            DB-->>SC: All blocks []
-            SC->>SC: Acquire write lock
-            SC->>SC: Clear local chain, reset all counters
-            loop For each block from DB
-                SC->>SC: chain.append(block)
-                SC->>SC: _update_event_statistics(block)
-            end
-            SC->>SC: Release write lock
-            SC->>OS: Reset block_history & blocks_created
-        else Local > DB OR hash mismatch
-            SC->>SC: Log WARNING: divergent state detected
-            SC->>DB: Force full rehydration from DB
-        end
+    SC->>SC: Compare local tip index/hash with supplied tip
+    opt Rebuild required
+        SC->>SC: Lock, clear chain and WorldState
+        SC->>SC: Append all supplied blocks and apply WorldState
+        SC->>SC: Blockchain._rebuild_event_indexes()
+        SC->>SC: Validate rebuilt chain
     end
-
-    SC->>SC: _reset_ordering_service_state()
-    Note over SC: Chain now consistent with storage
+    SC->>SC: Reconcile commit queue against local index/hash
 ```
 
----
+## Comparison and rebuild
 
-## Divergence scenarios
+| State | Behavior |
+|:------|:---------|
+| No supplied blocks | Rehydration returns without clearing the local chain |
+| Local tip behind supplied tip | Rebuild from the complete supplied block list |
+| Same index and same hash | Keep the local chain |
+| Same index with different hash | Rebuild from supplied blocks |
+| Local index ahead, different tip hash | Log divergence and rebuild |
+| Local index ahead, same tip hash | Keep the local chain |
 
-| Scenario | Detection | Action |
-|:---------|:----------|:-------|
-| **Cold start** | `local.index == 0` | Load all blocks from DB |
-| **Crash recovery** | `local.index < db.index` | Append missing blocks only |
-| **Hash mismatch** | `local.hash != db.hash` (same index) | Full rehydration from DB |
-| **Already in sync** | `local.index == db.index AND hash matches` | No-op |
-| **Local ahead of DB** | `local.index > db.index` | WARNING: DB is authoritative; force rehydrate |
+`_apply_rehydrated_blocks()` holds the chain lock while clearing and rebuilding the chain, WorldState and event indexes. It then calls `is_chain_valid()` and raises `ValueError` if validation fails. It does not reset an active orderer's block counters.
 
----
+Startup reconciliation drops queued blocks whose index and hash already match the rebuilt chain. Blocks absent from the chain remain queued. A queued block with a conflicting hash is retained and causes `ValueError`, preventing startup from accepting conflicting history.
 
-## Step-by-step breakdown
+## Errors and operational limits
 
-| Step | Description |
-|:-----|:------------|
-| **1. Trigger** | Node startup calls `sync_chain()`, or `auto_sync` timer fires |
-| **2. DB query** | `OrderingService.get_latest_block()` fetches the latest persisted block from storage |
-| **3. Comparison** | Compare local chain `(index, hash)` with DB `(index, hash)` |
-| **4. Up-to-date** | If identical: skip. Normal operations resume immediately |
-| **5. Partial sync** | If `local < db`: load only the delta blocks. Acquires write lock to prevent race conditions |
-| **6. Full rehydration** | If hash mismatch or local ahead: discard local, rebuild entirely from DB |
-| **7. Statistics reset** | `_update_event_statistics()` rebuilds `entity_event_index` from each block |
-| **8. OrderingService reset** | Sync block counters between chain and ordering service |
-
----
-
-## Error handling
-
-| Condition | Behavior |
-|:----------|:---------|
-| DB read fails during rehydration | Exception logged, retry on next sync interval |
-| Write lock held too long | Timeout after `lock_timeout` seconds; critical alert via Risk Alerts |
-| `entity_event_index` inconsistent after rehydration | Full index rebuild triggered |
-| Storage backend unreachable | Node enters read-only mode; new events queued but not persisted |
-
----
+Storage read errors propagate to the caller. Invalid rebuilt history and queue conflicts also raise errors. This path has no scheduled retry, lock-timeout alert or automatic read-only fallback. Restore storage access and the approved identity/trust configuration before restarting; inspect the failure before submitting more events.
 
 ## Key classes and methods
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Entry point | `SubChain.sync_chain()` | `hierarchical/sub_chain.py` |
-| Latest DB block | `OrderingService.get_latest_block()` | `consensus/ordering/service.py` |
-| Load all blocks | `storage.get_blocks_from_db()` | `adapters/database/sqlite_adapter.py` |
-| Rebuild index | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
-| Reset OS counters | `SubChain._reset_ordering_service_state()` | `hierarchical/sub_chain.py` |
-
----
+| Operation | Method | File |
+|:----------|:-------|:-----|
+| Public entry | `SubChain.sync_chain()` | `hierachain/hierarchical/sub_chain/base.py` |
+| Synchronization | `_sync_chain_for_sub_chain()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Load and compare | `_rehydrate_chain_from_ordering_service()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Rebuild | `_apply_rehydrated_blocks()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Queue reconciliation | `_discard_rehydrated_blocks_from_queue()` | `hierachain/hierarchical/sub_chain/ordering.py` |
+| Event indexes | `Blockchain._rebuild_event_indexes()` | `hierachain/core/blockchain.py` |
 
 ## Related
 
-- [Error Mitigation](./error-recovery.md): rollback triggers rehydration when snapshot fails
-- [System Integrity Validation](./integrity-validation.md): validates chain consistency after rehydration
+- [Error Mitigation](./error-recovery.md): separate recovery mechanisms
+- [System Integrity Validation](./integrity-validation.md): caller-initiated integrity reports

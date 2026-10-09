@@ -1,124 +1,81 @@
 ---
-title: "Data Models"
-description: "Describes Event/Block schemas based on hierachain/core/block.py; examples and invariants."
+title: "Mô hình dữ liệu"
+description: "Schema event nội bộ, input REST/SDK và biểu diễn block được tuần tự hóa trong HieraChain."
 icon: material/database-outline
 ---
 
-# Data Models
+# Mô hình dữ liệu
 
-## Mục đích
+## Schema event nội bộ
 
-Trang này định nghĩa các dạng dữ liệu cốt lõi (Event, Block header và Block đầy đủ) để client khác ngôn ngữ có thể đọc và ghi cùng một dữ liệu và các kiểm tra giữ nhất quán.
-
-## Phạm vi
-
-* Dựa trên Arrow schema `EVENT_SCHEMA` trong `hierachain/core/block.py:261`. Đây là Arrow schema duy nhất trong core. Không có `schemas.py` riêng.
-* Áp dụng cho core, Sub-Chain/Main Chain và lớp API nơi dữ liệu được serialize.
-
-## Schema chính
-
-### Event
-
-Event là một sự kiện của domain gắn với entity.
+`EVENT_SCHEMA` trong `hierachain/core/block.py` định nghĩa biểu diễn Arrow:
 
 ```python
-EVENT_SCHEMA = schema([
-  ('entity_id', string),          # Entity ID
-  ('event', string),              # Event type
-  ('timestamp', float64),         # epoch seconds (float)
-  ('details', map<string,string>),# metadata key->string (On-chain)
-  ('details_cid', string),        # IPFS CID (Off-chain reference)
-  ('details_nonce', string),      # Encryption nonce
-  ('data', binary),               # optional binary payload
-])
+from hierachain.core.block import EVENT_SCHEMA
+
+print(EVENT_SCHEMA)
 ```
 
-Ví dụ JSON do API trả về:
+| Field | Arrow type |
+|-------|------------|
+| `entity_id` | `string` |
+| `event` | `string` |
+| `timestamp` | `double` |
+| `details` | `map<string, string>` |
+| `details_cid` | `string` |
+| `details_nonce` | `string` |
+| `data` | `binary` |
 
-```json
-{
-  "entity_id": "PROD-001",
-  "event": "production_complete",
-  "timestamp": 1703088000.0,
-  "details": null,
-  "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-  "details_nonce": "a1b2c3d4e5f6...",
-  "data": null
-}
-```
+Cột `data` chứa byte JSON chuẩn hóa của sự kiện do bước chuyển đổi khối tạo ra. Giá trị details trong Arrow là chuỗi, còn `Block.to_event_list()` khôi phục kiểu JSON và details lồng nhau từ các byte đó. Trường JSON bổ sung được giữ trong payload dù không có cột Arrow riêng. `serialize_event_payload()` bỏ trường cấp cao nhất chứa `bytes` hoặc `bytearray`; giá trị lồng nhau phải tuần tự hóa được thành JSON. `data` là cột payload nội bộ, không phải trường upload file REST.
 
-### Block header và block
+## Input REST và SDK
 
-Không có `BLOCK_HEADER_SCHEMA` hay `TRANSACTION_SCHEMA` trong code. `Block` là class Python thuần trong `hierachain/core/block.py` với `index`, `timestamp`, `previous_hash`, `merkle_root`, `hash`, `events: pa.Table` (dùng `EVENT_SCHEMA`) và `data`. Các helper gồm `calculate_merkle_root()` và `to_event_list()`. `Block.events` là payload Arrow duy nhất. Block không có bảng transaction riêng và không có cột `zk_proof`.
-
-## Ánh xạ Pydantic (API ledger)
-
-API dùng model Pydantic trong `hierachain/api/ledger/schemas.py` để validate. Chúng ánh xạ tới cấu trúc core:
+`EventRequest` trong `hierachain/api/ledger/schemas.py` dùng `event_type`; server tạo event nội bộ với `event` và timestamp server. `entity_id` và `event_type` bắt buộc. Field tùy chọn gồm `details`, `details_cid`, `details_nonce`, `details_metadata`, `sender` và `signature`.
 
 ```python
-class EventRequest(BaseModel):
-    entity_id: str
-    event_type: str
-    details: dict[str, Any] | None
-    details_cid: str | None
-    details_nonce: str | None
-    details_metadata: dict[str, Any] | None
+from hierachain.api.ledger.schemas import EventRequest
 
-class ProofSubmissionRequest(BaseModel):
-    sub_chain_name: str | None
-    proof_hash: str | None
-    metadata: dict[str, Any] | None
+request = EventRequest(
+    entity_id="PROD-001",
+    event_type="production_complete",
+    details={"quantity": 100, "passed": True},
+)
+print(request.model_dump(exclude_none=True))
 ```
 
-Quy tắc chuyển đổi:
+Details giới hạn khoảng 1 MiB JSON serialize và độ sâu lồng 10. Nonce được cung cấp phải có 24 ký tự hex (12 byte). Dùng nonce và metadata xác thực trả về khi upload IPFS mã hóa; CID/nonce minh họa không phải fixture giải mã được. Field mật mã được validate khi cung cấp.
 
-* `EventRequest.details` (dict) trở thành `EVENT_SCHEMA.details` (Map<String, String>).
-* `ProofSubmissionRequest` được lưu dạng `Event` trên Main Chain với type `proof_submission`.
+Endpoint proof dùng tên chain trong URL và trả `ProofSubmissionResponse`. Không có class `ProofSubmissionRequest` trong module schema ledger.
 
-## Serialization
+## Biểu diễn block
 
-* `Block.events` là `pyarrow.Table` trong bộ nhớ. API có thể trả về dạng list dict qua `to_event_list()` hoặc `to_pylist()`.
-* `details` luôn là map<string,string>. Input không phải string sẽ được ép sang string.
-* `data` là binary. Qua JSON bạn phải mã hóa base64, hoặc bỏ qua nếu không cần.
+`Block` là class Python có bảng Arrow `events`. `to_dict()` trả `index`, `events`, `timestamp`, `previous_hash`, `nonce`, `merkle_root`, `hash`, `creator_id` và `signature`. Không có `BLOCK_HEADER_SCHEMA` riêng hoặc bảng event cho loại operation khác.
 
-### Làm việc với dữ liệu binary (field `data`)
-
-Field `data` là `binary` trong Arrow schema. Mã hóa payload nhỏ như PDF, chứng chỉ hoặc object đã serialize sang base64 khi gửi JSON, và giải mã khi nhận.
-
-Ví dụ Python:
-```python
-import base64
-
-# 1. Preparing binary data to send via Event
-raw_data = b"Enterprise visual quality report content"
-encoded_data = base64.b64encode(raw_data).decode('utf-8')
-
-event_payload = {
-    "entity_id": "PROD-001",
-    "event": "quality_inspection",
-    "data": encoded_data
-}
-
-# 2. Reading and decoding binary data from a Block or Event Response
-received_encoded_data = event_payload["data"]
-decoded_data = base64.b64decode(received_encoded_data)
-print(decoded_data.decode('utf-8'))  # "Enterprise visual quality report content"
-```
-
-## Ví dụ thao tác
+Ví dụ dựng block này chỉ minh họa chuyển đổi payload:
 
 ```python
-# Create Block from event list (dict)
-blk = Block(index=1, events=[{...}, {...}], previous_hash="<hash>")
+import time
+from hierachain.core.block import Block
 
-# Get event list as dict
-events = blk.to_event_list()
-
-# Check chain validity
-blockchain.is_chain_valid()
+block = Block(
+    index=1,
+    previous_hash="previous-block-hash",
+    events=[{
+        "entity_id": "PROD-001",
+        "event": "production_complete",
+        "timestamp": time.time(),
+        "details": {"quantity": 100},
+    }],
+)
+assert block.to_event_list()[0]["details"]["quantity"] == 100
 ```
+
+Khối mới dựng chưa phải khối đã được ledger chấp nhận. `Blockchain.add_block()` của lớp cơ sở yêu cầu chữ ký tin cậy, liên kết hợp lệ và toàn vẹn Merkle/hash; MainChain/SubChain bổ sung kiểm tra đồng thuận. Genesis cũng cần chữ ký tin cậy.
+
+`Block.from_dict()` dựng lại dữ liệu và so sánh `hash` dạng chuỗi được cung cấp với hash header tính lại. Hàm chấp nhận `merkle_root` được cung cấp mà không tính lại, nên byte sự kiện bị thay đổi vẫn có thể vượt qua bước chỉ kiểm tra header này. Dùng `BlockVerifier` với khóa công khai tin cậy hoặc phương thức xác thực của chuỗi để kiểm tra toàn vẹn sự kiện và chữ ký. `Block.validate_structure()` kiểm tra bảng sự kiện có `entity_id`, `event` và `timestamp`; hàm không xác thực mọi kiểu Arrow hay giá trị sự kiện.
 
 ## Liên quan
 
-* Core module: [Core](../modules/core.md)
-* API Ledger: [API Ledger](api-ledger.md)
+* [Schema dữ liệu](data-schema.md)
+* [API Ledger](api-ledger.md)
+* [Module Core](../modules/core.md)

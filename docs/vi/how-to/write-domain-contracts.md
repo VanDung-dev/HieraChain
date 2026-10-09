@@ -57,7 +57,7 @@ from hierachain.domains.events.event_creators import create_quality_check
 chain = DomainChain(name="logistics_chain", domain_type="logistics")
 chain.register_entity("CONTAINER-409", {"origin": "Port A"})
 
-# Tạo sự kiện kiểm tra chất lượng đã qua kiểm thực
+# Create a validated quality check event
 event = create_quality_check(
     entity_id="CONTAINER-409",
     check_type="temperature_compliance",
@@ -65,7 +65,7 @@ event = create_quality_check(
     details={"temperature_c": 4.2}
 )
 
-# Nạp sự kiện vào chuỗi nghiệp vụ
+# Append event to the domain chain
 chain.add_domain_event(event)
 ```
 
@@ -75,16 +75,16 @@ chain.add_domain_event(event)
 
 1. Đăng ký: Đăng ký thực thể mới cần theo dõi trên chuỗi.
 2. Cập nhật trạng thái: Ghi nhận các trạng thái chuyển giao như `in_progress`, `quality_approved` và `completed`.
-3. Chỉ số đo lường: `OperationMetricsTracker` ghi nhận độ trễ thực thi và tỷ lệ thành công phục vụ báo cáo kiểm toán.
+3. Chỉ số đo lường: `OperationMetricsTracker` ghi nhận tổng số thao tác và tỷ lệ thành công tổng hợp. Tracker không ghi nhận độ trễ thực thi hoặc phân nhóm kết quả theo loại thao tác.
 
 ```python
-# Đăng ký thực thể
+# Register an entity
 chain.register_entity(
     entity_id="CONTAINER-409",
     entity_data={"origin": "Port A", "destination": "Port B"}
 )
 
-# Cập nhật trạng thái thực thể
+# Update entity status
 chain.update_entity_status(
     entity_id="CONTAINER-409",
     status="in_transit",

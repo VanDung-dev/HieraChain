@@ -75,7 +75,7 @@ chain.add_domain_event(event)
 
 1. Registration: Register a new tracked entity on the chain.
 2. Status updates: Record transition states such as `in_progress`, `quality_approved`, and `completed`.
-3. Metrics: `OperationMetricsTracker` records execution latencies and success rates for audit reporting.
+3. Metrics: `OperationMetricsTracker` records aggregate operation counts and success rates. It does not record execution latency or break results down by operation type.
 
 ```python
 # Register an entity

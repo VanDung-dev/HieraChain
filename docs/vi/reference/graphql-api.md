@@ -41,8 +41,8 @@ Lọc event theo tên chain, loại event và giới hạn kết quả.
 ```graphql
 query FilterEvents {
   events(
-    chainName: "main_chain", 
-    limit: 10, 
+    chainName: "main_chain",
+    limit: 10,
     eventType: "user_registered"
   ) {
     entityId
@@ -109,3 +109,5 @@ mutation CreateNewEvent {
   }
 }
 ```
+
+Mutation ghi vào Sub-Chain chỉ xác nhận submission. `blockIndex` có thể là index block mới nhất đã có, không phải vị trí event mới; đọc event/block đã finalize để kiểm chứng. Schema không cung cấp hợp đồng finality hoặc idempotency cho mutation.

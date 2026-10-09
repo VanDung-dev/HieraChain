@@ -1,6 +1,6 @@
 ---
 title: "Proof of Authority (PoA)"
-description: "Giao thức đồng thuận dựa trên Authority, với định danh nút, chữ ký block và luân phiên Round-Robin."
+description: "Thành viên authority, chữ ký block, kiểm tra thời gian tùy chọn và helper lập lịch."
 icon: material/account-check-outline
 ---
 
@@ -8,22 +8,18 @@ icon: material/account-check-outline
 
 ## Tổng quan
 
-**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên định danh dành cho **mạng nội bộ doanh nghiệp hoặc tổ chức**, trong đó một MainChain quản lý các Sub-Chain nội bộ. Trong kiến trúc đồng thuận hai tầng của HieraChain, `SubChain` mặc định dùng PoA cho event nội bộ mà không cần đồng thuận giữa các tổ chức.
+Proof of Authority (PoA) là giao thức đồng thuận dựa trên định danh dành cho mạng nội bộ doanh nghiệp hoặc tổ chức, trong đó một MainChain quản lý các Sub-Chain nội bộ. Trong kiến trúc đồng thuận hai tầng của HieraChain, `SubChain` mặc định dùng PoA cho event nội bộ mà không cần đồng thuận giữa các tổ chức.
 
 Đối với kịch bản liên kết đồng thuận giữa các MainChain của nhiều doanh nghiệp độc lập, xem [Proof of Federation (PoF)](./pof.md).
-
----
 
 ## Nguyên lý hoạt động
 
 Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của các nút tham gia:
-1.  **Định danh nút**: Mỗi Authority được gán một `authority_id` và một cặp khóa ký số duy nhất.
-2.  **Lịch trình luân phiên (Round-Robin)**: Hệ thống sử dụng thuật toán tuần tự để xác định nút nào có quyền tạo khối tiếp theo dựa trên chỉ số khối (`BlockIndex % TotalAuthorities`).
-3.  **Xác thực chữ ký**: Mỗi khối mới phải được ký bởi Authority được chỉ định. Các nút khác sẽ xác thực chữ ký này trước khi chấp nhận khối vào sổ cái.
+1. Đăng ký ID authority và khóa công khai được phê duyệt bằng `add_authority()`.
+2. `can_create_block(authority_id)` kiểm tra tư cách thành viên. Nó không yêu cầu authority phải đến lượt trong vòng luân phiên.
+3. `validate_block()` kiểm tra cấu trúc, thời gian, sự kiện và chữ ký của authority đã đăng ký. `get_next_authority()` cung cấp helper lập lịch round-robin, nhưng các phương thức tạo và xác minh block này không bắt buộc tuân theo kết quả đó.
 
----
-
-## Các tính năng chính
+## Chức năng
 
 <div class="grid cards" markdown>
 
@@ -43,13 +39,11 @@ Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của c
 
     ---
 
-    Authority được chỉ định ký từng block. Các nút khác xác minh chữ ký trước khi chấp nhận block.
+    Chữ ký block phải xác minh được bằng khóa của authority đã đăng ký. Luồng xác minh không yêu cầu người ký là authority tiếp theo do helper lập lịch trả về.
 
 </div>
 
----
-
-## Tham số cấu hình quan trọng
+## Tham số cấu hình
 
 | Tham số | Ý nghĩa | Mặc định |
 | :--- | :--- | :--- |
@@ -63,34 +57,28 @@ Orderer của SubChain vẫn gom event theo `block_size` và `batch_timeout` (m�
 
 Với triển khai hiện có, cấu hình tường minh `HRC_BLOCK_INTERVAL=10` giữ khoảng cách tối thiểu 5 giây như trước. Dùng `HRC_BLOCK_INTERVAL=0` để bỏ khoảng cách này và cấu hình nhất quán giữa bên tạo block và validator: validator giữ khoảng cách cũ sẽ từ chối các block nhanh hơn. Các block đã đáp ứng khoảng cách cũ vẫn hợp lệ với mặc định mới.
 
----
-
 ## Ví dụ triển khai
 
 ```python
 from hierachain.consensus import ProofOfAuthority
+from hierachain.security.security_utils import KeyPair
 
-# Khởi tạo giao thức PoA
+# Generate temporary keys for this library example.
+# Deployments provision stable keys and register approved public keys.
+hq_key = KeyPair.generate()
+branch_key = KeyPair.generate()
 poa = ProofOfAuthority()
+poa.add_authority("node_hq", metadata={"public_key": hq_key.public_key})
+poa.add_authority("node_branch_1", metadata={"public_key": branch_key.public_key})
 
-# Cấp quyền cho các nút tham gia đồng thuận
-poa.add_authority("node_hq", metadata={"org": "Headquarters", "pubkey": "..."})
-poa.add_authority("node_branch_1", metadata={"org": "Branch 01", "pubkey": "..."})
-
-# Kiểm tra quyền tạo khối của nút hiện tại
-if poa.can_create_block("node_hq"):
-    # Tiến hành đóng khối...
-    pass
+assert poa.can_create_block("node_hq")
+assert poa.can_create_block("node_branch_1")
 ```
-
----
 
 ## Ưu điểm và Hạn chế
 
-*   **Ưu điểm**: Tiết kiệm tài nguyên (không cần CPU mạnh để đào), thông lượng cao, quản trị minh bạch.
-*   **Hạn chế**: Tính phi tập trung thấp hơn so với BFT, chỉ phù hợp cho mạng có sự tin tưởng nhất định giữa các thành viên.
-
----
+* Kiểm tra thành viên và chữ ký authority không dùng cơ chế đồng thuận dựa trên tính toán công việc. Throughput phụ thuộc vào batching, đồng bộ journal và lưu trữ.
+*   Hạn chế: Tính phi tập trung thấp hơn so với BFT, chỉ phù hợp cho mạng có sự tin tưởng nhất định giữa các thành viên.
 
 ## Liên quan
 

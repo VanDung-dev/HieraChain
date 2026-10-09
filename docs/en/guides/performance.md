@@ -44,4 +44,4 @@ Configure the node signing identity and trusted keys, and use an isolated databa
 ## System Observation
 
 * Use `monitoring/performance_monitor.py` to get CPU/RAM metrics.
-* Enable `ResourceGuardMiddleware` for load shedding during peak load.
+* Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.

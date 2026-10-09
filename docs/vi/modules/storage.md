@@ -56,12 +56,10 @@ HieraChain chia storage thành các lớp để cân bằng giữa độ bền v
 
 ```mermaid
 graph TD
-    A[New Block Committed] --> B[World State Manager]
-    B --> C{Extract Events}
-    C --> D[Apply Business Logic]
-    D --> E[Update State Cache]
-    E --> F[Persist to Backend]
-    F --> G[(SQL / Redis / Memory)]
+    A[Verified finalized block] --> B[WorldState.apply_block]
+    B --> C[In-memory entity projection]
+    D[Recovered signed blocks] --> B
+    C --> E[Diagnostic projection root]
 ```
 
 ---
@@ -89,7 +87,7 @@ Không có `models.py` hay `BlockModel`/`EventModel` kiểu SQLAlchemy. Bảng �
 
 ### Index và truy vấn
 
-World State index mọi entity theo `entity_id` và `timestamp`. Với Redis adapter, các index này được lưu dạng Sorted Set, nên truy vấn lịch sử của một entity chạy nhanh.
+`WorldState` giữ projection entity mới nhất trong bộ nhớ và dựng lại từ block đã xác minh. Nó không tự ghi SQL hoặc Redis. Index event của chain và Redis adapter riêng hỗ trợ truy vấn lịch sử, tách biệt với projection này.
 
 ---
 

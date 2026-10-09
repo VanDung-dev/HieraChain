@@ -85,11 +85,11 @@ graph TD
     end
 
     E -- "Submit Proof (Hash + ZKP)" --> F
-    
+
     subgraph "Hierarchy Manager"
         I[Transaction Manager 2PC]
     end
-    
+
     I -. "Coordinate" .-> A
 ```
 

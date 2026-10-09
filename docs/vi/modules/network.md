@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Tổng quan
 
-Module **Network** quản lý giao tiếp giữa các node HieraChain qua **ZeroMQ**. Module dùng các cơ chế mật mã để mã hóa và xác thực thông điệp.
+Module **Network** quản lý giao tiếp giữa các node HieraChain qua **ZeroMQ**. `SecureConnectionManager` cung cấp tùy chọn mã hóa transport bằng CurveZMQ, MSP handshake và kiểm tra chữ ký thông điệp. `NetworkClient` của API server tạo trực tiếp `ZmqNode`, nên luồng này không tự chạy handshake hoặc kiểm tra chữ ký của manager.
 
 ---
 
 ## Kiến trúc Bảo mật Đa tầng (Layered Security)
 
-HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
+`SecureConnectionManager` cung cấp các thành phần bảo mật này khi ứng dụng sử dụng nó; chúng không tự động hoạt động trên mọi kết nối `NetworkClient`:
 
 <div class="grid cards" markdown>
 
@@ -24,9 +24,9 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
     __Công nghệ__: Curve25519
 
-    * Mã hóa toàn bộ đường truyền giữa các Socket ZeroMQ.
+    * Mã hóa đường truyền giữa các socket ZeroMQ khi được cấu hình với transport key cục bộ và public key của peer.
     * Đảm bảo tính riêng tư (Privacy) và chống nghe lén trên mạng Web2.
-    * Sử dụng khóa ephemeral để đảm bảo Forward Secrecy.
+    * `SecureConnectionManager` tạo CurveZMQ keypair cho transport; `NetworkClient` riêng của API server dùng các transport key được cấu hình cho `ZmqNode`.
 
 *   :material-account-check:{ .lg .middle } __Lớp 2: MSP Handshake (Identity)__
 
@@ -34,7 +34,7 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
     __Công nghệ__: Ed25519 + Certificates
 
-    * Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).
+    * Xác thực danh tính nút qua chứng chỉ MSP (Membership Service Provider) khi handshake được chạy.
     * Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.
     * Quy trình Handshake 2 bước: `INIT` và `ACK`.
     * Ràng buộc subject và khóa ký của chứng chỉ còn hiệu lực với routing ID
@@ -46,9 +46,9 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
     __Công nghệ__: Ed25519 + Nonce + Timestamp
 
-    * Mọi thông điệp P2P đều được ký số (Digital Signature).
+    * Kiểm tra chữ ký thông điệp dữ liệu do `require_signatures` điều khiển; mặc định là `False` trong base, development và test settings, và `True` trong `ProductionSettings`.
     * Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).
-    * Cả hai thông điệp handshake đều có `timestamp` và `nonce` đã ký, được replay gate của transport chấp nhận.
+    * Chữ ký handshake được kiểm tra riêng; các thông điệp này có `timestamp` và `nonce` đã ký, được replay gate của transport chấp nhận.
 
 </div>
 
@@ -72,11 +72,14 @@ Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket **ROUTER
 2.  Thực hiện Handshake để trao đổi và xác thực chứng chỉ MSP.
 3.  Quản lý danh sách các Peer đã được xác thực (`authenticated_peers`).
 
+`NetworkClient` của API server hiện không nối manager này vào transport `ZmqNode`.
+
 ### 3. Peer Trust Manager (`peer_trust_manager.py`)
 Quản lý độ tin cậy của các nút lân cận:
 
-*   **Policy Enforcement**: Áp dụng các chính sách `strict` (chỉ cho phép allowlist) hoặc `discovery` (cho phép tự động khám phá).
-*   **Reputation**: Đánh dấu và ngắt kết nối với các Peer có hành vi xấu (sai chữ ký, gửi thông điệp rác).
+*   **Policy Enforcement**: Hỗ trợ `open` và `strict`. `open` tin cậy peer trừ khi peer nằm trong blocklist; `strict` yêu cầu peer có trong allowlist.
+*   **Peer lists**: Allowlist và blocklist được quản lý tường minh; manager không chấm điểm reputation hay tự ngắt kết nối peer vì spam.
+*   **Signed messages**: `SecureConnectionManager` loại bỏ chữ ký thông điệp dữ liệu không hợp lệ khi bật kiểm tra chữ ký.
 
 ---
 
@@ -88,15 +91,15 @@ sequenceDiagram
     participant NodeB as Node B (Responder)
 
     Note over NodeA, NodeB: 1. Curve25519 Encrypted Channel Established
-    
+
     NodeA->>NodeB: HANDSHAKE_INIT (MSP Cert + Ed25519 Sig)
-    
+
     Note right of NodeB: Verify Trust Policy<br/>Verify MSP Certificate<br/>Verify Handshake Signature
-    
+
     NodeB-->>NodeA: HANDSHAKE_ACK (Success + Ed25519 Sig)
-    
+
     Note left of NodeA: Verify ACK Signature
-    
+
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
 
@@ -114,7 +117,7 @@ thiếu hay không khớp đều bị từ chối.
 ```python
 from hierachain.network.secure_connection import SecureConnectionManager
 
-# Khởi tạo manager tích hợp MSP
+# Initialize manager with MSP integration
 secure_node = SecureConnectionManager(
     node_id="node_001",
     port=5001,
@@ -122,14 +125,16 @@ secure_node = SecureConnectionManager(
     identity_mgr=identity_instance
 )
 
-await secure_node.start()
+async def start_configured_node() -> None:
+    await secure_node.start()
 ```
 
 ### 2. Gửi thông điệp có ký số
 ```python
-# Tự động ký và gửi qua kênh đã mã hóa
-payload = {"event": "block_proposal", "data": {...}}
-await secure_node.send_secure("peer_002", payload)
+# Automatically signs and sends over the encrypted channel
+async def send_proposal() -> bool:
+    payload = {"event": "block_proposal", "data": {"block_index": 1}}
+    return await secure_node.send_secure("peer_002", payload)
 ```
 
 ---

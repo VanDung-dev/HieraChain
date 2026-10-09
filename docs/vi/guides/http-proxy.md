@@ -21,16 +21,16 @@ HieraChain không thay thế Cơ sở dữ liệu hiện có mà hoạt động 
 
 ```mermaid
 graph TD
-    User((Người dùng/Ứng dụng)) --> Web2[Hạ tầng Web2 Enterprise<br/>WAF / LB / Gateway]
-    
-    Web2 -- "Dữ liệu cần xác thực" --> HC[HieraChain API Node]
-    Web2 -- "Dữ liệu thường" --> DB_Web2[(Web2 Database)]
-    
-    subgraph HieraChain_Internal [Hệ sinh thái HieraChain]
-        HC --> DB_HC[(HieraChain Private DB<br/>Lưu trữ bằng chứng)]
+    User((User/Application)) --> Web2[Enterprise Web2 Infrastructure<br/>WAF / LB / Gateway]
+
+    Web2 -- "Data requiring verification" --> HC[HieraChain API Node]
+    Web2 -- "Regular data" --> DB_Web2[(Web2 Database)]
+
+    subgraph HieraChain_Internal [HieraChain Ecosystem]
+        HC --> DB_HC[(HieraChain Private DB<br/>Proof Storage)]
     end
-    
-    HC -. "Kiểm tra & Đối soát" .-> DB_Web2
+
+    HC -. "Cross-check & Verify" .-> DB_Web2
 ```
 
 ### 2. Triết lý "Plugin Layer"
@@ -68,5 +68,5 @@ Nếu hệ thống cần HTTP/2 hoặc HTTP/3 cho kết nối từ client, hãy 
 Dù chỉ chạy HTTP/1.1, HieraChain vẫn duy trì các lớp bảo mật nội tại:
 
 * **API Key Verification**: Xác thực quyền truy cập ở mức ứng dụng.
-* **Trusted Proxies**: Chỉ chấp nhận yêu cầu từ các IP của Load Balancer được định nghĩa trước (qua biến `HRC_TRUSTED_PROXIES`).
+* **Trusted Proxies**: `HRC_TRUSTED_PROXIES` quy định peer IP nào được phép cung cấp header `X-Forwarded-For` đáng tin cậy; thiết lập này không từ chối request từ IP khác. Hãy giới hạn truy cập mạng ở lớp proxy, firewall hoặc network policy.
 * **Payload Sanitization**: Làm sạch dữ liệu đầu vào để chống các cuộc tấn công tầng ứng dụng.

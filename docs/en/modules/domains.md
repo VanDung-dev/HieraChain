@@ -18,7 +18,7 @@ Components are organized into three sub-packages under `hierachain/domains/`:
 
 * `BaseChain`: Abstract base class managing chain states, entity registries, and event pipelines.
 * `DomainChain`: Concrete implementation supporting domain operations, operation validation, and transaction managers.
-* `chains/metrics.py`: Tracks operational metrics such as success rates and execution latencies.
+* `chains/metrics.py`: Tracks aggregate operation counts and rates; it does not record execution latency.
 
 ### 2.2 Enterprise events (`events/base_event.py`, `events/event_creators.py`)
 
@@ -38,7 +38,7 @@ Components are organized into three sub-packages under `hierachain/domains/`:
 1. Registration: Links a unique `entity_id` to an entity type and metadata attributes.
 2. Status updates: Tracks sequential states (`in_progress`, `quality_approved`, `completed`).
 3. Resource allocation: Tracks assigned and reserved resources. `assigned` adds a resource to `allocated_resources` (and removes its reservation); `reserved` adds it to `reserved_resources`; `released` removes it from either list; `transferred` moves an allocated resource to another registered entity named by `details.target_entity_id`. Invalid transitions are rejected before the event is submitted.
-4. Operation metrics: `OperationMetricsTracker` calculates execution metrics per operation type.
+4. Operation metrics: `OperationMetricsTracker` exposes aggregate operation counts and rates, with no latency or per-operation-type breakdown.
 
 Domain events require a registered entity. `register_entity` stores the supplied initial data in the Sub-Chain registration event so the registry can be reconstructed after restart; that data is ledger content and must not contain secrets. Older registration events without `initial_data` restore the supported registration metadata only.
 
@@ -54,22 +54,34 @@ Cross-chain operations coordinating multiple Sub-Chains execute through the Two-
 
 ```mermaid
 sequenceDiagram
+    participant Coordinator
     participant Source as Source Sub-Chain
     participant Target as Target Sub-Chain
-    
-    Note over Source, Target: Phase 1: Prepare
-    Source->>Target: Prepare transaction (ID, payload)
-    Target-->>Source: Prepared OK or reject
-    
-    Note over Source, Target: Phase 2: Commit or rollback
+
+    Note over Coordinator, Target: Phase 1: Prepare
+    Coordinator->>Source: Prepare (ID, payload)
+    Source-->>Coordinator: Prepared OK or reject
+    Coordinator->>Target: Prepare (ID, payload)
+    Target-->>Coordinator: Prepared OK or reject
+
+    Note over Coordinator, Target: Phase 2: Commit or rollback
     alt All chains prepared
-        Source->>Target: Commit transaction
-        Target->>Target: Finalize block
-    else Failure detected
-        Source->>Target: Rollback transaction
-        Target->>Target: Discard pending state
+        Coordinator->>Coordinator: Persist durable COMMIT decision (phase=commit)
+        Coordinator->>Source: Commit
+        Source-->>Coordinator: ACK after durable event-pair read-back
+        Coordinator->>Target: Commit
+        Target-->>Coordinator: ACK after durable event-pair read-back
+        Coordinator->>Coordinator: Persist COMMITTED
+        Note over Source, Target: Block finalization may complete asynchronously
+    else Prepare failed before COMMIT decision
+        Coordinator->>Source: Rollback
+        Source-->>Coordinator: Rollback result
+        Coordinator->>Target: Rollback
+        Target-->>Coordinator: Rollback result
     end
 ```
+
+After the durable COMMIT decision, a missing participant ACK leaves the operation `IN_DOUBT` for forward recovery. The coordinator does not roll back a commit decision that has already been persisted.
 
 ## 5. Compliance and cross-chain tracing
 
@@ -88,7 +100,7 @@ tracer = EntityTracer(hierarchy_manager)
 trace_results = tracer.trace_entity("ORDER-789")
 
 print(f"Total events found: {trace_results['total_events']}")
-for chain_name, summary in trace_results.get("chain_summaries", {}).items():
+for chain_name, summary in trace_results.get("chain_details", {}).items():
     print(f"Activity at {chain_name}: {summary['total_events']} events")
 ```
 

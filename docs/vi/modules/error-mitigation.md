@@ -27,7 +27,7 @@ Custom field validator trả về `(is_valid, message)`. Nếu callback ném exc
 * Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.
 * Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.
 
-`read_since(cursor=None)` flush và fsync writer đang hoạt động, đọc frame bền vững và trả `(records, (inode, byte_offset))`. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.
+`read_since(cursor=None)` flush writer đang hoạt động và chỉ fsync khi trạng thái tệp chưa xác định hoặc đã thay đổi. Append thành công đã fsync trước khi `log_event()` trả về. Phương thức đọc frame bền vững và trả `(records, (inode, byte_offset))`. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khi cần đồng bộ khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.
 
 Mỗi lần ghi lưu offset bắt đầu. Nếu ghi hoặc fsync frame thất bại, journal cắt file về offset đó và fsync phần cắt trước khi cho phép lần ghi tiếp theo. Nếu thao tác cắt hoặc fsync phần cắt thất bại, writer bị vô hiệu hóa và từ chối ghi cho đến khi được đóng rồi mở lại thành instance mới; khi khởi động, journal sửa phần cuối chưa hoàn chỉnh của file đang hoạt động.
 
@@ -67,14 +67,7 @@ Bên đọc log cần cập nhật bộ lọc sự kiện: `auto_scaling_trigger
 
 ## 3. Chiến lược phân loại lỗi
 
-`ErrorClassifier` trong `error_classifier.py` phân loại lỗi theo mức độ nghiêm trọng và đề xuất hành động xử lý:
-
-| Mức độ nghiêm trọng | Ý nghĩa | Hành động xử lý |
-| :--- | :--- | :--- |
-| INFO / WARNING | Bất thường vận hành nhỏ | Ghi log và tiếp tục |
-| ERROR | Lỗi xác thực sự kiện hoặc lỗi xử lý tạm thời | Thử lại kèm giãn cách hoặc từ chối |
-| CRITICAL | Hỏng trạng thái hoặc không khớp Merkle root | Từ chối, ghi log và yêu cầu khôi phục vận hành |
-| FATAL | Lỗi phần cứng hoặc lỗi đồng thuận không thể phục hồi | Khóa hệ thống khẩn cấp |
+`classify_error()` trả về `ErrorInfo` gồm category, `PriorityLevel` và mitigation strategy. Priority được tính từ impact và likelihood. `PriorityLevel` có các giá trị `CRITICAL`, `HIGH`, `MEDIUM` và `LOW`.
 
 ## 4. Nhật ký sự kiện
 
@@ -99,4 +92,4 @@ journal.log_event(event_dict)
 
 `ErrorClassifier` gọi callback lockdown được cung cấp cho lỗi security mức HIGH hoặc CRITICAL và lỗi performance mức CRITICAL. `DataValidator.validate_table()` kiểm tra kiểu Arrow bắt buộc ở mọi mức; strict kiểm tra thêm null. Kiểm tra consistency so sánh từng hàng theo thứ tự, gồm details JSON đã giải mã. Journal duyệt thư mục và mở tệp qua descriptor với cờ no-follow để từ chối symlink.
 
-Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của `details` và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem [quyền sở hữu journal cục bộ](../consensus/ordering.md#quyền-sở-hữu-journal-cục-bộ).
+Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của `details` và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem [quyền sở hữu journal cục bộ](../consensus/ordering.md#local-journal-ownership).

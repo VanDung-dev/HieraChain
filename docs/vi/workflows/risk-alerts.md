@@ -6,110 +6,70 @@ icon: material/alert
 
 # Cảnh báo rủi ro
 
-## Tổng quan
+## Phạm vi
 
-HieraChain theo dõi sức khỏe hệ thống trên 4 lĩnh vực rủi ro (đồng thuận, bảo mật, hiệu năng, lưu trữ). Khi chỉ số vượt ngưỡng, `AlertManager` tạo cảnh báo, áp dụng cooldown để chống lặp, gửi qua Email/Webhook và tự leo thang nếu không được xác nhận sau thời gian cấu hình.
+`AlertManager` trong `hierachain/monitoring/alert_system.py` đánh giá giá trị metric được cung cấp qua `check_metric()`. Ứng dụng chủ kết nối các bộ thu thập metric với phương thức này. Manager không tự động nhận mọi lỗi đồng thuận, chứng chỉ, storage hay báo cáo tính toàn vẹn.
 
----
+Manager giữ các cảnh báo đang hoạt động và lịch sử có giới hạn trong bộ nhớ. Thiết lập quy tắc điều khiển thời gian chờ giữa các cảnh báo, loại bỏ trùng lặp và nâng cấp. Thông báo dùng một worker với hàng đợi tối đa 128 cảnh báo; worker gọi tuần tự các notifier đã cấu hình.
 
 ## Biểu đồ luồng
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant PM as 📊 PerformanceMonitor
-    participant AM as 🚨 AlertManager
-    participant AD as 📈 AnomalyDetector
-    participant NTF as 📧 Email / Webhook Notifier
-
-    PM->>AM: check_metric(metric_name, value, source)
-    AM->>AD: add_data_point(metric_name, value)
-    AM->>AM: _evaluate_rule_condition(rule, value)
-    AM->>AM: _is_in_cooldown(rule)
-
-    alt Vượt ngưỡng quy định VÀ không trong cooldown
-        AM->>AM: _create_alert(rule, value, source)
-        AM->>AM: _is_duplicate_alert() → triệt tiêu nếu trùng lặp
-        AM->>AM: active_alerts[alert_id] = Alert
-        AM->>NTF: _send_notifications(alert)
-        NTF-->>AM: Thành công / Thất bại
-
-        Note over AM: Kích hoạt bộ đếm thời gian leo thang (mặc định 30 phút)
-
-        alt Cảnh báo không được xác nhận trong thời gian chờ
-            AM->>AM: _escalate_alert(alert_id)<br/>alert.escalation_level += 1
-            AM->>NTF: Gửi lại thông báo với tiền tố ESCALATED
-        end
+    participant App as Application metric source
+    participant AM as AlertManager
+    participant Worker as Notification worker
+    participant Notifier as Email or webhook
+    App->>AM: check_metric(metric_name, value, source_component)
+    AM->>AM: Record anomaly baseline data
+    AM->>AM: Evaluate matching enabled rules and cooldown
+    opt Rule condition passes and not suppressed
+        AM->>AM: create_alert(rule, value, source_component)
+        AM->>AM: Store alert and queue notification
+        Worker->>Notifier: send_alert(), one notifier at a time
+        Notifier-->>Worker: Success or failure
+        Worker->>AM: Update notification statistics
+        AM->>AM: Schedule escalation if escalation_time > 0
     end
-
-    Note over AM: Người vận hành xác nhận hoặc hệ thống tự động giải quyết
-
-    AM->>AM: acknowledge_alert(alert_id) → ACKNOWLEDGED (Đã xác nhận)
-    AM->>AM: resolve_alert(alert_id) → RESOLVED (Đã xử lý) + xóa khỏi active_alerts
+    opt Timer fires while alert remains ACTIVE
+        AM->>AM: Increment escalation level
+        AM->>Worker: Queue critical escalation notification
+    end
+    App->>AM: acknowledge_alert() or resolve_alert()
 ```
 
----
+## Quy tắc metric mặc định
 
-## Cấp độ nghiêm trọng
+| Quy tắc | Điều kiện | Mức độ |
+|:-----|:----------|:---------|
+| `CPU_HIGH` | `cpu_usage > 85` | `WARNING` |
+| `CPU_CRITICAL` | `cpu_usage > 95` | `CRITICAL` |
+| `MEMORY_HIGH` | `memory_usage > 85` | `WARNING` |
+| `CONSENSUS_FAILURE` | `consensus_success_rate < 95` | `CRITICAL` |
+| `RISK_DETECTED` | `risk_count > 0` | `WARNING` |
 
-| Cấp độ | Ví dụ chỉ số | Tự leo thang sau |
-|:-------|:----------------------|:----------------------|
-| `INFO` | Chỉ số dao động bình thường | Không |
-| `WARNING` | CPU > 85%, rủi ro nhỏ | 30 phút |
-| `CRITICAL` | CPU > 95%, tỷ lệ đồng thuận < 95% | 5 phút |
-| `EMERGENCY` | Khai báo thủ công hoặc lỗi kép | Ngay |
+Ứng dụng phải cung cấp các giá trị này. Thêm quy tắc cho metric khác bằng `add_alert_rule()`. `check_metric()` ghi mỗi giá trị làm dữ liệu đường cơ sở cho phát hiện bất thường trước khi đánh giá các quy tắc đang bật khớp metric và thời gian chờ. Quy tắc mặc định không dùng phát hiện bất thường làm điều kiện kích hoạt. Quy tắc được cấu hình rõ với `condition="anomaly"` có thể gọi `AnomalyDetector.is_anomaly()` qua `check_metric()` và kích hoạt cảnh báo khi điều kiện được thỏa mãn.
 
----
+`AlertRule` mặc định có thời gian chờ 300 giây, thời gian nâng cấp 1.800 giây, bật loại bỏ trùng lặp và `auto_resolve=False`. Chỉ mức độ cảnh báo không quyết định nâng cấp sau năm phút hay ngay lập tức. Xác nhận hoặc giải quyết cảnh báo hủy bộ hẹn giờ đang chờ. Metric trở lại bình thường không tự động giải quyết cảnh báo mặc định.
 
-## Lĩnh vực giám sát rủi ro
+## Lỗi thông báo
 
-| Lĩnh vực | Chỉ số chính |
-|:---------|:-------------------------------|
-| **Đồng thuận** | `node_count >= 3f+1`, thời gian bầu leader, tỷ lệ xác thực thông điệp |
-| **Bảo mật** | Thời hạn chứng chỉ (ngày còn lại), tỷ lệ xác thực lỗi, độ mạnh mã hóa |
-| **Hiệu năng** | CPU %, RAM %, kích thước hàng đợi sự kiện, độ trễ hoàn tất khối |
-| **Lưu trữ** | Kích thước DB sổ cái, tuổi bản sao lưu (giờ kể từ lần cuối) |
+Thao tác email và webhook có thời gian chờ 10 giây. Webhook notifier gửi một yêu cầu; không có cơ chế thử lại tích hợp sẵn. Notifier thất bại làm tăng `notifications_failed`, và notifier tiếp theo đã cấu hình vẫn được thử. Không có trạng thái cảnh báo `notification_failed`.
 
----
-
-## Các bước chi tiết
-
-| Bước | Mô tả |
-|:-----|:------|
-| **1. Kiểm tra chỉ số** | `AlertManager.check_metric()` so sánh từng chỉ số với quy tắc. |
-| **2. Phát hiện bất thường** | `AnomalyDetector` dùng baseline thống kê để gắn cờ điểm bất thường. |
-| **3. Kiểm tra cooldown** | Quy tắc có cooldown để tránh bão cảnh báo. |
-| **4. Kiểm tra trùng lặp** | `_is_duplicate_alert()` loại bỏ nếu cùng quy tắc và cùng nguồn đã có cảnh báo đang hoạt động. |
-| **5. Gửi thông báo** | Gửi đồng thời tới Email và/hoặc Webhook đã cấu hình. |
-| **6. Leo thang** | Cảnh báo không xác nhận sẽ tăng `escalation_level += 1` và gửi lại. |
-| **7. Hoàn tất vòng đời**| Vận hành xác nhận thành `ACKNOWLEDGED`; chỉ số về mức an toàn thành `RESOLVED`. |
-
----
-
-## Xử lý lỗi
-
-| Tình huống | Hành vi |
-|:-----------|:--------|
-| Lỗi gửi Email | Ghi log; vẫn cố gửi qua Webhook |
-| Webhook offline | Thử lại 1 lần; ghi log; đánh dấu `notification_failed` |
-| Bão cảnh báo (quá nhiều trùng lặp) | Cooldown tự loại bỏ cảnh báo trùng từ cùng quy tắc |
-
----
+Nếu hàng đợi thông báo đầy, manager ghi nhận một thông báo thất bại nhưng vẫn giữ cảnh báo trong lịch sử. Gọi `AlertManager.close()` để ngừng tiếp nhận thông báo mới và chờ hoàn tất công việc gửi trong giới hạn đã đặt. Tiến trình thoát đột ngột có thể làm mất thông báo trong hàng đợi và trạng thái cảnh báo trong bộ nhớ.
 
 ## Lớp và phương thức chính
 
-| Bước | Lớp / Phương thức | Tệp |
-|:-----|:--------------|:-----|
-| Kiểm tra chỉ số | `AlertManager.check_metric()` | `monitoring/alert_system.py` |
-| Phát hiện bất thường | `AnomalyDetector.is_anomaly()` | `monitoring/alert_system.py` |
-| Tạo cảnh báo | `AlertManager._create_alert()` | `monitoring/alert_system.py` |
-| Gửi Email | `EmailNotifier.send_alert()` | `monitoring/alert_system.py` |
-| Gửi Webhook | `WebhookNotifier.send_alert()` | `monitoring/alert_system.py` |
-| Leo thang | `AlertManager._escalate_alert()` | `monitoring/alert_system.py` |
-| Xác nhận | `AlertManager.acknowledge_alert()` | `monitoring/alert_system.py` |
-
----
+| Thao tác | Phương thức | Tệp |
+|:----------|:-------|:-----|
+| Kiểm tra metric | `AlertManager.check_metric()` | `hierachain/monitoring/alert_system.py` |
+| Truy vấn đường cơ sở | `AnomalyDetector.is_anomaly()` | `hierachain/monitoring/alert_system.py` |
+| Tạo cảnh báo | `AlertManager.create_alert()` | `hierachain/monitoring/alert_system.py` |
+| Thông báo | `EmailNotifier.send_alert()` / `WebhookNotifier.send_alert()` | `hierachain/monitoring/alert_system.py` |
+| Nâng cấp | `AlertManager._escalate_alert()` | `hierachain/monitoring/alert_system.py` |
+| Mặc định quy tắc | `AlertRule` | `hierachain/monitoring/types.py` |
 
 ## Liên quan
 
-- [Xác thực Tính toàn vẹn](./integrity-validation.md): trạng thái DEGRADED kích hoạt cảnh báo tại đây
+- [Kiểm tra tính toàn vẹn hệ thống](./integrity-validation.md): báo cáo mà ứng dụng có thể chuyển thành cảnh báo
+- [Giám sát](../modules/monitoring.md): bộ thu thập metric và tích hợp callback

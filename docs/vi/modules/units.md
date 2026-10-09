@@ -1,10 +1,10 @@
 ---
-title: "Versioning Module"
+title: "Module quản lý phiên bản"
 description: "Quản lý phiên bản hệ thống: Tuân thủ PEP 440, tuple phiên bản ngữ nghĩa và định dạng chuỗi phiên bản trong hierachain/config/version.py."
 icon: material/numeric
 ---
 
-# Versioning Module (`hierachain/config/version.py`)
+# Module quản lý phiên bản (`hierachain/config/version.py`)
 
 ## 1. Tổng quan
 
@@ -15,7 +15,7 @@ Module quản lý phiên bản xác định phiên bản phát hành cho HieraCh
 HieraChain định nghĩa phiên bản hệ thống dưới dạng tuple 5 phần tử trong `hierachain/config/version.py`:
 
 ```python
-VERSION: tuple[int, int, int, str, int] = (0, 1, 0, "final", 0)
+VERSION: tuple[int, int, int, str, int] = (0, 2, 0, "final", 0)
 ```
 
 Ý nghĩa các phần tử:
@@ -30,19 +30,19 @@ VERSION: tuple[int, int, int, str, int] = (0, 1, 0, "final", 0)
 
 Module cung cấp hàm chuyển đổi tuple thành chuỗi phiên bản tiêu chuẩn:
 
-* Bản phát hành `final` bỏ qua hậu tố, trả về chuỗi ngữ nghĩa gọn như `0.1.0`.
+* Bản phát hành `final` bỏ hậu tố, cho chuỗi version như `0.2.0`.
 * Các cấp thử nghiệm thêm hậu tố chuẩn PEP 440 như `-alpha1` hoặc `-beta2`.
-* Cấp `dev` định dạng theo mẫu `.devN`.
+* Mức `dev` dùng `.devN` khi serial dương, hoặc `.dev` khi serial bằng 0.
 
 ## 4. Sử dụng trong mã nguồn
 
 ```python
 from hierachain.config.version import get_version, VERSION, __version__
 
-# Chuỗi phiên bản hiện tại
+# Current version string
 print(f"HieraChain Version: {__version__}")
 
-# Định dạng tuple tùy chỉnh
+# Explicit tuple formatting
 custom_version = (0, 2, 0, "beta", 1)
 print(f"Formatted Version: {get_version(custom_version)}")
 ```

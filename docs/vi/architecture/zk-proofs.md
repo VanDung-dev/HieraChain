@@ -22,24 +22,23 @@ Hệ thống cung cấp hai module cốt lõi đảm nhiệm công việc này:
   
     * Đóng vai trò là bên xác minh (Verifier).
     * Với mock proof, `ZKVerifier` kiểm tra định dạng và commitment tới public inputs được cung cấp.
-    * Proof bị từ chối sẽ chặn submission tương ứng lên MainChain. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.
+    * Proof bị từ chối sẽ chặn submission lên MainChain khi `HRC_ENABLE_ZK_PROOFS=true` và có cung cấp proof, hoặc khi `HRC_ZK_REQUIRED_MAINCHAIN=true`; mặc định cả hai thiết lập đều là `false`. Mock commitment có thể giả mạo và không cung cấp bảo đảm zero-knowledge production.
 
 ### 2. Các Chế độ Hoạt động (Modes)
 
-Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi trường triển khai thực tế của Sub-chain (linh hoạt cấu hình qua biến môi trường `ZK_MODE`):
+Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi trường triển khai thực tế của Sub-chain (linh hoạt cấu hình qua biến môi trường `HRC_ZK_MODE`):
 
 #### a. Mock Mode (Mặc định)
 
 * Đây là chế độ phát triển (Dev) hoặc môi trường kiểm thử (Testing).
 * Mock mode dùng định dạng `mock_zkp_v2\x00` với commitment SHA-256 tới public inputs; không chạy circuit SNARK.
-* Thay vì chạy circuit thuật toán, mock mode sử dụng tính toán hàm lượng băm nội suy (`hashlib.sha256`) đối với các tham số đầu vào (Public Inputs) và giả lập một độ trễ từ 100-500ms để đảm bảo giống với hệ thống proof thực.
 * Hỗ trợ quá trình dev tích hợp Main/Sub mà không yêu cầu cấu hình tài nguyên phần cứng lớn.
 
-#### b. Production Mode (ZoKrates)
+#### b. Production Mode (unimplemented)
 
 * Đây là interface dành cho production, hiện chưa được hỗ trợ.
-* Đòi hỏi thư mục khóa chứng minh ở biến `ZK_PROVING_KEY_PATH` và khóa xác minh ở `ZK_VERIFICATION_KEY_PATH`.
-* Các method production hiện gây `NotImplementedError`; cấu hình đường dẫn khóa không kích hoạt proving service bên ngoài.
+* Đòi hỏi thư mục khóa chứng minh ở biến `HRC_ZK_PROVING_KEY` và khóa xác minh ở `HRC_ZK_VERIFICATION_KEY`.
+* Các hook production nội bộ `_generate_production_proof()` và `_verify_production()` gây `NotImplementedError`. `ZKProver.generate_proof()` công khai bắt lỗi tạo proof và trả `ZKProofResult` không thành công; `generate_proof_bytes()` gây `ZKProvingError`, còn `ZKVerifier.verify()` bọc lỗi backend thành `ZKVerificationError`.
 
 ### 3. Public Inputs (Đầu vào Công khai)
 
@@ -52,4 +51,4 @@ Theo định nghĩa của `ZKPublicInputs`, các đối số đầu vào (đư�
 
 Các tham số này đều được serialize định dạng JSON bytes chuẩn hóa chặt chẽ (sử dụng `sort_keys=True`) trước khi đem đi hash sinh Proof.
 
-`WorldState.get_state_root()` băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Proving và verification production hiện gây `NotImplementedError`; việc làm rõ root không triển khai circuit ZK production.
+`WorldState.get_state_root()` băm projection entity phục vụ truy vấn và là root chẩn đoán riêng. Đường proof liên cấp hiện tại không truyền root này. Các hook production chưa được triển khai; API công khai báo việc này qua kết quả và exception nêu trên. Việc làm rõ root không triển khai circuit ZK production.

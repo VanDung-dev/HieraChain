@@ -4,46 +4,40 @@ description: "FAQ về cài đặt, cấu hình, API, bảo mật, hiệu năng 
 icon: material/frequently-asked-questions
 ---
 
-# Câu hỏi thường gặp (FAQ)
+# Câu hỏi thường gặp
 
-!!! question "Mặc định API chạy ở cổng nào?"
-    Mặc định 2661 (xem `hierachain/config/settings.py`).
+## Khởi động node thế nào?
 
-!!! question "Làm sao bật xác thực API key?"
-    Đặt `HRC_AUTH_ENABLED=true` và gửi header `X-API-Key` (hoặc tên tuỳ biến theo `API_KEY_NAME`).
+Cấp identity, bản đồ trusted key và database theo [Bắt đầu nhanh](../getting-started/quickstart.md), rồi chạy `python -m hierachain` hoặc `hrc node start`. Port API mặc định là 2661. `/api/ledger/health` kiểm tra liveness; `/api/ledger/ready` kiểm tra phục hồi hierarchy.
 
-!!! question "Khác nhau giữa Main Chain và Sub‑Chain?"
-    Main Chain lưu proof; Sub‑Chain lưu dữ liệu sự kiện chi tiết theo domain.
+## Bật xác thực thế nào?
 
-!!! question "Tại sao event không có timestamp client gửi?"
-    Server sinh timestamp tại thời điểm nhận; giúp thống nhất nguồn thời gian.
+Đặt `HRC_AUTH_ENABLED=true` trước khi khởi động và dùng `X-API-Key` (hoặc `HRC_API_KEY_NAME`). Production yêu cầu `HRC_API_KEYS_FILE` đọc được, không rỗng, có key đã cấp, user ID và quyền. Xem [Cấu hình](../reference/config.md).
 
-!!! question "`details` phải có kiểu gì?"
-    Map<string,string>; giá trị phi chuỗi sẽ được chuyển sang chuỗi.
+## Có event ID nghĩa là block đã commit chưa?
 
-!!! question "Tạo Sub‑Chain báo lỗi tên không hợp lệ?"
-    Tên chỉ chứa `[a-zA-Z0-9_\-]` (xem kiểm tra trong `api/ledger/endpoints.py`).
+Chưa. Sub-Chain ghi journal và đưa event vào queue khi nhận. Đọc block/event đã finalize trước khi dựa vào commit. Gửi proof lên MainChain thành công xác nhận lưu và đọc lại proof có chữ ký bền vững.
 
-!!! question "Vì sao submit proof mà block của Sub‑Chain vẫn chưa thấy?"
-    Kiểm tra điều kiện finalize block, thời gian/lô sự kiện; thử gọi lại submit hoặc xem log.
+## MainChain và Sub-Chain là gì?
 
-!!! question "Hiệu năng thấp, hay 503?"
-    Xem `ResourceGuardMiddleware`, bật cache nâng cao, tối ưu batch size, kiểm tra CPU/RAM.
+Sub-Chain lưu event nghiệp vụ. MainChain neo proof block của chúng. Root proof là Merkle root event trong block; `WorldState.get_state_root()` là root projection chẩn đoán riêng.
 
-!!! question "Có API business không và dùng để làm gì?"
-    Có; quản lý channel, private data, contracts, organizations. Xem `docs/vi/reference/api-business.md`.
+## Event dùng định dạng nào?
 
-!!! question "CLI ở đâu và dùng thế nào?"
-    Lệnh `hrc` (đăng ký trong `pyproject.toml`). Xem `docs/vi/modules/cli.md`.
+Request REST/SDK dùng `entity_id`, `event_type` và object JSON `details`. Event nội bộ dùng `event`. API cấp timestamp. Arrow biểu diễn cột detail bằng chuỗi, còn byte event canonical giữ payload phục vụ phục hồi.
 
-!!! question "Có thể dùng Redis/SQLite làm backend?"
-    Có; cấu hình qua `DEFAULT_STORAGE_BACKEND`, `DATABASE_URL`, `REDIS_*`.
+## Dùng Redis làm backend ledger được không?
 
-!!! question "Làm thế nào để đóng góp mã nguồn?"
-    Xem `docs/vi/dev/contributing.md`.
+Storage hierarchy bền vững cần SQLite hoặc PostgreSQL. Redis có adapter phụ trợ, auth state và rate limit; startup hierarchy từ chối Redis làm storage block có chữ ký. Memory chỉ tồn tại trong process.
 
-!!! question "Test được bố trí và chạy như thế nào?"
-    Markers/paths trong `pyproject.toml`. Xem `docs/vi/dev/testing.md`.
+## ZK, contract, private data và ERP đã sẵn sàng production chưa?
 
-!!! question "Quy trình phát hành?"
-    Dựa trên `setuptools_scm`; xem `docs/vi/dev/release-process.md`.
+Tạo/xác minh ZK production, thực thi contract và ghi private data chưa triển khai. Thực thi contract/ghi private data trả HTTP 501. Connector ERP vendor có sẵn chỉ mô phỏng; ứng dụng phải cung cấp adapter thật.
+
+## Điều tra latency hoặc lỗi 503 thế nào?
+
+Kiểm tra rate/payload limit API, Redis, giới hạn event pool/RAM ordering và log storage. PoA mặc định không thêm giãn cách, nhưng batching và I/O bền vững vẫn mất thời gian. Xem [Hiệu năng](../guides/performance.md).
+
+## Kiểm thử và phát hành thế nào?
+
+Chạy từng file test với storage biệt lập; xem [Kiểm thử](../dev/testing.md). Version package lấy từ `hierachain/config/version.py`; xem [Quy trình phát hành](../dev/release-process.md).

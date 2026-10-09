@@ -8,39 +8,44 @@ icon: material/source-branch-plus
 
 ## Mục đích
 
-Tạo một Sub-Chain (chuỗi theo domain) và vận hành vòng đời cơ bản: khởi tạo → ghi sự kiện → gửi bằng chứng (proof) lên Main Chain.
+Dùng Python `HierarchyManager` để tạo `DomainChain`, hoặc dùng REST để tạo `SubChain` generic, sau đó ghi sự kiện và gửi proof. Luồng Python cung cấp kiểm tra hợp lệ của `DomainChain` và hành vi participant 2PC.
 
 ## Yêu cầu
 
 * Đã cài đặt gói và kích hoạt môi trường theo [Getting Started](../getting-started/install.md).
-* Có thể chạy API server: `python -m hierachain.api.server` (mặc định `http://localhost:2661`).
+* Có thể chạy API server: `python -m hierachain` (mặc định `http://localhost:2661`).
+
+
+Thiết lập identity ký, trusted key và storage theo [Bắt đầu nhanh](../getting-started/quickstart.md). Ví dụ Python dùng ledger mới và cần đăng ký entity trước operation.
 
 ## Cách 1: Dùng Python API (HierarchyManager)
 
 ```mermaid
 flowchart TD
-    Start[Bắt đầu] --> Init[Khởi tạo HierarchyManager]
-    Init --> Create{Tạo Sub-Chain?}
-    Create -- Có --> NewChain[manager.create_sub_chain]
-    Create -- Không --> LoadChain[Load Chain cũ]
-    NewChain --> Op[Ghi sự kiện: start_operation]
+    Start[Start] --> Init[Initialize HierarchyManager]
+    Init --> Create{Create Sub-Chain?}
+    Create -- Yes --> NewChain[manager.create_sub_chain]
+    Create -- No --> LoadChain[Load existing Chain]
+    NewChain --> Op[Record event: start_operation]
     LoadChain --> Op
-    Op --> Complete[Hoàn tất sự kiện: complete_operation]
-    Complete --> Proof[Gửi Proof: submit_proof_to_main_chain]
-    Proof --> End[Kết thúc]
+    Op --> Complete[Complete event: complete_operation]
+    Complete --> Proof[Submit Proof: submit_proof_to_main_chain]
+    Proof --> End[End]
 ```
 
 ```python
 from hierachain.hierarchical import HierarchyManager
 
-# 1. Tạo manager (khởi tạo Main Chain ngầm)
+# 1. Create manager (implicitly initializes Main Chain)
 manager = HierarchyManager()
 
-# 2. Tạo Sub-Chain theo domain
+# 2. Create Sub-Chain by domain
 ok = manager.create_sub_chain("supply_chain", domain_type="supply_chain")
-assert ok, "Tên sub-chain đã tồn tại?"
+assert ok, "Sub-chain name already exists?"
+chain = manager.get_sub_chain("supply_chain")
+assert chain.register_entity("PROD-001", {"batch": "BATCH-001"})
 
-# 3. Ghi nhận một thao tác/sự kiện domain
+# 3. Record a domain operation/event
 manager.start_operation(
     sub_chain_name="supply_chain",
     entity_id="PROD-001",
@@ -54,11 +59,13 @@ manager.complete_operation(
     result={"status": "ok"}
 )
 
-# 4. (Tuỳ chọn) Gửi proof lên Main Chain
-manager.submit_proof_to_main_chain("supply_chain")
+# 4. (Optional) Submit proof to Main Chain
+chain.flush_pending_and_finalize(timeout=10.0)
+assert manager.submit_proof_to_main_chain("supply_chain")
 
-# 5. Thống kê hệ thống
+# 5. System overview
 print(manager.get_system_overview())
+manager.close()
 ```
 
 Ghi chú: Các phương thức ở trên bám sát `hierachain/hierarchical/hierarchy_manager/base.py`:
@@ -71,11 +78,13 @@ Ghi chú: Các phương thức ở trên bám sát `hierachain/hierarchical/hier
 
 Giả sử API server đã chạy tại `http://localhost:2661`:
 
+Endpoint REST tạo lớp `SubChain` cơ sở và mặc định `chain_type` là `generic`; endpoint này không tạo `DomainChain`. Dùng cách Python ở trên khi cần kiểm tra hợp lệ của `DomainChain` hoặc hành vi participant 2PC.
+
 ```bash
-# 1. Tạo sub-chain (POST)
+# 1. Create sub-chain (POST)
 curl -X POST "http://localhost:2661/api/ledger/chains/production/create"
 
-# 2. Ghi sự kiện vào sub-chain
+# 2. Record event in sub-chain
 curl -X POST "http://localhost:2661/api/ledger/chains/production/events" \
   -H "Content-Type: application/json" \
   -d '{
@@ -84,13 +93,13 @@ curl -X POST "http://localhost:2661/api/ledger/chains/production/events" \
     "details": {"result": "pass"}
   }'
 
-# 3. Gửi proof
+# 3. Submit proof
 curl -X POST "http://localhost:2661/api/ledger/chains/production/submit-proof"
 
-# 4. Xem block của sub-chain
+# 4. View sub-chain blocks
 curl "http://localhost:2661/api/ledger/chains/production/blocks?limit=5&offset=0"
 
-# 5. Truy vết theo entity
+# 5. Trace by entity
 curl "http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=production"
 ```
 

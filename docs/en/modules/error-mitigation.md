@@ -27,7 +27,7 @@ Custom field validators return `(is_valid, message)`. If a callback raises an ex
 * Enforces append-only storage before events commit to blockchain state.
 * Provides replay generators to reconstruct uncommitted events after ungraceful shutdowns.
 
-`read_since(cursor=None)` flushes and fsyncs the active writer, reads durable frames, and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
+`read_since(cursor=None)` flushes the active writer and fsyncs it only when its file state is unknown or has changed. Successful appends are already fsynced before `log_event()` returns. It reads durable frames and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or required fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
 
 Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.
 
@@ -67,14 +67,7 @@ Log consumers must update their event filters: `auto_scaling_triggered` and its 
 
 ## 3. Error classification strategy
 
-`ErrorClassifier` in `error_classifier.py` categorizes errors by severity and recommends mitigation actions:
-
-| Severity Level | Category Meaning | Mitigation Action |
-| :--- | :--- | :--- |
-| INFO / WARNING | Minor operational anomalies | Log and continue |
-| ERROR | Event validation or transient processing failures | Retry with backoff or reject |
-| CRITICAL | State corruption or Merkle root mismatch | Reject, log, and require operational recovery |
-| FATAL | Irrecoverable consensus or hardware failure | Emergency lockdown |
+`classify_error()` returns an `ErrorInfo` with a category, a `PriorityLevel`, and a mitigation strategy. The priority is calculated from impact and likelihood. `PriorityLevel` contains `CRITICAL`, `HIGH`, `MEDIUM`, and `LOW`.
 
 ## 4. Transaction journaling
 

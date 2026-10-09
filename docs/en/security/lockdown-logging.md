@@ -1,24 +1,18 @@
 ---
 title: "Secure Logging"
-description: "Tamper-evident secure logging system."
+description: "Structured JSON logging, sanitization and sensitive-field redaction."
 icon: material/lock-alert
 ---
 
-# Secure Logging
+# Secure logging
 
-This security layer provides tamper-evident structured logs for security-sensitive operations.
+`SecureLogger` in `hierachain/security/secure_logging.py` writes structured JSON logs for security-sensitive operations. It sanitizes strings and masks sensitive named fields, including nested data. Separate logger instances let applications configure handlers and levels per module.
 
-## Secure Logging
+JSON structure alone does not detect record modification or deletion. `SecureLogger` has no hash chain, signature or trusted manifest. Centralized logging and retention controls belong to the deployment's logging system.
 
-**File**: `hierachain/security/secure_logging.py`
-
-A logging system specifically designed for security:
-
-*   **Tamper-evident**: Each log record has a strict structure, supporting detection of log deletion or modification.
-*   **Structured Logs**: Logs are recorded in JSON format for easy integration with centralized monitoring systems (SIEM).
-*   **Log Segmentation**: Sensitive modules (such as `security`, `consensus`) use separate `SecureLogger` instances with higher protection levels.
+For audit verification, use the separate `AuditLogger` and its trusted manifest workflow described in [Risk management](../modules/risk-management.md). Keep that manifest independently of the log being verified.
 
 ## Related
 
-*   [Input sanitization](./risk-analyzer.md)
-*   [Security module](../modules/security.md)
+* [Input sanitization](./risk-analyzer.md)
+* [Security module](../modules/security.md)

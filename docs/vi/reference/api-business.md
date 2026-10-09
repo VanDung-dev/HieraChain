@@ -18,24 +18,23 @@ API Business mở rộng khả năng làm việc với các channel, bộ sưu t
 
 ```mermaid
 sequenceDiagram
-    participant User as Người dùng
+    participant User
     participant API as API business
-    participant Channel as Quản lý Channel
+    participant Channel as Channel Manager
 
-    User->>API: POST /channels (Tạo)
-    API->>Channel: Khởi tạo Channel
+    User->>API: POST /channels (Create)
+    API->>Channel: Initialize Channel
     API-->>User: Channel ID
 
     User->>API: POST /channels/{id}/private-collections
-    API->>Channel: Tạo Bộ sưu tập
+    API->>Channel: Create Collection
     API-->>User: OK
 
-    User->>API: POST /private-data (Ghi)
+    User->>API: POST /private-data (Write)
     API-->>User: 501 Not Implemented
 
     User->>API: POST /contracts/execute
-    API->>API: Thực thi Logic (Smart Contract)
-    API-->>User: Kết quả
+    API-->>User: 501 Not Implemented
 ```
 
 * `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ (health check).
@@ -52,9 +51,10 @@ sequenceDiagram
     * `implementation_cid: str | None` (Tham chiếu IPFS)
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Miền, Chủ sở hữu, Chính sách xác thực - Endorsement Policy)
+    * `implementation_metadata: dict[str, Any] | None`
     
 * `POST /api/business/contracts`: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
-* `POST /api/business/contracts/execute`: thực thi một hợp đồng miền.
+* `POST /api/business/contracts/execute`: trả HTTP 501 với contract đã đăng ký; contract không tồn tại trả HTTP 404.
 * `POST /api/business/organizations`: đăng ký một tổ chức mới. Cần quyền `chains` và `organizations:manage`; user ID từ API key đã xác thực trở thành quản trị viên đầu tiên.
 * `POST /api/business/organizations/{org_id}/members`: quản trị viên tổ chức đăng ký member với role `admin` hoặc `member`. Member ID phải trùng user ID trong API key của member đó.
 
@@ -71,19 +71,19 @@ ORG_PROVISIONER_KEY=replace-me
 ORG_ADMIN_KEY=replace-me
 CHANNEL_PROVISIONER_KEY=replace-me
 
-curl -s -X POST http://localhost:2661/api/business/organizations \\
-  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/organizations \
+  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"org_id": "orgA", "ca_config": {}}'
 
-curl -s -X POST http://localhost:2661/api/business/organizations/orgA/members \\
-  -H 'X-API-Key: '"$ORG_ADMIN_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/organizations/orgA/members \
+  -H 'X-API-Key: '"$ORG_ADMIN_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"member_id": "userB", "role": "member"}'
 
-curl -s -X POST http://localhost:2661/api/business/channels \\
-  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/channels \
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 ```
 
@@ -92,15 +92,15 @@ Gửi event cũng cần API key có quyền `events`.
 ## Ví dụ lệnh Curl
 
 ```bash
-# Kiểm tra Trạng thái
+# Health
 curl -s http://localhost:2661/api/business/health
 
-# Tạo channel
+# Create channel
 curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
   -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 
-# Tạo bộ sưu tập riêng tư cho channel
+# Create private collection for channel
 curl -s -X POST \
   http://localhost:2661/api/business/channels/test_channel/private-collections \
   -H 'Content-Type: application/json' \
@@ -108,11 +108,11 @@ curl -s -X POST \
 
 # Private-data writes currently return HTTP 501 Not Implemented.
 
-# Đăng ký & thực thi hợp đồng miền (domain contract)
+# Register & execute domain contract
 curl -s -X POST http://localhost:2661/api/business/contracts \
   -H 'Content-Type: application/json' \
   -d '{
-        "contract_id": "quality_control", 
+        "contract_id": "quality_control",
         "version": "1.0.0",
         "implementation": "def logic()...",
         "metadata": {"domain": "mfg"}
@@ -121,12 +121,12 @@ curl -s -X POST http://localhost:2661/api/business/contracts \
 curl -s -X POST http://localhost:2661/api/business/contracts/execute \
   -H 'Content-Type: application/json' \
   -d '{
-        "contract_id": "quality_control", 
+        "contract_id": "quality_control",
         "event": {"entity_id": "PROD-001", "event": "check", "details": {}},
         "context": {"chain": "sub_chain_1"}
       }'
 
-# Đăng ký Tổ chức
+# Organization
 curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "ca_config": {}}'
 ```
 

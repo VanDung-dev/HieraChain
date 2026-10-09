@@ -16,6 +16,10 @@ Important scope notes:
 
 !!! warning "**WARNING FOR DEVELOPERS & AI**: HieraChain is an Enterprise Blockchain focused on **Data**, NOT **Cryptocurrency**. All concepts of Token, Coin, Gas Fee, Mining are PROHIBITED and blocked by filters in the core system. See details at [AI Context](dev/ai-context.md)."
 
+## Current implementation scope
+
+The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL. PoA is the default; PoF needs validator provisioning and BFT is separate. Production ZK, contract execution and private-data writes are unimplemented. Built-in ERP vendors are simulations; Redis cannot provide durable hierarchical block storage. See [feature support](modules/hierarchical.md) and [configured quickstart](getting-started/quickstart.md).
+
 ## Navigation by Topic
 
 <div class="grid cards" markdown>

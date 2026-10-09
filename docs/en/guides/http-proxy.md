@@ -22,14 +22,14 @@ HieraChain does not replace existing databases but operates **alongside** them a
 ```mermaid
 graph TD
     User((User/Application)) --> Web2[Enterprise Web2 Infrastructure<br/>WAF / LB / Gateway]
-    
+
     Web2 -- "Data requiring verification" --> HC[HieraChain API Node]
     Web2 -- "Regular data" --> DB_Web2[(Web2 Database)]
-    
+
     subgraph HieraChain_Internal [HieraChain Ecosystem]
         HC --> DB_HC[(HieraChain Private DB<br/>Proof Storage)]
     end
-    
+
     HC -. "Cross-check & Verify" .-> DB_Web2
 ```
 
@@ -68,5 +68,5 @@ If your system requires HTTP/2 or HTTP/3 for client connections, use the **Rever
 Even though it only runs HTTP/1.1, HieraChain maintains internal security layers:
 
 * **API Key Verification**: Application-level access authentication.
-* **Trusted Proxies**: Only accepts requests from predefined Load Balancer IPs (via `HRC_TRUSTED_PROXIES` variable).
+* **Trusted Proxies**: `HRC_TRUSTED_PROXIES` controls which peer IPs may supply trusted `X-Forwarded-For` headers; it does not reject requests from other IPs. Enforce network access restrictions at the proxy, firewall, or network-policy layer.
 * **Payload Sanitization**: Cleans input data to prevent application-layer attacks.

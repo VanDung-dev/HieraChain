@@ -21,7 +21,7 @@ HieraChain cung cấp interface prover và verifier cho luồng proof liên chu�
 **File**: `hierachain/security/verify/zk_verifier.py`
 
 * Xác minh mock so sánh commitment với hash của public inputs. Hash khớp không tạo bằng chứng toán học về bước chuyển trạng thái hợp lệ.
-* Với inputs hợp lệ, xác minh production phát sinh `ZKVerificationError` bọc lỗi backend chưa triển khai; inputs sai trả `False` trước bước gọi backend.
+* Với inputs đúng định dạng, xác minh production phát sinh `ZKVerificationError` bọc lỗi backend chưa triển khai. Các kiểm tra hiện tại trả `False` với những giá trị sai mà chúng nhận diện được, nhưng root hoặc block index sai kiểu có thể phát sinh lỗi trước khi gọi backend.
 * Nạp verification key không làm cho xác minh production khả dụng.
 
 ## 3. Cấu hình và ranh giới runtime

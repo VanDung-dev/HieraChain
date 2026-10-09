@@ -1,6 +1,6 @@
 ---
 title: "Đồng thuận BFT"
-description: "Luồng hoạt động đồng thuận chống gian lận (PBFT) để hoàn tất khối trong môi trường có tính đối kháng."
+description: "Tích hợp thư viện PBFT rõ ràng: phiếu các pha có chữ ký, ghi ứng dụng và thay đổi view."
 icon: material/shield-key
 ---
 
@@ -8,13 +8,13 @@ icon: material/shield-key
 
 ## Tổng quan
 
+Thành phần này cần caller tích hợp riêng. Chạy nhiều node API hoặc đặt `BFT_ENABLED` không tự nối PBFT vào MainChain/Sub-Chain.
+
 Thành phần thư viện BFT được export và demo độc lập sử dụng PBFT 3 pha. Nó yêu cầu `n >= 3f + 1` để chịu được `f` node lỗi hoặc gian lận. Luồng runtime MainChain và SubChain hiện tại không khởi tạo BFT; bên gọi sử dụng tường minh `BFTConsensus.request()`.
 
 Với chi tiết PoA và PoF, xem [Cơ chế Đồng thuận](./consensus_mechanisms.md).
 
 Yêu cầu hệ thống: tối thiểu 4 node để chịu 1 lỗi Byzantine (n=4, f=1: 3x1+1=4).
-
----
 
 ## Biểu đồ luồng: PBFT 3 pha
 
@@ -61,7 +61,7 @@ Primary và replica mỗi node đếm đúng một phiếu giai đoạn có ch�
 
 Khi không gắn application chain, thành phần chạy ở chế độ chỉ đồng thuận và ghi nhận trạng thái consensus mà không ghi event, như demo độc lập.
 
----
+Tiếp nhận yêu cầu xảy ra trước commit. Trạng thái thử lại nằm trong bộ nhớ và không bảo đảm áp dụng đúng một lần sau kết quả ghi không rõ ràng hoặc khởi động lại. Xem [Thành phần BFT](../consensus/bft_consensus.md) để biết giới hạn truyền tải, cấu hình, phát lại và ZK.
 
 ## Biểu đồ luồng: Thay đổi phiên (View Change)
 
@@ -82,28 +82,22 @@ sequenceDiagram
     NEW->>NEW: Activate the new view
 ```
 
----
-
 ## Các bước chi tiết
 
 | Bước | Mô tả |
 |:-----|:------|
-| **PRE-PREPARE** | Primary gán số thứ tự, băm toàn bộ request chuẩn, ký digest và phát request. |
-| **PREPARE** | Mỗi node tính lại digest và ghi nhận đúng một phiếu PREPARE của mình. Mỗi node chuyển sang COMMIT sau `2f` phiếu PREPARE duy nhất, bao gồm phiếu của chính nó. |
-| **COMMIT** | Mỗi node đã PREPARED ghi nhận và phát đúng một phiếu COMMIT của mình. Node áp dụng event sau `2f + 1` phiếu COMMIT duy nhất, bao gồm phiếu của chính nó. |
-| **View Change** | Nếu leader im lặng quá timeout, manager thu thập `2f + 1` phiếu VIEW-CHANGE có chữ ký trước khi chấp nhận view mới. |
-
----
+| PRE-PREPARE | Primary gán số thứ tự, băm toàn bộ request chuẩn, ký digest và phát request. |
+| PREPARE | Mỗi node tính lại digest và ghi nhận đúng một phiếu PREPARE của mình. Mỗi node chuyển sang COMMIT sau `2f` phiếu PREPARE duy nhất, bao gồm phiếu của chính nó. |
+| COMMIT | Mỗi node đã PREPARED ghi nhận và phát đúng một phiếu COMMIT của mình. Node áp dụng event sau `2f + 1` phiếu COMMIT duy nhất, bao gồm phiếu của chính nó. |
+| View Change | Nếu leader im lặng quá timeout, manager thu thập `2f + 1` phiếu VIEW-CHANGE có chữ ký trước khi chấp nhận view mới. |
 
 ## So sánh thuật toán đồng thuận
 
 | Thuật toán | Cơ chế | Khả năng chịu lỗi | Trường hợp dùng |
 |:-----------|:-------|:------------------|:-------------------|
-| **PoA** | Dựa trên danh tính, node có thẩm quyền ký khối | Danh tiếng validator | Mạng riêng / nội bộ |
-| **PoF** | Luân phiên leader, đồng thuận đa số `height % n` | Phân tán niềm tin | Mạng liên doanh / đa tổ chức |
-| **BFT** | Thành phần thư viện PBFT 3 pha | Chịu tới `f` node Byzantine trong `3f+1` | Bên gọi tường minh và demo độc lập |
-
----
+| PoA | Dựa trên danh tính, node có thẩm quyền ký khối | Danh tiếng validator | Mạng riêng / nội bộ |
+| PoF | Luân phiên leader `height % n`; xác thực thông thường kiểm tra chữ ký của leader | Phân tán niềm tin | Mạng liên doanh / đa tổ chức |
+| BFT | Thành phần thư viện PBFT 3 pha | Chịu tới `f` node Byzantine trong `3f+1` | Bên gọi tường minh và demo độc lập |
 
 ## Xử lý lỗi
 
@@ -111,11 +105,9 @@ sequenceDiagram
 |:-----------|:--------|
 | Leader không phản hồi | Kích hoạt View Change; primary mới là `all_nodes[new_view % n]` |
 | Validator gửi digest không hợp lệ | Phiếu bị loại, không tính vào quorum |
-| Chia mạng < f node | Giao thức tiếp tục nếu vẫn đủ quorum 2f+1 |
-| Chia mạng >= f+1 node | Giao thức tạm dừng tới khi mạng nối lại (ưu tiên an toàn hơn sẵn sàng) |
+| Đạt quorum COMMIT có chữ ký | Việc áp dụng cần `2f + 1` phiếu khác nhau cho cùng yêu cầu |
+| Thiếu phiếu COMMIT | Yêu cầu chưa được áp dụng cho đến khi đủ phiếu hợp lệ |
 | Ghi chain được gắn vào thất bại | Giữ quorum COMMIT hiện tại và thử lại cùng event khi COMMIT hợp lệ được gửi lại |
-
----
 
 ## Lớp và phương thức chính
 
@@ -127,8 +119,6 @@ sequenceDiagram
 | Quorum COMMIT và áp dụng event | `BFTConsensusEngine.process_commit_quorum()` | `consensus/bft/engine.py` |
 | View Change | `BFTViewChangeManager.initiate_view_change()` | `consensus/bft/view_change.py` |
 | Giao thức mạng | `BFTMessageDispatcher.broadcast_msg()` | `consensus/bft/dispatcher.py` |
-
----
 
 ## Liên quan
 

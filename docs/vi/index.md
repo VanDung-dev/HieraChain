@@ -16,6 +16,10 @@ Lưu ý quan trọng về phạm vi:
 
 !!! warning "**CẢNH BÁO DEVELOPER & AI**: HieraChain là Blockchain Doanh nghiệp tập trung vào **Dữ liệu (Data)**, KHÔNG PHẢI **Tiền mã hóa (Cryptocurrency)**. Mọi khái niệm về Token, Coin, Gas Fee, Mining đều bị CẤM và chặn bởi bộ lọc trong core system. Xem chi tiết tại [AI Context](dev/ai-context.md)."
 
+## Phạm vi triển khai hiện tại
+
+Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; Redis không làm storage block hierarchy bền vững. Xem [phạm vi tính năng](modules/hierarchical.md) và [bắt đầu nhanh có cấu hình ký](getting-started/quickstart.md).
+
 ## Điều hướng theo chủ đề
 
 <div class="grid cards" markdown>

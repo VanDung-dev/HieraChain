@@ -26,18 +26,18 @@ sequenceDiagram
     participant CJ as Coordinator journal
 
     Client->>TM: initiate_transaction(src, dst, payload)
-    TM->>CJ: fsync và đọc lại begin
+    TM->>CJ: fsync and read back begin
     TM->>SRC: prepare_transaction(tx_id, payload, true)
     SRC-->>TM: prepared
     TM->>DST: prepare_transaction(tx_id, payload, false)
     DST-->>TM: prepared
-    TM->>CJ: fsync và đọc lại prepared
-    TM->>CJ: fsync và đọc lại COMMIT decision
+    TM->>CJ: fsync and read back prepared
+    TM->>CJ: fsync and read back COMMIT decision
     TM->>SRC: commit_transaction(tx_id)
-    SRC-->>TM: đọc lại ordering events
+    SRC-->>TM: ordering events read back
     TM->>DST: commit_transaction(tx_id)
-    DST-->>TM: đọc lại ordering events
-    TM->>CJ: fsync và đọc lại committed
+    DST-->>TM: ordering events read back
+    TM->>CJ: fsync and read back committed
     TM-->>Client: tx_id
 ```
 

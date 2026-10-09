@@ -6,27 +6,24 @@ icon: material/security-network
 
 # Làm sạch Input
 
-Lớp bảo mật này xác thực và làm sạch dữ liệu không tin cậy trước khi logic nghiệp vụ xử lý.
+Module này cung cấp các phép biến đổi giá trị theo ngữ cảnh, không phải pipeline xác thực chung cho mọi request. `sanitize_string()` hỗ trợ ngữ cảnh HTML/general, log và filename; `sanitize_dict()` và `sanitize_list()` đệ quy áp dụng phép biến đổi đã chọn. `is_safe_input()` kiểm tra độ dài chuỗi và một số pattern script, JavaScript URI, template. Các helper này không xác thực theo schema ứng dụng và không cung cấp bảo vệ SQL, NoSQL hay command injection. Kiểm tra kích thước request và schema/độ sâu của route được thực hiện riêng; handler gọi sanitizer tại nơi cần.
 
 ## Làm sạch & Xác thực Input
 
 **File**: `hierachain/security/sanitization.py`
 
-Lớp phòng thủ chống lại các cuộc tấn công vào dữ liệu (Data-level attacks):
-
-*   **Injection Protection**: Làm sạch dữ liệu đầu vào để ngăn chặn SQL Injection, NoSQL Injection và Command Injection.
-*   **Nested Bomb Protection**: Giới hạn độ sâu của JSON payload để ngăn chặn các cuộc tấn công từ chối dịch vụ thông qua cấu trúc dữ liệu lồng nhau phức tạp.
-*   **Type Strictness**: Đảm bảo dữ liệu đầu vào khớp hoàn toàn với schema định nghĩa, từ chối mọi trường thông tin dư thừa hoặc sai định dạng.
+API có kiểm tra kích thước request và model theo từng route ở những nơi được cấu hình. Handler chỉ chạy sanitizer khi gọi helper tương ứng.
 
 ## Luồng Làm sạch Dữ liệu (Sanitization Flow)
 
 ```mermaid
 graph LR
-    A[Raw Request Body] --> B[Size Limit Check]
-    B --> C[JSON Schema Validation]
-    C --> D[Recursive Type Checking]
-    D --> E[Injection Pattern Scan]
-    E --> F[Sanitized Data for Logic]
+    A[API request] --> B[App middleware: payload-size check]
+    B --> C[Route-specific request validation]
+    C --> D[Route handler]
+    D -->|when called| E[Context-specific sanitizer]
+    D --> F[Business logic]
+    E --> F
 ```
 
 ---

@@ -8,11 +8,9 @@ icon: material/connection
 
 ## Overview
 
-HieraChain pushes block and event notifications to connected clients over WebSocket. Clients subscribe to specific chains or event types. A background ping loop checks for stale connections and removes them.
+The WebSocket API accepts chain/event subscriptions and provides broadcast helpers. The current ledger commit and event paths do not call `broadcast_new_block()` or `broadcast_event()`. Applications must connect their event source to those helpers before subscribers receive ledger notifications. An asyncio ping task removes connections when a send fails or exceeds its timeout; it does not wait for a client pong.
 
-`WebSocketManager` is a singleton (`ws_manager`) shared by all API routes, so there is a single connection registry.
-
----
+`WebSocketManager` is a singleton (`ws_manager`) shared by the routes within one API process. Multiple workers have separate connection registries.
 
 ## Flow diagram: connection and broadcast lifecycle
 
@@ -22,7 +20,7 @@ sequenceDiagram
     participant Client as 🖥️ Browser / SDK Client
     participant WS as 🔌 WebSocket Endpoint
     participant WSM as 📡 WebSocketManager
-    participant SC as 📦 SubChain
+    participant SC as Application broadcast integration
 
     Client->>WS: WebSocket Upgrade (GET /ws?chain_name=supply_chain)
     WS->>WSM: connect(connection_id, websocket, chain_name)
@@ -37,7 +35,7 @@ sequenceDiagram
         WSM->>WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
 
-    Note over SC: Block committed after asynchronous ordering (Event Submission)
+    Note over SC: Application calls the broadcast helper explicitly
 
     SC->>WSM: broadcast_new_block(chain_name, block_data)
     WSM->>WSM: get_chain_subscribers(chain_name)
@@ -45,8 +43,6 @@ sequenceDiagram
         WSM->>Client: send_text(JSON { type: "block_added", chain_name: chain_name, data: block_data })
     end
 ```
-
----
 
 ## Flow diagram: ping and stale connection cleanup
 
@@ -60,10 +56,10 @@ sequenceDiagram
     Note over BG: Every 30 seconds
 
     loop Each active connection
-        BG->>Client: ping frame
-        alt Pong received within 10s
-            Client-->>BG: pong ✅
-        else Timeout (10s)
+        BG->>Client: send_text JSON ping with 10s timeout
+        alt Send succeeds
+            Note over BG: Keep connection; no pong wait
+        else Send failure or timeout
             BG->>WSM: disconnect(connection_id)
             WSM->>WSM: Registry.remove(connection_id)
             WSM->>WSM: SubscriptionManager.unsubscribe_all(connection_id)
@@ -71,12 +67,10 @@ sequenceDiagram
     end
 ```
 
----
-
 ## Message format
 
 ```json
-// Block added notification
+// Block added notification (example payload)
 {
     "type": "block_added",
     "chain_name": "supply_chain",
@@ -86,10 +80,12 @@ sequenceDiagram
         "previous_hash": "9d1e4f...",
         "timestamp": 1714000000.0,
         "event_count": 5
-    }
+    },
+    "optimized": true,
+    "timestamp": "2026-10-09T12:00:00"
 }
 
-// Event notification (if subscribed to event_types)
+// Event notification sent by broadcast_event_type() after event-type filtering (example payload)
 {
     "type": "event",
     "chain_name": "supply_chain",
@@ -97,36 +93,35 @@ sequenceDiagram
         "entity_id": "product-SKU-001",
         "event": "quality_check",
         "details": { "result": "passed" }
-    }
+    },
+    "optimized": true,
+    "timestamp": "2026-10-09T12:00:00",
+    "event_type": "quality_check"
 }
 ```
 
----
+`broadcast_new_block()` wraps the `block_data` supplied by the application. It does not confirm that the block was durably committed; call it after the application establishes the block state it wants to announce.
 
 ## Step-by-step breakdown
 
 | Step | Description |
 |:-----|:------------|
-| **1. Upgrade** | Connect to `/ws`, optionally passing `chain_name` as a query parameter |
-| **2. Capacity check** | Reject if `active_connections >= max_connections` (default 1000) |
-| **3. Register** | `ConnectionRegistry.add()` stores connection by `connection_id` |
-| **4. Subscribe** | `SubscriptionManager.subscribe_to_chain()` links connection to chain |
-| **5. Optional filter** | Client can narrow to specific `event_types` |
-| **6. Broadcast** | After the Sub-Chain commits a block, `broadcast_new_block()` fans out to subscribers |
-| **7. Ping loop** | Background thread pings every 30s; removes unresponsive connections after 10s timeout |
-
----
+| 1. Upgrade | Connect to `/ws`, optionally passing `chain_name` as a query parameter |
+| 2. Capacity check | Reject if `active_connections >= max_connections` (default 1000) |
+| 3. Register | `ConnectionRegistry.add()` stores connection by `connection_id` |
+| 4. Subscribe | `SubscriptionManager.subscribe_to_chain()` links connection to chain |
+| 5. Optional filter | Only `broadcast_event_type()` applies the event-type subscription; `broadcast_event()` sends to all subscribers of the chain. |
+| 6. Broadcast | An application call to `broadcast_new_block()` fans out to subscribers |
+| 7. Ping loop | An asyncio task sends JSON pings every 30s; send failures or a 10s send timeout cause disconnection |
 
 ## Error handling
 
 | Condition | Behavior |
 |:----------|:---------|
-| Max connections reached | New connection refused with `1008 Policy Violation` |
+| Max connections reached | `WebSocketManager.connect()` raises a generic `Exception`; the endpoint catches and logs it, then runs cleanup. It does not explicitly send close code `1008`. |
 | Client disconnects unexpectedly | `ConnectionRegistry.remove()` called on next send failure |
 | Send to stale connection fails | Exception caught, `disconnect()` called, connection removed |
 | Broadcast to empty subscriber list | No-op, no error |
-
----
 
 ## Key classes and methods
 
@@ -142,9 +137,7 @@ sequenceDiagram
 | Message builder | `build_block_added()` / `build_event_message()` | `api/websocket/builders.py` |
 | Connection store | `ConnectionRegistry` | `api/websocket/registry.py` |
 
----
-
 ## Related
 
-- [Event Submission](./event-submission.md): triggers `broadcast_new_block()` after block commit
-- [Risk Analysis & Alerts](./risk-alerts.md): alert notifications can also be pushed via WebSocket
+- [Event Submission](./event-submission.md): ledger pipeline that an application can connect to broadcast helpers
+- [Risk Analysis & Alerts](./risk-alerts.md): separate email/webhook notification workflow

@@ -41,28 +41,24 @@ sequenceDiagram
     participant Main as Main Chain
 
     Client->>API: POST /api/ledger/chains/{chain_name}/create
-    API->>Sub: Khởi tạo Sub-Chain
+    API->>Sub: Initialize Sub-Chain
     API-->>Client: 201 Created
 
     Client->>API: POST /api/ledger/chains/{chain_name}/events
-    API->>Sub: add_event(event)
-    Sub->>Sub: OrderingService.receive_event()
-    Sub->>Sub: Ghi Journal và đưa sự kiện vào hàng đợi
-    API-->>Client: 200 OK (event_id; đã tiếp nhận, chưa phải block finality)
-
-    Note over Sub: Xử lý nền sau phản hồi API
-    Sub->>Sub: Gom batch và tạo block
-    Sub->>Sub: Finalize bằng consensus PoA hoặc PoF đã cấu hình
-    Sub->>Sub: Lưu block đã finalize
+    API->>Sub: Add event to ordering service
+    Sub->>Sub: Journal and enqueue event
+    API-->>Client: 200 OK (Event ID accepted for ordering)
+    Note over Sub: Background batching, block finalization, and persistence happen later
 
     Client->>API: POST /api/ledger/chains/{chain_name}/submit-proof
-    API->>Sub: Lấy Proof
-    Sub->>Main: Gửi Proof (Neo dữ liệu)
-    Main-->>Sub: Xác nhận
+    API->>Sub: Get Proof
+    Sub->>Main: Submit Proof (Data Anchoring)
+    Main-->>Sub: Confirm
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/ledger/health`: Kiểm tra tình trạng.
+* GET `/api/ledger/health`: Liveness.
+* GET `/api/ledger/ready`: Readiness khởi tạo/phục hồi hierarchy; HTTP 503 khi chưa khả dụng.
 * GET `/api/ledger/chains`: Liệt kê Main Chain và tất cả Sub-Chain.
 * POST `/api/ledger/chains/{chain_name}/create`: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
 * POST `/api/ledger/chains/{chain_name}/events`: Thêm sự kiện vào Sub-Chain.
@@ -88,7 +84,7 @@ curl -X POST "http://localhost:2661/api/ledger/channels/supply_chain/organizatio
      }'
 ```
 
-Channel không tồn tại trả về `404`; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về `403`. Phải bật xác thực API key và key cần có quyền `events`. `HierarchyManager` đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Ledger event của channel vẫn ở trong bộ nhớ khi manager restart.
+Channel không tồn tại trả về `404`; thiếu user đã xác thực hoặc user không có write role phù hợp trong organization trả về `403`. Phải bật xác thực API key và key cần có quyền `events`. `HierarchyManager` đang hoạt động phải khôi phục channel cùng member registry từ storage bền vững đã cấu hình, hoặc các registry phải được provision trong bộ nhớ trước request. Channel được quản lý bằng SQLite/PostgreSQL lưu record event và block có chữ ký trong stream append-only riêng, refresh theo sequence khi restart hoặc giữa các worker. Ghi event không ghi lại toàn bộ registry. Backend memory chỉ tồn tại trong process.
 
 ## Schema chính (trích từ `hierachain/api/ledger/schemas.py`)
 
@@ -100,6 +96,8 @@ Channel không tồn tại trả về `404`; thiếu user đã xác thực hoặ
     * `details_cid: str | None` (Off-chain CID reference)
     * `details_nonce: str | None` (Encryption nonce)
     * `details_metadata: dict[str, Any] | None`
+    * `sender: str | None`
+    * `signature: str | None`
 
 * `EventResponse`
 
@@ -174,11 +172,13 @@ curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
 
 Phản hồi:
 
+Event ID dưới đây là giá trị minh họa; ID được tạo có 16 ký tự thập lục phân viết thường.
+
 ```json
 {
   "success": true,
   "message": "Event added to chain 'supply_chain'",
-  "event_id": "supply_chain_1_1"
+  "event_id": "a1b2c3d4e5f67890"
 }
 ```
 
@@ -192,11 +192,13 @@ curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 
 Phản hồi:
 
+Ví dụ phản hồi này giả định chain có hai block; hậu tố của proof ID là độ dài chain.
+
 ```json
 {
   "success": true,
   "message": "Proof submitted from 'supply_chain' to main chain",
-  "proof_id": "supply_chain_1"
+  "proof_id": "supply_chain_2"
 }
 ```
 
@@ -248,12 +250,12 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * 404 Not Found: Không tìm thấy chuỗi hoặc sub-chain.
 * 500 Internal Server Error: Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).
 
-## Ghi chú triển khai (rút gọn từ `endpoints.py`)
+## Ghi chú triển khai (rút gọn từ `hierachain/api/ledger/events.py`)
 
 * DI lười (lazy DI): dùng các singleton nhẹ `get_hierarchy_manager()` và `get_entity_tracer()` cho request lifecycle.
-* `POST /chains/{chain_name}/events`: server sẽ đặt `timestamp = time.time()`; `details` vắng mặt sẽ thành `{}`.
+* `POST /api/ledger/chains/{chain_name}/events`: server sẽ đặt `timestamp = time.time()`; `details` vắng mặt sẽ thành `{}`.
 * `POST /api/ledger/chains/{chain_name}/submit-proof`: gọi `HierarchyManager.submit_proof_to_main_chain()`; thành công nghĩa là block proof MainChain đã ký được hoàn tất và kiểm tra lại sau khi đọc từ SQL bền vững. Thiếu storage hoặc backend chưa hỗ trợ sẽ trả lỗi.
-* `GET /chains/{chain_name}/blocks`: khi `Block` không có `to_event_list`, có fallback chuyển đổi từ Arrow Table (`to_pylist`) để an toàn.
+* `GET /api/ledger/chains/{chain_name}/blocks`: khi `Block` không có `to_event_list`, có fallback chuyển đổi từ Arrow Table (`to_pylist`) để an toàn.
 
 ## Liên quan
 

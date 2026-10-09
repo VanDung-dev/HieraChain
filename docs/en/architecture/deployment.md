@@ -1,66 +1,37 @@
 ---
 title: Deployment Architecture
-description: HieraChain deployment models, ZMQ network configuration, and Kubernetes operations guide for High Availability.
+description: HieraChain deployment models, ZMQ network configuration, Kubernetes resources and current operational limitations.
 icon: material/server-network
 ---
 
 # Deployment Architecture
 
-This document describes HieraChain deployment models in detail, how to configure the network, and system operations guidance on Kubernetes to ensure High Availability and enterprise-level scalability.
+## Runtime boundaries
 
----
+An API process initializes a `HierarchyManager` with MainChain and registered Sub-Chains. MainChain/Sub-Chain use PoA or PoF; the BFT engine is a separate component requiring explicit integration. Deploying four API replicas alone does not establish PBFT finality or leader failover. See [Consensus scope](../workflows/consensus_mechanisms.md).
 
-## 1. Multi-Node Deployment Model (BFT Topology)
+## Network and configuration
 
-HieraChain supports the BFT (Byzantine Fault Tolerance) consensus protocol to ensure the system continues operating correctly even when some nodes fail or behave maliciously.
+| Setting | Runtime default | Purpose |
+|---------|-----------------|---------|
+| `HRC_API_PORT` | `2661` | REST, GraphQL and WebSocket API |
+| `HRC_P2P_PORT` | `5555` | ZeroMQ transport; container manifests override it |
+| `HRC_PEERS` | Empty | Comma-separated seed peers; `peer-id@host:port` identifies a peer |
+| `HRC_P2P_ENABLED` | `true` | Starts the API lifecycle's network layer |
 
-### Standard BFT Configuration (Example: 4 Nodes)
+Use `python -m hierachain` or `hrc node start`. Provision distinct identities, trusted block keys, production API keys and SQL credentials before startup. A health response is liveness; readiness uses `/api/ledger/ready`. Keep the database and each node's `data/` journals persistent. Shared SQL registry storage does not remove the ordering journal's writer ownership requirements.
 
-The minimum deployment model for BFT to withstand 1 faulty node (***f=1***) requires at least ***3f + 1 = 4*** nodes.
+Terminate HTTPS and configure public access limits at the gateway. Restrict P2P access to the intended network. `ProductionSettings` sets `P2P_TRUST_POLICY = "strict"` and `P2P_REQUIRE_SIGNATURES = True`, but the current API P2P startup path passes seed nodes and transport keys to `NetworkClient` without wiring either setting into that runtime. These values alone do not enforce strict peer trust or message-signature verification there. Optional IPFS requires its daemon and a real 32-byte encryption key. See [Secure deployment](../how-to/secure-deployment.md) and [Configuration](../reference/config.md).
 
-Topology structure for a Sub-Chain:
+## Kubernetes assets
 
-* **Node 0 (Initial Leader)**: Receives transactions, closes blocks, and initiates consensus steps (Pre-prepare).
-* **Node 1, Node 2, Node 3 (Validators)**: Participate in Prepare and Commit rounds to validate blocks.
+`docker/k8s/` contains Deployment/StatefulSet, service, storage and configuration examples. The base kustomization uses the `hierachain` namespace; `templates/` contains separate Sub-Chain templates. `HierarchyManager` does not create namespaces or pods when a Python Sub-Chain is created. Namespace boundaries alone do not isolate CPU, memory or network traffic; requests/limits and network policy must be configured at deployment.
 
-During deployment, configure the peer list (via the `PEERS` environment variable) on each node so they form a P2P Mesh Network.
+Resources depend on the manifest: `node-deployment.yaml` uses 1 CPU/1 GiB requests and limits, while `node-statefulset.yaml` requests 500m CPU/1 GiB and limits 2 CPU/2 GiB. These are manifest values, not runtime requirements or tested capacity guarantees.
 
----
+Review the chosen manifest before deployment. For example, `node-deployment.yaml` currently invokes `hrc start`, while the CLI provides `hrc node start`; it also contains an IPFS encryption-key placeholder. The StatefulSet has separate identity secret mounts. These files are deployment examples, not a complete provisioned production environment. This documentation update does not modify or validate the cluster manifests.
 
-## 2. Network Configuration
+## Related
 
-For nodes in the network to communicate, the system uses **ZeroMQ TCP transport** and **HTTP REST API** via `FastAPI` (or manual configuration of separate API ports).
-
-* **Default standard ports**:
-
-    * **API Port** (`2661`): Used for GraphQL API, REST API, and external clients (SDK/CLI) to submit events to the chain. (Reference `api_port: int = 2661`).
-    * **Node Port** (`5001` - `50xx`): Internal ZeroMQ (ZMQ) port for consensus (P2P), signature message exchange, and block sharing between validators. (Reference `node_port: int = 5001`).
-
-* **Ingress / Egress Rules (Firewall Rules)**:
-
-  * **Ingress**: Only open port `2661` to the Internet or Load Balancer if a public API is needed. Port `5001` should only be configured within the internal cloud mesh network (VPC/Subnet).
-  * **Egress**: Allow nodes to make HTTP(s) calls (port `443/80`) if ERP integration is needed, and call internal ZeroMQ ports (`5001` - `50xx`) of other Nodes.
-
----
-
-## 3. Kubernetes Deployment (K8s Orchestration)
-
-The repository includes Kubernetes deployment manifests under `docker/k8s/`. Namespace and workload lifecycle are handled by the Kubernetes deployment workflow rather than by a runtime namespace manager:
-
-* **Isolation Principle**: Each Sub-chain is allocated a separate **Namespace**. Memory leaks or resource overload in one Sub-chain will not spread to others.
-* **Microservice Lifecycle**: Uses K8s Deployment to manage Pods.
-* **Resource isolation**: Namespace, resource requests, limits, and network policy are defined in the deployment manifests.
-
-### Namespace & Resource Limits Management
-
-Resource requests and limits are defined in the Kubernetes manifests and applied by the deployment workflow. `HierarchyManager` does not provision Kubernetes namespaces at runtime.
-
-* **Resource Requests:**
-
-    * **CPU:** `500m` (Ensures minimum core count needed for Arrow event processing).
-    * **Memory:** `512Mi`.
-
-* **Resource Limits:**
-
-    * **CPU:** `1000m` (1 vCPU). Leverages `parallel_engine.py` module for multi-threading.
-    * **Memory:** `1Gi` (Prevents Out-of-Memory due to In-memory Storage overflow).
+* [Recovery](../how-to/disaster-recovery.md)
+* [Testing and isolated deployment workloads](../dev/testing.md)

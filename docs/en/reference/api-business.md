@@ -34,8 +34,7 @@ sequenceDiagram
     API-->>User: 501 Not Implemented
 
     User->>API: POST /contracts/execute
-    API->>API: Execute Logic (Smart Contract)
-    API-->>User: Result
+    API-->>User: 501 Not Implemented
 ```
 
 * `GET  /api/business/health`: service health check.
@@ -52,9 +51,10 @@ sequenceDiagram
     * `implementation_cid: str | None` (IPFS reference)
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Domain, Owner, Endorsement Policy)
+    * `implementation_metadata: dict[str, Any] | None`
     
 * `POST /api/business/contracts`: Register a contract (Supports raw `implementation` or `implementation_cid` IPFS reference).
-* `POST /api/business/contracts/execute`: execute a contract.
+* `POST /api/business/contracts/execute`: returns HTTP 501 for registered contracts; unknown contracts return HTTP 404.
 * `POST /api/business/organizations`: register an organization. Requires `chains` and `organizations:manage`; the verified API key user becomes its first administrator.
 * `POST /api/business/organizations/{org_id}/members`: an organization administrator registers a member with role `admin` or `member`. The member ID must match that member's API key user ID.
 
@@ -71,19 +71,19 @@ ORG_PROVISIONER_KEY=replace-me
 ORG_ADMIN_KEY=replace-me
 CHANNEL_PROVISIONER_KEY=replace-me
 
-curl -s -X POST http://localhost:2661/api/business/organizations \\
-  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/organizations \
+  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"org_id": "orgA", "ca_config": {}}'
 
-curl -s -X POST http://localhost:2661/api/business/organizations/orgA/members \\
-  -H 'X-API-Key: '"$ORG_ADMIN_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/organizations/orgA/members \
+  -H 'X-API-Key: '"$ORG_ADMIN_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"member_id": "userB", "role": "member"}'
 
-curl -s -X POST http://localhost:2661/api/business/channels \\
-  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \\
-  -H 'Content-Type: application/json' \\
+curl -s -X POST http://localhost:2661/api/business/channels \
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \
+  -H 'Content-Type: application/json' \
   -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 ```
 
@@ -112,7 +112,7 @@ curl -s -X POST \
 curl -s -X POST http://localhost:2661/api/business/contracts \
   -H 'Content-Type: application/json' \
   -d '{
-        "contract_id": "quality_control", 
+        "contract_id": "quality_control",
         "version": "1.0.0",
         "implementation": "def logic()...",
         "metadata": {"domain": "mfg"}
@@ -121,7 +121,7 @@ curl -s -X POST http://localhost:2661/api/business/contracts \
 curl -s -X POST http://localhost:2661/api/business/contracts/execute \
   -H 'Content-Type: application/json' \
   -d '{
-        "contract_id": "quality_control", 
+        "contract_id": "quality_control",
         "event": {"entity_id": "PROD-001", "event": "check", "details": {}},
         "context": {"chain": "sub_chain_1"}
       }'

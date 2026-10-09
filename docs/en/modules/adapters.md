@@ -13,7 +13,7 @@ The `adapters` module provides the persistence layer for HieraChain. The core sy
 ### Main roles
 
 * Standardizes database read and write operations for chains, blocks, events, proofs, and entity state.
-* Supports multiple environments, with PostgreSQL as the default and SQLite as the local fallback.
+* Supports multiple environments, with PostgreSQL as the default and SQLite as an explicitly selected backend.
 * Enforces data isolation and input sanitization across database engines.
 
 ## 2. Available database adapters
@@ -22,7 +22,7 @@ All storage adapters reside in `hierachain/adapters/database/`.
 
 ### 2.1 SQLite Database Adapter (`sqlite_adapter.py`)
 
-The fallback adapter for environments where PostgreSQL is unavailable, and the explicit choice for lightweight single-node setups.
+An explicitly selected adapter for local deployments. PostgreSQL failure does not select SQLite automatically.
 
 * Technology: SQLite3 via `sqlite3` and `hierachain/adapters/database/base/sql_adapter.py` (`SQLBase`).
 * Schema: Initialized through `sqlite_schema.py`, creating tables for `chains`, `blocks`, `events`, `proofs`, and `chain_state`.
@@ -36,7 +36,7 @@ The relational database adapter for multi-node and enterprise deployments.
 * Technology: PostgreSQL with connection pooling.
 * Schema: Initialized through `postgres_schema.py` using identical schema semantics to SQLite.
 * Strengths: High concurrent write capacity, connection pooling, enterprise backup tooling.
-* Query features: Partition-aware queries and index scans for high-volume audit logs.
+* Query support uses SQL event indexes; partitioning is not automatically configured by this adapter.
 
 ### 2.3 Redis Database Adapter (`redis_adapter.py`)
 
@@ -49,14 +49,14 @@ An in-memory adapter designed for high-throughput reads and real-time entity sta
 
 ## 3. Adapter comparison
 
-| Feature | SQLiteAdapter | PostgreSQLAdapter | RedisAdapter |
+| Feature | SQLiteAdapter | PostgresAdapter | RedisStorageAdapter |
 | :--- | :--- | :--- | :--- |
 | Storage type | Relational file | Relational server | In-memory key-value |
 | Recommended use | Development, testing, edge nodes | Production, multi-node clusters | Low-latency state queries, caches |
-| Write latency | Low | Low to medium | Very low |
+
 | Query flexibility | Full SQL | Full SQL | Key and index lookups |
 | Persistence | ACID local file | ACID enterprise server | RDB / AOF snapshot |
-| External service | None | PostgreSQL 13+ | Redis 6+ |
+| External service | None | PostgreSQL | Redis |
 
 ## 4. Configuration and usage
 
@@ -89,9 +89,9 @@ print(f"Total blocks: {stats['total_blocks']}")
 #### Using PostgreSQL
 
 ```python
-from hierachain.adapters.database.postgres_adapter import PostgreSQLAdapter
+from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 
-adapter = PostgreSQLAdapter(connection_string="postgresql://user:pass@localhost:5432/hierachain")
+adapter = PostgresAdapter(database_url="postgresql://user:pass@localhost:5432/hierachain")
 stats = adapter.get_chain_statistics("supply_chain_ledger")
 print(f"Total blocks: {stats['total_blocks']}")
 ```
@@ -99,9 +99,9 @@ print(f"Total blocks: {stats['total_blocks']}")
 #### Using Redis
 
 ```python
-from hierachain.adapters.database.redis_adapter import RedisAdapter
+from hierachain.adapters.database.redis_adapter import RedisStorageAdapter
 
-adapter = RedisAdapter(host="localhost", port=6379, db=0)
+adapter = RedisStorageAdapter(host="localhost", port=6379, db=0)
 stats = adapter.get_chain_statistics("supply_chain_ledger")
 print(f"Total blocks: {stats['total_blocks']}")
 ```
@@ -121,7 +121,7 @@ Adapters log queries and connection events through `SecureLogger`, redacting dat
 
 ## 6. Maintenance and retention
 
-* Data cleanup: Relational adapters support purging historical event logs beyond retention thresholds set by `HRC_SQL_RETENTION_DAYS`.
+* `HRC_SQL_RETENTION_DAYS` is declared in settings but is not consumed by a runtime retention worker. No automatic event-history purge is wired to this setting.
 * Logging and journals: Persistent binary journals and forensic error records use `hierachain/core/parquet_log.py` and `hierachain/error_mitigation/journal.py`, keeping chain persistence decoupled from diagnostic logging.
 
 ## Related
@@ -129,3 +129,5 @@ Adapters log queries and connection events through `SecureLogger`, redacting dat
 * [Storage Module](./storage.md)
 * [Configuration Reference](../reference/config.md)
 * [Security Overview](./security.md)
+
+Redis adapters serve auxiliary indexing/queries; `HierarchyManager` rejects Redis as durable hierarchical block storage. Direct adapter callers manage connection lifetime.

@@ -17,12 +17,15 @@ are deployment responsibilities, not automatic services in this package.
 ```mermaid
 flowchart TD
     ERR["Error or node failure"] --> CLASS["ErrorClassifier\nclassify and log"]
-    CLASS -->|Pending event| JOURNAL["TransactionJournal\nreplay after restart"]
-    CLASS -->|Consensus failure| VIEW["BFTViewChangeManager\nstart a new view"]
-    CLASS -->|Validation failure| REJECT["Reject and report"]
-    JOURNAL --> VALIDATE["Validate before ordering"]
-    VIEW --> CONSENSUS["Resume BFT phases"]
+    CLASS -->|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
+    EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
+    JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
+    RECOVERY --> VALIDATE["Validate before ordering"]
+    LEADER["Leader unavailable"] --> VIEW["BFTConsensus\nBFTViewChangeManager"]
+    VIEW --> CONSENSUS["Install new view\nresume BFT phases"]
 ```
+
+These are separate component-owned paths, not a dispatch chain from `ErrorClassifier`. Its `classify_error()` records and returns an `ErrorInfo`; it may invoke the optional lockdown callback only for CRITICAL security/performance errors or HIGH security errors, and only when a callback is configured. `OrderingRecovery` replays journal entries, while `BFTConsensus` owns leader-failure view changes.
 
 ## Consensus recovery
 

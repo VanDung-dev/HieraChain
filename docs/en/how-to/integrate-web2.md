@@ -23,7 +23,7 @@ graph TD
     Web2[Web2 App / Frontend] -->|REST HTTP| API[HieraChain API]
     Legacy[Legacy System] -->|Adapter| SDK[Integration SDK]
     ERP[ERP System] -->|Pull/Push| Adapter
-    
+
     API --> Core[HieraChain Core]
     SDK --> Core
 ```
@@ -62,7 +62,7 @@ API_KEY = "your-api-key-here"  # If AUTH is enabled
 def log_order_to_chain(order_id, items):
     # 1. Create Sub-Chain for orders (or use shared 'orders' chain)
     # Assuming using shared 'orders' chain
-    
+
     # 2. Submit event
     payload = {
         "entity_id": order_id,
@@ -72,16 +72,16 @@ def log_order_to_chain(order_id, items):
             "total_value": sum(i['price'] for i in items)
         }
     }
-    
+
     headers = {
         "Content-Type": "application/json",
         "X-API-Key": API_KEY
     }
-    
+
     try:
         response = requests.post(
-            f"{API_URL}/chains/orders/events", 
-            json=payload, 
+            f"{API_URL}/chains/orders/events",
+            json=payload,
             headers=headers,
             timeout=5
         )
@@ -112,21 +112,23 @@ async function logOrder(orderId, items) {
         details: { count: items.length }
       })
     });
-    
+
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const result = await response.json();
     console.log("Logged event:", result.event_id);
     return result.event_id;
-    
+
   } catch (error) {
     console.error("Blockchain integration error:", error);
   }
 }
 ```
 
-## Method 2: Integration SDK (Python Backend)
+Configure a signing identity and SQL storage using [Quickstart](../getting-started/quickstart.md) before using `HierarchyManager`. The HTTP SDK in `hierachain/sdk/` is distinct from the direct library call below.
 
-If you are building a Python service within the same internal network or cluster, using the SDK directly provides higher performance (bypasses HTTP overhead).
+## Method 2: Direct in-process library integration (Python Backend)
+
+This example imports and calls `HierarchyManager` directly in the service process. Use `HieraChainClient` when your service should call the API through the HTTP SDK.
 
 ```mermaid
 sequenceDiagram
@@ -136,7 +138,7 @@ sequenceDiagram
     participant Main as Main Chain
 
     Service->>Manager: start_operation(sub_chain, data)
-    Manager->>Sub: Record Event & Close Block
+    Manager->>Sub: Journal and queue event
     Service->>Manager: submit_proof_to_main_chain()
     Manager->>Sub: Get Proof
     Manager->>Main: Submit Proof (Anchor Data)
@@ -146,26 +148,27 @@ sequenceDiagram
 ```python
 from hierachain.hierarchical import HierarchyManager
 
-# Initialize manager (connects directly to DB or via internal ZMQ)
 manager = HierarchyManager()
-
-def process_batch_data(batch_items):
-    # Write directly to processing queue
-    for item in batch_items:
-        manager.start_operation(
-            sub_chain_name="supply_chain",
-            entity_id=item["id"],
-            operation_type="ingest",
-            details=item["metadata"]
-        )
-    
-    # Trigger immediate proof submission (optional)
-    manager.submit_proof_to_main_chain("supply_chain")
+try:
+    assert manager.create_sub_chain("supply_chain", "supply_chain")
+    chain = manager.get_sub_chain("supply_chain")
+    assert chain.register_entity("PROD-001", {"product": "sample"})
+    assert manager.start_operation(
+        "supply_chain", "PROD-001", "production_start", {"quantity": 100}
+    )
+    chain.flush_pending_and_finalize(timeout=10.0)
+    assert any(
+        event["event"] == "operation_start"
+        for event in chain.get_events_by_entity("PROD-001")
+    )
+    assert manager.submit_proof_to_main_chain("supply_chain")
+finally:
+    manager.close()
 ```
 
 ## Method 3: ERP Adapter
 
-Use the `hierachain/integration` ledger to build bidirectional data sync adapters.
+Use the mapping/scheduler library with an application-provided ERP adapter. Built-in vendor connectors are simulation-only.
 
 See details at: [Integration Module](../modules/integration.md).
 

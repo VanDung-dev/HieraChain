@@ -8,12 +8,15 @@ icon: material/source-branch-plus
 
 ## Purpose
 
-Create a Sub-Chain (domain chain) and operate its basic lifecycle: initialize → record events → submit proof to Main Chain.
+Use Python `HierarchyManager` to create a `DomainChain`, or use REST to create a generic `SubChain`, then record events and submit proofs. The Python path provides `DomainChain` validation and participant 2PC behavior.
 
 ## Prerequisites
 
 * Package installed and environment activated per [Getting Started](../getting-started/install.md).
-* Can run API server: `python -m hierachain.api.server` (default `http://localhost:2661`).
+* Can run API server: `python -m hierachain` (default `http://localhost:2661`).
+
+
+Configure the signing identity, trusted keys and storage using [Quickstart](../getting-started/quickstart.md). The Python example uses a new ledger and registers the entity before starting operations.
 
 ## Method 1: Using Python API (HierarchyManager)
 
@@ -39,6 +42,8 @@ manager = HierarchyManager()
 # 2. Create Sub-Chain by domain
 ok = manager.create_sub_chain("supply_chain", domain_type="supply_chain")
 assert ok, "Sub-chain name already exists?"
+chain = manager.get_sub_chain("supply_chain")
+assert chain.register_entity("PROD-001", {"batch": "BATCH-001"})
 
 # 3. Record a domain operation/event
 manager.start_operation(
@@ -55,10 +60,12 @@ manager.complete_operation(
 )
 
 # 4. (Optional) Submit proof to Main Chain
-manager.submit_proof_to_main_chain("supply_chain")
+chain.flush_pending_and_finalize(timeout=10.0)
+assert manager.submit_proof_to_main_chain("supply_chain")
 
 # 5. System overview
 print(manager.get_system_overview())
+manager.close()
 ```
 
 Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager/base.py`:
@@ -70,6 +77,8 @@ Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager/base.
 ## Method 2: Using REST API Ledger
 
 Assuming API server is running at `http://localhost:2661`:
+
+The REST endpoint constructs the base `SubChain` class and defaults `chain_type` to `generic`; it does not construct `DomainChain`. Use the Python method above when `DomainChain` validation or participant 2PC behavior is required.
 
 ```bash
 # 1. Create sub-chain (POST)

@@ -60,7 +60,7 @@ Thay thế hoặc dừng hồ sơ sẽ hủy bộ hẹn giờ đang chờ và ng
 from hierachain.integration.erp_ledger import ERPIntegrationLedger
 
 ledger = ERPIntegrationLedger()
-ledger.register_adapter("sap", MyConfiguredSapAdapter)  # do ứng dụng cung cấp
+ledger.register_adapter("sap", MyConfiguredSapAdapter)  # application-provided
 ledger.create_mapping_profile(
     "SAP_Logistics",
     "sap",

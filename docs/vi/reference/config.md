@@ -36,17 +36,19 @@ print(settings.AUTH_ENABLED)
 
 * `HRC_API_HOST` (mặc định: `localhost` ở dev, `127.0.0.1` ở production)
 * `HRC_API_PORT` (mặc định: `2661`)
-* `API_VERSION` (hằng số: `ledger` như định nghĩa trong `hierachain/config/settings.py:189`, không phải `admin`)
+* `API_VERSION` (hằng số: `ledger`; các route business/admin có tiền tố riêng)
 
 ### Đồng thuận và blockchain
 
 * `HRC_CONSENSUS_TYPE` / `HRC_MAINCHAIN_CONSENSUS` (alias, mặc định: `proof_of_authority`; hỗ trợ: `proof_of_authority`, `proof_of_federation`)
+
+* `HRC_BLOCK_INTERVAL` (mặc định `0.0` giây): giãn cách bổ sung PoA; khi dương, validation dùng ít nhất nửa interval. Không điều khiển interval PoF. Batching Sub-Chain mặc định vẫn dùng 50 event và timeout 1 giây.
 * `CONSENSUS_FEDERATION_CONFIG`: cấu hình federation (min_validators: 3, block_interval: 5.0). Đây là thuộc tính Settings, không phải biến môi trường.
 * `VALIDATOR_TIMEOUT` (mặc định: `30` giây). Thuộc tính Settings.
 * `BFT_ENABLED` (mặc định: `True`), `BFT_FAULT_TOLERANCE` (mặc định: `1`), `BFT_NODE_COUNT` (mặc định: `4`). Là thuộc tính Settings (không có biến môi trường `HRC_BFT_ENABLED`).
 * Giới hạn block: `BLOCK_SIZE_LIMIT` (mặc định: `1000` events/block ở dev, `10` ở test)
 * `PROOF_SUBMISSION_INTERVAL` (mặc định: `300` giây ở dev, `10` ở test)
-* `HRC_VALIDATOR_IDENTITY`: đường dẫn file identity của validator (mặc định: `validator_key.json`)
+* `HRC_VALIDATOR_IDENTITY`: đường dẫn tệp danh tính nút đầy đủ (mặc định: `validator_key.json`). Tệp phải có ID nút/MSP, khóa ký riêng/công khai và khóa truyền tải riêng/công khai; đầu ra hai trường của `hrc key generate` chưa đủ. Xem [Khởi động nhanh](../getting-started/quickstart.md).
 * `HRC_BLOCK_TRUSTED_KEYS_FILE`: file JSON bắt buộc ánh xạ `creator_id` tới public key Ed25519 dạng hex. Khóa node trong `HRC_VALIDATOR_IDENTITY` phải khớp mục tương ứng. Thiếu file hoặc khóa không khớp sẽ chặn chain/API khởi động. Mọi block, kể cả genesis, đều cần chữ ký tin cậy. Chain cũ có block không ký cần được di chuyển dữ liệu trước khi khởi động.
 
 ### Lưu trữ và cache
@@ -66,11 +68,12 @@ print(settings.AUTH_ENABLED)
 * `HRC_IPFS_HOST` (mặc định: `/ip4/127.0.0.1/tcp/5001`). Địa chỉ daemon IPFS.
 * `HRC_IPFS_AUTO_PIN` (mặc định: `true`). Pin dữ liệu sau khi upload để không bị garbage collect.
 * `HRC_IPFS_TIMEOUT` (mặc định: `120` giây). Thời gian chờ tối đa cho thao tác IPFS.
-* `HRC_IPFS_ENCRYPTION_KEY`: khóa AES-256 (32-byte hex). Mọi node trong cùng channel hoặc organization phải dùng cùng một giá trị.
+* `HRC_IPFS_ENCRYPTION_KEY`: bắt buộc với factory IPFS từ môi trường, gồm đúng 64 ký tự hex (32 byte). Giá trị thiếu hoặc không hợp lệ gây `IPFSError`. Các nút đọc cùng đối tượng đã mã hóa cần cùng khóa, nonce và metadata AAD; phải giữ khóa qua các lần khởi động lại.
 
 ### Xử lý song song và tài nguyên
 
-* Bảo vệ DoS: `HRC_EVENT_POOL_MAX_SIZE` (mặc định: `10000`), `HRC_RAM_CRITICAL_THRESHOLD` (`95.0` %)
+* `HRC_EVENT_POOL_MAX_SIZE` (mặc định: `10000`) giới hạn hàng đợi event của ordering.
+* `HRC_RAM_CRITICAL_THRESHOLD` (mặc định: `95.0` %) được khai báo trong settings nhưng chưa có consumer runtime trong ordering hoặc storage.
 
 ### Bảo mật và authentication
 
@@ -86,7 +89,7 @@ print(settings.AUTH_ENABLED)
     * `HRC_BF_MAX_FAILURES` (mặc định: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (mặc định: `900` = 15 phút)
     * `HRC_BF_WINDOW_SECONDS` (mặc định: `300` = 5 phút)
-    * TTL Redis của lockout theo `HRC_BF_LOCKOUT_SECONDS`; mỗi request đọc lại key lockout dùng chung. Bộ đếm lần thất bại vẫn nằm trong từng process.
+    * TTL khóa của Redis tuân theo `HRC_BF_LOCKOUT_SECONDS`; mỗi yêu cầu kiểm tra khóa đều đọc khóa dùng chung. SQLite và Redis đếm số lần thất bại một cách nguyên tử giữa các worker. Redis dùng thời gian máy chủ và cập nhật Lua nguyên tử cho cửa sổ thất bại và ngưỡng khóa. Bộ đếm lần thử của memory/file vẫn thuộc riêng từng tiến trình.
 * Identity và organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
 ### Bảo mật mạng P2P
@@ -95,6 +98,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_P2P_TRUST_POLICY` (mặc định: `open` ở dev, `strict` ở production; giá trị: `open|strict`)
 * `HRC_P2P_PEER_ALLOWLIST` (danh sách peer ID phân tách bằng dấu phẩy cho chế độ strict)
 * `HRC_P2P_REQUIRE_SIGNATURES` (`false` ở dev, `true` ở production)
+
+Production cố định chính sách tin cậy ở `strict` và yêu cầu chữ ký ở `True`; giá trị môi trường không ghi đè các thuộc tính production này. `SecureConnectionManager` dùng các thiết lập đó. Luồng khởi động API tạo `NetworkClient` với seed peer và transport key, chưa nối manager này, chính sách tin cậy hoặc kiểm tra chữ ký vào client. Xem [Network](../modules/network.md).
 
 ### CORS
 
@@ -108,6 +113,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_HSTS_ENABLED` (`false` ở dev/test; `true` ở production)
 * `HRC_HSTS_MAX_AGE` (mặc định: `31536000` = 1 năm)
 
+Các thiết lập này được khai báo và kiểm tra để cảnh báo cấu hình, nhưng middleware API không thêm `Strict-Transport-Security`. Hãy cấu hình header tại reverse proxy HTTPS.
+
 ### Rate limiting
 
 * `HRC_RATE_LIMIT` (`false` ở dev/test; `true` ở production)
@@ -117,7 +124,7 @@ print(settings.AUTH_ENABLED)
 
 ### Monitoring và metrics
 
-* `HRC_METRICS_ENABLED` (mặc định: `false`). Bật endpoint `/metrics` cho Prometheus.
+* `HRC_METRICS_ENABLED` (mặc định: `false`). Bật `/metrics` để xuất registry Prometheus mặc định. API không đăng ký bộ đếm yêu cầu/độ trễ HTTP hay collector cho ledger.
 * `HRC_TRUSTED_PROXIES` (mặc định: `127.0.0.1`). IP của reverse proxy tin cậy (cho HTTP/2, HTTP/3).
 
 ### Đa tổ chức
@@ -134,6 +141,8 @@ print(settings.AUTH_ENABLED)
 * `HRC_ZK_VERIFICATION_KEY`, `HRC_ZK_PROVING_KEY`, `HRC_ZK_CIRCUIT` (đường dẫn file)
 * `HRC_ZK_REQUIRED_MAINCHAIN` (mặc định: `false`)
 
+Mock chỉ phục vụ phát triển; tạo/xác minh `production` chưa triển khai. Bật flag hoặc cấu hình key/circuit không cung cấp backend production.
+
 ### Đồng bộ trạng thái cross-level
 
 * `HRC_CROSS_LEVEL_SYNC` (mặc định: `true`)
@@ -145,12 +154,20 @@ print(settings.AUTH_ENABLED)
 * `ERP_INTEGRATION_ENABLED` (`True`)
 * `SUPPORTED_ERP_SYSTEMS` (danh sách: `sap`, `oracle`, `microsoft_dynamics`)
 
+Các thuộc tính này không khởi động ERP sync ở API. Connector vendor có sẵn là fixture `simulation_mode=True`; ứng dụng phải cấp adapter thật.
+
+### Thuộc tính khai báo chưa điều khiển runtime
+
+`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` và `HRC_SQL_RETENTION_DAYS` được đọc vào settings nhưng chưa có consumer runtime trong `hierachain/`. Đặt các biến này không tự đổi batching, xoay Parquet, bật batch worker SQL hoặc xóa event cũ. Cấu hình batching trực tiếp trên ordering service/Sub-Chain.
+
 ### Logging
 
-* `LOG_LEVEL` (mặc định: `DEBUG` ở dev/test, `WARNING` ở production)
+* `LOG_LEVEL`: lớp môi trường được chọn cố định thuộc tính này ở `DEBUG` trong dev/test và `WARNING` trong production. Đặt biến môi trường `LOG_LEVEL` không ghi đè các giá trị của lớp.
 * `LOG_FORMAT` (chuỗi định dạng logging Python chuẩn).
 * `HRC_LOG_FORMAT`: `text` (mặc định) hoặc `json` (cho log tập trung như ELK/Loki).
 * `HRC_LOG_SQL_DETAIL` (mặc định: `false`; bật tường minh qua biến môi trường nếu cần)
+
+Các lệnh khởi động cấu hình Uvicorn riêng: `python -m hierachain` chọn `debug` khi settings có mức DEBUG và `info` trong các trường hợp còn lại; `hrc node start` dùng `info`. `HRC_LOG_FORMAT` điều khiển formatter của ứng dụng.
 
 ### CLI
 
@@ -158,6 +175,8 @@ print(settings.AUTH_ENABLED)
 * `CLI_LOG_LEVEL` (mặc định: `INFO`)
 
 ## Ví dụ .env (development)
+
+Thêm identity ký và bản đồ trusted key theo [Bắt đầu nhanh](../getting-started/quickstart.md) trước khi khởi tạo chain.
 
 ```dotenv
 HRC_ENV=dev
@@ -167,13 +186,17 @@ HRC_CONSENSUS_TYPE=proof_of_authority
 HRC_AUTH_ENABLED=false
 HRC_CORS_ALLOW_ALL=true
 DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
-LOG_LEVEL=DEBUG
 ```
 
 ## Cấu hình production khuyến nghị (tối thiểu)
 
 ```dotenv
 HRC_ENV=production
+HRC_API_KEYS_FILE=/run/secrets/api_keys.json
+HRC_VALIDATOR_IDENTITY=/run/secrets/identity.json
+HRC_BLOCK_TRUSTED_KEYS_FILE=/run/secrets/trusted_block_keys.json
+HRC_API_KEY_REVOCATIONS_DB=/var/lib/hierachain/api_key_revocations.sqlite3
+HRC_NODE_ID=node1
 HRC_API_HOST=0.0.0.0
 HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false

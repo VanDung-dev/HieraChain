@@ -28,8 +28,8 @@ Explorer hỗ trợ trực quan hóa dữ liệu được lưu trữ ngoài chu�
     * 📦 **Màu vàng**: Dữ liệu CID chưa tải (Unresolved).
     * ✓ **Màu xanh**: Dữ liệu đã được tải và giải mã (Resolved).
 
-* **Tải dữ liệu**: Nút **"Load Details"** tải dữ liệu từ IPFS qua API Server mà không cần tải lại trang.
-* **Giải mã**: Server giải mã dữ liệu trước khi hiển thị trên giao diện.
+* **Tải dữ liệu**: Handler **"Load Details"** hiện yêu cầu dữ liệu block với `resolve_cid=true`, nhưng đọc trường `details` ở cấp cao nhất. Endpoint blocks trả các bản ghi đã giải quyết bên trong `blocks`, vì vậy handler này không hiển thị details của event.
+* **Giải mã**: Khi bật IPFS, API có thể giải quyết và giải mã details trong phản hồi block. Handler Explorer hiện không render các details đã giải quyết đó.
 
 ### 2. Render Dashboard qua API
 
@@ -38,13 +38,13 @@ Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của 
 ```python
 from hierachain.api.blockchain_explorer import BlockchainExplorer
 
-# Gắn module với cấu trúc Core hiện hữu
+# Attach the module to the existing Core structure
 explorer = BlockchainExplorer(chain=my_hierarchy_manager_instance)
 
-# Render Full trang chủ chứa Chain Overview, Entity Tracer, Event Analytics
+# Render a full dashboard page containing Chain Overview, Entity Tracer, Event Analytics
 dashboard_data = explorer.render()
 
-# Hoặc Render riêng mục "Truy vết Entity"
+# Or render just the "Entity Tracer" section
 tracer_form_ui = explorer.render(component_id="entity_tracer")
 ```
 

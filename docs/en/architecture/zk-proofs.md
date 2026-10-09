@@ -22,24 +22,23 @@ The system provides two core modules for this task:
   
     * Acts as the Verifier.
     * For mock proofs, `ZKVerifier` checks the format and the commitment to the supplied public inputs.
-    * A rejected proof prevents its MainChain submission. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.
+    * A rejected proof prevents MainChain submission when `HRC_ENABLE_ZK_PROOFS=true` and a proof is supplied, or when `HRC_ZK_REQUIRED_MAINCHAIN=true`; both settings default to `false`. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.
 
 ### 2. Operating Modes
 
-Zero-Knowledge Proofs in HieraChain support two running modes depending on the actual deployment environment of the Sub-chain (flexibly configured via `ZK_MODE` environment variable):
+Zero-Knowledge Proofs in HieraChain support two running modes depending on the actual deployment environment of the Sub-chain (flexibly configured via `HRC_ZK_MODE` environment variable):
 
 #### a. Mock Mode (Default)
 
 * This is the Development (Dev) or Testing environment mode.
 * Mock mode uses the `mock_zkp_v2\x00` format with a SHA-256 commitment to public inputs; it does not execute a SNARK circuit.
-* Instead of running algorithm circuits, mock mode uses interpolated hash computation (`hashlib.sha256`) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.
 * Supports Main/Sub integrated development without requiring significant hardware resources.
 
-#### b. Production Mode (ZoKrates)
+#### b. Production Mode (unimplemented)
 
 * This is a reserved production interface, currently unsupported.
-* Requires the proving key directory at `ZK_PROVING_KEY_PATH` and verification key at `ZK_VERIFICATION_KEY_PATH`.
-* The current production methods raise `NotImplementedError`; configuring key paths does not enable an external proving service.
+* Requires the proving key directory at `HRC_ZK_PROVING_KEY` and verification key at `HRC_ZK_VERIFICATION_KEY`.
+* The internal `_generate_production_proof()` and `_verify_production()` hooks raise `NotImplementedError`. Public `ZKProver.generate_proof()` catches the proving error and returns an unsuccessful `ZKProofResult`; `generate_proof_bytes()` raises `ZKProvingError`, and `ZKVerifier.verify()` wraps the backend error as `ZKVerificationError`.
 
 ### 3. Public Inputs
 
@@ -52,4 +51,4 @@ As defined by `ZKPublicInputs`, the input arguments (synchronized between Prover
 
 These parameters are serialized as standardized JSON bytes (using `sort_keys=True`) before being hashed for Proof generation.
 
-`WorldState.get_state_root()` hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. Production proving and verification currently raise `NotImplementedError`; this root clarification does not implement a production ZK circuit.
+`WorldState.get_state_root()` hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. The production hooks remain unimplemented; the public methods report this through the results and exceptions described above. This root clarification does not implement a production ZK circuit.

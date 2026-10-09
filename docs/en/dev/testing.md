@@ -14,19 +14,19 @@ icon: material/test-tube
 ### Running Unit Tests
 
 ```bash
-python -m pytest tests/unit -v
+python -m pytest tests/unit/core/test_block.py -v
 ```
 
 ### Running Integration Tests
 
 ```bash
-python -m pytest tests/integration -v
+python -m pytest tests/integration/test_data_flow.py -v
 ```
 
 ### Running Scenario Tests
 
 ```bash
-python -m pytest tests/scenarios -v
+python -m pytest tests/scenarios/test_recovery.py -v
 ```
 
 ### Running Benchmark Tests
@@ -39,7 +39,9 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 ### Running All Tests
 
 ```bash
-python -m pytest tests -v
+for test_file in $(find tests/unit tests/integration tests/scenarios -name 'test_*.py' | sort); do
+    python -m pytest "$test_file" -v || break
+done
 ```
 
 Consensus integration, 2PC, data-flow and recovery tests use per-case temporary SQLite databases and journals. They do not require the PostgreSQL service from the application's `.env`; dedicated live-backend tests exercise PostgreSQL.
@@ -178,7 +180,7 @@ kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout
 # Expose the API to local host
 kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
-# Test API  
+# Test API
 curl http://localhost:2661/api/ledger/health
 
 # Run stress test
@@ -273,8 +275,8 @@ Automated security checks across codebase and dependencies:
 ## Running by Marker Example
 
 ```bash
-pytest -v -m critical
-pytest -v -m integration
+python -m pytest tests/integration/test_data_flow.py -v -m critical
+python -m pytest tests/integration/test_data_flow.py -v -m integration
 ```
 
 ## Testing Principles

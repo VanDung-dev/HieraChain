@@ -38,19 +38,17 @@ When analyzing source code or writing documentation, AI must **ABSOLUTELY NOT** 
 
 ## Source Code Context
 
-The system has **Hard Enforcement** mechanisms in code to block cryptocurrency terms.
+Event validation includes a recursive check for standalone cryptocurrency terms in dictionary keys and values.
 
 * **File**: `hierachain/core/utils.py`
 * **Function**: `validate_no_cryptocurrency_terms`
-* **Logic**: If an Event contains keywords like `coin`, `token`, `wallet` -> The system will refuse processing (Raise Error).
+* **Logic**: `validate_no_cryptocurrency_terms()` returns `False` when it finds a forbidden term. `validate_event_structure()` also returns `False` for invalid events; each caller decides how to report rejection.
 
 ```python
-# Actual excerpt from hierachain/core/utils.py
+# Terms matched as standalone words by validate_no_cryptocurrency_terms
 crypto_terms = [
-    "mining", "coin", "token", "wallet", "address",
-    "fee", "reward", "coinbase" 
-    # Note: "transaction" may be used in the context of "Database Transaction",
-    # but context must be carefully considered.
+    "transaction", "mining", "coin", "token", "wallet", "address",
+    "sender", "receiver", "amount", "fee", "reward", "coinbase",
 ]
 ```
 

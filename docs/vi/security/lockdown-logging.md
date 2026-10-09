@@ -1,24 +1,18 @@
 ---
 title: "Ghi nhật ký an toàn"
-description: "Hệ thống ghi nhật ký an toàn có khả năng phát hiện giả mạo."
+description: "Log JSON có cấu trúc, sanitization và che trường nhạy cảm."
 icon: material/lock-alert
 ---
 
 # Ghi nhật ký an toàn
 
-Lớp bảo mật này cung cấp log có cấu trúc và khả năng phát hiện giả mạo cho các thao tác nhạy cảm.
+`SecureLogger` trong `hierachain/security/secure_logging.py` ghi log JSON có cấu trúc cho thao tác nhạy cảm về bảo mật. Nó làm sạch chuỗi và che trường nhạy cảm theo tên, kể cả dữ liệu lồng nhau. Các instance logger riêng cho phép ứng dụng cấu hình handler và level theo module.
 
-## Ghi nhật ký an toàn
+Cấu trúc JSON không tự phát hiện việc sửa hay xóa bản ghi. `SecureLogger` không có chuỗi hash, chữ ký hay manifest đáng tin cậy. Log tập trung và chính sách lưu giữ thuộc hệ thống log của môi trường triển khai.
 
-**File**: `hierachain/security/secure_logging.py`
-
-Hệ thống ghi nhật ký được thiết kế chuyên biệt cho an ninh:
-
-*   **Tamper-evident**: Mỗi bản ghi log có cấu trúc chặt chẽ, hỗ trợ phát hiện các hành vi xóa hoặc sửa đổi nhật ký.
-*   **Structured Logs**: Log được ghi dưới dạng JSON để dễ dàng tích hợp với các hệ thống giám sát tập trung (SIEM).
-*   **Phân quyền Log**: Các module nhạy cảm (như `security`, `consensus`) sử dụng `SecureLogger` riêng biệt với mức độ bảo vệ cao hơn.
+Để xác minh kiểm toán, dùng `AuditLogger` riêng và workflow manifest đáng tin cậy được mô tả trong [Quản lý rủi ro](../modules/risk-management.md). Lưu manifest độc lập với log cần xác minh.
 
 ## Liên quan
 
-*   [Làm sạch input](./risk-analyzer.md)
-*   [Security module](../modules/security.md)
+* [Sanitization đầu vào](./risk-analyzer.md)
+* [Module bảo mật](../modules/security.md)

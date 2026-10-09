@@ -56,12 +56,10 @@ HieraChain splits storage into layers to balance durability and query speed:
 
 ```mermaid
 graph TD
-    A[New Block Committed] --> B[World State Manager]
-    B --> C{Extract Events}
-    C --> D[Apply Business Logic]
-    D --> E[Update State Cache]
-    E --> F[Persist to Backend]
-    F --> G[(SQL / Redis / Memory)]
+    A[Verified finalized block] --> B[WorldState.apply_block]
+    B --> C[In-memory entity projection]
+    D[Recovered signed blocks] --> B
+    C --> E[Diagnostic projection root]
 ```
 
 ---
@@ -89,7 +87,7 @@ There is no `models.py` or SQLAlchemy `BlockModel`/`EventModel`. Tables are crea
 
 ### Indexing and queries
 
-World State indexes every entity by `entity_id` and `timestamp`. With the Redis adapter, these indexes are stored as Sorted Sets, which makes history queries for an entity fast.
+`WorldState` holds the latest entity projection in memory and is rebuilt from verified blocks. It does not write SQL or Redis itself. Native chain event indexes and the separate Redis adapter support history queries; they are distinct from this projection.
 
 ---
 

@@ -8,79 +8,81 @@ icon: material/connection
 
 ## Mục đích
 
-Kết nối tới HieraChain qua WebSocket để nhận thông báo event và block mới.
+Kết nối WebSocket tới HieraChain để đăng ký subscription và nhận thông điệp từ các helper broadcast. Luồng commit/sự kiện của ledger không tự gọi các helper này; ứng dụng phải tích hợp chúng. Xem [Workflow WebSocket](../workflows/websocket-streaming.md).
 
 ## Kết nối WebSocket
 
-### Địa chỉ Endpoint
+### Endpoint
+
+Kết nối tới `/ws`; có thể truyền `chain_name` qua query parameter để chọn chain khi kết nối:
 
 ```
 ws://localhost:2661/ws?chain_name=supply_chain
 ```
 
-Truyền `chain_name` qua query để chọn chuỗi khi kết nối; bỏ tham số này để kết nối tới tất cả chuỗi:
+Khi không có query parameter `chain_name`, kết nối dùng subscription `all`. Subscription này nhận các thông điệp được gửi tường minh bằng `broadcast_to_all()`; helper block và event theo chain yêu cầu subscription có tên chain cụ thể:
 
 ```
 ws://localhost:2661/ws
 ```
 
-Khi bật xác thực API key, hãy gửi header API key đã cấu hình (mặc định `X-API-Key`) trong quá trình bắt tay WebSocket. Key cần cả quyền `chains` và `events` vì luồng gửi cả block lẫn event. Ví dụ trình duyệt bên dưới dùng cho môi trường dev/test đã tắt xác thực; `WebSocket` gốc của trình duyệt không hỗ trợ đặt header bắt tay tùy chỉnh.
+Khi bật xác thực API key, gửi header API key đã cấu hình (mặc định `X-API-Key`) trong WebSocket handshake. Khóa cần cả quyền `chains` và `events` vì stream gửi cả block và sự kiện. Ví dụ trình duyệt dưới đây dùng cho dev/test đã tắt xác thực; `WebSocket` gốc của trình duyệt không hỗ trợ header handshake tùy chỉnh.
 
-Endpoint HTTP `GET /ws/status` yêu cầu quyền `chains` khi xác thực, vì thống kê có tên chain và số lượng subscriber.
+Endpoint HTTP `GET /ws/status` cần quyền `chains` khi bật xác thực vì thống kê chứa tên chain và số subscriber.
 
 ### Định dạng Tin nhắn
 
 Tất cả các tin nhắn trao đổi đều ở định dạng JSON.
 
-**Client → Server:**
+Client → Server:
 
 ```json
-// Đăng ký nhận tất cả sự kiện/block từ một chuỗi cụ thể
+// Subscribe to all events/blocks from a chain
 {"type": "subscribe", "chain_name": "supply_chain"}
 
-// Đăng ký nhận một loại sự kiện cụ thể
+// Subscribe to specific event type
 {"type": "subscribe", "chain_name": "supply_chain", "event_types": ["production_complete"]}
 
-// Hủy đăng ký nhận tin
+// Unsubscribe
 {"type": "unsubscribe"}
 
-// Gửi ping để duy trì kết nối (keep-alive)
+// Keep-alive ping
 {"type": "ping", "timestamp": 1234567890}
 ```
 
-**Server → Client:**
+Server → Client:
 
 ```json
-// Block đã được commit
-{"type": "block_added", "chain_name": "supply_chain", "data": {"hash": "...", "index": 10}}
+// Block added notification (example payload)
+{"type": "block_added", "chain_name": "supply_chain", "data": {"hash": "...", "index": 10}, "optimized": true, "timestamp": "2026-10-09T12:00:00"}
 
-// Thông báo sự kiện
-{"type": "event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event": "production_complete"}}
+// Event notification
+{"type": "event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event": "production_complete"}, "optimized": true, "timestamp": "2026-10-09T12:00:00"}
 
-// Phản hồi Pong từ server
+// Pong response
 {"type": "pong", "timestamp": 1234567890}
 
-// Lỗi
+// Error
 {"type": "error", "message": "Invalid subscription"}
 ```
 
 ## Ví dụ: JavaScript Client
 
 ```javascript
-// Khởi tạo kết nối WebSocket
+// Connect WebSocket
 const ws = new WebSocket('ws://localhost:2661/ws?chain_name=supply_chain');
 
-// Xử lý khi kết nối thành công
+// Handle connection
 ws.onopen = () => {
-  console.log('✅ Đã kết nối với HieraChain WebSocket');
-  
-  // Đăng ký nhận tin từ 'supply_chain'
+  console.log('✅ Connected to HieraChain WebSocket');
+
+  // Subscribe to 'supply_chain'
   ws.send(JSON.stringify({
     type: 'subscribe',
     chain_name: 'supply_chain'
   }));
-  
-  // Hoặc đăng ký theo loại sự kiện cụ thể
+
+  // Or subscribe by event type
   ws.send(JSON.stringify({
     type: 'subscribe',
     chain_name: 'supply_chain',
@@ -88,37 +90,37 @@ ws.onopen = () => {
   }));
 };
 
-// Nhận tin nhắn từ server
+// Receive messages
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  
+
   switch (data.type) {
     case 'block_added':
-      console.log('🆕 Block mới:', data.data.hash);
+      console.log('🆕 New block:', data.data.hash);
       break;
     case 'event':
-      console.log('📝 Sự kiện mới:', data.data.event);
+      console.log('📝 New event:', data.data.event);
       break;
     case 'pong':
-      console.log('💚 Nhận được Pong');
+      console.log('💚 Pong received');
       break;
     case 'error':
-      console.error('❌ Lỗi:', data.message);
+      console.error('❌ Error:', data.message);
       break;
   }
 };
 
-// Xử lý lỗi
+// Handle errors
 ws.onerror = (error) => {
-  console.error('Lỗi WebSocket:', error);
+  console.error('WebSocket error:', error);
 };
 
-// Xử lý khi đóng kết nối
+// Handle close
 ws.onclose = () => {
-  console.log('🔌 Đã ngắt kết nối');
+  console.log('🔌 Disconnected');
 };
 
-// Giữ kết nối: gửi ping định kỳ mỗi 30 giây
+// Keep-alive: send ping every 30 seconds
 setInterval(() => {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
@@ -135,23 +137,23 @@ import json
 
 async def listen():
     uri = "ws://localhost:2661/ws?chain_name=supply_chain"
-    
+
     async with websockets.connect(uri) as ws:
-        # Đăng ký nhận tin từ chuỗi
+        # Subscribe to chain
         await ws.send(json.dumps({
             "type": "subscribe",
             "event_types": ["production_complete"],
             "chain_name": "supply_chain"
         }))
-        
-        # Lắng nghe các tin nhắn
+
+        # Listen for messages
         async for message in ws:
             data = json.loads(message)
-            
+
             if data["type"] == "block_added":
-                print(f"🆕 Block mới: {data['data']['hash']}")
+                print(f"🆕 New block: {data['data']['hash']}")
             elif data["type"] == "event":
-                print(f"📝 Sự kiện mới: {data['data']['event']}")
+                print(f"📝 New event: {data['data']['event']}")
             elif data["type"] == "pong":
                 print("💚 Pong")
 
@@ -170,7 +172,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();
 
-    // Đăng ký nhận tin từ chuỗi
+    // Subscribe to chain
     let msg = serde_json::json!({
         "type": "subscribe",
         "event_types": ["production_complete"],
@@ -178,14 +180,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     write.send(Message::Text(msg.to_string())).await?;
 
-    // Lắng nghe tin nhắn
+    // Listen
     while let Some(msg) = read.next().await {
         if let Message::Text(text) = msg? {
             let data: serde_json::Value = serde_json::from_str(&text)?;
             println!("Received: {:?}", data);
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -202,24 +204,26 @@ Phản hồi mẫu:
 
 ```json
 {
-  "total_connections": 5,
-  "max_connections": 1000,
-  "chains": {
-    "supply_chain": 3,
-    "orders": 2
-  },
-  "event_types_count": 1
+  "status": "running",
+  "stats": {
+    "total_connections": 5,
+    "max_connections": 1000,
+    "chains": {
+      "supply_chain": 3,
+      "orders": 2
+    },
+    "event_types_count": 1
+  }
 }
 ```
 
-## Xử lý Lỗi Thường gặp
+## Xử lý lỗi thường gặp
 
-| Lỗi | Nguyên nhân | Giải pháp |
+| Lỗi | Nguyên nhân | Cách xử lý |
 |------|-------------|------------|
-| Connection refused | Server chưa chạy | Chạy lệnh `python -m hierachain.api.server` |
-| Không nhận được dữ liệu của chuỗi mong muốn | Chưa chọn `chain_name` hoặc chưa đăng ký chuỗi | Gửi `type=subscribe` kèm `chain_name` và `event_types` khi cần lọc |
-| Không nhận được tin nhắn | Chưa đăng ký chuỗi | Cần gửi tin nhắn subscribe trước tiên |
-| Ngắt kết nối đột ngột | Server khởi động lại | Tự động kết nối lại ở phía client |
+| Kết nối bị từ chối | Server chưa chạy | Chạy `python -m hierachain` |
+| Không nhận thông điệp ledger | Thiếu subscription hoặc tích hợp broadcast | Kiểm tra subscription và bảo đảm ứng dụng gọi các helper broadcast |
+| Mất kết nối đột ngột | Server khởi động lại | Cho client tự kết nối lại |
 
 ## Liên quan
 

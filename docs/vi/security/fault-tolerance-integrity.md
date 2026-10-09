@@ -1,37 +1,35 @@
 ---
-title: "Fault-tolerance & Integrity"
+title: "Chịu lỗi và toàn vẹn"
 description: "Bảo vệ tài nguyên và kiểm tra toàn vẹn thực tế trong HieraChain (không có Resource Guard/Integrity riêng)."
 icon: material/shield-check
 ---
 
-# Fault-tolerance & Integrity
+# Chịu lỗi và toàn vẹn
 
-Trang này trước đây mô tả `security/resource_guard.py` và `security/integrity.py`, các file này không tồn tại trong `hierachain/`. Khả năng chịu lỗi trong codebase được phân tán ở nhiều nơi khác.
+Giới hạn tài nguyên và kiểm tra toàn vẹn ledger chạy tại API middleware, ordering service và block verifier.
 
-## Bảo vệ tài nguyên (thực tế)
+## Bảo vệ tài nguyên
 
-* Giới hạn rate và payload nằm trong `hierachain/api/middleware.py` (`add_rate_limit`, `add_payload_limit` với `HRC_RATE_LIMIT`, `HRC_RATE_LIMIT_RPM`, `HRC_RATE_LIMIT_BACKEND`, `HRC_TRUSTED_PROXIES`; payload được kiểm tra qua `request.stream()` với giới hạn 1MB).
-* Guard cho event pool và RAM là `HRC_EVENT_POOL_MAX_SIZE` (10k) và `HRC_RAM_CRITICAL_THRESHOLD` (95%), được kiểm tra trong các đường dẫn ordering và storage.
-* Không có `ResourceGuardMiddleware`. Bảng ngưỡng 70%/90% và việc shed tải trong `monitoring/performance_monitor.py` mô tả trước đây là bịa. Hãy dùng middleware của app kết hợp với giới hạn ở reverse proxy.
+* Giới hạn rate và payload nằm trong `hierachain/api/middleware.py` (`add_rate_limit`, `add_payload_limit` với `HRC_RATE_LIMIT`, `HRC_RATE_LIMIT_RPM`, `HRC_RATE_LIMIT_BACKEND`, `HRC_TRUSTED_PROXIES`). Với request POST, PUT và PATCH, middleware kiểm tra `Content-Length` hợp lệ với giới hạn 1 MiB; chỉ đếm byte qua `request.stream()` khi thiếu header này.
+* `HRC_EVENT_POOL_MAX_SIZE` mặc định là 10.000 và giới hạn hàng đợi ordering. `HRC_RAM_CRITICAL_THRESHOLD` được khai báo với mặc định 95% nhưng không có runtime consumer trong `hierachain/`. Khi được gọi, `ResourceValidator` báo các ngưỡng CPU, memory và disk được cấu hình riêng; nó không thực thi ngưỡng RAM này trong ordering hay storage.
+* Dùng middleware ứng dụng kết hợp giới hạn tại reverse proxy. `PerformanceMonitor` báo cáo metric; nó không cài guard CPU/RAM cho từng request.
 
-## Kiểm tra toàn vẹn (thực tế)
+## Kiểm tra toàn vẹn
 
-Không có quét chữ ký lúc khởi động trong `security/integrity.py`. Cơ chế toàn vẹn thực tế là:
+Việc nạp và xác minh ledger dùng các cơ chế sau:
 
 * Merkle và chain link trong `hierachain/core/block.py` và `core/merkle_tree.py` (tiền tố phân tách domain `0x01`) và `consensus/ordering/storage.py:_verify_chain_links()` (chuỗi `previous_hash`).
 * Xác minh proof trong `hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain` (quét fallback) và `security/verify/block_verifier.py`.
 * Cơ chế toàn vẹn runtime dùng chain link, Merkle root, xác minh proof và consensus validation. Snapshot trạng thái và rollback thuộc trách nhiệm deployment.
-* `BlockVerifier.verify_chain()` xác minh toàn bộ chain: block đầu tiên phải là genesis ở index `0` với `previous_hash` bằng `"0"`. API này không nhận lịch sử một phần; bên gọi phải cung cấp toàn bộ chain.
+* `BlockVerifier.verify_chain()` kiểm tra chuỗi được truyền vào. Với chuỗi không rỗng, block đầu phải là genesis ở index `0` với `previous_hash` bằng `"0"`, và các liên kết giữa những block đã cung cấp được kiểm tra. Chuỗi rỗng trả `VALID`. API không nhận tip height hoặc hash dự kiến, nên một tiền tố hợp lệ nhưng thiếu các block phía sau vẫn có thể được chấp nhận.
 
 ```mermaid
 graph LR
     A[Block finalize] --> B[previous_hash check]
     B --> C[Merkle root verify]
     C --> D[Proof verify on MainChain]
-    D --> E[Phục hồi vận hành nếu cần]
+    D --> E[Operational recovery if needed]
 ```
-
----
 
 ## Liên quan
 

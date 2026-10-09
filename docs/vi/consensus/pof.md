@@ -1,94 +1,46 @@
 ---
 title: "Proof of Federation (PoF)"
-description: "Giao thức đồng thuận liên minh: Bầu chọn lãnh đạo xác định, Biểu quyết Quorum và Quản trị đa tổ chức."
+description: "Thành viên validator PoF, luân phiên leader xác định, xác thực chữ ký và giới hạn tích hợp quorum."
 icon: material/account-group-outline
 ---
 
-# Proof of Federation (`hierachain/consensus/proof_of_federation.py`)
+# Proof of Federation (PoF)
 
-## Tổng quan
+`hierachain/consensus/proof_of_federation.py` triển khai danh sách validator đã sắp xếp, luân phiên leader xác định và chữ ký finalization Ed25519. Chọn rõ ràng cho MainChain bằng `HRC_MAINCHAIN_CONSENSUS=proof_of_federation`. Mặc định vẫn là PoA.
 
-**Proof of Federation (PoF)** là giao thức đồng thuận liên chuỗi (**Inter-MainChain**) được thiết kế dành riêng cho các mạng liên minh tổ chức (**Consortium Alliance**). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z), mỗi bên tự vận hành một MainChain riêng, có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức **mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị**.
+## Cấu hình
 
----
+| Khóa cấu hình Python | Mặc định | Ý nghĩa |
+|----------------------|----------|---------|
+| `min_validators` | `3` | Số thành viên tối thiểu cho `can_create_block()` |
+| `block_interval` | `5.0` | Validation yêu cầu giãn cách ít nhất 80% giá trị này |
+| `enforce_rotation` | `True` | Kiểm tra signer theo `validators[index % count]` |
 
-## Vị trí Kiến trúc: PoA và PoF
+Các khóa cấu hình này thuộc instance đồng thuận. Hàm khởi tạo MainChain/SubChain hiện không tự áp dụng `CONSENSUS_FEDERATION_CONFIG`.
 
-| Cơ chế Đồng thuận | Phạm vi & Mục đích | Tầng Áp dụng & Mô hình Quản trị |
-| :--- | :--- | :--- |
-| **Proof of Authority (PoA)** | **Nội bộ Tổ chức** (Các Sub-Chain nghiệp vụ nội bộ) | **Tầng SubChain** (Mặc định cho mọi sự kiện nội bộ; kiểm soát đơn quyền) |
-| **Proof of Federation (PoF)** | **Liên minh Đa Tổ chức** (Mạng liên kết MainChain P2P) | **Tầng MainChain** (Cấu hình qua `HRC_MAINCHAIN_CONSENSUS=proof_of_federation` cho liên minh đa bên) |
+Cấp public key thật của từng validator khi gọi `add_validator(validator_id, metadata={"public_key": ...})`. Các node phải thống nhất thành viên và khóa. Chỉ đặt selector không cấp đủ cấu hình federation.
 
----
-
-## Cơ chế Hoạt động
-
-PoF sử dụng mô hình luân phiên liên bang ngang hàng kết hợp với xác thực đa chữ ký:
-1.  **Xoay vòng Lãnh đạo (Leader Rotation)**: Leader có quyền đề xuất khối liên minh cho mỗi lượt được xác định bằng công thức toán học: `Leader = Validators[BlockIndex % TotalValidators]`. Điều này ngăn chặn bất kỳ MainChain nào thao túng độc quyền lượt tạo khối.
-2.  **Biểu quyết Quorum**: Để một khối sự kiện liên tổ chức được xác nhận hợp lệ giữa các MainChain độc lập, nó cần đa chữ ký xác thực từ một ngưỡng tối thiểu các thành viên liên minh (thường là **2/3 + 1**).
-3.  **Danh sách Validator Sắp xếp**: Danh sách các MainChain tham gia được tự động sắp xếp đồng bộ trên tất cả các nút để đảm bảo tính nhất quán của lịch trình tạo khối.
-
----
-
-## Các tính năng nổi bật
-
-<div class="grid cards" markdown>
-
-*   :material-account-group:{ .lg .middle } __Quản trị Đa phương__
-
-    ---
-
-    Loại bỏ điểm yếu tập trung (Single Point of Failure). Nếu Leader hiện tại gặp sự cố, quyền tạo khối sẽ tự động chuyển cho nút tiếp theo trong chu kỳ.
-
-*   :material-vote-outline:{ .lg .middle } __Biểu quyết Quorum__
-
-    ---
-
-    Cung cấp lớp bảo mật bổ sung bằng cách yêu cầu sự đồng thuận của đa số tổ chức thành viên trước khi chốt dữ liệu.
-
-*   :material-scale-balance:{ .lg .middle } __Công bằng & Minh bạch__
-
-    ---
-
-    Mỗi tổ chức thành viên đều có cơ hội đóng góp và kiểm soát sổ cái ngang hàng nhau thông qua lịch trình được định sẵn.
-
-</div>
-
----
-
-## Tham số cấu hình
-
-| Tham số | Ý nghĩa | Mặc định |
-| :--- | :--- | :--- |
-| `min_validators` | Số lượng nút tối thiểu để mạng hoạt động. | `3` |
-| `block_interval` | Chu kỳ tạo khối mục tiêu. | `5.0` giây |
-| `enforce_rotation` | Bắt buộc xoay vòng leader sau mỗi khối. | `True` |
-
----
-
-## Luồng Xác thực Khối
+## Luồng xác thực
 
 ```mermaid
-graph TD
-    A[Block Proposed by Leader] --> B{Verify Leader Identity}
-    B -- Correct Leader --> C[Collect Quorum Signatures]
-    C --> D{Signatures >= 2/3 + 1?}
-    D -- Yes --> E[Commit Block to Ledger]
-    D -- No --> F[Reject & Wait for Next Leader]
-    B -- Wrong Leader --> G[Reject Block]
+flowchart TD
+    A[Proposed finalized block] --> B{Structure and timestamp spacing valid?}
+    B -->|Yes| C{Expected leader when rotation enabled?}
+    C -->|Yes| D{Leader signature matches reconstructed payload?}
+    D -->|Yes| E{Shared optional ZK check passes?}
+    E -->|Yes| F[Validation succeeds]
+    B -->|No| R[Reject]
+    C -->|No| R
+    D -->|No| R
+    E -->|No| R
 ```
 
----
+Helper `_verify_block_quorum()` thông thường kiểm tra chữ ký leader, không kiểm tra chữ ký quorum nhiều bên. Hàm riêng `verify_quorum_signatures(message, signatures, required_count=None)` đếm validator đã đăng ký khác nhau, mặc định `floor(2n/3)+1`. Hàm này không tự được gọi để thu thập phiếu khi finalize block. Class chưa triển khai failover tự động hoặc thay leader theo timeout.
 
-## Ưu điểm và Hạn chế
-
-*   **Ưu điểm**: Phù hợp cho mạng liên minh đa bên, chống lại sự chi phối của một nhóm nhỏ, tính sẵn sàng cao.
-*   **Hạn chế**: Tốn thêm băng thông mạng để thu thập chữ ký Quorum so với PoA, hiệu năng giảm nhẹ khi số lượng Validator tăng quá lớn.
-
----
+Xác minh ZK là tùy chọn dùng chung với PoA. Mock proof phát triển không bảo đảm zero-knowledge; tạo/xác minh production chưa khả dụng. `HRC_BLOCK_INTERVAL` đổi giãn cách PoA và không đổi interval PoF.
 
 ## Liên quan
 
-*   [Đồng thuận dựa trên thẩm quyền (PoA)](./poa.md)
-*   [Kiến trúc mạng P2P](../modules/network.md)
-*   [Hệ thống bảo mật (Security)](../security/authorization-access-control.md)
+* [PoA](poa.md)
+* [Phạm vi runtime đồng thuận](../workflows/consensus_mechanisms.md)
+* [Triển khai ZK](../architecture/zk-proofs.md)

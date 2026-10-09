@@ -8,11 +8,9 @@ icon: material/tray-arrow-down
 
 ## Tổng quan
 
-API Ledger kiểm tra schema của request rồi `SubChain.add_event()` chuyển event tới `OrderingService`. Ordering Service ghi event vào journal và hàng đợi trước khi trả `event_id`. ID này xác nhận event đã được tiếp nhận; block được commit sau đó. Processor nền chứng thực và gom batch, rồi tạo block và đưa vào commit queue. Consumer của SubChain finalize và lưu từng block. Mặc định, SubChain gom 50 event và chờ 1 giây trước khi tạo block. MainChain dùng PoA hoặc PoF; BFT là thành phần riêng, không được chọn trong luồng API này.
+Ledger API xác thực từng yêu cầu sự kiện. Sau đó, `SubChain.add_event()` gửi sự kiện đến `OrderingService`, dịch vụ ghi nhật ký và xếp hàng trước khi trả về `event_id`. ID xác nhận đã tiếp nhận để sắp thứ tự; việc ghi khối diễn ra sau đó. Bộ xử lý nền chứng nhận và gom sự kiện thành lô. Orderer dựng từng khối, gán chỉ số và hash khối trước, chạy bước hoàn tất đồng thuận đã cấu hình, ký header và lưu khối bền vững trước khi đưa vào hàng đợi commit. Consumer của Sub-Chain áp dụng nguyên trạng khối đó vào chuỗi cục bộ và WorldState. Mặc định, Sub-Chain gom lô 50 sự kiện và chờ 1.0 giây trước khi tạo khối. Cấu hình đồng thuận Main-Chain riêng bằng `HRC_MAINCHAIN_CONSENSUS`.
 
 Với sơ đồ PoA và PoF, xem [Cơ chế Đồng thuận](./consensus_mechanisms.md).
-
----
 
 ## Biểu đồ luồng
 
@@ -23,71 +21,71 @@ sequenceDiagram
     participant API as 🌐 FastAPI
     participant SC as 📦 SubChain
     participant OS as ⚙️ OrderingService
+    participant BM as 🧱 OrderingBlockManager
+    participant PRF as 🔐 Proof
     participant DB as 💾 Storage
 
     rect rgb(0, 0, 0, 0)
-        Note over Client,API: Giai đoạn 1 — Gửi Sự kiện
+        Note over Client,API: Phase 1 — Request and asynchronous acknowledgement
         Client->>API: POST /api/ledger/chains/{chain_name}/events
         API->>SC: add_event(event_dict)
-        SC->>SC: Thêm timestamp/entity_id/event mặc định nếu thiếu
         SC->>OS: receive_event(event_data, channel_id, submitter_org)
-        OS->>OS: Ghi Event Journal và đưa vào event_pool
-        OS-->>API: event_id
-        API-->>Client: 200 OK (đã tiếp nhận; chưa phải block finality)
+        OS->>OS: Append to Event Journal
+        OS->>OS: Enqueue in event_pool
+        API-->>Client: 200 OK (event_id accepted for ordering)
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over OS: Giai đoạn 2 — Gom batch và tạo block ở xử lý nền
-        Note over OS: Đạt block_size hoặc batch_timeout
-
-        OS->>OS: BlockBuilder._finalize_batch() trả về danh sách event
-        OS->>OS: OrderingBlockManager.create_block_async(events) tạo block
-        OS->>DB: Lưu block do Ordering tạo
-        OS->>OS: Đưa block vào commit_queue sau khi lưu thành công
+        Note over OS: Phase 2 — Background certification and batching
+        OS->>OS: Certify event
+        OS->>OS: BlockBuilder.add_event()
+        Note over OS: Batch size or timeout returns a batch of event data
+        OS->>BM: create_block_async(raw_event_data)
+        BM->>BM: Build Block
+        BM->>BM: commit_block()
+        BM->>BM: Assign index, previous_hash and creator_id
+        BM->>PRF: finalize_block(block, previous_block)
+        PRF-->>BM: Finalized block
+        BM->>BM: Sign block header
+        BM->>DB: save_block(block, chain_name)
+        Note over BM: Enqueue persisted block in commit_queue
     end
 
     rect rgb(0, 0, 0, 0)
-        Note over SC: Giai đoạn 3 — Finalize và cập nhật SubChain
-        Note over SC: Consumer nền lấy block từ commit_queue
+        Note over SC: Phase 3: Apply committed block
+        Note over SC: Background consumer processes the commit_queue
 
         SC->>OS: get_next_block()
         OS-->>SC: Block
-        SC->>SC: _process_and_finalize_single_block()
-        SC->>SC: Tính index, previous_hash, hash
-        SC->>SC: Finalize bằng consensus PoA hoặc PoF
-        SC->>DB: Lưu block đã finalize
-        SC->>SC: add_block() và cập nhật world state
+        SC->>SC: Validate and add unchanged block
+        SC->>SC: WorldState.apply_block(block)
         SC->>SC: auto_submit_proof_if_needed()
 
-        Note over SC: → Kích hoạt Neo giữ Bằng chứng
+        Note over SC: → Triggers Proof Anchoring
     end
 ```
-
----
 
 ## Các bước chi tiết
 
 | Bước | Mô tả |
-|:-----|:------|
-| **1. Nhận qua API** | FastAPI kiểm tra schema `EventRequest`, gồm `entity_id` và `event_type`; endpoint trả `event_id` sau khi sự kiện được tiếp nhận, chưa xác nhận block finality. |
-| **2. Thêm sự kiện vào SubChain** | `SubChain.add_event()` bổ sung giá trị mặc định, kiểm tra cấu trúc event rồi mới gọi `OrderingService.receive_event()`; API vẫn bắt buộc `entity_id` và `event_type`. Hàm này không gọi `validate_event_for_consensus()`. |
-| **3. Chứng thực nền** | Ordering Service chuyển sự kiện qua certifier sau phản hồi API; sự kiện bị từ chối không được đưa vào block. |
-| **4. Gom batch** | `BlockBuilder.add_event()` thêm event đã chứng thực vào batch; khi đủ `block_size`, hết `batch_timeout` hoặc được flush, `_finalize_batch()` trả danh sách event và reset batch. |
-| **5. Tạo và commit block Ordering** | `OrderingBlockManager.create_block_async()` tạo block; `commit_block()` lưu block vào storage rồi mới đưa vào `commit_queue`. |
-| **6. Finalize ở SubChain** | Consumer nền lấy block từ `commit_queue`; `_process_and_finalize_single_block()` đặt index và các hash liên kết, gọi consensus đã cấu hình của SubChain (PoA mặc định hoặc PoF), rồi lưu block đã finalize. |
-| **7. Cập nhật chuỗi** | Khi lưu thành công, SubChain thêm block vào chuỗi và cập nhật world state. |
-| **8. Kích hoạt proof** | `auto_submit_proof_if_needed()` có thể gửi proof lên Main Chain khi đạt ngưỡng đã cấu hình. |
-
----
+|:-----|:------------|
+| 1. API tiếp nhận | `POST /api/ledger/chains/{chain_name}/events` xác thực lược đồ yêu cầu và chuyển sự kiện đến Sub-Chain |
+| 2. Xếp hàng | `SubChain.add_event()` bổ sung giá trị mặc định nội bộ còn thiếu và xác thực cấu trúc sự kiện trước khi gọi `OrderingService.receive_event()`; orderer ghi nhật ký trước khi xếp hàng và trả về `event_id` |
+| 3. Chứng thực nền | Ordering Service chuyển sự kiện qua certifier sau phản hồi API; sự kiện bị từ chối không được đưa vào block. |
+| 4. Gom lô | `BlockBuilder.add_event()` thêm sự kiện đã chứng nhận vào lô; ngưỡng kích thước, thời gian chờ hoặc lệnh flush trả về dữ liệu lô |
+| 5. Dựng khối | `OrderingBlockManager.create_block_async()` dựng một `Block` |
+| 6. Hoàn tất và lưu | `commit_block()` gán chỉ số/liên kết/bên tạo khối, gọi bước hoàn tất đồng thuận, ký header và lưu khối trước khi xếp hàng |
+| 7. Áp dụng | Consumer xác thực và thêm nguyên trạng khối, rồi cập nhật WorldState; nó không lưu khối lần nữa |
+| 8. Kích hoạt proof | `auto_submit_proof_if_needed()` có thể gửi proof lên Main Chain khi đạt ngưỡng đã cấu hình. |
 
 ## Cấu trúc sự kiện
 
 ```python
 event = {
-    "entity_id": "product-SKU-001",    # Định danh thực thể nghiệp vụ
-    "event_type": "quality_check",      # Loại sự kiện
+    "entity_id": "product-SKU-001",    # Domain entity identifier
+    "event_type": "quality_check",      # Event type (domain-specific)
     "timestamp": 1714000000.0,
-    "details": {                        # Payload nghiệp vụ
+    "details": {                        # Domain-specific payload
         "check_type": "visual",
         "check_result": "passed",
         "inspector": "station-7"
@@ -95,40 +93,35 @@ event = {
 }
 ```
 
-> **Lưu ý**: API yêu cầu `entity_id` và `event_type`; khi chuyển sang event nội bộ, `event_type` được biểu diễn bằng khóa `event`. `SubChain.add_event()` từ chối event sai cấu trúc hoặc chứa thuật ngữ bị cấm trước khi xếp hàng. Không nên coi `event_id` API trả về là bằng chứng block đã được finalize.
-
----
+> Ledger API yêu cầu `entity_id` và `event_type`, đồng thời ánh xạ `event_type` sang trường nội bộ `event`. Giá trị mặc định trong `SubChain.add_event()` áp dụng cho lời gọi nội bộ, không khiến các trường API này trở thành tùy chọn. `SubChain.add_event()` từ chối sự kiện sai định dạng và thuật ngữ bị cấm trước khi xếp hàng. `event_id` trả về xác nhận đã tiếp nhận để sắp thứ tự, không xác nhận khối đã hoàn tất.
 
 ## Xử lý lỗi
 
 | Tình huống | Hành vi |
-|:-----------|:--------|
-| Thiếu trường bắt buộc hoặc chain không tồn tại | API từ chối request; schema yêu cầu `entity_id` và `event_type`. |
+|:----------|:---------|
+| Body yêu cầu không hợp lệ | FastAPI từ chối trong bước xác thực mô hình yêu cầu trước khi gọi `SubChain.add_event()` |
 | Cấu trúc event không hợp lệ | `SubChain.add_event()` ném `ValueError` trước khi ghi journal; API Ledger trả HTTP 422. |
-| Ghi event journal thất bại | `OrderingService.receive_event()` ném lỗi và không xếp sự kiện vào `event_pool`. |
+| Ghi nhật ký thất bại | `OrderingService.receive_event()` phát sinh lỗi trước khi thêm sự kiện vào hàng đợi trong bộ nhớ |
 | Chứng thực event thất bại | Processor đánh dấu event bị từ chối; event không được thêm vào block. |
 | Lưu block Ordering thất bại | Lỗi được ghi log và Ordering Service chuyển sang `MAINTENANCE`; block chưa được đưa vào `commit_queue`. |
-| Lưu block đã finalize thất bại | Consumer đã lấy block khỏi `commit_queue`; `_process_and_finalize_single_block()` trả về lỗi và mã hiện tại không đưa block trở lại hàng đợi để thử lại. |
-
----
+| Hoàn tất đồng thuận hoặc ký thất bại | Orderer chuyển sang `MAINTENANCE` trừ khi đã ở trạng thái kết thúc/hạn chế; khối không được đưa vào hàng đợi commit |
+| Consumer từ chối khối đã commit | Khi `add_block()` thất bại, orderer chuyển sang `MAINTENANCE`, đặt `should_stop` và ghi log khối bị từ chối |
 
 ## Lớp và phương thức chính
 
 | Bước | Lớp / Phương thức | Tệp |
 |:-----|:--------------|:-----|
-| Kiểm tra và nhận request | `EventRequest`; `SubChain.add_event()` | `hierachain/api/ledger/schemas.py`; `hierachain/api/ledger/events.py` |
+| Tiếp nhận sự kiện | `SubChain.add_event()` | `hierachain/hierarchical/sub_chain/base.py` |
 | Journal và xếp hàng | `OrderingService.receive_event()` | `hierachain/consensus/ordering/service.py` |
 | Chứng thực và gom batch | `OrderingProcessor`; `BlockBuilder.add_event()` | `hierachain/consensus/ordering/processor.py`; `hierachain/consensus/ordering/block_builder.py` |
 | Tạo và commit block Ordering | `OrderingBlockManager.create_block_async()`; `commit_block()` | `hierachain/consensus/ordering/block_manager.py` |
-| Finalize và lưu block SubChain | `_process_and_finalize_single_block()` | `hierachain/hierarchical/sub_chain/block.py` |
+| Áp dụng khối Sub-Chain đã lưu | `_process_and_finalize_single_block()` | `hierachain/hierarchical/sub_chain/block.py` |
 | Storage adapter | Database adapters | `hierachain/adapters/database/` |
-
----
 
 ## Liên quan
 
 - [Cơ chế Đồng thuận](./consensus_mechanisms.md): sơ đồ phụ PoA và PoF
 - [Neo giữ Bằng chứng](./proof-anchoring.md): kích hoạt sau khi khối hoàn tất
 - [Đồng thuận BFT](./bft-consensus.md): luồng PBFT 3 pha đầy đủ
-- [Thực thi Chính sách](./policy-enforcement.md): cổng kiểm soát trước `add_event()`
-- [Danh tính MSP](./msp-identity.md): gọi `authorize_action()` trước khi gửi
+- [Thực thi chính sách](./policy-enforcement.md): kiểm tra chính sách cho các thao tác được chuyển rõ ràng qua `PolicyEngine`
+- [Danh tính MSP](./msp-identity.md): kiểm tra thành viên cho bên gọi sử dụng `HierarchicalMSP`

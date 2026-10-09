@@ -24,26 +24,26 @@ sequenceDiagram
     participant MC as 🔗 MainChain
 
     SC->>SC: auto_submit_proof_if_needed()
-    SC->>SC: Kiểm tra: chain length > 1 AND block finalized
+    SC->>SC: Check: chain length > 1 AND block finalized
 
     alt ZK Proofs Enabled (HRC_ENABLE_ZK_PROOFS=true)
         SC->>ZKP: generate_proof(old_state_root, new_state_root, block_index, events)
-        ZKP->>ZKP: Tính toán bằng chứng (Simulate SHA-256 hoặc mạch ZoKrates)
+        ZKP->>ZKP: Compute proof (Mock SHA-256; production backend unavailable)
         ZKP-->>SC: ProofResult { proof: bytes, success: bool }
-        SC->>SC: Thử lại tối đa 3 lần với khoảng chờ tăng dần nếu thất bại
+        SC->>SC: Retry up to 3× with exponential backoff on failure
     else ZK Proofs Disabled
         SC->>SC: zk_proof = None
     end
 
     SC->>SC: _generate_default_proof_metadata()
     SC->>MC: add_proof(sub_chain_name, proof_hash, metadata, zk_proof)
-    MC->>MC: Xác thực bằng chứng ZK (nếu bật)
-    MC-->>SC: Proof đã vào hàng chờ
-    SC->>MC: Hoàn tất block proof đã ký, lưu và đọc lại từ storage
-    MC-->>SC: Proof bền vững đã xác nhận
+    MC->>MC: Verify ZK proof (if enabled)
+    MC-->>SC: Proof queued
+    SC->>MC: Finalize signed proof block, save and read back from storage
+    MC-->>SC: Durable proof confirmed
 
-    SC->>SC: Ghi nhận sự kiện nội bộ proof_submitted
-    SC->>SC: Cập nhật timestamp last_proof_submission
+    SC->>SC: Record proof_submitted event
+    SC->>SC: Update last_proof_submission timestamp
 ```
 
 ---
@@ -65,7 +65,7 @@ sequenceDiagram
 | Chế độ | Cơ chế | Trường hợp dùng |
 |:-------|:-------|:-------------------|
 | `mock` | Mô phỏng băm SHA-256 | Phát triển / kiểm thử |
-| `production` | Mạch ZoKrates ZK-SNARKs | Triển khai thực tế |
+| `production` | Backend tạo/xác minh chưa triển khai | Chưa khả dụng |
 
 ---
 

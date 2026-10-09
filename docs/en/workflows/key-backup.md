@@ -6,71 +6,39 @@ icon: material/key
 
 # Key backup and restoration
 
-## Overview
+## Node identity backup
 
-HieraChain does not have a `security/key_backup_manager.py` or `MasterKeyProvider`. Key backup is operator managed and has two real paths: plain JSON key files created by the CLI and the optional encrypted `FileVaultProvider` vault. There is no automatic AES-256-GCM multi-vault distribution or SHA-512 integrity chain in the code.
+Block signing requires a fixed node identity and an operator-approved trusted block key map. `HRC_VALIDATOR_IDENTITY` points to the identity JSON; `HRC_BLOCK_TRUSTED_KEYS_FILE` points to the trusted public key map. Follow [Quickstart](../getting-started/quickstart.md) to provision both files.
 
----
+The identity contains `node_id`, `msp_id`, `signing_key`, `signing_public_key`, `transport_secret_key` and `transport_public_key`. Back up the complete identity and the trusted key map using external tooling with restricted access. Restore them to the configured paths before starting the node. The signing private/public keys must match, and the trusted map must contain that node's approved signing public key.
 
-## Actual paths
+Generating a new key changes the identity's signing authority. Update the trusted maps of every affected verifier through the deployment's provisioning process; copying a new private key alone does not authorize it.
 
-### 1. CLI plain backup (default)
+## CLI key pair files
 
-**File**: `hierachain/cli/key.py`
+`hierachain/cli/key.py` provides these commands through `hrc`:
 
 ```bash
-python -m hierachain key generate --output validator_key.json  # Ed25519 hex JSON
-python -m hierachain key show --input validator_key.json
-python -m hierachain key verify --input validator_key.json
+hrc key generate --output validator_key.json
+hrc key show --input validator_key.json
+hrc key verify --input validator_key.json
 ```
 
-* Output is `{private_key, public_key}` hex. Backup means copying `validator_key.json` to secure external storage. Restore means copying it back and setting `HRC_VALIDATOR_IDENTITY=validator_key.json`.
-* No encryption, no hash, no auto-rotation. The operator handles rotation by running `generate` again.
+The default JSON output contains `private_key` and `public_key` as hexadecimal strings. The file is created with mode `0600` on POSIX systems, and generation refuses to overwrite an existing file. `show` masks the private key; `verify` checks whether the public key matches the private key.
 
-### 2. Encrypted vault (dev/test)
+This two-field file is accepted by `LocalKeyProvider.from_file()`. It is not a complete node identity and cannot be used directly as `HRC_VALIDATOR_IDENTITY`. `python -m hierachain` starts the API server; use `hrc` for key commands.
 
-**File**: `hierachain/security/key_provider.py` (`FileVaultProvider`)
+Backup and restore of CLI key files are manual. After restoring a file, run `hrc key verify --input validator_key.json`. The CLI supplies no encryption, automatic rotation or backup distribution.
 
-* Creates a `.vault` file encrypted with `PBKDF2HMAC(SHA256, 310k iter)` that leads to `Fernet` (AES-128-CBC with HMAC, not AES-256-GCM). The password is supplied to the `FileVaultProvider` constructor.
-* This provider is documented as dev/test only. Production should implement `KeyProvider` with HSM or KMS.
-* There is no distribution to multiple vaults, no `metadata.json`, no `retention_period` and no `auto_restore_threshold`.
-* `HRC_VAULT_TOKEN` and `HRC_VAULT_PATH` configure the separate `SecretManager` Vault backend; they do not supply the `FileVaultProvider` password.
+## Encrypted vault for development and tests
 
-```mermaid
-sequenceDiagram
-    participant CLI as CLI generate
-    participant File as validator_key.json / .vault
-    participant Op as Operator / HSM
+`FileVaultProvider` in `hierachain/security/key_provider.py` stores a key pair in a password-protected vault. It derives a Fernet key using `PBKDF2HMAC(SHA256, 310_000 iterations)`; Fernet uses AES-128-CBC and HMAC. Supply the password to the provider constructor and keep a recoverable copy in the application's secret-management system.
 
-    CLI->>File: write private_key/public_key hex
-    File->>Op: manual copy to backup / KMS
-    Op-->>File: restore copy back
-    File->>CLI: verify / LocalKeyProvider.from_file()
-```
+The provider uses password-derived encryption for a local vault file. Development and tests are its documented target, but the code has no environment gate that blocks production use; suitability depends on deployment controls and requirements. Production HSM or KMS integration requires an application-specific `KeyProvider`. The vault is a key provider, not a replacement for the complete node identity JSON.
 
----
-
-## What is not implemented
-
-| Documented claim (removed) | Reality |
-|---|---|
-| `KeyBackupManager.backup_keys()` / `_encrypt_backup_data()` / `SHA-512` / `_distribute_to_locations()` | No such class/methods exist |
-| AES-256-GCM + nonce\|\|ciphertext + 3-vault failover | Vault uses `Fernet`; multi-location is manual copy |
-| `MasterKeyProvider.get_master_key()` | No such provider; `HRC_MASTER_KEY_SOURCE=env` is only a compatibility alias, while other source values and nonempty `HRC_MASTER_KEY_FILE` stop configuration loading |
-| Auto backup on MSP cert issue or consensus rotation | No hook; certs in `security/msp.py` are in-memory only |
-
----
-
-## Operator checklist
-
-1. Generate: `python -m hierachain key generate -o validator_key.json`
-2. Backup: `cp validator_key.json /secure/backup/` (encrypt externally if needed)
-3. Restore: `cp /secure/backup/validator_key.json ./ && python -m hierachain key verify`
-4. For encrypted vault: `FileVaultProvider.create_vault(vault_path, password)` and supply the password through the application's secret-management flow. `HRC_VAULT_TOKEN` is a Vault service credential, not the vault password.
-
----
+`HRC_VAULT_TOKEN` and `HRC_VAULT_PATH` configure the separate `SecretManager` Vault backend. They do not supply the `FileVaultProvider` password. MSP certificate issuance and consensus changes do not trigger automatic backups.
 
 ## Related
 
-- [MSP Identity](./msp-identity.md): `security/msp.py` issues in-memory certs; no trigger to key backup
-- [Encryption & Keys](../security/encryption-keys.md): corrected description of `msp.py`/`key_provider.py`
+- [MSP Identity](./msp-identity.md): internal certificate lifecycle
+- [Encryption & Keys](../security/encryption-keys.md): providers and key scope

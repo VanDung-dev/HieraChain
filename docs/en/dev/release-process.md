@@ -1,6 +1,6 @@
 ---
 title: "Release Process"
-description: "Version release and documentation process: versioning with setuptools_scm, packaging, release notes."
+description: "Release preparation, versioning from hierachain/config/version.py, packaging and documentation builds."
 icon: material/rocket
 ---
 
@@ -8,29 +8,28 @@ icon: material/rocket
 
 ## Versioning
 
-* Uses `setuptools_scm` (see `pyproject.toml`) to infer version from Git tags.
-* Create tags following the pattern: `vX.Y.Z` or `vX.Y.Z.devN` for development builds.
+`pyproject.toml` reads `hierachain.config.version.__version__`, computed from the `VERSION` tuple in `hierachain/config/version.py`. Git tags alone do not change the packaged version; this project does not use `setuptools_scm`.
 
-## Release Preparation
+## Preparation and packaging
 
-1. Ensure tests pass: `pytest -v`.
-2. Review documentation: links/index/nav updated.
-3. Update `docs/en/changelog.md` with release content.
-
-## Packaging
+1. Run relevant test files separately, plus required static-analysis and live-backend CI checks.
+2. Synchronize corresponding English/Vietnamese docs. Changelogs describe core library changes, not documentation-only edits.
+3. Update the Python version tuple and release tags consistently.
 
 ```bash
-python -m build
-twine check dist/*
-# (optional) twine upload dist/*
+uv build
+python -m twine check dist/*
 ```
 
-## Documentation Release
+Publication is a separate release step. See `.github/workflows/` for the configured workflow requirements.
 
-* Build static site with MkDocs (performed after content stabilizes).
-* CI (later): build preview on PR, publish on merge to `main`.
+## Documentation
 
-## Release Notes
+Build with Zensical, English first and Vietnamese second:
 
-* Summarize main changes to code and documentation.
-* Link to related PRs; list breaking changes if any.
+```bash
+zensical build -f zensical.toml
+zensical build -f zensical.vi.toml
+```
+
+`.github/workflows/docs.yml` builds both languages on matching pull requests and deploys GitHub Pages on matching pushes to `main`.

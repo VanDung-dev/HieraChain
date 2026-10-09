@@ -44,4 +44,4 @@ Cấu hình danh tính ký của node và khóa tin cậy, đồng thời dùng 
 ## Quan sát hệ thống
 
 * Dùng `monitoring/performance_monitor.py` để lấy metrics CPU/RAM.
-* Bật `ResourceGuardMiddleware` để shed load trong đỉnh tải.
+* Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.

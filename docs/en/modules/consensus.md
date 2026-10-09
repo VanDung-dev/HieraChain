@@ -1,78 +1,49 @@
 ---
 title: "Consensus Module"
-description: "Multi-protocol consensus system: Ordering Service (CFT) and BFT Consensus (PBFT)."
+description: "PoA/PoF block finalization, local event ordering and the separate PBFT component."
 icon: material/handshake
 ---
 
-# Consensus Module (`hierachain/consensus/*`)
+# Consensus module (`hierachain/consensus/*`)
 
-## Overview
+## Scope
 
-The **Consensus** module is responsible for ensuring consistency and deterministic ordering of data across the entire HieraChain network. The system provides flexible consensus mechanisms, allowing enterprises to choose between extreme performance in trusted environments or absolute security in environments at risk of attack.
+The module provides PoA and PoF block finalization, an event ordering service, and a separate BFT library. Their validation rules and integration requirements differ.
 
----
+## Components
 
-## Supported Consensus Protocols
+| Component | Behavior | Reference |
+|:----------|:---------|:----------|
+| Ordering Service | Journals, queues, certifies and batches local events; signs and persists blocks before queueing them for the consumer | [Ordering](../consensus/ordering.md) |
+| PoA | Checks registered authority membership, block signatures and optional timestamp spacing | [PoA](../consensus/poa.md) |
+| PoF | Checks federation membership, scheduled leader and its finalization signature; quorum signature verification is a separate helper | [PoF](../consensus/pof.md) |
+| BFT | Runs PBFT phases with `n >= 3f + 1`; callers supply signing keys, transport and application integration | [BFT](../consensus/bft_consensus.md) |
 
-The Ordering Service batches events, while PoA and PoF finalize Sub-Chain blocks. The repository also contains a separate BFT component. `HRC_CONSENSUS_TYPE` selects `proof_of_authority` or `proof_of_federation`; it does not select BFT:
+Ordering recovery uses a local durable journal. It does not elect a replicated orderer cluster or provide automatic service failover. BFT is not selected by the MainChain/Sub-Chain consensus settings.
 
-<div class="grid cards" markdown>
-
-*   :material-order-bool-ascending:{ .lg .middle } __Ordering Service (CFT)__
-
-    ---
-
-    * Suitable for Consortium or Single-org networks.
-    * Crash Fault Tolerance.
-    * High performance with batching mechanism.
-    * [:octicons-arrow-right-24: Details](../consensus/ordering.md)
-
-*   :material-shield-key:{ .lg .middle } __BFT Consensus (PBFT)__
-
-    ---
-
-    * Suitable for untrusted environments.
-    * Byzantine Fault Tolerance with condition `n >= 3f + 1`.
-    * Ensures integrity even when nodes are compromised.
-    * [:octicons-arrow-right-24: Details](../consensus/bft_consensus.md)
-
-*   :material-account-tie:{ .lg .middle } __Proof of Authority / Federation__
-
-    ---
-
-    * **PoA**: Authorized nodes sign blocks.
-    * **PoF**: Rotating leader mechanism within a consortium.
-    * Suitable for Sub-Chains requiring fast processing.
-
-</div>
-
----
-
-## Overall Architecture
+## Ordering path
 
 ```mermaid
 graph TD
-    A[Event Submission] --> B[Ordering Service]
-    B --> C[Block Building]
-    C --> D[Sub-Chain finalization: PoA or PoF]
-    D --> E[Storage Commitment]
-    E --> F[(Ledger Persistence)]
-    G[BFT Consensus component] -. separate component .-> H[Consensus workflows]
+    A[Event Submission] --> B[Journal and Queue]
+    B --> C[Certification and Batching]
+    C --> D[Configured PoA or PoF Finalizer]
+    D --> E[Sign Header and Persist Block]
+    E --> F[Commit Queue]
+    F --> G[Sub-Chain Consumer and WorldState]
+    H[Explicit BFT Caller] --> I[Separate PBFT Component]
 ```
 
----
+The submission ID acknowledges journal/queue acceptance. The consumer validates and applies the persisted block later; an acceptance response is not block finality.
 
-## Integration into Hierarchy
+## Hierarchy configuration
 
-In HieraChain's hierarchical model:
+MainChain defaults to PoA. `HRC_MAINCHAIN_CONSENSUS` selects PoA or PoF and falls back to `HRC_CONSENSUS_TYPE`. Sub-Chains default to PoA and use their Python `config` to select PoF. `BFT_ENABLED` does not connect BFT to either chain path.
 
-1.  **Main Chain**: Uses **PoA** by default and can be configured for **PoF** through `HRC_MAINCHAIN_CONSENSUS`. The BFT implementation is a separate consensus component; `MainChain` does not select it as its default.
-2.  **Sub-Chains**: Use the **Ordering Service** for batching and can finalize blocks with the configured Sub-Chain consensus (PoA by default). Proofs can then be submitted to the Main Chain.
-
----
+Provision a complete signing identity and approved trusted block keys before creating chains. PoF also needs matching federation membership and validator public keys across nodes. See [Consensus mechanisms](../workflows/consensus_mechanisms.md) and [Quickstart](../getting-started/quickstart.md).
 
 ## Related
 
-*   [Hierarchical Model](./hierarchical.md)
-*   [Network System](./network.md)
-*   [Error Mitigation](./error-mitigation.md)
+* [Hierarchical module](./hierarchical.md)
+* [Network](./network.md)
+* [Error mitigation](./error-mitigation.md)

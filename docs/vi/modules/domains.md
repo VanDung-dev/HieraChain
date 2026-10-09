@@ -18,7 +18,7 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 
 * `BaseChain`: Lớp cơ sở trừu tượng quản lý trạng thái chuỗi, sổ đăng ký thực thể và quy trình xử lý sự kiện.
 * `DomainChain`: Triển khai cụ thể hỗ trợ thao tác nghiệp vụ, kiểm tra tính hợp lệ của thao tác và trình quản lý giao dịch.
-* `chains/metrics.py`: Theo dõi chỉ số vận hành như tỷ lệ thành công và độ trễ thực thi.
+* `chains/metrics.py`: Theo dõi tổng số thao tác và các tỷ lệ tổng hợp; không ghi nhận độ trễ thực thi.
 
 ### 2.2 Sự kiện doanh nghiệp (`events/base_event.py`, `events/event_creators.py`)
 
@@ -38,7 +38,7 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 1. Đăng ký: Gắn định danh `entity_id` duy nhất với loại thực thể và thuộc tính metadata.
 2. Cập nhật trạng thái: Theo dõi các trạng thái tuần tự (`in_progress`, `quality_approved`, `completed`).
 3. Phân bổ tài nguyên: Theo dõi tài nguyên đã phân công và đã giữ chỗ. `assigned` thêm vào `allocated_resources` (và bỏ giữ chỗ); `reserved` thêm vào `reserved_resources`; `released` xóa khỏi một trong hai danh sách; `transferred` chuyển tài nguyên đã phân công sang thực thể đã đăng ký khác theo `details.target_entity_id`. Chuyển trạng thái không hợp lệ bị từ chối trước khi gửi event.
-4. Chỉ số vận hành: `OperationMetricsTracker` tính toán các chỉ số thực thi theo từng loại thao tác.
+4. Chỉ số vận hành: `OperationMetricsTracker` cung cấp tổng số thao tác và các tỷ lệ tổng hợp, không có độ trễ hoặc phân nhóm theo loại thao tác.
 
 Sự kiện nghiệp vụ yêu cầu thực thể đã đăng ký. `register_entity` lưu dữ liệu ban đầu được cung cấp trong event đăng ký của Sub-Chain để có thể dựng lại registry sau khi khởi động lại; dữ liệu này trở thành nội dung sổ cái nên không được chứa bí mật. Event đăng ký cũ không có `initial_data` chỉ khôi phục metadata đăng ký mà hệ thống hỗ trợ.
 
@@ -54,22 +54,34 @@ Các thao tác phối hợp giữa nhiều Sub-Chain thực thi qua giao thức 
 
 ```mermaid
 sequenceDiagram
+    participant Coordinator
     participant Source as Source Sub-Chain
     participant Target as Target Sub-Chain
-    
-    Note over Source, Target: Phase 1: Prepare
-    Source->>Target: Prepare transaction (ID, payload)
-    Target-->>Source: Prepared OK or reject
-    
-    Note over Source, Target: Phase 2: Commit or rollback
+
+    Note over Coordinator, Target: Phase 1: Prepare
+    Coordinator->>Source: Prepare (ID, payload)
+    Source-->>Coordinator: Prepared OK or reject
+    Coordinator->>Target: Prepare (ID, payload)
+    Target-->>Coordinator: Prepared OK or reject
+
+    Note over Coordinator, Target: Phase 2: Commit or rollback
     alt All chains prepared
-        Source->>Target: Commit transaction
-        Target->>Target: Finalize block
-    else Failure detected
-        Source->>Target: Rollback transaction
-        Target->>Target: Discard pending state
+        Coordinator->>Coordinator: Persist durable COMMIT decision (phase=commit)
+        Coordinator->>Source: Commit
+        Source-->>Coordinator: ACK after durable event-pair read-back
+        Coordinator->>Target: Commit
+        Target-->>Coordinator: ACK after durable event-pair read-back
+        Coordinator->>Coordinator: Persist COMMITTED
+        Note over Source, Target: Block finalization may complete asynchronously
+    else Prepare failed before COMMIT decision
+        Coordinator->>Source: Rollback
+        Source-->>Coordinator: Rollback result
+        Coordinator->>Target: Rollback
+        Target-->>Coordinator: Rollback result
     end
 ```
+
+Sau khi ghi bền quyết định COMMIT, nếu thiếu ACK từ participant thì thao tác ở trạng thái `IN_DOUBT` để forward recovery tiếp tục. Coordinator không rollback quyết định commit đã được lưu bền vững.
 
 ## 5. Tuân thủ và truy vết liên chuỗi
 
@@ -88,7 +100,7 @@ tracer = EntityTracer(hierarchy_manager)
 trace_results = tracer.trace_entity("ORDER-789")
 
 print(f"Total events found: {trace_results['total_events']}")
-for chain_name, summary in trace_results.get("chain_summaries", {}).items():
+for chain_name, summary in trace_results.get("chain_details", {}).items():
     print(f"Activity at {chain_name}: {summary['total_events']} events")
 ```
 

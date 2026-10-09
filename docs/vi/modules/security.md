@@ -1,16 +1,14 @@
 ---
-title: "Security Module"
+title: "Module bảo mật"
 description: "Tổng quan về hệ thống bảo mật đa tầng: MSP, Policy Engine, Key Management và ZK Proofs."
 icon: material/shield-lock
 ---
 
-# Security Module (`hierachain/security/*`)
+# Module bảo mật (`hierachain/security/*`)
 
 ## Tổng quan
 
-Module security cung cấp lớp bảo vệ chính cho HieraChain. Nó không dựa vào một lớp duy nhất. Module kết hợp danh tính, kiểm soát truy cập, bảo vệ tài nguyên và tính toàn vẹn ledger có chữ ký. Các interface ZK tùy chọn hiện chỉ có mock phát triển; ZK production chưa được triển khai.
-
----
+Module bảo mật cung cấp helper identity, chính sách kiểm soát truy cập, sanitization và kiểm tra ledger có chữ ký. Kiểm tra scope HTTP, chính sách tổ chức và lời gọi Python trực tiếp có các luồng thực thi riêng. Giao diện ZK tùy chọn hiện cung cấp mock cho phát triển; ZK production chưa được triển khai.
 
 ## Sáu nhóm bảo mật
 
@@ -18,7 +16,7 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
 <div class="grid cards" markdown>
 
-*   :material-account-lock:{ .lg .middle } __Authorization và access__
+*   :material-account-lock:{ .lg .middle } __Phân quyền và truy cập__
 
     ---
 
@@ -29,14 +27,14 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
     ---
 
-    Ghi log chống giả mạo cho các thao tác nhạy cảm về bảo mật.
+    Log JSON có cấu trúc, sanitization và che trường nhạy cảm. Xác minh kiểm toán dùng `AuditLogger` riêng cùng manifest đáng tin cậy.
     [:octicons-arrow-right-24: Chi tiết](../security/lockdown-logging.md)
 
-*   :material-shield-check:{ .lg .middle } __Integrity và guard__
+*   :material-shield-check:{ .lg .middle } __Toàn vẹn và bảo vệ tài nguyên__
 
     ---
 
-    Bảo vệ tài nguyên trước DoS và kiểm tra tính toàn vẹn của code và cấu hình khi khởi động.
+    Giới hạn tài nguyên tại API và ordering, cùng xác minh block có chữ ký khi nạp và commit ledger.
     [:octicons-arrow-right-24: Chi tiết](../security/fault-tolerance-integrity.md)
 
 *   :material-security-network:{ .lg .middle } __Làm sạch input__
@@ -46,11 +44,11 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
     Xác thực và làm sạch input để chặn injection.
     [:octicons-arrow-right-24: Chi tiết](../security/risk-analyzer.md)
 
-*   :material-key-chain:{ .lg .middle } __Encryption và keys__
+*   :material-key-chain:{ .lg .middle } __Mã hóa và khóa__
 
     ---
 
-    Quản lý vòng đời khóa (Ed25519, AES-GCM) và chứng chỉ X.509.
+    Provider khóa Ed25519, mã hóa AES-GCM cho IPFS và chứng chỉ MSP nội bộ. MSP không triển khai X.509 hay mTLS.
     [:octicons-arrow-right-24: Chi tiết](../security/encryption-keys.md)
 
 *   :material-brain:{ .lg .middle } __Zero-knowledge proofs__
@@ -62,17 +60,13 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
 </div>
 
----
-
 ## Cách các lớp kết nối
 
-Mọi phần của HieraChain đều dùng chung các lớp này:
+Runtime áp dụng các kiểm tra sau ở từng luồng tương ứng:
 
-* API server dùng `ResourceGuard` và `APIKeyVerifier` làm middleware. Chúng chạy đầu tiên trên mỗi request.
-* Consensus ký mọi message đồng thuận và kiểm tra tính toàn vẹn trước khi chấp nhận.
-* Storage mã hóa dữ liệu nhạy cảm trước khi ghi và làm sạch input khi truy vấn.
-
----
+* Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
+* Block có chữ ký được kiểm tra bằng khóa creator do operator phê duyệt; kiểm tra thông điệp đồng thuận phụ thuộc vào thành phần được chọn.
+* Upload IPFS mặc định mã hóa. Kho ledger SQL không tự mã hóa mọi chi tiết sự kiện được lưu; hãy cấu hình mã hóa lưu trữ và kiểm soát truy cập tại môi trường triển khai.
 
 ## Cấu hình bảo mật
 
@@ -80,8 +74,6 @@ Các thiết lập chính nằm ở `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` bật hoặc tắt xác thực API.
 * `HRC_ENABLE_ZK_PROOFS` bật luồng xác thực ZK; nó không cung cấp backend production. Xem [phạm vi ZK](../security/decentralized-zkp.md).
-
----
 
 ## Liên quan
 

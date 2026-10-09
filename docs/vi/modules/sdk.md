@@ -43,7 +43,7 @@ Module **SDK** cung cấp bộ công cụ phát triển (Software Development Ki
     ---
 
     * **Entity Tracing**: Truy vết vòng đời thực thể xuyên suốt các chuỗi con.
-    * **CID Resolution**: Tự động giải mã dữ liệu từ IPFS khi truy vấn khối.
+    * **CID Resolution**: Truy vấn block mặc định dùng `resolve_cid=False`; với `resolve_cid=True`, SDK yêu cầu API giải quyết CID. API giải quyết và giải mã details khi IPFS được bật. `trace_entity()` cũng hỗ trợ tùy chọn này.
 
 Entity ID được percent-encode thành một path segment khi truy vấn trace. Khi cấu hình `api_key`, cả hai client từ chối redirect đối với request đọc; phản hồi 3xx được trả về dưới dạng `HieraChainAPIError` để `X-API-Key` không bị chuyển tiếp sang origin redirect.
 
@@ -62,7 +62,7 @@ stateDiagram-v2
     OPEN --> HALF_OPEN: Recovery Timeout Expired
     HALF_OPEN --> CLOSED: Success (Service Recovered)
     HALF_OPEN --> OPEN: Failure (Still Broken)
-    
+
     note right of OPEN: Fails fast immediately\nwithout calling API
 ```
 
@@ -85,12 +85,12 @@ config = HieraChainClientConfig(
 ### 2. Sử dụng Synchronous Client (Dành cho Script/CLI)
 ```python
 with HieraChainClient(config) as client:
-    # Ghi sự kiện vào chuỗi cung ứng
+    # Write event to supply chain
     result = client.submit_event(
         chain_name="supply_chain",
         event_data={
             "entity_id": "PRODUCT-123",
-            "event": "quality_check",
+            "event_type": "quality_check",
             "details": {"status": "passed", "inspector": "QA-01"}
         }
     )
@@ -103,7 +103,7 @@ from hierachain.sdk import HieraChainAsyncClient
 
 async def track_product():
     async with HieraChainAsyncClient(config) as client:
-        # Truy vết thực thể xuyên chuỗi
+        # Trace entity across chains
         trace = await client.trace_entity("PRODUCT-123")
         for event in trace.events:
             print(f"Timestamp: {event['timestamp']} - Action: {event['event']}")

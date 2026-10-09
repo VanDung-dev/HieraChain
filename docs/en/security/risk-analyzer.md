@@ -6,27 +6,24 @@ icon: material/security-network
 
 # Input Sanitization
 
-This security layer validates and sanitizes untrusted input before business logic handles it.
+This module provides context-specific value transformations, not a request-wide validation pipeline. `sanitize_string()` supports HTML/general, log, and filename contexts; `sanitize_dict()` and `sanitize_list()` apply the selected transformation recursively. `is_safe_input()` checks string length and a short list of script, JavaScript URI, and template patterns. These helpers do not validate an application schema or provide SQL, NoSQL, or command-injection protection. Request-size and route-schema/depth checks are separate, and handlers call sanitizers where needed.
 
 ## Input Sanitization & Validation
 
 **File**: `hierachain/security/sanitization.py`
 
-Defense layer against data-level attacks:
-
-*   **Injection Protection**: Sanitizes input data to prevent SQL Injection, NoSQL Injection, and Command Injection.
-*   **Nested Bomb Protection**: Limits JSON payload depth to prevent denial-of-service attacks through complex nested data structures.
-*   **Type Strictness**: Ensures input data fully matches the defined schema, rejecting any redundant or malformed fields.
+The API uses separate request-size and route-model checks where configured. Sanitizer helpers run only where a route calls them.
 
 ## Sanitization Flow
 
 ```mermaid
 graph LR
-    A[Raw Request Body] --> B[Size Limit Check]
-    B --> C[JSON Schema Validation]
-    C --> D[Recursive Type Checking]
-    D --> E[Injection Pattern Scan]
-    E --> F[Sanitized Data for Logic]
+    A[API request] --> B[App middleware: payload-size check]
+    B --> C[Route-specific request validation]
+    C --> D[Route handler]
+    D -->|when called| E[Context-specific sanitizer]
+    D --> F[Business logic]
+    E --> F
 ```
 
 ---

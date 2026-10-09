@@ -1,10 +1,10 @@
 ---
-title: "API Module"
+title: "Module API"
 description: "Hệ thống API đa giao thức: REST ledger/business/admin, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
 icon: material/api
 ---
 
-# API Module (`hierachain/api/*`)
+# Module API (`hierachain/api/*`)
 
 ## Tổng quan
 
@@ -17,10 +17,8 @@ Import helper của API client, như `hierachain.api.storage.ipfs_client`, khôn
 * FastAPI server (`server.py`) là điểm khởi chạy. Nó thiết lập middleware, xác thực và router.
 * REST API có ba nhóm (ledger, business, admin) cho thao tác lõi, tính năng nghiệp vụ và quản trị hệ thống.
 * GraphQL endpoint cho phép chọn field linh hoạt với giới hạn depth và complexity.
-* WebSocket gateway truyền block và event tới subscriber theo mô hình publish/subscribe.
+* Gateway WebSocket quản lý subscription và helper broadcast; ứng dụng phải nối sự kiện ledger vào các helper này.
 * Tích hợp IPFS xử lý dữ liệu off-chain với mã hóa AES-256-GCM. Payload lớn nằm ngoài chain, chỉ CID được lưu trên chain.
-
----
 
 ## Kiến trúc và bảo mật
 
@@ -28,8 +26,8 @@ API dùng middleware theo lớp. Mỗi request đi qua cùng một chuỗi kiể
 
 ### Bảo mật HTTP
 
-* Header bảo mật được thêm vào mọi response, gồm CSP, HSTS, X-Frame-Options đặt là DENY và X-Content-Type-Options đặt là nosniff.
-* Giới hạn payload chặn body request ở mức 5 MB mặc định. Mức này giúp tránh DoS bằng payload lớn.
+* HTTP middleware thêm CSP, X-Frame-Options có giá trị DENY và X-Content-Type-Options có giá trị nosniff. Nó không thêm HSTS; hãy cấu hình header này tại reverse proxy HTTPS.
+* Middleware payload giới hạn body POST/PUT/PATCH ở 1 MiB. Nó kiểm tra Content-Length nếu được gửi và đọc stream khi thiếu header này.
 * CORS kiểm soát origin nào được gọi API. Môi trường production yêu cầu danh sách cho phép cụ thể.
 
 ### Rate limiting
@@ -45,11 +43,9 @@ Mặc định là 100 request mỗi phút, được cấu hình qua `HRC_RATE_LI
 
 `APIKeyVerifier` kiểm tra header `X-API-Key` cho HTTP và WebSocket. Production bắt buộc `HRC_AUTH_ENABLED=true` và file key `HRC_API_KEYS_FILE` đã được cấp; dev/test có thể tắt xác thực. Khi bật xác thực, GraphQL kiểm tra scope cho từng operation: query chain và block cần `chains`, query event và `addEvent` cần `events`, còn query block chọn event lồng bên trong cần cả hai scope. WebSocket truyền cả message block và event, nên kết nối và đăng ký cần `chains` và `events` (hoặc `all`). Trong production, GraphQL và WebSocket từ chối yêu cầu nếu app không có verifier đang bật hoặc verifier không trả auth context.
 
----
+## Tham chiếu REST API
 
-## REST API reference
-
-### ledger: core ledger
+### ledger: sổ cái cốt lõi
 
 Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 
@@ -64,7 +60,7 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 * `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}` lấy thông tin chi tiết một block theo chỉ số hoặc mã băm.
 * `GET /api/ledger/entities/{id}/trace` truy vết entity xuyên suốt hệ thống phân cấp chuỗi.
 
-### business: enterprise features
+### business: tính năng doanh nghiệp
 
 Các endpoint này hỗ trợ quy trình nghiệp vụ:
 
@@ -73,15 +69,13 @@ Các endpoint này hỗ trợ quy trình nghiệp vụ:
 * Domain contract đăng ký metadata; `POST /api/business/contracts/execute` trả HTTP 501 vì engine thực thi chưa được triển khai.
 * Organization đăng ký và quản lý danh tính qua MSP.
 
-### admin: system và admin
+### admin: hệ thống và quản trị
 
 Các endpoint này dành cho vận hành node và hệ thống:
 
 * `POST /api/admin/verify-identity` cho phép node ký challenge để chứng minh danh tính.
-* `GET /api/admin/status` trả về uptime, số lượng chain, phiên bản và trạng thái bản quyền.
-* `POST /api/admin/chains/{chain_name}/secure-events` gửi sự kiện mức tin cậy cao yêu cầu xác thực chữ ký đồng bộ.
-
----
+* `GET /api/admin/status` được miễn xác thực API key và trả uptime, số chain, version cùng cờ license được gán cố định.
+* `POST /api/admin/chains/{chain_name}/secure-events` kiểm tra chữ ký đồng bộ rồi gửi qua ordering bất đồng bộ; response không xác nhận block đã commit.
 
 ## GraphQL API
 
@@ -109,13 +103,11 @@ query {
 }
 ```
 
----
-
-## WebSocket (real-time streaming)
+## WebSocket (truyền dữ liệu thời gian thực)
 
 Kết nối tới `/ws`. Để chọn chuỗi ngay khi kết nối, truyền `chain_name`, ví dụ `/ws?chain_name=supply_chain`.
 
-Khi bật xác thực, hãy gửi header `X-API-Key` trong quá trình bắt tay WebSocket. Kết nối và mỗi lần đăng ký cần cả quyền `chains` và `events` vì luồng hiện tại gửi cả message block lẫn event tới subscriber của chuỗi. Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.
+Khi bật xác thực, gửi header `X-API-Key` trong WebSocket handshake. Kết nối và từng subscription cần cả quyền `chains` lẫn `events` vì stream hiện gửi cả hai loại thông điệp cho subscriber của chain. Luồng ledger không tự gọi helper broadcast. Subscription chỉ nhận thông điệp ledger khi ứng dụng đã tích hợp việc phát thông điệp.
 
 ### Các loại message chính
 
@@ -127,8 +119,6 @@ Khi bật xác thực, hãy gửi header `X-API-Key` trong quá trình bắt tay
     * `event` đẩy chi tiết event tới subscriber.
     * `subscribed` xác nhận đăng ký thành công.
 
----
-
 ## Blockchain explorer
 
 Tích hợp sẵn tại `blockchain_explorer.py`, explorer cung cấp dashboard cho người vận hành:
@@ -137,17 +127,10 @@ Tích hợp sẵn tại `blockchain_explorer.py`, explorer cung cấp dashboard 
 * Visualizer vẽ cây quan hệ giữa Main Chain và Sub-Chain.
 * IPFS decoder cho phép admin có quyền giải mã CID trực tiếp trên trình duyệt.
 
----
-
 ## Quan sát (observability)
 
 * `X-Request-ID` gắn UUID cho mỗi request để truy vết log.
-* `/metrics` cung cấp metric dạng Prometheus, gồm:
-    * Số request thành công và thất bại.
-    * Độ trễ trung bình.
-    * Trạng thái bộ nhớ và CPU của API server.
-
----
+* Khi `HRC_METRICS_ENABLED=true`, `/metrics` xuất registry mặc định của `prometheus_client`. Các collector process/runtime mặc định phụ thuộc nền tảng. API không đăng ký bộ đếm request thành công/thất bại, histogram latency hay collector throughput ledger; ứng dụng phải bổ sung instrumentation. `PerformanceMonitor` là thành phần riêng và không tự được xuất qua endpoint này.
 
 ## Hướng dẫn nhanh (curl)
 
@@ -169,8 +152,6 @@ curl -X POST http://localhost:2661/api/ledger/chains/my_chain/events \
 ```bash
 curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 ```
-
----
 
 ## Liên quan
 

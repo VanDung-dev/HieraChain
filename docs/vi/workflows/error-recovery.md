@@ -16,13 +16,16 @@ tự động trong package này.
 
 ```mermaid
 flowchart TD
-    ERR["Lỗi hoặc node hỏng"] --> CLASS["ErrorClassifier\nphân loại và ghi log"]
-    CLASS -->|Sự kiện đang chờ| JOURNAL["TransactionJournal\nphát lại sau restart"]
-    CLASS -->|Lỗi đồng thuận| VIEW["BFTViewChangeManager\nbắt đầu view mới"]
-    CLASS -->|Lỗi xác thực| REJECT["Từ chối và báo cáo"]
-    JOURNAL --> VALIDATE["Xác thực trước ordering"]
-    VIEW --> CONSENSUS["Tiếp tục các pha BFT"]
+    ERR["Error or node failure"] --> CLASS["ErrorClassifier\nclassify and log"]
+    CLASS -->|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
+    EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
+    JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
+    RECOVERY --> VALIDATE["Validate before ordering"]
+    LEADER["Leader unavailable"] --> VIEW["BFTConsensus\nBFTViewChangeManager"]
+    VIEW --> CONSENSUS["Install new view\nresume BFT phases"]
 ```
+
+Đây là các luồng riêng do từng component phụ trách, không phải chuỗi điều phối từ `ErrorClassifier`. `classify_error()` ghi lại và trả về `ErrorInfo`; hàm chỉ có thể gọi callback lockdown tùy chọn đối với lỗi security/performance mức CRITICAL hoặc lỗi security mức HIGH, và chỉ khi đã cấu hình callback. `OrderingRecovery` phát lại các mục trong journal, còn `BFTConsensus` phụ trách view change khi leader gặp sự cố.
 
 ## Phục hồi đồng thuận
 

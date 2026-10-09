@@ -25,8 +25,8 @@ MSP là thành phần cốt lõi quản lý danh tính cho toàn bộ hệ thố
 Quản lý thông tin chi tiết về người dùng và tổ chức:
 
 *   **Organization Management**: Định nghĩa các tổ chức thành viên.
-*   **User Profiles**: Lưu trữ thông tin định danh, vai trò và chữ ký số Ed25519 của người dùng.
-*   **Signature Verification**: Xác thực chữ ký của người dùng trên các yêu cầu và sự kiện.
+*   **User Profiles**: Lưu thông tin định danh, vai trò và khóa công khai Ed25519 tùy chọn.
+*   **Signature Verification**: `verify_user_signature()` kiểm tra message và chữ ký do caller cung cấp dựa trên khóa công khai đã đăng ký khi được gọi. Các handler request và event không tự động gọi hàm này.
 
 ## 3. Policy Engine (ABAC)
 
@@ -43,8 +43,8 @@ Hệ thống kiểm soát truy cập dựa trên thuộc tính (Attribute-Based 
 
 Lớp xác thực nhanh cho các yêu cầu qua API:
 
-*   **API Key Management**: Tạo, thu hồi và kiểm tra API Key.
-*   **Middleware Tích hợp**: Tự động xác thực API Key cho mọi yêu cầu HTTP vào server.
+*   **API Key Lifecycle**: `KeyManager` trong `hierachain/security/key_manager.py` tạo và thu hồi key. `APIKeyVerifier` xác minh key khi xử lý request.
+*   **Global HTTP Authentication**: Server chỉ cài dependency API key khi `AUTH_ENABLED` là true. Các đường dẫn trong `EXEMPT_PATHS`, gồm health, status và docs, bỏ qua bước kiểm tra key toàn cục này; các kiểm tra xác thực hoặc quyền riêng theo route vẫn có thể được áp dụng. Khi chạy production, server từ chối khởi động nếu tắt xác thực.
 *   **Permission Mapping**: Ánh xạ API Key với các quyền hạn cụ thể trong hệ thống.
 
 ## Kiểm tra ủy quyền
@@ -59,14 +59,19 @@ Lớp xác thực nhanh cho các yêu cầu qua API:
 
 ```mermaid
 graph TD
-    A[Request with API Key] --> B[API Key Verifier]
-    B -- Valid --> C[Identity Manager]
-    C --> D[Identify Organization & Role]
-    D --> E[Policy Engine]
-    E -- Check Rules --> F{Authorized?}
-    F -- Yes --> G[Execute Business Logic]
-    F -- No --> H[403 Forbidden]
-    B -- Invalid --> I[401 Unauthorized]
+    Request[HTTP request] --> Auth{AUTH_ENABLED?}
+    Auth -- No --> Route[Route handler]
+    Auth -- Yes --> Exempt{Exempt path?}
+    Exempt -- Yes --> Route
+    Exempt -- No --> Verify[APIKeyVerifier]
+    Verify -- Invalid --> Error401[401 Unauthorized]
+    Verify -- Valid --> Route
+    Route --> Permission[Route-specific checks, where required]
+    Permission --> Business[Business logic]
+    PythonApp[Python application] -->|explicit call| MSP["HierarchicalMSP.authorize_action()"]
+    MSP --> OrgPolicies[OrganizationPolicies]
+    PythonApp -->|explicit call| Signature["IdentityManager.verify_user_signature()"]
+    PythonApp -->|explicit call| Policy[Typed PolicyEngine]
 ```
 
 ---

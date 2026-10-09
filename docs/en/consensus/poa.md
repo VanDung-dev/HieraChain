@@ -1,6 +1,6 @@
 ---
 title: "Proof of Authority (PoA)"
-description: "Authority-based consensus protocol with node identities, block signatures, and round-robin rotation."
+description: "Authority membership, block signatures, optional timing checks and scheduling helpers."
 icon: material/account-check-outline
 ---
 
@@ -8,22 +8,18 @@ icon: material/account-check-outline
 
 ## Overview
 
-**Proof of Authority (PoA)** is an identity-based consensus protocol for **intra-organization enterprise networks**, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, `SubChain` instances default to PoA for internal events without requiring consensus between organizations.
+Proof of Authority (PoA) is an identity-based consensus protocol for intra-organization enterprise networks, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, `SubChain` instances default to PoA for internal events without requiring consensus between organizations.
 
 For cross-organizational inter-MainChain consensus between independent enterprises, see [Proof of Federation (PoF)](./pof.md).
 
----
-
-## How It Works
+## How it works
 
 The protocol operates based on trust in the identity of participating nodes:
-1.  **Node Identity**: Each Authority is assigned an `authority_id` and a unique signing key pair.
-2.  **Round-Robin Schedule**: The system uses a sequential algorithm to determine which node has the right to create the next block based on the block index (`BlockIndex % TotalAuthorities`).
-3.  **Signature Verification**: Each new block must be signed by the designated Authority. Other nodes verify this signature before accepting the block into the ledger.
+1. Register an authority ID and its approved signing public key with `add_authority()`.
+2. `can_create_block(authority_id)` checks membership. It does not require that the authority be next in a rotation.
+3. `validate_block()` checks the block structure, timing, events and signature from a registered authority. `get_next_authority()` supplies a round-robin scheduling helper, but these creation and validation methods do not enforce its result.
 
----
-
-## Key Features
+## Features
 
 <div class="grid cards" markdown>
 
@@ -43,13 +39,11 @@ The protocol operates based on trust in the identity of participating nodes:
 
     ---
 
-    Each block is signed by its designated Authority. Other nodes verify the signature before accepting the block.
+    A block signature must verify against a registered authority key. The validation path does not require the next authority returned by the scheduling helper.
 
 </div>
 
----
-
-## Important Configuration Parameters
+## Configuration parameters
 
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
@@ -63,34 +57,28 @@ The SubChain orderer still batches events according to `block_size` and `batch_t
 
 For an existing deployment, an explicit `HRC_BLOCK_INTERVAL=10` retains the previous 5-second minimum spacing. Use `HRC_BLOCK_INTERVAL=0` to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.
 
----
-
-## Deployment Example
+## Deployment example
 
 ```python
 from hierachain.consensus import ProofOfAuthority
+from hierachain.security.security_utils import KeyPair
 
-# Initialize PoA protocol
+# Generate temporary keys for this library example.
+# Deployments provision stable keys and register approved public keys.
+hq_key = KeyPair.generate()
+branch_key = KeyPair.generate()
 poa = ProofOfAuthority()
+poa.add_authority("node_hq", metadata={"public_key": hq_key.public_key})
+poa.add_authority("node_branch_1", metadata={"public_key": branch_key.public_key})
 
-# Authorize nodes to participate in consensus
-poa.add_authority("node_hq", metadata={"org": "Headquarters", "pubkey": "..."})
-poa.add_authority("node_branch_1", metadata={"org": "Branch 01", "pubkey": "..."})
-
-# Check block creation permission for current node
-if poa.can_create_block("node_hq"):
-    # Proceed to close block...
-    pass
+assert poa.can_create_block("node_hq")
+assert poa.can_create_block("node_branch_1")
 ```
 
----
+## Advantages and limitations
 
-## Advantages and Limitations
-
-*   **Advantages**: Resource-efficient (no powerful CPU needed for mining), high throughput, transparent governance.
-*   **Limitations**: Lower decentralization compared to BFT, only suitable for networks with a certain level of trust between members.
-
----
+* Authority membership and signature checks avoid work-based consensus. Throughput depends on batching, journal synchronization and storage.
+*   Limitations: Lower decentralization compared to BFT, only suitable for networks with a certain level of trust between members.
 
 ## Related
 

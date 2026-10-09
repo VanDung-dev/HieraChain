@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Overview
 
-The **Network** module handles communication between HieraChain nodes over **ZeroMQ**. It uses cryptographic checks to encrypt and authenticate network messages.
+The **Network** module handles communication between HieraChain nodes over **ZeroMQ**. `SecureConnectionManager` provides optional CurveZMQ transport encryption, an MSP handshake, and message-signature checks. The API server's `NetworkClient` creates `ZmqNode` directly, so that path does not automatically run the manager's handshake or signature checks.
 
 ---
 
 ## Layered Security Architecture
 
-HieraChain uses three independent security layers for network communication:
+`SecureConnectionManager` provides these security components when an application uses it; they are not automatically active on every `NetworkClient` connection:
 
 <div class="grid cards" markdown>
 
@@ -24,9 +24,9 @@ HieraChain uses three independent security layers for network communication:
 
     __Technology__: Curve25519
 
-    * Encrypts the entire transmission path between ZeroMQ Sockets.
+    * Encrypts the transmission between ZeroMQ sockets when configured with local transport keys and peer public keys.
     * Ensures privacy and prevents eavesdropping on Web2 networks.
-    * Uses ephemeral keys to guarantee Forward Secrecy.
+    * `SecureConnectionManager` generates a CurveZMQ keypair for its transport; the API server's separate `NetworkClient` uses the transport keys configured for its `ZmqNode`.
 
 *   :material-account-check:{ .lg .middle } __Layer 2: MSP Handshake (Identity)__
 
@@ -34,7 +34,7 @@ HieraChain uses three independent security layers for network communication:
 
     __Technology__: Ed25519 + Certificates
 
-    * Authenticates node identity through MSP (Membership Service Provider) certificates.
+    * Authenticates node identity through MSP (Membership Service Provider) certificates when the handshake is run.
     * Only allows nodes from valid organizations to join the network.
     * 2-step Handshake process: `INIT` and `ACK`.
     * Binds the active certificate subject and signing key to the ZeroMQ routing ID
@@ -46,9 +46,9 @@ HieraChain uses three independent security layers for network communication:
 
     __Technology__: Ed25519 + Nonce + Timestamp
 
-    * Every P2P message is digitally signed.
+    * Data-message signature checks are controlled by `require_signatures`; they default to `False` in base, development, and test settings, and `True` in `ProductionSettings`.
     * Prevents replay attacks by checking unique Nonce and Timestamp within the allowed window (60s).
-    * Both handshake messages carry signed `timestamp` and `nonce` fields accepted by the transport replay gate.
+    * Handshake messages have separate signature checks and carry signed `timestamp` and `nonce` fields accepted by the transport replay gate.
 
 </div>
 
@@ -72,11 +72,14 @@ Orchestrates the secure connection establishment process:
 2.  Perform Handshake to exchange and verify MSP certificates.
 3.  Manage the list of authenticated peers (`authenticated_peers`).
 
+The API server's `NetworkClient` does not currently wire this manager into its `ZmqNode` transport.
+
 ### 3. Peer Trust Manager (`peer_trust_manager.py`)
 Manages the trust level of neighboring nodes:
 
-*   **Policy Enforcement**: Applies `strict` (allowlist only) or `discovery` (auto-discovery) policies.
-*   **Reputation**: Marks and disconnects peers with malicious behavior (wrong signatures, spam messages).
+*   **Policy Enforcement**: Supports `open` and `strict`. `open` trusts peers unless they are blocklisted; `strict` requires an allowlisted peer.
+*   **Peer lists**: Allowlist and blocklist entries are managed explicitly; the manager does not assign reputation scores or automatically disconnect peers for spam.
+*   **Signed messages**: Invalid data-message signatures are dropped by `SecureConnectionManager` when signature checks are enabled.
 
 ---
 
@@ -88,15 +91,15 @@ sequenceDiagram
     participant NodeB as Node B (Responder)
 
     Note over NodeA, NodeB: 1. Curve25519 Encrypted Channel Established
-    
+
     NodeA->>NodeB: HANDSHAKE_INIT (MSP Cert + Ed25519 Sig)
-    
+
     Note right of NodeB: Verify Trust Policy<br/>Verify MSP Certificate<br/>Verify Handshake Signature
-    
+
     NodeB-->>NodeA: HANDSHAKE_ACK (Success + Ed25519 Sig)
-    
+
     Note left of NodeA: Verify ACK Signature
-    
+
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
 
@@ -122,14 +125,16 @@ secure_node = SecureConnectionManager(
     identity_mgr=identity_instance
 )
 
-await secure_node.start()
+async def start_configured_node() -> None:
+    await secure_node.start()
 ```
 
 ### 2. Send a Signed Message
 ```python
 # Automatically signs and sends over the encrypted channel
-payload = {"event": "block_proposal", "data": {...}}
-await secure_node.send_secure("peer_002", payload)
+async def send_proposal() -> bool:
+    payload = {"event": "block_proposal", "data": {"block_index": 1}}
+    return await secure_node.send_secure("peer_002", payload)
 ```
 
 ---

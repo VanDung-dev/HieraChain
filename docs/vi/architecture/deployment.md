@@ -1,66 +1,37 @@
 ---
 title: Kiến trúc Triển khai (Deployment Architecture)
-description: Mô hình triển khai HieraChain, cấu hình mạng ZMQ, và hướng dẫn vận hành Kubernetes để đảm bảo High Availability.
+description: Mô hình triển khai HieraChain, cấu hình mạng ZMQ, tài nguyên Kubernetes và giới hạn vận hành hiện tại.
 icon: material/server-network
 ---
 
 # Kiến trúc Triển khai (Deployment Architecture)
 
-Tài liệu này mô tả chi tiết các mô hình triển khai của HieraChain, cách cấu hình mạng, và hướng dẫn vận hành hệ thống trên môi trường Kubernetes để đảm bảo tính sẵn sàng cao (High Availability) cũng như khả năng mở rộng ở cấp độ doanh nghiệp (Enterprise-ready).
+## Giới hạn runtime
 
----
+Một process API khởi tạo `HierarchyManager` gồm MainChain và các Sub-Chain đã đăng ký. MainChain/Sub-Chain dùng PoA hoặc PoF; engine BFT là thành phần riêng cần tích hợp rõ ràng. Chỉ triển khai bốn replica API không tạo PBFT finality hoặc failover leader. Xem [Phạm vi đồng thuận](../workflows/consensus_mechanisms.md).
 
-## 1. Mô hình triển khai Multi-Node (BFT Topology)
+## Mạng và cấu hình
 
-HieraChain hỗ trợ giao thức đồng thuận BFT (Byzantine Fault Tolerance) nhằm đảm bảo hệ thống vẫn hoạt động chính xác ngay cả khi có một số node bị lỗi hoặc có hành vi gian lận.
+| Cấu hình | Mặc định runtime | Mục đích |
+|----------|------------------|----------|
+| `HRC_API_PORT` | `2661` | API REST, GraphQL và WebSocket |
+| `HRC_P2P_PORT` | `5555` | Transport ZeroMQ; manifest container ghi đè |
+| `HRC_PEERS` | Rỗng | Seed peer phân tách dấu phẩy; `peer-id@host:port` định danh peer |
+| `HRC_P2P_ENABLED` | `true` | Khởi động lớp mạng trong lifecycle API |
 
-### Cấu hình BFT Tiêu chuẩn (Ví dụ: 4 Nodes)
+Dùng `python -m hierachain` hoặc `hrc node start`. Cấp identity riêng, trusted block key, API key production và credential SQL trước khi khởi động. Phản hồi health là liveness; readiness dùng `/api/ledger/ready`. Lưu bền database và journal `data/` từng node. Registry SQL dùng chung không loại bỏ yêu cầu quyền sở hữu writer của journal ordering.
 
-Mô hình triển khai tối thiểu để BFT có thể chống chịu được 1 node lỗi (***f=1***) yêu cầu ít nhất ***3f + 1 = 4*** nodes.
+Terminate HTTPS và cấu hình giới hạn truy cập công khai ở gateway. Giới hạn P2P trong mạng dự kiến. `ProductionSettings` đặt `P2P_TRUST_POLICY = "strict"` và `P2P_REQUIRE_SIGNATURES = True`, nhưng luồng khởi động P2P hiện tại của API chỉ truyền seed node và transport key vào `NetworkClient`, không nối hai cấu hình này vào runtime đó. Chỉ đặt các giá trị này không kích hoạt strict peer trust hoặc xác minh chữ ký message trong runtime API. IPFS tùy chọn cần daemon và encryption key thật dài 32 byte. Xem [Triển khai an toàn](../how-to/secure-deployment.md) và [Cấu hình](../reference/config.md).
 
-Cấu trúc Topology cho một Sub-Chain:
+## Tài nguyên Kubernetes
 
-* **Node 0 (Leader ban đầu)**: Nhận transaction, đóng block và khởi tạo các bước đồng thuận (Pre-prepare).
-* **Node 1, Node 2, Node 3 (Validators)**: Tham gia vào các vòng Prepare và Commit để xác thực block.
+`docker/k8s/` có ví dụ Deployment/StatefulSet, service, storage và cấu hình. Kustomization cơ bản dùng namespace `hierachain`; `templates/` có template Sub-Chain riêng. `HierarchyManager` không tạo namespace hoặc pod khi tạo Sub-Chain Python. Namespace riêng không tự cô lập CPU, bộ nhớ hay mạng; cần cấu hình requests/limits và network policy ở deployment.
 
-Trong quá trình triển khai, cần thiết lập danh sách các peer (thông qua biến môi trường `PEERS`) trên mỗi node để chúng tạo thành một mạng liên kết ngang hàng (P2P Mesh Network).
+Tài nguyên phụ thuộc manifest: `node-deployment.yaml` dùng requests và limits 1 CPU/1 GiB; `node-statefulset.yaml` request 500m CPU/1 GiB và limit 2 CPU/2 GiB. Đây là giá trị manifest, không phải yêu cầu runtime hoặc bảo đảm capacity đã kiểm thử.
 
----
+Đọc manifest được chọn trước khi triển khai. Ví dụ `node-deployment.yaml` hiện gọi `hrc start`, trong khi CLI cung cấp `hrc node start`; file cũng có placeholder encryption key IPFS. StatefulSet có mount identity secret riêng. Các file là ví dụ triển khai, chưa phải môi trường production đã cấp đủ cấu hình. Lần sửa tài liệu này không sửa hoặc xác minh chạy cluster manifest.
 
-## 2. Cấu hình Mạng (Network Configuration)
+## Liên quan
 
-Để các node trong mạng có thể giao tiếp, hệ thống sử dụng **ZeroMQ TCP transport** và giao thức **HTTP REST API** qua `FastAPI` (hoặc cấu hình thủ công cổng riêng biệt cho API).
-
-* **Cổng (Ports) tiêu chuẩn mặc định**:
-
-    * **API Port** (`2661`): Dùng cho GraphQL API, REST API, và cho các external client (SDK/CLI) gửi sự kiện vào chuỗi. (Tham chiếu `api_port: int = 2661`).
-    * **Node Port** (`5001` - `50xx`): Cổng ZeroMQ (ZMQ) nội bộ dành cho việc đồng thuận (Consensus P2P), trao đổi tin nhắn chữ ký và block giữa các validator. (Tham chiếu `node_port: int = 5001`).
-
-* **Quy tắc Ingress / Egress (Firewall Rules)**:
-
-  * **Ingress**: Chỉ mở port `2661` ra Internet hoặc Load Balancer nếu cần public API. Cổng `5001` chỉ nên được cấu hình chặn nội bộ lưới mạng đám mây (VPC/Subnet).
-  * **Egress**: Cần cho phép các node gọi ra HTTP(s) (port `443/80`) nếu có tích hợp ERP, và gọi port ZeroMQ nội bộ (`5001` - `50xx`) của các Node khác.
-
----
-
-## 3. Triển khai qua Kubernetes (K8s Orchestration)
-
-Repository cung cấp các manifest triển khai Kubernetes trong `docker/k8s/`. Vòng đời namespace và workload do quy trình triển khai Kubernetes quản lý, không do namespace manager trong runtime:
-
-* **Nguyên lý Cách ly (Isolation)**: Mỗi Sub-chain được cấp phát một **Namespace** riêng biệt. Sự cố rò rỉ bộ nhớ, quá tải tài nguyên ở một Sub-chain sẽ không lây lan sang Sub-chain khác.
-* **Microservice Lifecycle**: Sử dụng K8s Deployment để quản lý Pods.
-* **Cô lập tài nguyên**: Namespace, resource request, limit và network policy được định nghĩa trong manifest triển khai.
-
-### Quản lý Namespace & Resource Limits
-
-Resource request và limit được định nghĩa trong các manifest Kubernetes và áp dụng bởi quy trình triển khai. `HierarchyManager` không cấp phát namespace Kubernetes trong runtime.
-
-* **Tài nguyên Yêu cầu (Requests):**
-
-    * **CPU:** `500m` (Đảm bảo số lượng core tối thiểu cần thiết để Arrow xử lý event).
-    * **Memory:** `512Mi`.
-
-* **Tài nguyên Giới hạn (Limits):**
-
-    * **CPU:** `1000m` (1 vCPU). Tận dụng module `parallel_engine.py` cho đa luồng.
-    * **Memory:** `1Gi` (Tránh Out-of-Memory do In-memory Storage tràn ngập).
+* [Phục hồi](../how-to/disaster-recovery.md)
+* [Kiểm thử và workload triển khai biệt lập](../dev/testing.md)

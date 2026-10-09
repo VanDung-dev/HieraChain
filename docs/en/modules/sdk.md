@@ -43,7 +43,7 @@ The **SDK** module provides a Python Software Development Kit that enables exter
     ---
 
     * **Entity Tracing**: Trace entity lifecycle across Sub-Chains.
-    * **CID Resolution**: Automatically decrypts data from IPFS when querying blocks.
+    * **CID Resolution**: Block queries default to `resolve_cid=False`; with `resolve_cid=True`, the SDK asks the API to resolve CID data. The API resolves and decrypts details when IPFS is enabled. `trace_entity()` supports the same option.
 
 Entity IDs are percent-encoded as one URL path segment for trace requests. When `api_key` is configured, both clients reject redirects for read requests; a 3xx response is returned as `HieraChainAPIError` so `X-API-Key` is never forwarded to a redirected origin.
 
@@ -62,7 +62,7 @@ stateDiagram-v2
     OPEN --> HALF_OPEN: Recovery Timeout Expired
     HALF_OPEN --> CLOSED: Success (Service Recovered)
     HALF_OPEN --> OPEN: Failure (Still Broken)
-    
+
     note right of OPEN: Fails fast immediately\nwithout calling API
 ```
 
@@ -90,7 +90,7 @@ with HieraChainClient(config) as client:
         chain_name="supply_chain",
         event_data={
             "entity_id": "PRODUCT-123",
-            "event": "quality_check",
+            "event_type": "quality_check",
             "details": {"status": "passed", "inspector": "QA-01"}
         }
     )

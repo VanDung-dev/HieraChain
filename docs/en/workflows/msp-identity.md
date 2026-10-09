@@ -1,167 +1,77 @@
 ---
 title: "MSP Identity & Auth"
-description: "X.509 certificate lifecycle, enrollment, and MSP authentication for system participants."
+description: "Internal certificate enrollment, MSP identity checks and organization role policies."
 icon: material/card-account-details
 ---
 
 # MSP identity and authorization
 
-## Overview
+## Scope
 
-HieraChain uses two identity layers:
+`IdentityManager` in `hierachain/security/identity.py` provides user registration, role permissions and signature helpers. `HierarchicalMSP` in `hierachain/security/msp.py` manages organization entities, internal certificates and role-linked `OrganizationPolicies`.
 
-| Layer | Class | Use Case |
-|:------|:------|:---------|
-| **Simple RBAC** | `IdentityManager` | Single-org deployments; role-based permission checks |
-| **Enterprise MSP** | `HierarchicalMSP` | Multi-org consortiums; X.509 certificate hierarchy with `CertificateAuthority` |
+The MSP certificate is a Python `Certificate` dataclass, not an X.509 certificate. Its CA creates an Ed25519 signature over certificate ID, subject and public key. `verify_certificate()` checks the stored certificate's status and validity window; it does not validate an X.509 chain or establish possession of the entity's private key. CA keys, registrations and revocations are held in memory.
 
-Every entity must be registered and have its identity validated before the system allows it to call `PolicyEngine` or submit events.
+Generic Ledger event routes check API-key scopes and submit to the Sub-Chain. They do not automatically call MSP or `PolicyEngine`. Channel paths apply their own membership and role checks. Applications using the Python interfaces must call the checks required for their operation.
 
----
-
-## Flow diagram: entity onboarding (enterprise MSP)
+## Enrollment and authorization
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Enterprise Admin
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Phase 1 — Define roles
-
-        Admin->>MSP: define_role(role_name, permissions, policy_ids)
-        MSP->>MSP: OrganizationPolicies.assign_role_permissions(role, perms)
+    participant App as Application
+    participant MSP as HierarchicalMSP
+    participant CA as CertificateAuthority
+    participant Policies as OrganizationPolicies
+    App->>MSP: define_role(role_name, permissions, policy_ids)
+    MSP->>Policies: assign_role_permissions(role, permissions)
+    App->>MSP: register_entity(entity_id, credentials, role, attributes)
+    MSP->>CA: issue_certificate(subject, public_key, attributes, valid_days)
+    CA-->>MSP: Internal Certificate
+    MSP-->>App: Registration success or failure
+    App->>MSP: validate_identity(entity_id, credentials)
+    MSP->>CA: verify_certificate(cert_id)
+    MSP->>MSP: Compare supplied and registered public keys
+    MSP-->>App: True or False
+    App->>MSP: authorize_action(entity_id, action, resource)
+    MSP->>CA: Verify active certificate
+    MSP->>Policies: check_permission(role, action)
+    loop Role-linked policy IDs
+        MSP->>Policies: evaluate_policy(policy_id, context)
     end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Admin: Phase 2 — Register entity
-
-        Admin->>MSP: register_entity(entity_id, credentials, role, attributes)
-        MSP->>CA: issue_certificate(entity_id, public_key, attributes, valid_days)
-        CA->>CA: _generate_cert_id(entity_id, public_key)
-        CA->>CA: _sign_certificate(cert_id, subject, public_key, ca_key)
-        CA-->>MSP: Certificate { cert_id, valid_until, status=ACTIVE }
-        MSP->>MSP: entities[entity_id] = { certificate, role, status: active }
-        MSP-->>Admin: True ✅
-    end
+    MSP-->>App: True only if all required checks pass
 ```
 
----
+`credentials` must include `public_key`. Registration returns `False` on failure, including an undefined role. `validate_identity()` checks registration, certificate validity and the supplied public key; it does not verify a fresh challenge signature. Use a separate signature verification flow when proof of key possession is required.
 
-## Flow diagram: runtime authorization
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Caller as 🖥️ API Client
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,CA: Phase 1 — Validate Identity
-        Caller->>MSP: validate_identity(entity_id, credentials)
-        MSP->>CA: verify_certificate(cert_id)
-        CA->>CA: Check: cert not revoked AND is_valid() (within time window)
-        CA-->>MSP: True / False
-        MSP->>MSP: Match credentials.public_key vs stored certificate
-        MSP-->>Caller: True ✅ (identity confirmed)
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over Caller,PE: Phase 2 — Authorize Action
-        Caller->>MSP: authorize_action(entity_id, action, resource)
-        MSP->>MSP: check_permission(role, action)
-        MSP->>MSP: evaluate_policy(policy_id, context) for each role policy
-        MSP-->>Caller: True / False
-    end
-
-    alt Action authorized
-        Caller->>PE: evaluate_policy(policy_id, context_with_role)
-        Note right of PE: Policy Enforcement flow continues here
-    end
-```
-
----
-
-## Flow diagram: certificate revocation
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Admin as 🏢 Enterprise Admin
-    participant MSP as 🏛️ HierarchicalMSP
-    participant CA as 📜 CertificateAuthority
-
-    Admin->>MSP: revoke_entity(entity_id, reason)
-    MSP->>CA: revoke_certificate(cert_id, reason)
-    CA->>CA: revoked_certificates.add(cert_id)
-    CA->>CA: cert.status = REVOKED
-    MSP->>MSP: entity[status] = revoked
-    MSP-->>Admin: True ✅
-
-    Note over CA: All future validate_identity() calls for this entity<br/>will fail at CA.verify_certificate()
-```
-
----
+`authorize_action()` requires an active entity and valid stored certificate, checks role permissions, then evaluates every linked organization policy. These are `OrganizationPolicies`, whose evaluation checks configured required context attributes. They are separate from the typed rules in `security/policy_engine.py`.
 
 ## Default roles
 
 | Role | Permissions |
 |:-----|:------------|
-| `admin` | manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data |
+| `admin` | manage_entities, view_audit_log, define_policies, create_channels, manage_certificates, submit_events, view_channels, query_data, view_data |
 | `operator` | submit_events, view_channels, query_data |
 | `viewer` | view_data, query_data |
 
----
+## Revocation and failures
 
-## Step-by-step breakdown
+`revoke_entity(entity_id, reason)` revokes the stored certificate and marks the entity revoked. Later identity validation and action authorization fail. Expired or revoked certificates, unknown entities, mismatched public keys and missing permissions also fail their respective checks.
 
-| Step | Description |
-|:-----|:------------|
-| **1. Define role** | Admin defines role + permission set + linked policy IDs |
-| **2. Register entity** | MSP requests X.509 certificate from CA for the entity's public key |
-| **3. CA issue** | CA generates `cert_id`, signs certificate, stores with `status=ACTIVE` |
-| **4. Validate identity** | CA checks: cert not revoked AND current time within `[issued_at, valid_until]` |
-| **5. Credential match** | MSP verifies `credentials.public_key == certificate.public_key` |
-| **6. Authorize action** | `check_permission(role, action)` + evaluate all role-linked policies |
-| **7. Policy gate** | If authorized, PolicyEngine (Policy Enforcement) evaluates further context-based rules |
-| **8. Revoke** | Sets `cert.status = REVOKED`; all future `validate_identity()` calls fail at step 4 |
-
----
-
-## Error handling
-
-| Condition | Behavior |
-|:----------|:---------|
-| Entity not registered | `validate_identity()` returns `False` immediately |
-| Certificate expired | `CA.is_valid()` returns `False`; identity rejected |
-| Certificate revoked | `CA.verify_certificate()` fails; identity rejected |
-| Public key mismatch | `validate_identity()` returns `False` |
-| Role has no matching permission | `authorize_action()` returns `False` |
-
----
+This lifecycle has no CRL distribution, persistent certificate registry, mTLS or automatic key-backup hook. Provision transport security at the reverse proxy and manage identity backups separately.
 
 ## Key classes and methods
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
-| Simple RBAC register | `IdentityManager.register_user()` | `security/identity.py` |
-| Simple RBAC validate | `IdentityManager.validate_identity()` | `security/identity.py` |
-| Signature verify | `IdentityManager.verify_user_signature()` | `security/identity.py` |
-| Enterprise register | `HierarchicalMSP.register_entity()` | `security/msp.py` |
-| Issue certificate | `CertificateAuthority.issue_certificate()` | `security/msp.py` |
-| Validate identity | `HierarchicalMSP.validate_identity()` | `security/msp.py` |
-| Authorize action | `HierarchicalMSP.authorize_action()` | `security/msp.py` |
-| Revoke entity | `HierarchicalMSP.revoke_entity()` | `security/msp.py` |
-
----
+| Operation | Method | File |
+|:----------|:-------|:-----|
+| User registration | `IdentityManager.register_user()` | `hierachain/security/identity.py` |
+| User validation | `IdentityManager.validate_identity()` | `hierachain/security/identity.py` |
+| User signature verification | `IdentityManager.verify_user_signature()` | `hierachain/security/identity.py` |
+| Entity registration | `HierarchicalMSP.register_entity()` | `hierachain/security/msp.py` |
+| Certificate issue/verify/revoke | `CertificateAuthority` methods | `hierachain/security/msp.py` |
+| Entity authorization | `HierarchicalMSP.authorize_action()` | `hierachain/security/msp.py` |
 
 ## Related
 
-- [Policy Enforcement](./policy-enforcement.md): called after MSP authorization succeeds
-- [Event Submission](./event-submission.md): `authorize_action()` gates access before `add_event()`
-- [Key Backup](./key-backup.md): new certificate issuance triggers key backup
+- [Policy Enforcement](./policy-enforcement.md): separate typed ABAC policies
+- [Event Submission](./event-submission.md): generic ledger ingestion
+- [Key Backup](./key-backup.md): operator-managed identity backups

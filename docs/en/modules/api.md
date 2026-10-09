@@ -17,10 +17,8 @@ Importing API client helpers, such as `hierachain.api.storage.ipfs_client`, does
 * FastAPI server (`server.py`) is the entry point. It sets up middleware, authentication, and routers.
 * Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.
 * GraphQL endpoint offers flexible field selection with depth and complexity limits.
-* WebSocket gateway streams blocks and events to subscribers using publish/subscribe.
+* WebSocket gateway manages subscriptions and broadcast helpers; the application must connect ledger events to those helpers.
 * IPFS integration handles off-chain data with AES-256-GCM encryption. Large payloads stay off chain and only the CID is stored on chain.
-
----
 
 ## Architecture and security
 
@@ -28,8 +26,8 @@ The API uses layered middleware. Each request passes through the same checks bef
 
 ### HTTP security
 
-* Security headers are added to every response, including CSP, HSTS, X-Frame-Options set to DENY, and X-Content-Type-Options set to nosniff.
-* Payload limit caps request bodies at 5 MB by default. This helps prevent DoS with large payloads.
+* HTTP middleware adds CSP, X-Frame-Options set to DENY and X-Content-Type-Options set to nosniff. It does not add HSTS; configure that header at the HTTPS reverse proxy.
+* Payload middleware limits POST/PUT/PATCH bodies to 1 MiB. It checks a supplied Content-Length and reads the stream when that header is absent.
 * CORS controls which origins can call the API. Production requires an explicit allow list.
 
 ### Rate limiting
@@ -44,8 +42,6 @@ The default limit is 100 requests per minute, configured with `HRC_RATE_LIMIT_RP
 ### Authentication
 
 `APIKeyVerifier` checks the `X-API-Key` header for HTTP and WebSocket access. Production requires `HRC_AUTH_ENABLED=true` and a provisioned `HRC_API_KEYS_FILE`; dev/test can disable authentication. With authentication enabled, GraphQL checks scopes for every operation: chain and block queries require `chains`, event queries and `addEvent` require `events`, and a block query that selects nested events requires both scopes. WebSocket streams contain both block and event messages, so connecting and subscribing requires `chains` and `events` (or `all`). Production GraphQL and WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.
-
----
 
 ## REST API reference
 
@@ -78,10 +74,8 @@ These endpoints support business workflows:
 These endpoints are for node and system operations:
 
 * `POST /api/admin/verify-identity` lets a node sign a challenge to prove its identity.
-* `GET /api/admin/status` returns uptime, chain counts, version, and license status.
-* `POST /api/admin/chains/{chain_name}/secure-events` submits high-integrity events requiring synchronous signature verification.
-
----
+* `GET /api/admin/status` is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.
+* `POST /api/admin/chains/{chain_name}/secure-events` checks the signature synchronously, then submits through asynchronous ordering; the response does not establish block commitment.
 
 ## GraphQL API
 
@@ -109,13 +103,11 @@ query {
 }
 ```
 
----
-
 ## WebSocket (real-time streaming)
 
 Connect to `/ws`. To select a chain when connecting, pass `chain_name`, for example `/ws?chain_name=supply_chain`.
 
-When authentication is enabled, send the `X-API-Key` header in the WebSocket handshake. The connection and each subscription require both `chains` and `events` permissions because the current stream sends both kinds of messages to chain subscribers. The server pushes data as soon as a block is committed or an event arrives.
+When authentication is enabled, send the `X-API-Key` header in the WebSocket handshake. The connection and each subscription require both `chains` and `events` permissions because the current stream sends both kinds of messages to chain subscribers. The ledger pipeline does not call the broadcast helpers automatically. Subscriptions receive ledger messages only when the application supplies that integration.
 
 ### Main message types
 
@@ -127,8 +119,6 @@ When authentication is enabled, send the `X-API-Key` header in the WebSocket han
     * `event` pushes event details to subscribers.
     * `subscribed` confirms the subscription.
 
----
-
 ## Blockchain explorer
 
 Built in at `blockchain_explorer.py`, the explorer gives operators a dashboard:
@@ -137,17 +127,10 @@ Built in at `blockchain_explorer.py`, the explorer gives operators a dashboard:
 * Visualizer renders the tree between Main Chain and Sub-Chains.
 * IPFS decoder lets authorized admins decode CIDs in the browser.
 
----
-
 ## Observability
 
 * `X-Request-ID` adds a UUID to each request for log tracing.
-* `/metrics` exposes Prometheus metrics, including:
-    * Count of successful and failed requests.
-    * Average response latency.
-    * Memory and CPU status of the API server.
-
----
+* With `HRC_METRICS_ENABLED=true`, `/metrics` exposes the default `prometheus_client` registry. Default process/runtime collectors depend on the platform. The API does not register HTTP success/failure counters, latency histograms or ledger throughput collectors; add those through application instrumentation. `PerformanceMonitor` is a separate component and is not automatically exported here.
 
 ## Quick usage guide (curl)
 
@@ -169,8 +152,6 @@ curl -X POST http://localhost:2661/api/ledger/chains/my_chain/events \
 ```bash
 curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 ```
-
----
 
 ## Related
 

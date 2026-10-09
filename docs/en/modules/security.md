@@ -8,9 +8,7 @@ icon: material/shield-lock
 
 ## Overview
 
-The security module provides the main protections for HieraChain. It does not rely on one layer. It combines identity, access control, resource protection and signed ledger integrity. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
-
----
+The security module provides identity helpers, access-control policies, sanitization and signed ledger integrity. HTTP scope checks, organization policies and direct Python calls have different enforcement paths. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
 
 ## Six security areas
 
@@ -29,14 +27,14 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Tamper-evident logging for security-sensitive operations.
+    Structured JSON logs with sanitization and sensitive-field redaction. Audit verification uses the separate `AuditLogger` and a trusted manifest.
     [:octicons-arrow-right-24: Details](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Integrity and guard__
 
     ---
 
-    Resource protection against DoS and integrity checks for code and configuration at startup.
+    API and ordering resource limits, with signed-block verification during ledger loading and commitment.
     [:octicons-arrow-right-24: Details](../security/fault-tolerance-integrity.md)
 
 *   :material-security-network:{ .lg .middle } __Input sanitization__
@@ -50,7 +48,7 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Key lifecycle management (Ed25519, AES-GCM) and X.509 certificates.
+    Ed25519 key providers, IPFS AES-GCM encryption and internal MSP certificates. MSP does not implement X.509 or mTLS.
     [:octicons-arrow-right-24: Details](../security/encryption-keys.md)
 
 *   :material-brain:{ .lg .middle } __Zero-knowledge proofs__
@@ -62,17 +60,13 @@ The design groups protections into six areas that work together:
 
 </div>
 
----
-
 ## How it connects
 
-Each part of HieraChain uses the same layers:
+The runtime applies these checks in their respective paths:
 
-* API server uses `ResourceGuard` and `APIKeyVerifier` as middleware. They run first on every request.
-* Consensus signs every consensus message and checks integrity before accepting it.
-* Storage encrypts sensitive data before write and sanitizes input on queries.
-
----
+* Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
+* Signed blocks are checked against operator-approved creator keys; consensus-message checks depend on the selected component.
+* IPFS uploads encrypt by default. SQL ledger storage does not automatically encrypt all stored event details; configure storage encryption and access controls at deployment.
 
 ## Security configuration
 
@@ -80,8 +74,6 @@ Main settings live in `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` turns API authentication on or off.
 * `HRC_ENABLE_ZK_PROOFS` enables the ZK verification path; it does not provide a production backend. See [ZK scope](../security/decentralized-zkp.md).
-
----
 
 ## Related
 

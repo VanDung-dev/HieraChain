@@ -14,19 +14,19 @@ icon: material/test-tube
 ### Chạy Unit Test (Kiểm thử Đơn vị)
 
 ```bash
-python -m pytest tests/unit -v
+python -m pytest tests/unit/core/test_block.py -v
 ```
 
 ### Chạy Integration Test (Kiểm thử Tích hợp)
 
 ```bash
-python -m pytest tests/integration -v
+python -m pytest tests/integration/test_data_flow.py -v
 ```
 
 ### Chạy Scenario Test (Kiểm thử Kịch bản)
 
 ```bash
-python -m pytest tests/scenarios -v
+python -m pytest tests/scenarios/test_recovery.py -v
 ```
 
 ### Chạy Benchmark Test (Kiểm thử Hiệu năng)
@@ -39,7 +39,9 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 ### Chạy Tất cả Kiểm thử
 
 ```bash
-python -m pytest tests -v
+for test_file in $(find tests/unit tests/integration tests/scenarios -name 'test_*.py' | sort); do
+    python -m pytest "$test_file" -v || break
+done
 ```
 
 Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQLite và journal trong thư mục tạm riêng cho từng test. Chúng không yêu cầu dịch vụ PostgreSQL trong `.env` của ứng dụng; test live-backend chuyên biệt kiểm tra PostgreSQL.
@@ -158,32 +160,32 @@ Chạy kiểm thử áp lực trên môi trường Kubernetes.
 # Build image
 docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
 
-# Tạo cluster Kind
+# Create Kind cluster
 kind create cluster --config docker/kind-config.yaml
 
-# Giới hạn tài nguyên cho mỗi Node K8s (1 CPU, 1GiB RAM)
+# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
 docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
 docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
 docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
 docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
 
-# Tải image vào trong cluster
+# Load image into cluster
 kind load docker-image hierachain:latest --name hiera-cluster
 kubectl apply -k docker/k8s/
 
-# Chờ các pod sẵn sàng
+# Wait for pods to be ready
 kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
 
-# Ánh xạ cổng API ra máy cục bộ (localhost)
+# Expose the API to local host
 kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
-# Kiểm tra API hoạt động  
+# Test API
 curl http://localhost:2661/api/ledger/health
 
-# Chạy stress test
+# Run stress test
 docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
-# Dọn dẹp
+# Cleanup
 kubectl delete -k docker/k8s/
 kind delete cluster --name hiera-cluster
 ```
@@ -195,10 +197,10 @@ Thư mục `scripts/` chứa các công cụ tiện ích hỗ trợ nhà phát t
 ### Phân tích Tĩnh (Static Analysis)
 
 ```bash
-# Chạy mặc định
+# Run default
 python -m scripts.static_analysis
 
-# Xuất kết quả phân tích ra file
+# Export results to file
 python -m scripts.static_analysis --output analysis_report.json
 ```
 
@@ -209,30 +211,30 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
 * **Bandit** (Phân tích bảo mật mã nguồn tĩnh SAST cho Python):
 
     ```bash
-    # Quét toàn bộ các mức độ cảnh báo
+    # Full security scan across all severity levels
     uv run bandit -r hierachain/
 
-    # Chỉ quét cảnh báo mức Medium và High
+    # Scan Medium and High severity issues only
     uv run bandit -r hierachain/ -ll
     ```
 
 * **pip-audit** (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):
 
     ```bash
-    # Quét toàn bộ thư viện đã cài đặt trong .venv
+    # Scan all installed dependencies
     uv run pip-audit
 
-    # Chế độ nghiêm ngặt (Strict mode)
+    # Strict mode (fail on any vulnerability)
     uv run pip-audit --strict
     ```
 
 * **Semgrep** (Phân tích ngữ nghĩa & quy tắc bảo mật API):
 
     ```bash
-    # Tự động nhận diện quy tắc phù hợp
+    # Auto-detect relevant rules
     uv run semgrep --config=auto hierachain/
 
-    # Chạy bộ quy tắc OWASP Top 10
+    # Run OWASP Top 10 ruleset
     uv run semgrep --config=p/owasp-top-ten hierachain/
     ```
 
@@ -272,8 +274,8 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
 ## Ví dụ chạy kiểm thử theo Marker
 
 ```bash
-pytest -v -m critical
-pytest -v -m integration
+python -m pytest tests/integration/test_data_flow.py -v -m critical
+python -m pytest tests/integration/test_data_flow.py -v -m integration
 ```
 
 ## Các Nguyên tắc Kiểm thử
