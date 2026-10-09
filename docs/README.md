@@ -45,7 +45,7 @@ This will quickly generate all static assets and output them to the `site/` dire
 
 ## Multi-Language Deployment
 
-To support multiple languages, create a separate config file for each locale and build them to isolated directories:
+The repository already contains two locale configurations. Build them to their configured directories, in this order:
 
 * `zensical.toml` → build to `site/` (English as default)
 * `zensical.vi.toml` → build to `site/vi/` (Vietnamese)
@@ -76,7 +76,6 @@ Build each language:
 ```bash
 zensical build -f zensical.toml          # English → docs.hierachain.org
 zensical build -f zensical.vi.toml       # Vietnamese → docs.hierachain.org/vi
-zensical build -f zensical.ru.toml       # Russian → docs.hierachain.org/ru
 ```
 
 ## Custom Domain Configuration (GitHub Pages)
