@@ -1,219 +1,266 @@
-# HieraChain Development Scripts
+# HieraChain development scripts
 
-This directory contains utility scripts for development, debugging, testing, and analysis of the HieraChain Ledger.
+These scripts measure local performance, inspect source code and SARIF reports,
+and probe a running API. Run commands from the repository root. Security probes
+write test data or generate load, so use an isolated local test environment.
 
----
+## Layout
 
-## Directory Structure
+| Path | Purpose |
+| --- | --- |
+| `benchmark_hashing.py` | Compare block-header hashing with full-event JSON serialization |
+| `benchmark_throughput.py` | Measure signed-event ordering throughput and observed commit latency |
+| `static_analysis.py` | Custom regex/AST checks for security, quality, terminology, and dependencies |
+| `sarif_analysis.py` | Display findings from an existing SARIF file |
+| `verify_storage.py` | Persistence-check script with an unresolved backend import |
+| `security/base_probe.py` | Common argument parser, headers, and JSON report helpers |
+| `security/` | HTTP probes, a socket-based load probe, and two database audit scripts |
 
-```
-scripts/
-├── benchmark_hashing.py         # Benchmark Merkle tree hashing performance
-├── benchmark_throughput.py       # Benchmark OrderingService throughput
-├── static_analysis.py            # Static code analysis (security, quality, compliance)
-├── verify_storage.py             # Verify database storage persistence
-├── sarif_analysis.py             # Parse and display SARIF analysis results
-├── docker-stress-entrypoint.sh   # Docker entrypoint for stress testing
-├── data/                        # Data directory for scripts
-└── security/                    # Security probe scripts
-    ├── base_probe.py            # Base class for security probes
-    ├── auth_bypass_probe.py     # Test authentication bypass techniques
-    ├── ssrf_probe.py            # Test Server-Side Request Forgery
-    ├── path_traversal_probe.py  # Test path traversal attacks
-    ├── stored_injection_probe.py # Test stored injection/XSS
-    ├── input_fuzzer.py          # Fuzz API endpoints
-    ├── http_headers_probe.py    # Test HTTP security headers
-    ├── rate_limit_stress.py     # Test rate limiting
-    ├── json_nested_bomb.py      # Test JSON parsing DoS
-    ├── oversized_payload_probe.py # Test large payload handling
-    ├── error_disclosure_verify.py # Test error message security
-    ├── api_key_edge_cases_probe.py # Test API key edge cases
-    ├── business_flow_sequence.py # Test business logic consistency
-    ├── log_level_test.py        # Test log level behavior
-    ├── slowloris_like_probe.py  # Test Slowloris DoS
-    ├── chain_integrity_verify.py # Verify blockchain integrity
-    └── signature_verify.py      # Verify signature validation
-```
+The Docker stress entrypoint is
+[`docker/scripts/docker-stress-entrypoint.sh`](../docker/scripts/docker-stress-entrypoint.sh).
+It is used by the Kubernetes Compose stress runner; see
+[Docker infrastructure](../docker/README.md) for its workflow and limitations.
 
----
+## Prepare the environment
 
-## Prerequisites
-
-Before running scripts, ensure you have installed the package in development mode along with development dependencies:
+Use the repository virtual environment and locked development dependencies:
 
 ```bash
-pip install -e ".[dev]"
+uv sync --frozen --extra dev
+source .venv/bin/activate
 ```
 
----
-
-## Scripts Overview
-
-### 1. Development & Debug Scripts
-
-#### Benchmark Hashing
-Tests Merkle tree hashing performance vs traditional JSON serialization:
+If `uv` is unavailable, install the development extra in a virtual environment:
 
 ```bash
-python scripts/benchmark_hashing.py
+python -m pip install -e ".[dev]"
 ```
 
-**Output:**
+Run modules with `python -m scripts.<name>`. This keeps repository imports
+available; security probes also use relative imports and need module invocation.
 
-* Block initialization time
-* New method (Merkle) hash speed
-* Old method (JSON) hash speed
-* Speedup factor
-
-#### Benchmark Throughput
-Tests OrderingService event processing throughput:
+## Hashing benchmark
 
 ```bash
-python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
+python -m scripts.benchmark_hashing
 ```
 
-**Options:**
+The workload is fixed: 10,000 events, 1,000 calls to `Block.calculate_hash()`, and
+10 calls that serialize the full event list to sorted JSON before hashing. The
+script prints block initialization time, average time per call, and their timing
+ratio. It has no CLI workload options.
 
-* `--events`: Number of events to submit (default: 1000)
-* `--workers`: Number of worker threads (default: from settings)
-* `--batch-size`: Events per block (default: 100)
+Block-header hashing uses the Merkle root already computed during initialization.
+The ratio compares repeated header hashing with full-event serialization; it
+does not include rebuilding the Merkle tree on every call or establish overall
+ledger throughput.
 
-#### Verify Storage
-Verifies database persistence by saving blocks, closing backend, and re-opening:
+## Ordering throughput benchmark
+
+The benchmark creates one local `OrderingService` and submits signed events.
+It requires a fixed signing identity and a trusted public-key map containing
+that identity. Provision these files as described in
+[Quickstart](../docs/en/getting-started/quickstart.md).
+
+Use a dedicated database, journal directory, and log file. The parent directory
+for the log file must already exist:
 
 ```bash
-python scripts/verify_storage.py
+mkdir -p log/report
+export HRC_ENV=test
+export HRC_VALIDATOR_IDENTITY="/absolute/path/to/identity.json"
+export HRC_BLOCK_TRUSTED_KEYS_FILE="/absolute/path/to/trusted-block-keys.json"
+export HRC_BENCHMARK_DB_URL="sqlite:///benchmark.sqlite"
+export HRC_BENCHMARK_JOURNAL_DIR="benchmark-journal"
+export HRC_BENCHMARK_LOG_FILE="log/report/benchmark.log"
+python -m scripts.benchmark_throughput --events 1000 --batch-size 100
 ```
 
----
+| Setting | Default |
+| --- | --- |
+| `--events` | `1000`; must be positive |
+| `--batch-size` | `100`; must be positive |
+| `HRC_BENCHMARK_DB_URL` | `hierachain.db` |
+| `HRC_BENCHMARK_JOURNAL_DIR` | `journal` |
+| `HRC_BENCHMARK_LOG_FILE` | `benchmark_debug.log` |
 
-### 2. Static Analysis Scripts
+The CLI does not have a `--workers` option. Event generation and signing happen
+before the timed submission loop. The result logs submitted, committed, rejected,
+and unfinished event counts, committed events per second, and p95/p99 latency.
+Latency measures submission to observed commit and includes submission/draining
+delay. The batch timeout is 0.5 seconds; draining stops after completion,
+rejection, or a 60-second measurement window. Rejected or unfinished events raise
+an error. Journal fsync and storage adapter commit remain part of the path.
 
-#### Static Analysis
-Performs static code analysis for security vulnerabilities, code quality, and compliance:
+Relative journal paths are anchored under the working directory's `data/`:
+the example uses `data/benchmark-journal`. Absolute journal paths must also stay
+inside that `data/` directory. The database and journal persist after the run;
+use a fresh pair when comparing independent workloads. Running the repository
+tests removes `data/`, including journals created there. For a PostgreSQL-backed
+container benchmark with explicit identity mounts, see the
+[Docker README](../docker/README.md).
+
+## Static analysis
 
 ```bash
-python scripts/static_analysis.py
-python scripts/static_analysis.py hierachain -o report.json -f json
+python -m scripts.static_analysis
+
+mkdir -p log/report
+python -m scripts.static_analysis hierachain -o log/report/static-analysis.json -f json
+python -m scripts.static_analysis hierachain -o log/report/static-analysis.txt -f text
 ```
 
-**Options:**
+The positional `project_path` defaults to `hierachain`. `-o`/`--output` writes the
+report to a file; otherwise it prints to stdout. `-f`/`--format` accepts `json`
+and `text`, with JSON as the default. Parent output directories are not created
+by the script.
 
-* `project_path`: Path to analyze (default: "hierachain")
-* `-o, --output`: Output file path
-* `-f, --format`: Output format (json or text)
+The analyzer scans Python files with its own regex and AST rules. It checks
+patterns resembling hardcoded secrets, SQL injection, insecure randomness, and
+debug mode; function length, parameter count, and docstrings; and project
+terminology. It does not invoke Bandit or SonarQube.
 
-**Analysis Types:**
+Dependency checks only inspect pinned entries in `requirements*.txt` beneath
+the selected directory against a small hardcoded version list. They do not scan
+`uv.lock` or `pyproject.toml` or query an advisory service. Review findings in
+context. The CLI exits with code 1 for critical findings or a top-level failure;
+high-severity findings alone do not cause that exit code. A nonexistent scan
+path can produce an empty report, so check the path before using the result.
 
-* **Security**: Hardcoded secrets, SQL injection, insecure random, debug mode
-* **Quality**: Long functions, too many parameters, missing docstrings
-* **Compliance**: Crypto terminology (transaction, sender, receiver, etc.)
-* **Dependencies**: Vulnerable package detection
-
-#### SARIF Analysis
-Parses SARIF (Static Analysis Results Interchange Format) files:
+## SARIF display
 
 ```bash
-python scripts/sarif_analysis.py python.sarif
+python -m scripts.sarif_analysis path/to/report.sarif
 ```
 
-If no file is specified, defaults to `python.sarif`.
+The optional positional path defaults to `python.sarif`. The script reads SARIF
+JSON and prints the tool name, rule, severity, message, and first physical
+location for each displayed finding. Entries without that location are omitted
+from the displayed count.
 
-**Generate SARIF file:**
-```bash
-pylint hierachain --output-format=sarif > python.sarif
-```
+Use a report produced by an analyzer that supports SARIF. This script does not
+run an analyzer or convert another report format. A missing file prints an
+informational message and exits successfully; invalid JSON exits with code 1.
+Printed findings do not change its exit status.
 
----
+## HTTP security probes
 
-### 3. Security Probe Scripts
+Start an isolated API with the configuration you intend to inspect. Supply a
+provisioned API key with the permissions required by the chosen endpoint when
+authentication is enabled. Probe headers use `X-API-Key`; the parser does not
+load `HRC_API_KEY` automatically.
 
-Security probes test the running API server for vulnerabilities. **Requires API server to be running**.
-
-> ⚠️ **WARNING**: Only run security probes against local/isolated environments. Do not target external systems without permission.
-
-#### Running Security Probes
-
-All probes use the same interface:
-
-```bash
-python -m scripts.security.<probe_name> --base-url http://localhost:2661
-```
-
-**Common Options:**
-
-* `--base-url`: Base URL of the API server (default: http://127.0.0.1:2661)
-* `--api-key`: API key for authentication (optional)
-* `--output`: Output file for JSON report (default: stdout)
-* `--timeout`: Request timeout in seconds (default: 10)
-
-#### Available Probes
-
-| Probe | Description | Example |
-|-------|-------------|---------|
-| `auth_bypass_probe` | Test authentication bypass techniques | `python -m scripts.security.auth_bypass_probe` |
-| `ssrf_probe` | Test Server-Side Request Forgery | `python -m scripts.security.ssrf_probe` |
-| `path_traversal_probe` | Test path traversal attacks | `python -m scripts.security.path_traversal_probe` |
-| `stored_injection_probe` | Test stored injection/XSS | `python -m scripts.security.stored_injection_probe` |
-| `input_fuzzer` | Fuzz API endpoints | `python -m scripts.security.input_fuzzer` |
-| `http_headers_probe` | Test HTTP security headers | `python -m scripts.security.http_headers_probe` |
-| `rate_limit_stress` | Test rate limiting | `python -m scripts.security.rate_limit_stress --count 100` |
-| `json_nested_bomb` | Test JSON parsing DoS | `python -m scripts.security.json_nested_bomb` |
-| `oversized_payload_probe` | Test large payload handling | `python -m scripts.security.oversized_payload_probe` |
-| `error_disclosure_verify` | Test error message security | `python -m scripts.security.error_disclosure_verify` |
-| `api_key_edge_cases_probe` | Test API key edge cases | `python -m scripts.security.api_key_edge_cases_probe` |
-| `business_flow_sequence` | Test business logic | `python -m scripts.security.business_flow_sequence` |
-| `log_level_test` | Test log level behavior | `python -m scripts.security.log_level_test` |
-| `slowloris_like_probe` | Test Slowloris DoS | `python -m scripts.security.slowloris_like_probe` |
-
-#### Chain Integrity Verify
-Verifies blockchain integrity in the database:
+Inspect a probe's options before running it:
 
 ```bash
-python -m scripts.security.chain_integrity_verify
-python -m scripts.security.chain_integrity_verify --db sqlite:///hierachain.db
+python -m scripts.security.http_headers_probe --help
 ```
 
----
+For example, after setting `HRC_API_KEY` in your calling shell:
 
-### 4. Docker Support
+```bash
+mkdir -p log/report
+python -m scripts.security.http_headers_probe \
+  --base-url http://127.0.0.1:2661 --api-key "$HRC_API_KEY" \
+  --output log/report/http-headers.json
+```
 
-#### Docker Stress Entrypoint
-The `docker-stress-entrypoint.sh` script is used as an entrypoint for Docker stress testing. It:
+Most HTTP probes share these options from `base_probe.py`:
 
-* Patches kubeconfig for host networking
-* Handles network routing for Docker/Kubernetes
+| Option | Behavior |
+| --- | --- |
+| `--base-url` | Defaults to `http://127.0.0.1:2661` |
+| `--api-key` | Optional CLI value used in the `X-API-Key` header |
+| `--output`, `-o` | JSON report file; defaults to stdout |
+| `--timeout` | Request timeout in seconds; defaults to `10` |
 
-See [`docker/README.md`](../docker/README.md) for stress testing with Docker.
+BaseProbe reports contain `probe_type`, `base_url`, `timestamp`, summary counts,
+and per-case results with status, elapsed time, findings, and errors. Progress
+messages normally go to stderr. Create the output directory yourself.
 
----
+| Module under `scripts.security` | Work performed |
+| --- | --- |
+| `auth_bypass_probe` | Missing/malformed keys, header variants, and query-string attempts |
+| `api_key_edge_cases_probe` | Empty, oversized, Unicode, case-variant, and scope-related key inputs |
+| `http_headers_probe` | Response security headers and CORS/cache observations |
+| `error_disclosure_verify` | Error-response text checks for internal information |
+| `log_level_test` | Error disclosure under the server's current log configuration |
+| `path_traversal_probe` | Path traversal inputs to channel routes |
+| `ssrf_probe` | URL-like contract metadata and timing/body heuristics |
+| `stored_injection_probe` | Attempts to store and retrieve injection payloads |
+| `input_fuzzer` | Injection patterns, malformed types, Unicode, and large/nested inputs |
+| `business_flow_sequence` | Channel/private-collection workflow and missing-parent cases |
+| `json_nested_bomb` | A depth-2,000 JSON object and a 100,000-item array |
+| `oversized_payload_probe` | A fixed 10 MiB invalid-JSON body |
+| `rate_limit_stress` | Concurrent requests to `/api/business/health` |
+| `slowloris_like_probe` | Partial HTTP headers over raw sockets |
 
-## Quick Reference
+### Interface exceptions
 
-| Task | Command |
-|------|---------|
-| Run hashing benchmark | `python scripts/benchmark_hashing.py` |
-| Run throughput benchmark | `python scripts/benchmark_throughput.py --events 1000` |
-| Verify storage | `python scripts/verify_storage.py` |
-| Run static analysis | `python scripts/static_analysis.py` |
-| Parse SARIF | `python scripts/sarif_analysis.py` |
-| Run auth bypass probe | `python -m scripts.security.auth_bypass_probe` |
-| Run SSRF probe | `python -m scripts.security.ssrf_probe` |
-| Run all security probes | `for p in auth_bypass ssrf path_traversal; do python -m scripts.security.${p}_probe; done` |
+`rate_limit_stress` uses its own parser. It supports `--output` without the `-o`
+alias, and adds `--count` (default 200) and `--concurrency` (default 20):
 
----
+```bash
+python -m scripts.security.rate_limit_stress \
+  --base-url http://127.0.0.1:2661 --count 100 --concurrency 10
+```
 
-## Notes
+`oversized_payload_probe` uses a fixed 30-second HTTP timeout despite accepting
+`--timeout`. `slowloris_like_probe` accepts the common options but does not use
+`--api-key` or `--timeout`: it opens up to five sockets with a fixed four-second
+socket timeout and sends partial headers in five rounds separated by two
+seconds. Its JSON report has a separate outcome-based structure.
 
-* **Security probes** require the API server to be running. They test runtime behavior, unlike unit tests which use mocks.
-* **Static analysis** can be run without the full project being functional - it's meant for pre-commit checks.
-* **Benchmarks** are for development/testing purposes - not production performance measurement.
-* All scripts follow the project's coding conventions and **do not use cryptocurrency terminology** (transaction, sender, receiver, amount, wallet, etc.).
+`log_level_test` does not change the server's `LOG_LEVEL`. Restart the test server
+with the desired setting and run the probe separately for each configuration.
 
----
+### Interpret results
 
-## Related Documentation
+Probe findings are observations for review. These scripts generally catch
+request errors and report findings without returning a failing process status.
+An exit code of 0 or an empty report does not establish that a control passed.
+Check the attempted endpoint, authentication, status code, and errors.
 
-* **Tests**: See [`tests/README.md`](../tests/README.md) for automated test execution
-* **Docker**: See [`docker/README.md`](../docker/README.md) for containerized testing
-* **Development Guide**: See [`docs/DEV_GUIDE.md`](../docs/DEV_GUIDE.md) for full development guide
+Several probes contain illustrative paths or payloads that can receive 404/422
+responses before reaching the intended behavior. SSRF detection uses response
+time and text heuristics without an external callback. Stored-injection probes
+do not execute a browser renderer. Deep JSON serialization can fail on the
+client before a request reaches the server.
+
+The API deliberately exempts health endpoints from authentication and rate
+limiting. `auth_bypass_probe` nevertheless interprets an unauthenticated health
+response as authentication being disabled, and its query-string case can flag
+that same public endpoint. `rate_limit_stress` targets the exempt business health
+route, so a lack of 429 responses there does not establish broken rate limiting.
+Review protected-route behavior separately.
+
+## Database verification scripts
+
+These three scripts currently import the absent
+`hierachain.storage.sql_backend.SqlStorageBackend` and fail before their checks
+or CLI help can run:
+
+- `verify_storage.py`
+- `security/chain_integrity_verify.py`
+- `security/signature_verify.py`
+
+Use the package CLI for persisted chain and signature verification instead.
+Supply the operator-approved trusted block key map matching the stored creators:
+
+```bash
+export HRC_BLOCK_TRUSTED_KEYS_FILE="/absolute/path/to/trusted-block-keys.json"
+hrc verify chain --db sqlite:///path/to/ledger.db
+hrc verify signatures --db sqlite:///path/to/ledger.db --limit 100
+```
+
+The CLI also accepts PostgreSQL URLs. Signature auditing reports unsigned events
+separately; their absence of a signature is not counted as a verified signature.
+For adapter persistence and replay checks, use the relevant file in the
+[tests README](../tests/README.md).
+
+## Related documentation
+
+- [Automated tests](../tests/README.md)
+- [Docker infrastructure](../docker/README.md)
+- [Development guide](../docs/DEV_GUIDE.md)
+- [Secure deployment](../docs/en/how-to/secure-deployment.md)
