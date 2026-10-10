@@ -682,6 +682,18 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Local audit artifacts, state, and deployment credentials are not image inputs.
+.git/
+.agents/
+.codex/
+graphify-out/
+data/
+**/__pycache__/
+**/*.py[cod]
+docker/nodes/
+docker/ipfs/swarm.key
+docker/ipfs/encryption.key
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
