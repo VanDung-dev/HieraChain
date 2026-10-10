@@ -29,6 +29,9 @@ spec:
         - name: hierachain
           image: hierachain:latest
           imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"] # Test namespace: tc network fault injection.
           ports:
             - containerPort: 5001
               name: node-port
@@ -164,11 +167,14 @@ spec:
             - "sh"
             - "-c"
             - |
+              set -e
               POD_INDEX=${HOSTNAME##*-}
               echo "Initializing identity for pod index $POD_INDEX"
               
               # Copy identity file
               cp /identities-secret/node-${POD_INDEX}-identity /identity-storage/identity.json
+              chmod 600 /identity-storage/identity.json
+              cp /identities-secret/trusted-block-keys /identity-storage/trusted_block_keys.json
               
               # Build HRC_PEERS string for ZMQ BFT consensus
               # Format: node_id@host:port:pub_key

@@ -208,6 +208,7 @@ def test_poison_setup_reports_the_unwritable_node_without_random_retries(monkeyp
 
 
 def test_auth_preflight_requires_key_before_any_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HRC_STRESS_ENV", "docker")
     monkeypatch.delenv("HRC_API_KEY", raising=False)
     client = real_client.RealStressClient(nodes=["node1:2661"])
     client.session.get = Mock()
@@ -523,3 +524,161 @@ def test_docker_resource_stress_fails_instead_of_skipping_without_socket(monkeyp
     monkeypatch.setattr(resource_test_module.os.path, "exists", lambda _path: False)
     with pytest.raises(pytest.fail.Exception, match="requires the mounted Docker Engine socket"):
         resource_test_module.TestResourceMonitoring.setup.__wrapped__(resource_test_module.TestResourceMonitoring())
+
+
+def test_k8s_dns_maps_to_runtime_node_ids() -> None:
+    client = real_client.RealStressClient(nodes=[
+        f"hierachain-node-{i}.hierachain-node-headless:2661" for i in range(4)
+    ])
+    assert list(client.node_status) == ["node1", "node2", "node3", "node4"]
+    assert client.node_status["node1"].url == "http://hierachain-node-0.hierachain-node-headless:2661"
+
+
+def test_k8s_session_requires_four_ready_nodes(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = Mock()
+    client.wait_for_nodes.return_value = False
+    monkeypatch.setattr(real_client, "RealStressClient", Mock(return_value=client))
+    monkeypatch.setenv("REAL_REQUESTS", "true")
+    monkeypatch.setenv("HRC_STRESS_ENV", "k8s")
+    monkeypatch.setenv("HRC_IPFS_ENABLED", "false")
+    with pytest.raises(pytest.UsageError, match="four live node APIs"):
+        stress_conftest.pytest_sessionstart(Mock())
+    client.wait_for_nodes.assert_called_once_with(timeout=30, min_healthy=4)
+    client.preflight_auth.assert_not_called()
+    client.wait_for_nodes.return_value = True
+    stress_conftest.pytest_sessionstart(Mock())
+    client.preflight_auth.assert_called_once()
+
+
+@pytest.mark.parametrize("node,index", [("node1", 0), ("node4", 3)])
+def test_k8s_bft_recovery_targets_stateful_pod(
+    monkeypatch: pytest.MonkeyPatch, node: str, index: int,
+) -> None:
+    import subprocess
+
+    run = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setenv("K8S_NAMESPACE", "hierachain")
+    bft.TestBFTViewChange._run_node_command(node, "stop")
+    assert run.call_args.args[0] == ["kubectl", "delete", "pod", "-n", "hierachain", f"hierachain-node-{index}"]
+    assert run.call_args.kwargs["timeout"] > 30
+    bft.TestBFTViewChange._run_node_command(node, "start")
+    run.assert_called_once()
+
+
+@pytest.mark.parametrize("status", [200, 403])
+def test_k8s_unauthenticated_preflight_still_checks_access(
+    monkeypatch: pytest.MonkeyPatch, status: int,
+) -> None:
+    monkeypatch.delenv("HRC_API_KEY", raising=False)
+    monkeypatch.setenv("HRC_STRESS_ENV", "k8s")
+    monkeypatch.setenv("HRC_ENV", "test")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "false")
+    client = real_client.RealStressClient(nodes=["node1:2661"])
+    client.session = Mock()
+    client.session.get.return_value = Mock(status_code=status)
+    if status == 200:
+        client.preflight_auth()
+    else:
+        with pytest.raises(RuntimeError, match="HTTP 403"):
+            client.preflight_auth()
+    client.session.get.assert_called_once()
+
+
+@pytest.mark.parametrize("environment,auth", [("docker", "false"), ("k8s", "true")])
+def test_authenticated_stress_still_requires_configured_key(
+    monkeypatch: pytest.MonkeyPatch, environment: str, auth: str,
+) -> None:
+    monkeypatch.delenv("HRC_API_KEY", raising=False)
+    monkeypatch.setenv("HRC_STRESS_ENV", environment)
+    monkeypatch.setenv("HRC_ENV", "test")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", auth)
+    client = real_client.RealStressClient(nodes=["node1:2661"])
+    with pytest.raises(RuntimeError, match="HRC_API_KEY"):
+        client.preflight_auth()
+
+
+
+def test_flood_submits_to_runtime_id_for_k8s_dns(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(real_client, "REAL_REQUESTS", True)
+    host = "hierachain-node-0.hierachain-node-headless:2661"
+    flood = TsunamiFloodTest({"target_nodes": [host]})
+    submit = Mock(return_value=True)
+    monkeypatch.setattr(flood.client, "submit_event", submit)
+    result = flood.send_event_batch(host, [{"entity_id": "live-event"}])
+    assert result["success"] == 1
+    assert submit.call_args.args[0] == "node1"
+
+
+@pytest.mark.parametrize("message", ["Cannot delete qdisc with handle of zero.", "Operation not permitted"])
+def test_k8s_network_reset_only_tolerates_already_removed_qdisc(
+    monkeypatch: pytest.MonkeyPatch, message: str,
+) -> None:
+    monkeypatch.setenv("K8S_NAMESPACE", "hierachain")
+    monkeypatch.setitem(chaos.K8S_ACTIONS, "network_reset", lambda *args, **kwargs: ("", message))
+    if "handle of zero" in message:
+        assert chaos._do("node1", "network_reset") == ("", "")
+    else:
+        with pytest.raises(RuntimeError, match="Operation not permitted"):
+            chaos._do("node1", "network_reset")
+
+
+
+def test_k8s_session_rejects_unreachable_configured_ipfs(monkeypatch: pytest.MonkeyPatch) -> None:
+    from hierachain.api.storage import ipfs_client
+
+    client = Mock()
+    client.wait_for_nodes.return_value = True
+    monkeypatch.setattr(real_client, "RealStressClient", Mock(return_value=client))
+    monkeypatch.setenv("REAL_REQUESTS", "true")
+    monkeypatch.setenv("HRC_STRESS_ENV", "k8s")
+    monkeypatch.setenv("HRC_IPFS_ENABLED", "true")
+    monkeypatch.setenv("HRC_IPFS_HOST", "/dns4/ipfs-0.ipfs-headless/tcp/5001")
+    ipfs = Mock(side_effect=ipfs_client.IPFSError("unreachable"))
+    monkeypatch.setattr(ipfs_client, "IPFSClient", ipfs)
+    with pytest.raises(pytest.UsageError, match="reachable IPFS API"):
+        stress_conftest.pytest_sessionstart(Mock())
+    ipfs.assert_called_once_with(ipfs_host="/dns4/ipfs-0.ipfs-headless/tcp/5001")
+
+
+
+@pytest.mark.parametrize("commits", [True, False])
+def test_ipfs_resolution_waits_for_commit_and_fails_on_missing_refs(
+    monkeypatch: pytest.MonkeyPatch, commits: bool,
+) -> None:
+    from types import SimpleNamespace
+    from docker.stress import test_ipfs_stress as ipfs
+
+    now = [0.0]
+    monkeypatch.setattr(ipfs, "time", SimpleNamespace(
+        time=lambda: now[0], monotonic=lambda: now[0],
+        sleep=lambda seconds: now.__setitem__(0, now[0] + seconds),
+    ))
+    ref = {"cid": "expected-cid", "expected_data": {"payload": "decrypted"}}
+    monkeypatch.setattr(ipfs, "_preload_ipfs_data", lambda count: [ref])
+    client = Mock(node_status={"node1": SimpleNamespace(is_healthy=True, url="http://node1:2661")})
+    client.wait_for_nodes.return_value = True
+    client.create_chains_on_nodes.return_value = True
+
+    def get(url: str, **kwargs: object) -> Mock:
+        if "limit=1" in url:
+            return Mock(status_code=200, json=lambda: {"total_blocks": 1})
+        if "resolve_cid=true" in url:
+            assert commits and now[0] >= 2
+            return Mock(status_code=200, json=lambda: {"resolved": True, "blocks": [{"events": [
+                {"details_cid": ref["cid"], "details": ref["expected_data"]},
+            ]}]})
+        events = [{"details_cid": ref["cid"]}] if commits and now[0] >= 2 else []
+        return Mock(status_code=200, json=lambda: {"blocks": [{"events": events}]})
+
+    client.session.get.side_effect = get
+    monkeypatch.setattr(ipfs, "RealStressClient", lambda: client)
+    test = ipfs.TestIPFSStress()
+    monkeypatch.setattr(test, "_submit_ipfs_event", Mock(return_value={"status": 201, "body": {}}))
+    if commits:
+        test.test_ipfs_resolve_stress()
+        assert now[0] == 2
+    else:
+        with pytest.raises(AssertionError, match="not committed within 120s"):
+            test.test_ipfs_resolve_stress()
+        assert now[0] == 120

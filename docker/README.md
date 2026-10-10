@@ -19,7 +19,7 @@ below from the repository root.
 | `tests/` | Deterministic container runtime tests |
 | `stress/` | Network, resource, failure, and other stress tests |
 | `ipfs/init.sh` | IPFS initialization for the private swarm |
-| `k8s/` | Kustomize resources, stress Job, and additional deployment templates |
+| `k8s/` | Kustomize resources, stress runner, and additional deployment templates |
 | `kind-config.yaml` | Separate Kind configuration; the wrapper does not create a Kind cluster |
 
 ## Prerequisites
@@ -234,40 +234,48 @@ anonymous volumes, so retain any results you need before removing them:
 docker compose -f docker/docker-compose.benchmark.yml down -v
 ```
 
-## Kubernetes assets and current limitations
+## Kubernetes stress testing
 
-The wrapper's `k8s` mode targets an existing local Kubernetes environment. It
-uses the current `kubectl` context and assumes the gateway NodePort is reachable
-at `localhost:32660`. Its host-side stress fallback explicitly uses the Docker
-context `orbstack`. It does not create a Kubernetes cluster or publish/load the
-locally built `hierachain:latest` image into another cluster.
+The wrapper's `k8s` mode uses the current `kubectl` context and a local
+`hierachain:latest` image. Start OrbStack Kubernetes first:
 
-The Kustomize resource set declares four node pods with SQLite and data PVCs,
-four IPFS pods, Redis, and an Nginx gateway. Its ConfigMap selects
-`HRC_ENV=test` and disables authentication. The gateway NodePort is `32660` and
-the node API NodePort is `32661`. This differs from the PostgreSQL-backed
-product-mode Compose cluster.
+```bash
+orbctl start k8s
+bash docker/hierachain.sh stress k8s --duration 15
+# Skip the build and deployment on later runs:
+bash docker/hierachain.sh stress k8s --reuse --duration 15
+```
 
-The following gaps need to be fixed before treating this path as a working
-setup and stress workflow:
+A run without `--reuse` builds the image and applies the Kustomize resources:
+four node pods with SQLite data PVCs, four private IPFS pods, Redis, and an
+Nginx gateway. Deployment preserves the namespace, PVCs and existing identity,
+encryption and swarm secrets. New K8s identities are generated separately from
+Docker Compose identities. The identity init container installs the signing
+identity, trusted block keys and P2P peer configuration.
 
-- Nodes require `/app/config/identity/trusted_block_keys.json`, but the identity
-  init container copies only the node identity and generates `peers.env`. The
-  setup wrapper's identity Secret also omits the trusted block key maps.
-- The in-cluster stress Job calls `uv run pytest ... --timeout=...`. The final
-  production image installs neither `uv` nor `pytest-timeout`. Its script also
-  does not generate the HTML report that the wrapper attempts to copy.
-- `stress k8s` without `--reuse` deletes the namespace, but its subsequent
-  `start_services` call does not reapply Kubernetes resources. The Job is tried
-  only when the namespace exists; failure leads to the OrbStack Compose fallback.
-- The standalone `docker-compose.k8s-stress.yml` targets
-  `host.docker.internal:32661`; the wrapper fallback defaults to port `32660`.
-  The fallback requires a host kubeconfig and reachable NodePort, does not inject
-  `HRC_API_KEY`, and uses an image without `kubectl` for tests that need it.
+The wrapper waits for workload rollouts and all eight node/IPFS pods to be
+ready. It then runs pytest synchronously through `kubectl exec` in the
+`stress-tester` pod, using all four node DNS names. Pytest also checks all four
+node APIs and the configured IPFS API before collecting live tests. The production image includes `kubectl` for
+chaos tests. The runner's service account can only get/delete the four node
+pods and execute commands in them; the test node pods have `NET_ADMIN` for
+network fault injection.
 
-The wrapper exposes `setup k8s`, `stress k8s --reuse`, and `down k8s`, but these
-limitations prevent describing them as a ready-to-run EKS/GKE deployment.
-`setup k8s` and `down k8s` delete the entire `hierachain` namespace, including
-its PVCs; backing-volume retention depends on the cluster's reclaim policy.
-Only resources listed in `k8s/kustomization.yaml` are applied during setup;
-additional manifests and templates are not deployed automatically.
+The wrapper copies HTML and JUnit reports into `log/report/`, removes the
+runner pod and returns failure if pytest or report retrieval fails. It never
+falls back to Docker Compose after a K8s failure. `TEST_DURATION` controls load
+test duration, not a timeout for the entire suite. Docker-only recovery and
+resource-monitoring checks may skip on K8s; inspect the report's skip reasons.
+
+The ConfigMap selects `HRC_ENV=test` and disables authentication. The gateway
+NodePort is `32660` and the node API NodePort is `32661`. These test manifests
+are not a hardened production deployment. Other clusters need the image loaded
+into their runtime or published to a registry before deployment. The standalone
+`docker-compose.k8s-stress.yml` remains a host-side NodePort runner and does not
+provide the wrapper's in-cluster four-node coverage.
+
+`setup k8s` also preserves data by default. `setup k8s --force`,
+`stress k8s --force` without `--reuse`, and `down k8s` delete the entire
+`hierachain` namespace, including PVCs; backing-volume retention depends on the
+cluster's reclaim policy. Only resources listed in `k8s/kustomization.yaml` are
+applied during deployment; additional templates are not deployed automatically.

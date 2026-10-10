@@ -17,7 +17,7 @@ usage() {
 Usage: hierachain.sh <command> <environment> [options]
 
 Commands:
-  setup                 Deploy full cluster from scratch
+  setup                 Deploy full cluster (K8s preserves data unless --force)
   stress                Run stress tests (requires running cluster)
   down                  Stop and clean up cluster
 
@@ -67,39 +67,19 @@ echo "========================================"
 # === Commands ===
 case "$COMMAND" in
   setup)
-    generate_keys
-    generate_identities
-    discover_nodes
-    build_image
-    down_cluster
-    echo ""; echo "[4/6] Starting cluster..."
     if $K8S; then
-      kubectl create namespace "$NAMESPACE" 2>/dev/null || true
-      kubectl create secret generic hierachain-node-identities \
-        --from-file=node-0-identity=docker/nodes/node1/identity.json \
-        --from-file=node-1-identity=docker/nodes/node2/identity.json \
-        --from-file=node-2-identity=docker/nodes/node3/identity.json \
-        --from-file=node-3-identity=docker/nodes/node4/identity.json \
-        -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-      kubectl create secret generic hierachain-secrets \
-        --from-literal=EXPLORER_TOKEN="$EXPLORER_TOKEN" \
-        --from-literal=HRC_NODES="$HRC_NODES" \
-        --from-literal=IPFS_ENCRYPTION_KEY="$IPFS_ENCRYPTION_KEY" \
-        -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-      kubectl apply -k docker/k8s/
-      SWARM_KEY_FILE="docker/ipfs/swarm.key"
-      if [ -f "$SWARM_KEY_FILE" ]; then
-        SWARM_KEY_CONTENT=$(uv run python -c "import sys,json; print(json.dumps(sys.stdin.read()))" < "$SWARM_KEY_FILE")
-        kubectl patch configmap ipfs-config -n "$NAMESPACE" \
-          --patch "{\"data\":{\"swarm.key\":$SWARM_KEY_CONTENT}}" 2>/dev/null || \
-          kubectl create configmap ipfs-config -n "$NAMESPACE" \
-            --from-file=swarm.key="$SWARM_KEY_FILE" \
-            --dry-run=client -o yaml | kubectl apply -f -
-      fi
-      kubectl rollout status statefulset/hierachain-node -n "$NAMESPACE" --timeout=300s
-      kubectl rollout status statefulset/ipfs -n "$NAMESPACE" --timeout=300s
-      kubectl rollout status deployment/web2-node -n "$NAMESPACE" --timeout=300s
+      ensure_keys
+      build_image
+      if $FORCE; then down_cluster; fi
+      deploy_k8s
+      wait_nodes_healthy
     else
+      generate_keys
+      generate_identities
+      discover_nodes
+      build_image
+      down_cluster
+      echo ""; echo "[4/6] Starting cluster..."
       start_services postgres-node1 postgres-node2 postgres-node3 postgres-node4 \
         node1 node2 node3 node4 gateway redis \
         ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
@@ -116,15 +96,22 @@ case "$COMMAND" in
     fi
     ensure_keys
     if [ "$REUSE" = false ]; then
-      generate_identities
-      build_image
-      down_cluster
-      echo ""; echo "Starting cluster..."
-      start_services postgres-node1 postgres-node2 postgres-node3 postgres-node4 \
-        node1 node2 node3 node4 gateway redis \
-        ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
+      if $K8S; then
+        build_image
+        if $FORCE; then down_cluster; fi
+        deploy_k8s
+      else
+        generate_identities
+        build_image
+        down_cluster
+        echo ""; echo "Starting cluster..."
+        start_services postgres-node1 postgres-node2 postgres-node3 postgres-node4 \
+          node1 node2 node3 node4 gateway redis \
+          ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
+      fi
     fi
     wait_nodes_healthy
+    if $K8S; then connect_ipfs_swarm; fi
     run_tests
     echo ""; echo "Stress test complete!"
     ;;

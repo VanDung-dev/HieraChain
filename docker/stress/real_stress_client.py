@@ -131,12 +131,20 @@ class RealStressClient:
             if port == 80:
                 continue
             node_id = parts[0]
+            pod_name = node_id.split(".", 1)[0]
+            if pod_name.startswith("hierachain-node-") and pod_name.removeprefix("hierachain-node-").isdigit():
+                node_id = f"node{int(pod_name.removeprefix('hierachain-node-')) + 1}"
             url = f"http://{node}"
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
     def preflight_auth(self) -> None:
         """Abort before load or chaos if a node rejects the configured credential."""
-        if not get_auth_headers():
+        unauthenticated_k8s_test = (
+            os.getenv("HRC_STRESS_ENV") == "k8s"
+            and os.getenv("HRC_ENV") == "test"
+            and os.getenv("HRC_AUTH_ENABLED", "true").lower() == "false"
+        )
+        if not get_auth_headers() and not unauthenticated_k8s_test:
             raise RuntimeError("Set HRC_API_KEY to a provisioned stress key before sending requests")
         try:
             for node_id, status in self.node_status.items():

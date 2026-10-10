@@ -235,14 +235,23 @@ class TestIPFSStress:
             result = self._submit_ipfs_event(node_url, entity_id, ref, stress_client)
             assert result["status"] in (200, 201), result["body"]
 
-        time.sleep(3)
-
         blocks_url = f"{node_url}/api/ledger/chains/{CHAIN_NAME}/blocks"
-        latest = stress_client.session.get(f"{blocks_url}?limit=1", timeout=30)
-        assert latest.status_code == 200
-        total_blocks = latest.json()["total_blocks"]
         resolve_limit = len(ipfs_refs) * 2
-        offset = max(0, total_blocks - resolve_limit)
+        expected_cids = {ref["cid"] for ref in ipfs_refs}
+        committed_cids: set[str] = set()
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            latest = stress_client.session.get(f"{blocks_url}?limit=1", timeout=10)
+            assert latest.status_code == 200
+            offset = max(0, latest.json()["total_blocks"] - resolve_limit)
+            committed = stress_client.session.get(f"{blocks_url}?offset={offset}&limit={resolve_limit}", timeout=10)
+            assert committed.status_code == 200
+            committed_cids = {event["details_cid"] for block in committed.json()["blocks"]
+                              for event in block.get("events", []) if "details_cid" in event}
+            if expected_cids <= committed_cids:
+                break
+            time.sleep(1)
+        assert expected_cids <= committed_cids, "Submitted IPFS references were not committed within 120s"
 
         # Query the newest blocks with resolution
         resolve_start = time.time()

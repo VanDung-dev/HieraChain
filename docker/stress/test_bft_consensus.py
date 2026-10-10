@@ -173,12 +173,12 @@ class TestBFTViewChange:
         try:
             ns = os.environ.get("K8S_NAMESPACE")
             if ns and action == "stop":
-                pod = primary.replace("node", "hierachain-node-")
+                pod = f"hierachain-node-{int(primary.removeprefix('node')) - 1}"
                 subprocess.run(["kubectl", "delete", "pod", "-n", ns, pod],
-                               capture_output=True, timeout=15, check=True)
+                               capture_output=True, timeout=45, check=True)
             elif ns:
-                subprocess.run(["kubectl", "rollout", "restart", "deployment", "-n", ns],
-                               capture_output=True, timeout=15, check=True)
+                # StatefulSet recreates the pod; the caller checks API/ledger recovery.
+                return
             else:
                 from docker.stress.docker_helper import run_docker_container_action
                 docker_cmd = "stop" if action == "stop" else "start"

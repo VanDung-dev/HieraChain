@@ -84,7 +84,10 @@ class TsunamiFloodTest:
         from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or self.client is None:
             raise RuntimeError("Tsunami flood requires REAL_REQUESTS=true")
-        node_id = node_url.split(":")[0]
+        node_id = next((node_id for node_id, status in self.client.node_status.items()
+                        if status.url == f"http://{node_url}"), None)
+        if node_id is None:
+            raise RuntimeError(f"Unknown flood target: {node_url}")
 
         start_time = time.monotonic()
         success_count = 0

@@ -34,6 +34,8 @@ FROM source AS benchmark
 
 CMD ["python", "docker/scripts/benchmark_throughput.py"]
 
+FROM registry.k8s.io/kubectl:v1.35.6 AS kubectl
+
 FROM python:3.12-slim AS production
 
 WORKDIR /app
@@ -64,6 +66,7 @@ COPY docker/scripts/ /app/docker/scripts/
 COPY scripts/benchmark_throughput.py /app/scripts/benchmark_throughput.py
 COPY docker/stress/ /app/docker/stress/
 COPY pytest.ini /app/pytest.ini
+COPY --from=kubectl /bin/kubectl /usr/local/bin/kubectl
 
 RUN mkdir -p /app/data /app/log && \
     chmod +x /app/docker/entrypoint.sh /app/docker/scripts/wg-tc.sh

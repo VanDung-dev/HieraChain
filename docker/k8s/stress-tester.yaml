@@ -1,46 +1,57 @@
-# Stress tester pod for running benchmark tests inside the K8s cluster
-# Profile: stress-test (only created when explicitly testing)
-# Connects to HieraChain nodes via K8s DNS and to Redis for metrics
+# Test runner stays alive so kubectl exec returns pytest's status and reports can be copied.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stress-tester
+  namespace: hierachain
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: stress-tester
+  namespace: hierachain
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    resourceNames: ["hierachain-node-0", "hierachain-node-1", "hierachain-node-2", "hierachain-node-3"]
+    verbs: ["get", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    resourceNames: ["hierachain-node-0", "hierachain-node-1", "hierachain-node-2", "hierachain-node-3"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stress-tester
+  namespace: hierachain
+subjects:
+  - kind: ServiceAccount
+    name: stress-tester
+    namespace: hierachain
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: stress-tester
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stress-tester-scripts
   namespace: hierachain
-  labels:
-    app: hierachain
-    component: stress-tester
 data:
   run-stress.sh: |
     #!/bin/sh
     set -e
-    echo "=== HieraChain K8s Stress Tester ==="
-    echo "Target nodes: ${TARGET_NODES}"
-    echo "Test duration: ${TEST_DURATION}s"
-    echo ""
-    echo "Waiting for target nodes..."
-    OLD_IFS="$IFS"; IFS=','
-    for node in $TARGET_NODES; do
-      host=$(echo $node | cut -d: -f1)
-      port=$(echo $node | cut -d: -f2)
-      echo "  Waiting for $host:$port..."
-      for i in $(seq 1 30); do
-        if wget -q -O- "http://$host:$port/api/ledger/health" 2>/dev/null | grep -q healthy; then
-          echo "  ✅ $host:$port is ready"
-          break
-        fi
-        sleep 2
-      done
-    done
-    IFS="$OLD_IFS"
-    echo ""
-    echo "Starting stress test..."
     cd /app
-    . .venv/bin/activate
-    exec uv run pytest docker/stress/ -v --timeout=${TEST_DURATION} --tb=short
+    mkdir -p log/report
+    exec /app/.venv/bin/python -m pytest docker/stress/ -v --log-level=INFO --durations=10 \
+      -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
+      --html=/app/log/report/k8s_stress_report.html --self-contained-html \
+      --junitxml=/app/log/report/k8s_stress_report.xml
 ---
-apiVersion: batch/v1
-kind: Job
+apiVersion: v1
+kind: Pod
 metadata:
   name: stress-tester
   namespace: hierachain
@@ -48,43 +59,52 @@ metadata:
     app: hierachain
     component: stress-tester
 spec:
-  ttlSecondsAfterFinished: 3600
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: stress-tester
-          image: hierachain:latest
-          imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "/stress-scripts/run-stress.sh"]
-          env:
-            - name: TARGET_NODES
-              value: "web2-service:80,hierachain-node-0.hierachain-node-headless:2661,hierachain-node-1.hierachain-node-headless:2661,hierachain-node-2.hierachain-node-headless:2661,hierachain-node-3.hierachain-node-headless:2661"
-            - name: TEST_DURATION
-              value: "120"
-            - name: REAL_REQUESTS
-              value: "true"
-            - name: REDIS_HOST
-              value: "hierachain-redis"
-            - name: REDIS_PORT
-              value: "6379"
-            - name: HRC_ENV
-              value: "test"
-          envFrom:
-            - configMapRef:
-                name: hierachain-config
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "500m"
-            limits:
-              memory: "1Gi"
-              cpu: "1"
-          volumeMounts:
-            - name: stress-scripts
-              mountPath: /stress-scripts
-      volumes:
+  serviceAccountName: stress-tester
+  restartPolicy: Never
+  containers:
+    - name: stress-tester
+      image: hierachain:latest
+      imagePullPolicy: IfNotPresent
+      command: ["sleep", "infinity"]
+      env:
+        - name: TARGET_NODES
+          value: "hierachain-node-0.hierachain-node-headless:2661,hierachain-node-1.hierachain-node-headless:2661,hierachain-node-2.hierachain-node-headless:2661,hierachain-node-3.hierachain-node-headless:2661"
+        - name: REAL_REQUESTS
+          value: "true"
+        - name: HRC_STRESS_ENV
+          value: "k8s"
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: HRC_IPFS_ENABLED
+          value: "true"
+        - name: HRC_IPFS_HOST
+          value: "/dns4/ipfs-0.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+        - name: HRC_IPFS_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hierachain-secrets
+              key: IPFS_ENCRYPTION_KEY
+        - name: REDIS_HOST
+          value: "hierachain-redis"
+        - name: REDIS_PORT
+          value: "6379"
+      envFrom:
+        - configMapRef:
+            name: hierachain-config
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1"
+      volumeMounts:
         - name: stress-scripts
-          configMap:
-            name: stress-tester-scripts
-            defaultMode: 0755
+          mountPath: /stress-scripts
+  volumes:
+    - name: stress-scripts
+      configMap:
+        name: stress-tester-scripts
+        defaultMode: 0755

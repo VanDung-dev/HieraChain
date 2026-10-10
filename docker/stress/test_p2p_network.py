@@ -40,7 +40,7 @@ def _exec_tc(node_id: str, cmd: list[str]) -> None:
     try:
         if os.environ.get("K8S_NAMESPACE"):
             ns = os.environ["K8S_NAMESPACE"]
-            pod = node_id.replace("node", "hierachain-node-")
+            pod = f"hierachain-node-{int(node_id.removeprefix('node')) - 1}"
             subprocess.run(
                 ["kubectl", "exec", "-n", ns, pod, "--"] + cmd,
                 capture_output=True, timeout=15,

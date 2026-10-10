@@ -77,9 +77,9 @@ def _is_k8s() -> bool:
 
 
 K8S_ACTIONS = {
-    "stop": lambda ns, pod, **kw: _run_cmd(["kubectl", "delete", "pod", "-n", ns, pod]),
+    "stop": lambda ns, pod, **kw: _run_cmd(["kubectl", "delete", "pod", "-n", ns, pod], timeout=45),
     "start": lambda ns, pod, **kw: None,
-    "restart": lambda ns, pod, **kw: _run_cmd(["kubectl", "rollout", "restart", "deployment", "-n", ns]),
+    "restart": lambda ns, pod, **kw: _run_cmd(["kubectl", "delete", "pod", "-n", ns, pod], timeout=45),
     "network_cut": lambda ns, pod, **kw: _run_cmd(
         ["kubectl", "exec", "-n", ns, pod, "--", "tc", "qdisc", "add", "dev", "eth0", "root", "netem", "loss", "100%"]),
     "network_reset": lambda ns, pod, **kw: _run_cmd(
@@ -118,6 +118,9 @@ def _do(node_id: str, action: str, **kwargs):
     if not fn:
         raise RuntimeError(f"Unsupported chaos action: {action}")
     if isinstance(result, tuple) and result[1]:
+        # A replaced pod already has its default qdisc; cleanup is idempotent.
+        if action == "network_reset" and "Cannot delete qdisc with handle of zero." in result[1]:
+            return result[0], ""
         raise RuntimeError(f"Chaos action {action} failed on {node_id}: {result[1]}")
     return result
 

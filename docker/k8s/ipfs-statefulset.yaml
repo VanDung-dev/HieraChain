@@ -25,6 +25,8 @@ spec:
           image: ipfs/kubo:latest
           command: ["sh", "-c", "/container-init.d/init.sh"]
           env:
+            - name: LIBP2P_FORCE_PNET
+              value: "1"
             - name: IPFS_PROFILE
               value: "server"
           volumeMounts:
@@ -39,6 +41,8 @@ spec:
         - name: ipfs
           image: ipfs/kubo:latest
           env:
+            - name: LIBP2P_FORCE_PNET
+              value: "1"
             - name: IPFS_PROFILE
               value: "server"
           ports:
@@ -80,8 +84,8 @@ spec:
             name: ipfs-config
             defaultMode: 0755 # Ensure scripts are executable
         - name: swarm-key
-          configMap:
-            name: ipfs-config
+          secret:
+            secretName: hierachain-ipfs-swarm
             items:
               - key: swarm.key
                 path: swarm.key

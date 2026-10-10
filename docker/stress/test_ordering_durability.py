@@ -292,11 +292,11 @@ class TestJournalDurability:
                     node_id,
                 )
                 return
-            pod = f"hierachain-node-{node_id.removeprefix('node')}"
+            pod = f"hierachain-node-{int(node_id.removeprefix('node')) - 1}"
             try:
                 subprocess.run(
                     ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod],
-                    capture_output=True, timeout=20, check=True,
+                    capture_output=True, timeout=45, check=True,
                 )
                 logger.info("Deleted pod %s", pod)
             except FileNotFoundError:

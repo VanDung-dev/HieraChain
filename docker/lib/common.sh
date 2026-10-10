@@ -252,7 +252,12 @@ wait_gateway_healthy() {
 
 wait_nodes_healthy() {
   if $K8S; then
-    echo "  (health check handled via kubectl rollout)"
+    for workload in statefulset/ipfs statefulset/hierachain-node deployment/hierachain-redis deployment/web2-node; do
+      kubectl rollout status "$workload" -n "$NAMESPACE" --timeout=300s || return 1
+    done
+    kubectl wait -n "$NAMESPACE" --for=condition=Ready pod \
+      hierachain-node-0 hierachain-node-1 hierachain-node-2 hierachain-node-3 \
+      ipfs-0 ipfs-1 ipfs-2 ipfs-3 --timeout=300s || return 1
     return 0
   fi
   echo ""; echo "Waiting for nodes to be healthy..."
@@ -285,28 +290,21 @@ connect_ipfs_swarm() {
   echo ""; echo "[5/6] Connecting IPFS private swarm..."
   local max_retries=15
   if $K8S; then
-    for i in $(seq 0 3); do
-      echo "  Waiting for ipfs-$i..."
-      for j in $(seq 1 $max_retries); do
-        $KUBECTL exec "ipfs-$i" -- ipfs id 2>/dev/null >/dev/null && break
-        sleep 2
-      done
-    done
     local peer_ids=""
     for i in $(seq 0 3); do
       local pid
-      pid=$($KUBECTL exec "ipfs-$i" -- ipfs config Identity.PeerID 2>/dev/null || echo "")
-      [ -n "$pid" ] && peer_ids="$peer_ids ipfs-$i:$pid"
+      pid=$($KUBECTL exec "ipfs-$i" -c ipfs -- ipfs config Identity.PeerID) || return 1
+      [ -n "$pid" ] || return 1
+      peer_ids="$peer_ids ipfs-$i:$pid"
     done
     for src in $(seq 0 3); do
       for dst in $(seq 0 3); do
         [ "$src" = "$dst" ] && continue
         local dst_peer dst_ip
         dst_peer=$(echo "$peer_ids" | tr ' ' '\n' | grep "^ipfs-$dst:" | cut -d: -f2)
-        dst_ip=$($KUBECTL get pod "ipfs-$dst" -o jsonpath='{.status.podIP}' 2>/dev/null || echo "")
-        if [ -n "$dst_peer" ] && [ -n "$dst_ip" ]; then
-          $KUBECTL exec "ipfs-$src" -- ipfs swarm connect "/ip4/$dst_ip/tcp/4001/p2p/$dst_peer" 2>/dev/null || true
-        fi
+        dst_ip=$($KUBECTL get pod "ipfs-$dst" -o jsonpath='{.status.podIP}') || return 1
+        [ -n "$dst_peer" ] && [ -n "$dst_ip" ] || return 1
+        $KUBECTL exec "ipfs-$src" -c ipfs -- ipfs swarm connect "/ip4/$dst_ip/tcp/4001/p2p/$dst_peer" || return 1
       done
     done
   else
@@ -341,50 +339,89 @@ connect_ipfs_swarm() {
   fi
 }
 
+deploy_k8s() {
+  kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f - || return 1
+  if ! kubectl get secret hierachain-node-identities -n "$NAMESPACE" >/dev/null 2>&1; then
+    if [ -n "$(kubectl get pvc -n "$NAMESPACE" -l component=node -o name)" ]; then
+      echo "ERROR: Restore the node identity secret before opening existing ledger volumes."
+      return 1
+    fi
+    local identity_dir
+    identity_dir=$(mktemp -d "${TMPDIR:-/tmp}/hierachain-k8s-identities.XXXXXX")
+    uv run python docker/scripts/generate_node_identities.py --output-dir "$identity_dir" || return 1
+    kubectl create secret generic hierachain-node-identities -n "$NAMESPACE" \
+      --from-file=node-0-identity="$identity_dir/node1/identity.json" \
+      --from-file=node-1-identity="$identity_dir/node2/identity.json" \
+      --from-file=node-2-identity="$identity_dir/node3/identity.json" \
+      --from-file=node-3-identity="$identity_dir/node4/identity.json" \
+      --from-file=trusted-block-keys="$identity_dir/node1/trusted_block_keys.json" || return 1
+    rm -rf "$identity_dir"
+  fi
+  # Upgrade old identity secrets without rotating keys that signed persisted blocks.
+  if [ -z "$(kubectl get secret hierachain-node-identities -n "$NAMESPACE" -o jsonpath='{.data.trusted-block-keys}')" ]; then
+    (
+      set -o pipefail
+      kubectl get secret hierachain-node-identities -n "$NAMESPACE" -o json |
+        uv run python -c '
+import base64, json, sys
+secret = json.load(sys.stdin)
+identities = [json.loads(base64.b64decode(secret["data"][f"node-{i}-identity"])) for i in range(4)]
+trust = {identity["node_id"]: identity["signing_public_key"] for identity in identities}
+secret["data"]["trusted-block-keys"] = base64.b64encode(json.dumps(trust).encode()).decode()
+json.dump(secret, sys.stdout)
+' | kubectl apply -f -
+    ) || return 1
+  fi
+  if ! kubectl get secret hierachain-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+    kubectl create secret generic hierachain-secrets -n "$NAMESPACE" \
+      --from-literal=EXPLORER_TOKEN="$EXPLORER_TOKEN" \
+      --from-literal=HRC_NODES="node1,node2,node3,node4" \
+      --from-literal=IPFS_ENCRYPTION_KEY="$IPFS_ENCRYPTION_KEY" || return 1
+  fi
+  if ! kubectl get secret hierachain-ipfs-swarm -n "$NAMESPACE" >/dev/null 2>&1; then
+    kubectl create secret generic hierachain-ipfs-swarm -n "$NAMESPACE" \
+      --from-file=swarm.key=docker/ipfs/swarm.key || return 1
+  fi
+  kubectl apply -k docker/k8s/ || return 1
+  # The local image tag is reused; restart pods to load the newly built image.
+  kubectl rollout restart statefulset/hierachain-node -n "$NAMESPACE" || return 1
+  kubectl rollout restart statefulset/ipfs -n "$NAMESPACE" || return 1
+}
+
 run_tests() {
   local report="${ENV}_stress_report"
   echo ""; echo "[4/4] Running tests..."
 
   if $K8S; then
-    k8s_env="export K8S_NAMESPACE='${NAMESPACE}'"
-    # K8s in-cluster Job uses K8s DNS (web2-service etc.), compose fallback uses host gateway
-    K8S_JOB_NODES="web2-service:80,hierachain-node-0.hierachain-node-headless:2661,hierachain-node-1.hierachain-node-headless:2661,hierachain-node-2.hierachain-node-headless:2661,hierachain-node-3.hierachain-node-headless:2661"
-    K8S_COMPOSE_NODES="${TARGET_NODES:-host.docker.internal:${GATEWAY_PORT}}"
-    # Try in-cluster Job first
-    if kubectl get namespace "${NAMESPACE}" >/dev/null 2>&1; then
-      echo "  Running K8s stress via Job (in-cluster DNS: ${K8S_JOB_NODES})..."
-      kubectl apply -f docker/k8s/stress-tester.yaml >/dev/null 2>&1 || true
-      # Ensure Job uses correct nodes and duration
-      kubectl set env job/stress-tester -n "${NAMESPACE}" TARGET_NODES="${K8S_JOB_NODES}" TEST_DURATION="${DURATION:-60}" >/dev/null 2>&1 || true
-      if kubectl wait --for=condition=complete job/stress-tester -n "${NAMESPACE}" --timeout=400s 2>/dev/null; then
-        kubectl logs -n "${NAMESPACE}" job/stress-tester --tail=300 2>/dev/null || true
-        # copy reports from job
-        kubectl cp "${NAMESPACE}/$(kubectl get pod -n "${NAMESPACE}" -l job-name=stress-tester -o jsonpath='{.items[0].metadata.name} 2>/dev/null'):/app/log/report/${report}.html" "log/${report}.html" 2>/dev/null || true
-        return 0
-      fi
-      echo "  K8s Job not ready, falling back to compose stress-tester with ${K8S_COMPOSE_NODES}..."
-      TARGET_NODES="${K8S_COMPOSE_NODES}"
-      # Patch docker-stress-entrypoint gateway IP if needed (host.docker.internal fallback)
-      # Let entrypoint handle host.docker.internal -> gateway IP
+    local result=0
+    mkdir -p log/report
+    kubectl delete job stress-tester -n "$NAMESPACE" --ignore-not-found --wait=true || return 1
+    kubectl delete pod stress-tester -n "$NAMESPACE" --ignore-not-found --wait=true || return 1
+    kubectl apply -f docker/k8s/stress-tester.yaml || return 1
+    if kubectl wait pod/stress-tester -n "$NAMESPACE" --for=condition=Ready --timeout=300s; then
+      kubectl exec -n "$NAMESPACE" stress-tester -- \
+        env TEST_DURATION="${DURATION:-60}" /stress-scripts/run-stress.sh || result=$?
+      kubectl cp "$NAMESPACE/stress-tester:/app/log/report/${report}.html" "log/report/${report}.html" || result=1
+      kubectl cp "$NAMESPACE/stress-tester:/app/log/report/${report}.xml" "log/report/${report}.xml" || result=1
     else
-      TARGET_NODES="${K8S_COMPOSE_NODES}"
+      result=1
+      kubectl describe pod stress-tester -n "$NAMESPACE"
     fi
-  else
-    TARGET_NODES="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
+    kubectl delete pod stress-tester -n "$NAMESPACE" --ignore-not-found --wait=true || result=1
+    return "$result"
   fi
 
-  $COMPOSE --profile stress-test run --rm stress-tester \
+  TARGET_NODES="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
+  export HRC_IPFS_ENCRYPTION_KEY="$IPFS_ENCRYPTION_KEY"
+
+  $COMPOSE --profile stress-test run --rm \
+    -e TARGET_NODES="$TARGET_NODES" -e TEST_DURATION="${DURATION:-60}" \
+    -e REAL_REQUESTS=true -e HRC_STRESS_ENV="$ENV" \
+    -e HRC_IPFS_ENABLED=true -e HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001 \
+    -e HRC_IPFS_ENCRYPTION_KEY stress-tester \
     bash -c "
       set -e
       mkdir -p /app/log/report
-      export TARGET_NODES='${TARGET_NODES}'
-      export TEST_DURATION='${DURATION:-60}'
-      export REAL_REQUESTS='true'
-      export HRC_STRESS_ENV='${ENV}'
-      export HRC_IPFS_ENABLED=true
-      export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
-      export HRC_IPFS_ENCRYPTION_KEY='${IPFS_ENCRYPTION_KEY}'
-      ${k8s_env}
       pytest docker/stress/ -v --log-level=INFO --durations=10 \
         -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
         --html=/app/log/report/${report}.html \
@@ -416,6 +453,18 @@ print_setup_summary() {
   echo "  Primary Port: ${port}"
   echo "  (Accessible from LAN 0.0.0.0)"
   echo ""
+  if $K8S; then
+    echo "Kubernetes namespace: $NAMESPACE"
+    echo "  Gateway status: http://localhost:${port}/web2-status"
+    echo "  Get explorer token: kubectl -n $NAMESPACE get secret hierachain-secrets -o jsonpath='{.data.EXPLORER_TOKEN}' | base64 --decode"
+    for i in $(seq 0 3); do
+      echo "  node$((i+1)) → hierachain-node-$i.hierachain-node-headless:2661"
+      echo "  IPFS → ipfs-$i.ipfs-headless:5001"
+    done
+    echo "  Stress test: bash docker/hierachain.sh stress k8s --reuse"
+    echo "  Cleanup: bash docker/hierachain.sh down k8s"
+    return 0
+  fi
   echo "Developer Helper:"
   echo "  Get token: docker exec ${CONTAINER_PREFIX}gateway env | grep EXPLORER_TOKEN"
 

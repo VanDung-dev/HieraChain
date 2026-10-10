@@ -17,9 +17,8 @@ resources:
   - ipfs-statefulset.yaml
 
 # ============================================================
-# Stress Testing (Benchmark Job)
-# Run with: kubectl apply -f docker/k8s/stress-tester.yaml
-# Or uncomment to include in kustomize apply
+# Stress runner is created and removed by the unified wrapper.
+# Run with: bash docker/hierachain.sh stress k8s --reuse
 # ============================================================
 # - stress-tester.yaml
 

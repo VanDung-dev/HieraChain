@@ -144,7 +144,7 @@ def _kill_node(node_id: str) -> None:
         pod = _node_pod(node_id)
         subprocess.run(
             ["kubectl", "delete", "pod", "-n", ns, pod],
-            capture_output=True, timeout=20,
+            capture_output=True, timeout=45, check=True,
         )
     else:
         c = _node_container(node_id)
@@ -158,11 +158,8 @@ def _kill_node(node_id: str) -> None:
 def _restart_node(node_id: str) -> None:
     """Restart node container/pod."""
     if os.environ.get("K8S_NAMESPACE"):
-        ns = os.environ["K8S_NAMESPACE"]
-        subprocess.run(
-            ["kubectl", "rollout", "restart", "deployment", "-n", ns],
-            capture_output=True, timeout=20,
-        )
+        # StatefulSet recreates the pod; the caller checks API/ledger recovery.
+        return
     else:
         c = _node_container(node_id)
         ok = _docker_start(c)
@@ -213,7 +210,7 @@ class TestSingleNodeFailure:
             assert ok, f"Survivor {nid} should still respond"
 
         _restart_node(target)
-        self.client.wait_for_nodes(timeout=30)
+        assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after node deletion"
 
 
 class TestQuorumLoss:
@@ -258,7 +255,7 @@ class TestQuorumLoss:
 
         for t in targets:
             _restart_node(t)
-        self.client.wait_for_nodes(timeout=60)
+        assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after node deletion"
 
 
 @pytest.mark.stress

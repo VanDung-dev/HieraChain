@@ -5,6 +5,7 @@ and X25519 WireGuard keys for multi-region P2P mesh simulation.
 """
 
 import base64
+import argparse
 import json
 import os
 from typing import Dict, List
@@ -122,9 +123,8 @@ def _write_wg_config(node_dir: str, node_id: str, identity: dict,
     print(f"Generated wg0.conf for {node_id}")
 
 
-def main() -> None:
+def main(base_dir: str = "docker/nodes") -> None:
     nodes: List[str] = ["node1", "node2", "node3", "node4"]
-    base_dir = "docker/nodes"
     os.makedirs(base_dir, exist_ok=True)
 
     all_identities: Dict[str, dict] = {}
@@ -190,4 +190,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", default="docker/nodes")
+    main(parser.parse_args().output_dir)
