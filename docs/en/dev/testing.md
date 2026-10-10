@@ -151,45 +151,32 @@ Reports are saved to `log/report/` directory.
 
 ### Kubernetes Stress Testing
 
-Run stress tests in Kubernetes
-
-> **Recommendation:** Use Docker Compose for local dev. Use Kubernetes when you need a production-like environment.
-
-**Quick Start:**
+The unified wrapper targets an existing Kubernetes cluster. For local OrbStack:
 
 ```bash
-# Build image
-docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-
-# Create Kind cluster
-kind create cluster --config docker/kind-config.yaml
-
-# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
-
-# Load image into cluster
-kind load docker-image hierachain:latest --name hiera-cluster
-kubectl apply -k docker/k8s/
-
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
-
-# Expose the API to local host
-kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
-
-# Test API
-curl http://localhost:2661/api/ledger/health
-
-# Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-
-# Cleanup
-kubectl delete -k docker/k8s/
-kind delete cluster --name hiera-cluster
+orbctl start k8s
+bash docker/hierachain.sh stress k8s --duration 15
+bash docker/hierachain.sh stress k8s --reuse --duration 15
 ```
+
+The first command builds and deploys four SQLite-backed nodes, four private
+IPFS pods, Redis and the gateway. Deployment preserves existing PVCs and keys;
+K8s identities are generated separately from Docker identities. Workloads and
+all node/IPFS pods must become ready before testing. Other clusters must have
+`hierachain:latest` loaded or available in their image registry.
+
+Pytest runs in the cluster through `kubectl exec`, targets all four node DNS
+names and verifies their API readiness before collection. The configured
+IPFS API must also be reachable; otherwise preflight fails. HTML and JUnit reports are copied to `log/report/`. The wrapper removes the test runner and
+returns pytest failures without a Docker fallback. `--duration` controls load
+test duration; the full suite includes longer chaos and recovery checks.
+Docker-only checks may skip on K8s; review the recorded reasons.
+
+These manifests use `HRC_ENV=test`, disable authentication and give test node
+pods `NET_ADMIN` for network fault injection. The runner has namespace-scoped
+permission to get/delete and exec into the four node pods. Use them only for
+isolated testing. `setup k8s --force` and `down k8s` delete the namespace and
+its PVCs; `setup k8s` preserves data by default.
 
 ## Developer Scripts
 

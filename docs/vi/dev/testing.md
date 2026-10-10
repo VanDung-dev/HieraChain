@@ -150,45 +150,31 @@ Các báo cáo kết quả được lưu tại thư mục `log/report/`.
 
 ### Kiểm thử Áp lực với Kubernetes
 
-Chạy kiểm thử áp lực trên môi trường Kubernetes.
-
-> **Khuyên dùng:** Sử dụng Docker Compose cho việc phát triển cục bộ. Chỉ sử dụng Kubernetes khi bạn cần mô phỏng một môi trường gần giống với sản xuất thực tế.
-
-**Bắt đầu nhanh:**
+Script triển khai chung sử dụng cluster Kubernetes đã có. Với OrbStack cục bộ:
 
 ```bash
-# Build image
-docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-
-# Create Kind cluster
-kind create cluster --config docker/kind-config.yaml
-
-# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
-
-# Load image into cluster
-kind load docker-image hierachain:latest --name hiera-cluster
-kubectl apply -k docker/k8s/
-
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
-
-# Expose the API to local host
-kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
-
-# Test API
-curl http://localhost:2661/api/ledger/health
-
-# Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-
-# Cleanup
-kubectl delete -k docker/k8s/
-kind delete cluster --name hiera-cluster
+orbctl start k8s
+bash docker/hierachain.sh stress k8s --duration 15
+bash docker/hierachain.sh stress k8s --reuse --duration 15
 ```
+
+Lệnh đầu build và triển khai bốn node dùng SQLite, bốn pod IPFS riêng tư,
+Redis và gateway. Triển khai giữ nguyên PVC và khóa hiện có; identity K8s được
+tạo riêng với identity Docker. Các workload và toàn bộ pod node/IPFS phải
+ready trước khi kiểm thử. Cluster khác cần nạp image `hierachain:latest` hoặc
+có image trong registry trước khi triển khai.
+
+Pytest chạy trong cluster qua `kubectl exec`, nhắm vào DNS của cả bốn node và
+kiểm tra API readiness trước khi thu thập bài test. API IPFS đã cấu hình cũng
+phải truy cập được; nếu không, preflight trả lỗi. Báo cáo HTML và JUnit được chép về `log/report/`. Script xóa pod chạy test và trả lỗi pytest, không fallback
+sang Docker. `--duration` điều khiển thời lượng các bài tải; toàn bộ suite còn
+có bài chaos và recovery lâu hơn. Bài chỉ dành cho Docker có thể skip trên K8s;
+cần xem lý do được ghi trong báo cáo.
+
+Các manifest này dùng `HRC_ENV=test`, tắt xác thực và cấp `NET_ADMIN` cho pod
+node để mô phỏng lỗi mạng. Runner chỉ có quyền trong namespace để get/delete
+và exec vào bốn pod node. Chỉ dùng cho kiểm thử cô lập. `setup k8s --force` và
+`down k8s` xóa namespace cùng PVC; `setup k8s` mặc định giữ dữ liệu.
 
 ## Các Kịch bản Hỗ trợ Developer (Developer Scripts)
 
