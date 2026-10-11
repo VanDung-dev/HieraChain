@@ -36,3 +36,17 @@ Use Conventional Commit prefixes found in the history, such as `feat:`, `fix:`, 
 ## Repository Rules
 
 Read the applicable files in `.agents/rules/` before changing terminology, architecture, changelogs, or documentation. Treat the implementation under `hierachain/` as the source of truth and never commit `.env` or credentials.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked locally as Markdown files in `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default triage roles in each issue's `Status:` line. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a single-context layout with root `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.
