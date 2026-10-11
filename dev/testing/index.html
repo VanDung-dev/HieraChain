@@ -4835,43 +4835,27 @@ journal under <code>/app/data</code>. Journal fsync is always enabled. Override
 </ul>
 <p>Reports are saved to <code>log/report/</code> directory.</p>
 <h3 id="kubernetes-stress-testing">Kubernetes Stress Testing</h3>
-<p>Run stress tests in Kubernetes</p>
-<blockquote>
-<p><strong>Recommendation:</strong> Use Docker Compose for local dev. Use Kubernetes when you need a production-like environment.</p>
-</blockquote>
-<p><strong>Quick Start:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Build image</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--no-cache<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Create Kind cluster</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>kind<span class="w"> </span>create<span class="w"> </span>cluster<span class="w"> </span>--config<span class="w"> </span>docker/kind-config.yaml
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1"># Resource limit for each Node of K8s (1 CPU, 1GiB RAM)</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-control-plane
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker2
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>docker<span class="w"> </span>update<span class="w"> </span>--cpus<span class="w"> </span><span class="m">1</span><span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span>--memory-swap<span class="w"> </span>1g<span class="w"> </span>hiera-cluster-worker3
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="c1"># Load image into cluster</span>
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>kind<span class="w"> </span>load<span class="w"> </span>docker-image<span class="w"> </span>hierachain:latest<span class="w"> </span>--name<span class="w"> </span>hiera-cluster
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>kubectl<span class="w"> </span>apply<span class="w"> </span>-k<span class="w"> </span>docker/k8s/
-<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
-<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1"># Wait for pods to be ready</span>
-<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a>kubectl<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>ready<span class="w"> </span>pod<span class="w"> </span>-l<span class="w"> </span><span class="nv">app</span><span class="o">=</span>hierachain<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--timeout<span class="o">=</span>120s
-<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>
-<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="c1"># Expose the API to local host</span>
-<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/hierachain-api<span class="w"> </span><span class="m">2661</span>:2661<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--address<span class="w"> </span><span class="m">0</span>.0.0.0
-<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>
-<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1"># Test API</span>
-<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>curl<span class="w"> </span>http://localhost:2661/api/ledger/health
-<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>
-<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1"># Run stress test</span>
-<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.k8s-stress.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--build<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
-<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>
-<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="c1"># Cleanup</span>
-<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>kubectl<span class="w"> </span>delete<span class="w"> </span>-k<span class="w"> </span>docker/k8s/
-<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>kind<span class="w"> </span>delete<span class="w"> </span>cluster<span class="w"> </span>--name<span class="w"> </span>hiera-cluster
+<p>The unified wrapper targets an existing Kubernetes cluster. For local OrbStack:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>orbctl<span class="w"> </span>start<span class="w"> </span>k8s
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
 </code></pre></div>
+<p>The first command builds and deploys four SQLite-backed nodes, four private
+IPFS pods, Redis and the gateway. Deployment preserves existing PVCs and keys;
+K8s identities are generated separately from Docker identities. Workloads and
+all node/IPFS pods must become ready before testing. Other clusters must have
+<code>hierachain:latest</code> loaded or available in their image registry.</p>
+<p>Pytest runs in the cluster through <code>kubectl exec</code>, targets all four node DNS
+names and verifies their API readiness before collection. The configured
+IPFS API must also be reachable; otherwise preflight fails. HTML and JUnit reports are copied to <code>log/report/</code>. The wrapper removes the test runner and
+returns pytest failures without a Docker fallback. <code>--duration</code> controls load
+test duration; the full suite includes longer chaos and recovery checks.
+Docker-only checks may skip on K8s; review the recorded reasons.</p>
+<p>These manifests use <code>HRC_ENV=test</code>, disable authentication and give test node
+pods <code>NET_ADMIN</code> for network fault injection. The runner has namespace-scoped
+permission to get/delete and exec into the four node pods. Use them only for
+isolated testing. <code>setup k8s --force</code> and <code>down k8s</code> delete the namespace and
+its PVCs; <code>setup k8s</code> preserves data by default.</p>
 <h2 id="developer-scripts">Developer Scripts</h2>
 <p>The <code>scripts/</code> directory contains utility tools.</p>
 <h3 id="static-analysis">Static Analysis</h3>
