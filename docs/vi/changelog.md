@@ -116,7 +116,11 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (55)"
+??? note "Improvements (56)"
+
+    * 2026-10-15
+
+        * **Database & Ordering (Backend Ledger Redis Bền)**: thêm `RedisLedgerAdapter` (`hierachain/adapters/database/redis_ledger.py`, export từ `hierachain/adapters/database/__init__.py`) kế thừa `RedisStorageAdapter` với ledger block có ký dạng append-only theo khóa SHA-256 `chain_name`, `save_block()` nguyên tử WATCH/MULTI kèm validate `creator_id`/`signature`/`merkle_root`, chặn sequence index cộng liên kết `previous_hash` và cấm expire với retry idempotent cùng vị trí, các hàm đọc `get_blocks_from_index()`/`get_block_by_index()`/`get_latest_block()`/`list_block_chain_names()` kiểm tra sequence nghiêm và raise `RedisStorageError` khi lịch sử rỗng/hỏng/thiếu, truy vấn quét ledger `get_entity_events()`/`get_events_by_type()`/`get_event_by_id()` (trạng thái `ordered`) và `get_chain_statistics()`, các ghi `store_chain()`/`save_hierarchy_registry()`/`append_channel_record()`/`store_proof()` đều qua cổng bền `require_durable_storage()` (`appendonly=yes`, `appendfsync=always`, `no-appendfsync-on-rewrite=no`, `maxmemory-policy=noeviction`, `aof-load-truncated=no`, AOF khỏe, vai trò primary) và `cleanup_old_data()` từ chối cắt tỉa; `OrderingStorageHandler` (`hierachain/consensus/ordering/storage.py`) chọn adapter này khi `storage_backend == "redis"` (giữ nguyên lựa chọn PostgreSQL/SQLite), `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) trả về adapter cho backend `redis` thay vì raise, và `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) chuyển tiếp `storage_backend` vào cấu hình ordering — trước đây backend `redis` bị raise `RuntimeError` ở hierarchy manager và ordering bỏ qua lựa chọn Redis.
 
     * 2026-10-07
 

@@ -116,7 +116,11 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (55)"
+??? note "Improvements (56)"
+
+    * 2026-10-15
+
+        * **Database & Ordering (Durable Redis Ledger Backend)**: new `RedisLedgerAdapter` (`hierachain/adapters/database/redis_ledger.py`, exported from `hierachain/adapters/database/__init__.py`) extends `RedisStorageAdapter` with an append-only signed-block ledger keyed by SHA-256 `chain_name`, atomic WATCH/MULTI `save_block()` with `creator_id`/`signature`/`merkle_root` validation, index-sequence plus `previous_hash` link plus no-expire guards with idempotent same-position retry, strict sequence-checked `get_blocks_from_index()`/`get_block_by_index()`/`get_latest_block()`/`list_block_chain_names()` raising `RedisStorageError` on empty/corrupt/incomplete history, ledger-scan `get_entity_events()`/`get_events_by_type()`/`get_event_by_id()` (`ordered` status) and `get_chain_statistics()`, durability-gated `store_chain()`/`save_hierarchy_registry()`/`append_channel_record()`/`store_proof()` via `require_durable_storage()` (`appendonly=yes`, `appendfsync=always`, `no-appendfsync-on-rewrite=no`, `maxmemory-policy=noeviction`, `aof-load-truncated=no`, healthy AOF, primary role) and a pruning refusal in `cleanup_old_data()`; `OrderingStorageHandler` (`hierachain/consensus/ordering/storage.py`) selects it when `storage_backend == "redis"` (preserving PostgreSQL/SQLite selection), `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) returns it for the `redis` backend instead of raising, and `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) forwards `storage_backend` into the ordering config — previously the `redis` backend raised `RuntimeError` in the hierarchy manager and ordering ignored the Redis selection.
 
     * 2026-10-07
 
