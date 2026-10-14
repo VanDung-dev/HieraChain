@@ -596,9 +596,9 @@ class HierarchyManager:
                 raise RuntimeError("Configured PostgreSQL storage is unavailable") from exc
 
         if backend == "redis":
-            raise RuntimeError(
-                "Redis ledger storage does not support durable signed blocks; use sqlite or postgres"
-            )
+            from hierachain.adapters.database.redis_ledger import RedisLedgerAdapter
+
+            return RedisLedgerAdapter()
 
         if backend == "memory":
             return None
