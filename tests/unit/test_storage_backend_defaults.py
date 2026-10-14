@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+from unittest.mock import patch
 
 import pytest
 
@@ -69,9 +70,10 @@ def test_explicit_memory_backend_remains_available(
     assert HierarchyManager._create_storage() is None
 
 
-def test_redis_ledger_backend_fails_before_accepting_unsupported_proofs(
+def test_redis_ledger_backend_selects_durable_adapter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("HRC_STORAGE_BACKEND", "redis")
-    with pytest.raises(RuntimeError, match="Redis ledger storage does not support durable signed blocks"):
-        HierarchyManager._create_storage()
+    with patch("hierachain.adapters.database.redis_ledger.RedisLedgerAdapter") as adapter:
+        assert HierarchyManager._create_storage() is adapter.return_value
+        adapter.assert_called_once_with()
