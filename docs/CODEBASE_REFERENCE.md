@@ -114,7 +114,7 @@ See [Consensus](en/architecture/consensus.md) · [Đồng thuận](vi/architectu
 | `hierachain/error_mitigation/data_validator.py` | Input validation helpers |
 | `hierachain/cluster/cross_level_sync.py` | Proof synchronization and cross-level state tracking |
 
-The hierarchy accepts SQLite, PostgreSQL or process-local memory storage. It rejects Redis as a durable signed-block backend. CLI chain/event commands require SQLite or PostgreSQL. Preserve both the database and the per-chain ordering journals for recovery.
+The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedgerAdapter`, or process-local memory storage. Redis requires healthy AOF, fsync on every write, no eviction, no fsync bypass during rewrites, and no truncated AOF loading. CLI chain/event commands require SQLite or PostgreSQL. Preserve both the database and the per-chain ordering journals for recovery.
 
 `ErrorClassifier` does not automatically dispatch every error to journal or BFT recovery. Recovery depends on configured callbacks and the owning component's actual error-handling path.
 
