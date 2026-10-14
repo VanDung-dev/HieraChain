@@ -90,7 +90,11 @@ class OrderingStorageHandler:
             else load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
         )
         db_url = config.get("db_url", "")
-        if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
+        if config.get("storage_backend") == "redis":
+            from hierachain.adapters.database.redis_ledger import RedisLedgerAdapter
+
+            self.storage = RedisLedgerAdapter()
+        elif db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
             from hierachain.adapters.database.postgres_adapter import PostgresAdapter
             self.storage = PostgresAdapter(database_url=db_url)
         else:
