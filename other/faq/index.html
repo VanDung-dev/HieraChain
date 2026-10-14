@@ -4454,7 +4454,7 @@
 <h2 id="what-format-does-the-event-use">What format does the event use?</h2>
 <p>REST/SDK requests use <code>entity_id</code>, <code>event_type</code> and a JSON object <code>details</code>. Internal events use <code>event</code>. The API assigns the timestamp. Arrow exposes string-valued detail columns while canonical event bytes preserve the payload for recovery.</p>
 <h2 id="can-i-use-redis-as-the-ledger-backend">Can I use Redis as the ledger backend?</h2>
-<p>Hierarchical durable storage requires SQLite or PostgreSQL. Redis is available for auxiliary adapters, authentication state and rate limits; hierarchical startup rejects it as signed-block storage. Memory is process-local.</p>
+<p>Hierarchical durable storage supports SQLite, PostgreSQL, or <code>RedisLedgerAdapter</code> with <a href="../../modules/storage/#redis-ledger">durable AOF requirements</a>. Redis also serves auxiliary adapters, authentication state and rate limits. Memory is process-local.</p>
 <h2 id="are-zk-contracts-private-data-and-erp-production-ready">Are ZK, contracts, private data and ERP production-ready?</h2>
 <p>Production ZK proving/verifying, contract execution and private-data writes are unimplemented. Contract execution/private-data writes return HTTP 501. Built-in vendor ERP connectors are simulation-only; real adapters must be supplied by the application.</p>
 <h2 id="how-do-i-investigate-latency-or-503-errors">How do I investigate latency or 503 errors?</h2>

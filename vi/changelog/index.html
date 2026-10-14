@@ -4586,8 +4586,14 @@
 </ul>
 </details>
 <details class="note">
-<summary>Improvements (55)</summary>
+<summary>Improvements (56)</summary>
 <ul>
+<li>
+<p>2026-10-15</p>
+<ul>
+<li><strong>Database &amp; Ordering (Backend Ledger Redis Bền)</strong>: thêm <code>RedisLedgerAdapter</code> (<code>hierachain/adapters/database/redis_ledger.py</code>, export từ <code>hierachain/adapters/database/__init__.py</code>) kế thừa <code>RedisStorageAdapter</code> với ledger block có ký dạng append-only theo khóa SHA-256 <code>chain_name</code>, <code>save_block()</code> nguyên tử WATCH/MULTI kèm validate <code>creator_id</code>/<code>signature</code>/<code>merkle_root</code>, chặn sequence index cộng liên kết <code>previous_hash</code> và cấm expire với retry idempotent cùng vị trí, các hàm đọc <code>get_blocks_from_index()</code>/<code>get_block_by_index()</code>/<code>get_latest_block()</code>/<code>list_block_chain_names()</code> kiểm tra sequence nghiêm và raise <code>RedisStorageError</code> khi lịch sử rỗng/hỏng/thiếu, truy vấn quét ledger <code>get_entity_events()</code>/<code>get_events_by_type()</code>/<code>get_event_by_id()</code> (trạng thái <code>ordered</code>) và <code>get_chain_statistics()</code>, các ghi <code>store_chain()</code>/<code>save_hierarchy_registry()</code>/<code>append_channel_record()</code>/<code>store_proof()</code> đều qua cổng bền <code>require_durable_storage()</code> (<code>appendonly=yes</code>, <code>appendfsync=always</code>, <code>no-appendfsync-on-rewrite=no</code>, <code>maxmemory-policy=noeviction</code>, <code>aof-load-truncated=no</code>, AOF khỏe, vai trò primary) và <code>cleanup_old_data()</code> từ chối cắt tỉa; <code>OrderingStorageHandler</code> (<code>hierachain/consensus/ordering/storage.py</code>) chọn adapter này khi <code>storage_backend == "redis"</code> (giữ nguyên lựa chọn PostgreSQL/SQLite), <code>HierarchyManager._create_storage()</code> (<code>hierachain/hierarchical/hierarchy_manager/base.py</code>) trả về adapter cho backend <code>redis</code> thay vì raise, và <code>SubChain</code> (<code>hierachain/hierarchical/sub_chain/base.py</code>) chuyển tiếp <code>storage_backend</code> vào cấu hình ordering — trước đây backend <code>redis</code> bị raise <code>RuntimeError</code> ở hierarchy manager và ordering bỏ qua lựa chọn Redis.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-07</p>
 <ul>

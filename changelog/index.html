@@ -4586,8 +4586,14 @@
 </ul>
 </details>
 <details class="note">
-<summary>Improvements (55)</summary>
+<summary>Improvements (56)</summary>
 <ul>
+<li>
+<p>2026-10-15</p>
+<ul>
+<li><strong>Database &amp; Ordering (Durable Redis Ledger Backend)</strong>: new <code>RedisLedgerAdapter</code> (<code>hierachain/adapters/database/redis_ledger.py</code>, exported from <code>hierachain/adapters/database/__init__.py</code>) extends <code>RedisStorageAdapter</code> with an append-only signed-block ledger keyed by SHA-256 <code>chain_name</code>, atomic WATCH/MULTI <code>save_block()</code> with <code>creator_id</code>/<code>signature</code>/<code>merkle_root</code> validation, index-sequence plus <code>previous_hash</code> link plus no-expire guards with idempotent same-position retry, strict sequence-checked <code>get_blocks_from_index()</code>/<code>get_block_by_index()</code>/<code>get_latest_block()</code>/<code>list_block_chain_names()</code> raising <code>RedisStorageError</code> on empty/corrupt/incomplete history, ledger-scan <code>get_entity_events()</code>/<code>get_events_by_type()</code>/<code>get_event_by_id()</code> (<code>ordered</code> status) and <code>get_chain_statistics()</code>, durability-gated <code>store_chain()</code>/<code>save_hierarchy_registry()</code>/<code>append_channel_record()</code>/<code>store_proof()</code> via <code>require_durable_storage()</code> (<code>appendonly=yes</code>, <code>appendfsync=always</code>, <code>no-appendfsync-on-rewrite=no</code>, <code>maxmemory-policy=noeviction</code>, <code>aof-load-truncated=no</code>, healthy AOF, primary role) and a pruning refusal in <code>cleanup_old_data()</code>; <code>OrderingStorageHandler</code> (<code>hierachain/consensus/ordering/storage.py</code>) selects it when <code>storage_backend == "redis"</code> (preserving PostgreSQL/SQLite selection), <code>HierarchyManager._create_storage()</code> (<code>hierachain/hierarchical/hierarchy_manager/base.py</code>) returns it for the <code>redis</code> backend instead of raising, and <code>SubChain</code> (<code>hierachain/hierarchical/sub_chain/base.py</code>) forwards <code>storage_backend</code> into the ordering config — previously the <code>redis</code> backend raised <code>RuntimeError</code> in the hierarchy manager and ordering ignored the Redis selection.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-07</p>
 <ul>

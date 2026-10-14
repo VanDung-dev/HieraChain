@@ -2145,6 +2145,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#redis-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Redis ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tinh-toan-ven-va-idempotency" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4386,6 +4397,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#redis-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Redis ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tinh-toan-ven-va-idempotency" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4478,7 +4500,7 @@
 <p><strong>File</strong>: <code>hierachain/adapters/database/sqlite_adapter.py</code>, <code>postgres_adapter.py</code>, <code>redis_adapter.py</code>, <code>sqlite_schema.py</code>/<code>postgres_schema.py</code></p>
 <ul>
 <li><strong>SQLite/Postgres</strong> qua <code>SQLBase</code> + <code>init_database_schema()</code> (các bảng <code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>; index composite).</li>
-<li><strong>Redis Adapter</strong>: <code>hierachain/adapters/database/redis_adapter.py</code> cho index theo entity. <code>HierarchyManager</code> từ chối Redis ledger storage khi khởi động cho đến khi có lưu trữ bền vững block đã ký; các helper indexing và registry vẫn có thể được dùng trực tiếp.</li>
+<li><strong>Redis</strong>: <code>RedisLedgerAdapter</code> trong <code>hierachain/adapters/database/redis_ledger.py</code> lưu block hierarchy đã ký trong list append-only. <code>HierarchyManager</code> và orderer Sub-Chain chọn adapter này với <code>HRC_STORAGE_BACKEND=redis</code> sau khi kiểm tra persistence. <code>RedisStorageAdapter</code> vẫn phục vụ indexing phụ trợ và các helper registry.</li>
 <li><strong>Memory</strong>: <code>HRC_STORAGE_BACKEND=memory</code> cho test. Không có File Adapter tích hợp sẵn. Log Parquet công bố snapshot active bền dữ liệu tối đa 1.024 bản ghi; segment đã đóng giữ bất biến trong <code>&lt;path&gt;.segments</code> và đọc bằng <code>read_parquet_log()</code> (bao gồm log legacy chỉ có một tệp); transaction journal dùng Arrow IPC append-only (<code>error_mitigation/journal.py</code>), không dùng để lưu chain.</li>
 </ul>
 </li>
@@ -4518,7 +4540,7 @@
 <tr>
 <td style="text-align: left;"><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code>+<code>HRC_DATABASE_URL</code></td>
 <td style="text-align: left;">Storage backend / DB URL</td>
-<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>memory</code>; settings nhận diện <code>redis</code>, nhưng <code>HierarchyManager</code> từ chối dùng cho ledger storage</td>
+<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>redis</code> với điều kiện bền dữ liệu bên dưới, <code>memory</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>HRC_LOG_SQL_DETAIL</code> / <code>HRC_LOG_FORMAT</code></td>
@@ -4529,6 +4551,17 @@
 </table>
 <hr />
 <h2 id="tinh-nang-nang-cao">Tính năng nâng cao</h2>
+<h3 id="redis-ledger">Redis ledger</h3>
+<p>Đặt <code>HRC_STORAGE_BACKEND=redis</code>, <code>HRC_REDIS_HOST</code>, <code>HRC_REDIS_PORT</code> và <code>REDIS_DB</code> cho primary riêng cho phép ghi. Adapter cần quyền đọc <code>CONFIG GET</code> và <code>INFO</code>. Khi khởi động và trước mỗi lần ghi, adapter yêu cầu các cấu hình Redis bên dưới cùng trạng thái AOF khỏe:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>appendonly yes
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>appendfsync always
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>no-appendfsync-on-rewrite no
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>maxmemory-policy noeviction
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>aof-load-truncated no
+</code></pre></div>
+<p>Dùng volume bền vững cho <code>/data</code>; cấu hình Redis và key ledger phải do bên quản trị đáng tin cậy quản lý, không đặt TTL. <a href="https://redis.io/docs/latest/management/persistence/">Tài liệu persistence Redis</a> giải thích <code>appendfsync always</code> fsync trước khi trả lời. Các kiểm tra này không cung cấp đồng thuận giữa replica, an toàn khi failover hay bảo vệ khi mất volume. Redis đi kèm Docker/Kubernetes vẫn là cache phụ trợ và mặc định chưa đáp ứng điều kiện này; chọn nó làm ledger sẽ bị từ chối an toàn. Mặc định triển khai SQLite/PostgreSQL không đổi.</p>
+<p>Block giữ nguyên thứ tự event, Merkle root, hash, creator ID và chữ ký trong một phần tử JSON bất biến của list. Append dùng WATCH/MULTI để từ chối khoảng trống, bản ghi xung đột tại cùng index và parent hash sai; retry bản ghi giống hệt được chấp nhận. Recovery dùng lại kiểm tra chữ ký từ khóa tin cậy, Merkle và liên kết chain. Truy vấn ledger quét block chuẩn; chưa có index truy vấn suy ra hay retention tự động. Định dạng này tách biệt với adapter phụ trợ và không di chuyển ledger SQL hiện có. Lệnh CLI chain/event vẫn yêu cầu SQLite/PostgreSQL.</p>
+<p>File hồi quy opt-in <code>tests/integration/test_redis_ledger.py</code> dùng <code>HRC_REDIS_LEDGER_TEST_URL</code> trỏ tới instance tạm riêng. Case crash còn yêu cầu <code>HRC_REDIS_LEDGER_TEST_CONTAINER=hrc-ledger-test-*</code>, port được publish cố định và Docker volume bền vững; nó chỉ gửi SIGKILL tới container test có tên đó rồi xác minh block đã ACK và registry sau khởi động lại.</p>
 <h3 id="tinh-toan-ven-va-idempotency">Tính toàn vẹn và idempotency</h3>
 <p><code>SQLiteAdapter</code> và <code>PostgresAdapter</code> (qua <code>SQLBase</code>) xử lý <code>save_block</code> có kiểm tra trùng <code>hash</code>/<code>block_hash</code> và xác thực liên kết <code>previous_hash</code> (<code>consensus/ordering/storage.py:_verify_chain_links</code>). <code>SqlStorageBackend</code> không tồn tại trong code hiện tại.</p>
 <h3 id="index-va-truy-van">Index và truy vấn</h3>
@@ -4541,7 +4574,7 @@
 <li><a href=".././monitoring/">Performance Monitoring</a></li>
 </ul>
 <p>Log Parquet công bố snapshot hoàn chỉnh của segment active, fsync tệp và thư mục rồi mới trả về. Mỗi segment tối đa 1.024 bản ghi; snapshot active được thay thế nguyên tử, segment đã đóng giữ bất biến. Mỗi append ghi lại tối đa một segment, làm tăng chi phí ghi. Bên đọc dùng <code>read_parquet_log()</code> cho log hiện tại và legacy.</p>
-<p>Lịch sử proof Redis lưu mỗi lần gửi trong một phần tử JSON của list, nên hai lần gửi cùng chỉ số block vẫn giữ hash riêng. Lịch sử tham chiếu hash cũ vẫn đọc được, nhưng adapter phiên bản cũ không đọc được định dạng inline mới; cần nâng cấp bên đọc và ghi cùng lúc. Truy vấn sự kiện Redis ném <code>RedisStorageError</code> khi lệnh lỗi, bản ghi sai hoặc thiếu bản ghi đã lập chỉ mục, thay vì trả kết quả thiếu như thành công. Redis vẫn chưa được hỗ trợ để khởi động hierarchical ledger bền dữ liệu.</p>
+<p>Lịch sử proof Redis lưu mỗi lần gửi trong một phần tử JSON của list, nên hai lần gửi cùng chỉ số block vẫn giữ hash riêng. Lịch sử tham chiếu hash cũ vẫn đọc được, nhưng adapter phiên bản cũ không đọc được định dạng inline mới; cần nâng cấp bên đọc và ghi cùng lúc. Truy vấn sự kiện Redis ném <code>RedisStorageError</code> khi lệnh lỗi, bản ghi sai hoặc thiếu bản ghi đã lập chỉ mục, thay vì trả kết quả thiếu như thành công. Ledger adapter riêng từ chối cache cleanup; lịch sử block chuẩn được giữ lại.</p>
 
 
 

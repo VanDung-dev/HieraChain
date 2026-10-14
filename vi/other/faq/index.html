@@ -4454,7 +4454,7 @@
 <h2 id="event-dung-inh-dang-nao">Event dùng định dạng nào?</h2>
 <p>Request REST/SDK dùng <code>entity_id</code>, <code>event_type</code> và object JSON <code>details</code>. Event nội bộ dùng <code>event</code>. API cấp timestamp. Arrow biểu diễn cột detail bằng chuỗi, còn byte event canonical giữ payload phục vụ phục hồi.</p>
 <h2 id="dung-redis-lam-backend-ledger-uoc-khong">Dùng Redis làm backend ledger được không?</h2>
-<p>Storage hierarchy bền vững cần SQLite hoặc PostgreSQL. Redis có adapter phụ trợ, auth state và rate limit; startup hierarchy từ chối Redis làm storage block có chữ ký. Memory chỉ tồn tại trong process.</p>
+<p>Storage hierarchy bền vững hỗ trợ SQLite, PostgreSQL hoặc <code>RedisLedgerAdapter</code> với <a href="../../modules/storage/#redis-ledger">điều kiện AOF bền dữ liệu</a>. Redis cũng phục vụ adapter phụ trợ, auth state và rate limit. Memory chỉ tồn tại trong process.</p>
 <h2 id="zk-contract-private-data-va-erp-a-san-sang-production-chua">ZK, contract, private data và ERP đã sẵn sàng production chưa?</h2>
 <p>Tạo/xác minh ZK production, thực thi contract và ghi private data chưa triển khai. Thực thi contract/ghi private data trả HTTP 501. Connector ERP vendor có sẵn chỉ mô phỏng; ứng dụng phải cung cấp adapter thật.</p>
 <h2 id="ieu-tra-latency-hoac-loi-503-the-nao">Điều tra latency hoặc lỗi 503 thế nào?</h2>

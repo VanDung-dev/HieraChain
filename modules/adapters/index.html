@@ -4816,7 +4816,7 @@
 <li><a href="../../reference/config/">Configuration Reference</a></li>
 <li><a href=".././security/">Security Overview</a></li>
 </ul>
-<p>Redis adapters serve auxiliary indexing/queries; <code>HierarchyManager</code> rejects Redis as durable hierarchical block storage. Direct adapter callers manage connection lifetime.</p>
+<p><code>RedisStorageAdapter</code> serves auxiliary indexing/queries. <code>RedisLedgerAdapter</code> stores append-only signed hierarchy blocks on a primary with durable AOF configuration; see <a href=".././storage/#redis-ledger">Redis ledger requirements</a>. Direct adapter callers manage connection lifetime.</p>
 
 
 

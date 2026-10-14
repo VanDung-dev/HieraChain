@@ -2145,6 +2145,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#redis-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Redis ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#integrity-and-idempotency" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4386,6 +4397,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#redis-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Redis ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#integrity-and-idempotency" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4478,7 +4500,7 @@
 <p><strong>File</strong>: <code>hierachain/adapters/database/sqlite_adapter.py</code>, <code>postgres_adapter.py</code>, <code>redis_adapter.py</code>, <code>sqlite_schema.py</code>/<code>postgres_schema.py</code></p>
 <ul>
 <li><strong>SQLite/Postgres</strong> via <code>SQLBase</code> + <code>init_database_schema()</code> (<code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code> tables; composite indexes).</li>
-<li><strong>Redis Adapter</strong>: <code>hierachain/adapters/database/redis_adapter.py</code> for entity indexing. <code>HierarchyManager</code> rejects Redis ledger storage at startup until durable signed-block persistence is implemented; indexing and registry helpers can still be used directly.</li>
+<li><strong>Redis</strong>: <code>RedisLedgerAdapter</code> in <code>hierachain/adapters/database/redis_ledger.py</code> stores signed hierarchy blocks in append-only lists. <code>HierarchyManager</code> and Sub-Chain orderers select it with <code>HRC_STORAGE_BACKEND=redis</code> after checking persistence. <code>RedisStorageAdapter</code> remains available for auxiliary indexing and registry helpers.</li>
 <li><strong>Memory</strong>: <code>HRC_STORAGE_BACKEND=memory</code> for tests. There is no built-in File Adapter. Parquet logs publish durable active snapshots of up to 1,024 records; sealed segments remain immutable under <code>&lt;path&gt;.segments</code> and read with <code>read_parquet_log()</code> (including legacy single-file logs); the transaction journal uses append-only Arrow IPC (<code>error_mitigation/journal.py</code>), not chain storage.</li>
 </ul>
 </li>
@@ -4518,7 +4540,7 @@
 <tr>
 <td style="text-align: left;"><code>HRC_STORAGE_BACKEND</code> / <code>DATABASE_URL</code>+<code>HRC_DATABASE_URL</code></td>
 <td style="text-align: left;">Storage backend / DB URL</td>
-<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>memory</code>; settings recognize <code>redis</code>, but <code>HierarchyManager</code> rejects it for ledger storage</td>
+<td style="text-align: left;"><code>sqlite</code>, <code>postgres</code> (auto-detected from <code>postgres://</code>), <code>redis</code> with the durability requirements below, <code>memory</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>HRC_LOG_SQL_DETAIL</code> / <code>HRC_LOG_FORMAT</code></td>
@@ -4529,6 +4551,17 @@
 </table>
 <hr />
 <h2 id="advanced-features">Advanced features</h2>
+<h3 id="redis-ledger">Redis ledger</h3>
+<p>Set <code>HRC_STORAGE_BACKEND=redis</code>, <code>HRC_REDIS_HOST</code>, <code>HRC_REDIS_PORT</code>, and <code>REDIS_DB</code> for a dedicated writable primary. The adapter requires permission to read <code>CONFIG GET</code> and <code>INFO</code>. At startup and before writes it requires these Redis settings and healthy AOF status:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>appendonly yes
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>appendfsync always
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>no-appendfsync-on-rewrite no
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>maxmemory-policy noeviction
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>aof-load-truncated no
+</code></pre></div>
+<p>Use a persistent volume for <code>/data</code>; keep Redis configuration and ledger keys under trusted administration, without TTLs. <a href="https://redis.io/docs/latest/management/persistence/">Redis persistence documentation</a> explains that <code>appendfsync always</code> fsyncs before replying. These checks do not provide replicated consensus, failover safety or protection against volume loss. The bundled Docker/Kubernetes Redis service remains an auxiliary cache and does not meet these requirements by default; selecting Redis ledger storage against it fails closed. SQLite/PostgreSQL deployment defaults are unchanged.</p>
+<p>Blocks retain ordered events, Merkle roots, hashes, creator IDs and signatures as one immutable JSON list entry. Appends use WATCH/MULTI to reject gaps, conflicting records at the same index and incorrect parent hashes; identical retries succeed. Recovery uses the existing trusted-signature, Merkle and chain-link checks. Ledger queries scan canonical blocks; derived query indexes and automatic retention are not implemented. This format is separate from the auxiliary adapter and does not migrate an existing SQL ledger. CLI chain/event commands still require SQLite/PostgreSQL.</p>
+<p>The opt-in regression file <code>tests/integration/test_redis_ledger.py</code> uses <code>HRC_REDIS_LEDGER_TEST_URL</code> for a disposable instance. Its crash case additionally requires <code>HRC_REDIS_LEDGER_TEST_CONTAINER=hrc-ledger-test-*</code>, a fixed published port and a persistent Docker volume; it sends SIGKILL only to that named test container and verifies acknowledged blocks and registry state after restart.</p>
 <h3 id="integrity-and-idempotency">Integrity and idempotency</h3>
 <p><code>SQLiteAdapter</code> and <code>PostgresAdapter</code> (via <code>SQLBase</code>) handle <code>save_block</code> with checks for duplicate <code>hash</code>/<code>block_hash</code> and verify <code>previous_hash</code> links (<code>consensus/ordering/storage.py:_verify_chain_links</code>). <code>SqlStorageBackend</code> does not exist in the current code.</p>
 <h3 id="indexing-and-queries">Indexing and queries</h3>
@@ -4541,7 +4574,7 @@
 <li><a href=".././monitoring/">Performance Monitoring</a></li>
 </ul>
 <p>Parquet logging publishes a complete active segment snapshot, fsyncs its file and directory, and only then returns. Segments contain at most 1,024 records; active snapshots are atomically replaced, while sealed segments remain immutable. This rewrites at most one segment per append and increases write cost. Readers use <code>read_parquet_log()</code> for current and legacy logs.</p>
-<p>Redis proof history records each submission as one JSON list element, so two submissions at the same block index retain distinct hashes. Existing hash-reference history remains readable, but older adapter versions cannot read the new inline format; upgrade readers and writers together. Redis event queries raise <code>RedisStorageError</code> on command failures, malformed records or missing indexed records instead of returning a successful partial result. Redis remains unsupported for durable hierarchical ledger startup.</p>
+<p>Redis proof history records each submission as one JSON list element, so two submissions at the same block index retain distinct hashes. Existing hash-reference history remains readable, but older adapter versions cannot read the new inline format; upgrade readers and writers together. Redis event queries raise <code>RedisStorageError</code> on command failures, malformed records or missing indexed records instead of returning a successful partial result. The separate ledger adapter rejects cache cleanup; its canonical block history is retained.</p>
 
 
 

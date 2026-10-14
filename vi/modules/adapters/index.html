@@ -4816,7 +4816,7 @@
 <li><a href="../../reference/config/">Tham chiếu cấu hình</a></li>
 <li><a href=".././security/">Tổng quan bảo mật</a></li>
 </ul>
-<p>Redis adapters phục vụ indexing/truy vấn phụ trợ; <code>HierarchyManager</code> từ chối Redis làm storage block hierarchy bền vững. Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.</p>
+<p><code>RedisStorageAdapter</code> phục vụ indexing/truy vấn phụ trợ. <code>RedisLedgerAdapter</code> lưu block hierarchy đã ký theo kiểu append-only trên primary có cấu hình AOF bền dữ liệu; xem <a href=".././storage/#redis-ledger">điều kiện Redis ledger</a>. Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.</p>
 
 
 

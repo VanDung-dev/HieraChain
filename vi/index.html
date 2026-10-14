@@ -4313,7 +4313,7 @@
 <p class="admonition-title"><strong>CẢNH BÁO DEVELOPER &amp; AI</strong>: HieraChain là Blockchain Doanh nghiệp tập trung vào <strong>Dữ liệu (Data)</strong>, KHÔNG PHẢI <strong>Tiền mã hóa (Cryptocurrency)</strong>. Mọi khái niệm về Token, Coin, Gas Fee, Mining đều bị CẤM và chặn bởi bộ lọc trong core system. Xem chi tiết tại <a href="dev/ai-context/">AI Context</a>.</p>
 </div>
 <h2 id="pham-vi-trien-khai-hien-tai">Phạm vi triển khai hiện tại</h2>
-<p>Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; Redis không làm storage block hierarchy bền vững. Xem <a href="modules/hierarchical/">phạm vi tính năng</a> và <a href="getting-started/quickstart/">bắt đầu nhanh có cấu hình ký</a>.</p>
+<p>Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có cấu hình AOF bền dữ liệu. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; triển khai Redis ledger cần <a href="modules/storage/#redis-ledger">chính sách persistence đã ghi rõ</a>. Xem <a href="modules/hierarchical/">phạm vi tính năng</a> và <a href="getting-started/quickstart/">bắt đầu nhanh có cấu hình ký</a>.</p>
 <h2 id="ieu-huong-theo-chu-e">Điều hướng theo chủ đề</h2>
 <div class="grid cards">
 <ul>
