@@ -237,6 +237,7 @@ class SubChain(Blockchain):
             "batch_timeout": 1.0,
             "worker_threads": 2,
             "db_url": db_url,
+            "storage_backend": settings.STORAGE_BACKEND,
             "chain_name": self.name,
             "trusted_public_keys": self.trusted_public_keys,
         }
