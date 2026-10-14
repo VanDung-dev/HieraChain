@@ -53,7 +53,7 @@ print(settings.AUTH_ENABLED)
 
 ### Lưu trữ và cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị được nhận diện: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage. `HierarchyManager` cũng từ chối `redis` khi khởi động vì chưa lưu bền vững block đã ký; dùng `sqlite` hoặc `postgres` cho ledger bền vững. Redis vẫn dùng được trong các adapter riêng cho indexing, trạng thái xác thực và rate limit.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị được nhận diện: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage. `HierarchyManager` và orderer Sub-Chain dùng `RedisLedgerAdapter` với `redis`, yêu cầu primary cho phép ghi, AOF khỏe, fsync mỗi lần ghi, không eviction và không nạp AOF bị cắt cụt; xem [điều kiện Redis ledger](../modules/storage.md#redis-ledger). Redis vẫn dùng được trong các adapter riêng cho indexing, trạng thái xác thực và rate limit.
 * Trong production, khi backend được chọn là PostgreSQL, cần đặt rõ `DATABASE_URL` hoặc `HRC_DATABASE_URL`. API từ chối URL fallback local có sẵn khi khởi động; bước này không kiểm tra kết nối tới database.
 * `DATABASE_URL` được ưu tiên khi có giá trị. Nếu rỗng hoặc chỉ có khoảng trắng, hệ thống dùng `HRC_DATABASE_URL`.
 * Nếu PostgreSQL không khả dụng, khởi tạo storage của chain sẽ thất bại. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.

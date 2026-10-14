@@ -130,4 +130,4 @@ Adapter ghi nhận truy vấn và sự kiện kết nối qua `SecureLogger`, t�
 * [Tham chiếu cấu hình](../reference/config.md)
 * [Tổng quan bảo mật](./security.md)
 
-Redis adapters phục vụ indexing/truy vấn phụ trợ; `HierarchyManager` từ chối Redis làm storage block hierarchy bền vững. Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.
+`RedisStorageAdapter` phục vụ indexing/truy vấn phụ trợ. `RedisLedgerAdapter` lưu block hierarchy đã ký theo kiểu append-only trên primary có cấu hình AOF bền dữ liệu; xem [điều kiện Redis ledger](./storage.md#redis-ledger). Khi dùng adapter trực tiếp, caller quản lý vòng đời kết nối.

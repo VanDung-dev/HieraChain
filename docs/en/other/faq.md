@@ -28,7 +28,7 @@ REST/SDK requests use `entity_id`, `event_type` and a JSON object `details`. Int
 
 ## Can I use Redis as the ledger backend?
 
-Hierarchical durable storage requires SQLite or PostgreSQL. Redis is available for auxiliary adapters, authentication state and rate limits; hierarchical startup rejects it as signed-block storage. Memory is process-local.
+Hierarchical durable storage supports SQLite, PostgreSQL, or `RedisLedgerAdapter` with [durable AOF requirements](../modules/storage.md#redis-ledger). Redis also serves auxiliary adapters, authentication state and rate limits. Memory is process-local.
 
 ## Are ZK, contracts, private data and ERP production-ready?
 

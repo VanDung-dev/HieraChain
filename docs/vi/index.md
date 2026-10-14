@@ -18,7 +18,7 @@ Lưu ý quan trọng về phạm vi:
 
 ## Phạm vi triển khai hiện tại
 
-Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; Redis không làm storage block hierarchy bền vững. Xem [phạm vi tính năng](modules/hierarchical.md) và [bắt đầu nhanh có cấu hình ký](getting-started/quickstart.md).
+Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có cấu hình AOF bền dữ liệu. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; triển khai Redis ledger cần [chính sách persistence đã ghi rõ](modules/storage.md#redis-ledger). Xem [phạm vi tính năng](modules/hierarchical.md) và [bắt đầu nhanh có cấu hình ký](getting-started/quickstart.md).
 
 ## Điều hướng theo chủ đề
 

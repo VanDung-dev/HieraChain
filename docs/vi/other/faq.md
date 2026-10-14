@@ -28,7 +28,7 @@ Request REST/SDK dùng `entity_id`, `event_type` và object JSON `details`. Even
 
 ## Dùng Redis làm backend ledger được không?
 
-Storage hierarchy bền vững cần SQLite hoặc PostgreSQL. Redis có adapter phụ trợ, auth state và rate limit; startup hierarchy từ chối Redis làm storage block có chữ ký. Memory chỉ tồn tại trong process.
+Storage hierarchy bền vững hỗ trợ SQLite, PostgreSQL hoặc `RedisLedgerAdapter` với [điều kiện AOF bền dữ liệu](../modules/storage.md#redis-ledger). Redis cũng phục vụ adapter phụ trợ, auth state và rate limit. Memory chỉ tồn tại trong process.
 
 ## ZK, contract, private data và ERP đã sẵn sàng production chưa?
 

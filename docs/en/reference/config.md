@@ -53,7 +53,7 @@ print(settings.AUTH_ENABLED)
 
 ### Storage and cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; recognized values: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). An unknown backend stops API startup and chain storage initialization. `HierarchyManager` also rejects `redis` at startup because durable signed-block persistence is unavailable; use `sqlite` or `postgres` for durable ledger storage. Redis remains available for the separate indexing, authentication-state, and rate-limit adapters.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; recognized values: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). An unknown backend stops API startup and chain storage initialization. `HierarchyManager` and Sub-Chain orderers use `RedisLedgerAdapter` for `redis`, requiring a writable primary, healthy AOF, fsync on every write, no eviction and no truncated AOF loading; see [Redis ledger requirements](../modules/storage.md#redis-ledger). Redis remains available for the separate indexing, authentication-state, and rate-limit adapters.
 * In production, when the selected backend is PostgreSQL, set `DATABASE_URL` or `HRC_DATABASE_URL` explicitly. API startup rejects the built-in local fallback URL; it does not test database connectivity.
 * `DATABASE_URL` takes precedence when nonblank. An empty or whitespace-only value falls back to `HRC_DATABASE_URL`.
 * If PostgreSQL is unavailable, chain storage initialization fails. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.

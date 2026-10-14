@@ -35,7 +35,7 @@ HieraChain splits storage into layers to balance durability and query speed:
     __File__: `hierachain/adapters/database/sqlite_adapter.py`, `postgres_adapter.py`, `redis_adapter.py`, `sqlite_schema.py`/`postgres_schema.py`
 
     * **SQLite/Postgres** via `SQLBase` + `init_database_schema()` (`chains`, `blocks`, `events`, `proofs`, `chain_state` tables; composite indexes).
-    * **Redis Adapter**: `hierachain/adapters/database/redis_adapter.py` for entity indexing. `HierarchyManager` rejects Redis ledger storage at startup until durable signed-block persistence is implemented; indexing and registry helpers can still be used directly.
+    * **Redis**: `RedisLedgerAdapter` in `hierachain/adapters/database/redis_ledger.py` stores signed hierarchy blocks in append-only lists. `HierarchyManager` and Sub-Chain orderers select it with `HRC_STORAGE_BACKEND=redis` after checking persistence. `RedisStorageAdapter` remains available for auxiliary indexing and registry helpers.
     * **Memory**: `HRC_STORAGE_BACKEND=memory` for tests. There is no built-in File Adapter. Parquet logs publish durable active snapshots of up to 1,024 records; sealed segments remain immutable under `<path>.segments` and read with `read_parquet_log()` (including legacy single-file logs); the transaction journal uses append-only Arrow IPC (`error_mitigation/journal.py`), not chain storage.
 
 *   :material-cloud-sync:{ .lg .middle } __Off-chain Storage (IPFS)__
@@ -74,12 +74,30 @@ There is no `models.py` or SQLAlchemy `BlockModel`/`EventModel`. Tables are crea
 
 | Environment Variable | Meaning | Available Values |
 | :--- | :--- | :--- |
-| `HRC_STORAGE_BACKEND` / `DATABASE_URL`+`HRC_DATABASE_URL` | Storage backend / DB URL | `sqlite`, `postgres` (auto-detected from `postgres://`), `memory`; settings recognize `redis`, but `HierarchyManager` rejects it for ledger storage |
+| `HRC_STORAGE_BACKEND` / `DATABASE_URL`+`HRC_DATABASE_URL` | Storage backend / DB URL | `sqlite`, `postgres` (auto-detected from `postgres://`), `redis` with the durability requirements below, `memory` |
 | `HRC_LOG_SQL_DETAIL` / `HRC_LOG_FORMAT` | SQL detail / log format | `true/false`, `text/json` |
 
 ---
 
 ## Advanced features
+
+### Redis ledger
+
+Set `HRC_STORAGE_BACKEND=redis`, `HRC_REDIS_HOST`, `HRC_REDIS_PORT`, and `REDIS_DB` for a dedicated writable primary. The adapter requires permission to read `CONFIG GET` and `INFO`. At startup and before writes it requires these Redis settings and healthy AOF status:
+
+```text
+appendonly yes
+appendfsync always
+no-appendfsync-on-rewrite no
+maxmemory-policy noeviction
+aof-load-truncated no
+```
+
+Use a persistent volume for `/data`; keep Redis configuration and ledger keys under trusted administration, without TTLs. [Redis persistence documentation](https://redis.io/docs/latest/management/persistence/) explains that `appendfsync always` fsyncs before replying. These checks do not provide replicated consensus, failover safety or protection against volume loss. The bundled Docker/Kubernetes Redis service remains an auxiliary cache and does not meet these requirements by default; selecting Redis ledger storage against it fails closed. SQLite/PostgreSQL deployment defaults are unchanged.
+
+Blocks retain ordered events, Merkle roots, hashes, creator IDs and signatures as one immutable JSON list entry. Appends use WATCH/MULTI to reject gaps, conflicting records at the same index and incorrect parent hashes; identical retries succeed. Recovery uses the existing trusted-signature, Merkle and chain-link checks. Ledger queries scan canonical blocks; derived query indexes and automatic retention are not implemented. This format is separate from the auxiliary adapter and does not migrate an existing SQL ledger. CLI chain/event commands still require SQLite/PostgreSQL.
+
+The opt-in regression file `tests/integration/test_redis_ledger.py` uses `HRC_REDIS_LEDGER_TEST_URL` for a disposable instance. Its crash case additionally requires `HRC_REDIS_LEDGER_TEST_CONTAINER=hrc-ledger-test-*`, a fixed published port and a persistent Docker volume; it sends SIGKILL only to that named test container and verifies acknowledged blocks and registry state after restart.
 
 ### Integrity and idempotency
 
@@ -99,4 +117,4 @@ There is no `models.py` or SQLAlchemy `BlockModel`/`EventModel`. Tables are crea
 
 Parquet logging publishes a complete active segment snapshot, fsyncs its file and directory, and only then returns. Segments contain at most 1,024 records; active snapshots are atomically replaced, while sealed segments remain immutable. This rewrites at most one segment per append and increases write cost. Readers use `read_parquet_log()` for current and legacy logs.
 
-Redis proof history records each submission as one JSON list element, so two submissions at the same block index retain distinct hashes. Existing hash-reference history remains readable, but older adapter versions cannot read the new inline format; upgrade readers and writers together. Redis event queries raise `RedisStorageError` on command failures, malformed records or missing indexed records instead of returning a successful partial result. Redis remains unsupported for durable hierarchical ledger startup.
+Redis proof history records each submission as one JSON list element, so two submissions at the same block index retain distinct hashes. Existing hash-reference history remains readable, but older adapter versions cannot read the new inline format; upgrade readers and writers together. Redis event queries raise `RedisStorageError` on command failures, malformed records or missing indexed records instead of returning a successful partial result. The separate ledger adapter rejects cache cleanup; its canonical block history is retained.

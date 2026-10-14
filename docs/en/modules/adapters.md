@@ -130,4 +130,4 @@ Adapters log queries and connection events through `SecureLogger`, redacting dat
 * [Configuration Reference](../reference/config.md)
 * [Security Overview](./security.md)
 
-Redis adapters serve auxiliary indexing/queries; `HierarchyManager` rejects Redis as durable hierarchical block storage. Direct adapter callers manage connection lifetime.
+`RedisStorageAdapter` serves auxiliary indexing/queries. `RedisLedgerAdapter` stores append-only signed hierarchy blocks on a primary with durable AOF configuration; see [Redis ledger requirements](./storage.md#redis-ledger). Direct adapter callers manage connection lifetime.
