@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from hierachain.adapters.database import redis_adapter
 from hierachain.adapters.database.postgres_adapter import PostgresAdapter
-from hierachain.adapters.database.redis_adapter import RedisStorageAdapter
+from hierachain.adapters.database.redis_ledger import RedisLedgerAdapter
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.api.business.router import business_router
 from hierachain.api.ledger.depds import get_hierarchy_manager
@@ -59,7 +59,7 @@ def managers(
         prefix = "hrc_registry_" + uuid.uuid4().hex
         monkeypatch.setattr(redis_adapter, "_KEY_PREFIX", prefix)
         def factory() -> Any:
-            return RedisStorageAdapter(port=int(port), db=14)
+            return RedisLedgerAdapter(port=int(port), db=14)
         def cleanup() -> None:
             store = factory()
             try:
