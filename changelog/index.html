@@ -4443,8 +4443,14 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="warning">
-<summary>Breaking Changes (58)</summary>
+<summary>Breaking Changes (59)</summary>
 <ul>
+<li>
+<p>2026-10-15</p>
+<ul>
+<li><strong>Packaging (Drop Python 3.10 Support)</strong>: <code>requires-python</code> in <code>pyproject.toml</code> rises from <code>&gt;=3.10</code> to <code>&gt;=3.11</code> with the <code>3.10</code> classifier removed; Ruff <code>target-version</code> moves to <code>py311</code>, Black drops <code>py310</code>, Mypy <code>python_version</code> moves to <code>3.11</code>, the CI compatibility matrix in <code>.github/workflows/test.yml</code> covers <code>3.11–3.14</code>, and <code>uv.lock</code> is regenerated — environments still on Python 3.10 must upgrade to 3.11+ before installing this checkout.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-06</p>
 <ul>

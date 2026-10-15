@@ -4443,8 +4443,14 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="warning">
-<summary>Breaking Changes (58)</summary>
+<summary>Breaking Changes (59)</summary>
 <ul>
+<li>
+<p>2026-10-15</p>
+<ul>
+<li><strong>Packaging (Ngừng Hỗ Trợ Python 3.10)</strong>: <code>requires-python</code> trong <code>pyproject.toml</code> tăng từ <code>&gt;=3.10</code> lên <code>&gt;=3.11</code> và bỏ classifier <code>3.10</code>; Ruff <code>target-version</code> chuyển sang <code>py311</code>, Black bỏ <code>py310</code>, Mypy <code>python_version</code> chuyển sang <code>3.11</code>, ma trận tương thích CI trong <code>.github/workflows/test.yml</code> chỉ còn <code>3.11–3.14</code>, và <code>uv.lock</code> được tạo lại — môi trường còn ở Python 3.10 phải nâng cấp lên 3.11+ trước khi cài checkout này.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-06</p>
 <ul>
