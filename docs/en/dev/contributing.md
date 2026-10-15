@@ -51,7 +51,7 @@ To set up the environment, install dependencies, and run tests, please see the d
 
 * Follow PEP 8 standards.
 * Ensure code passes static analysis checks in the `scripts/` directory.
-* New code must have complete Type Hints (Python >= 3.10).
+* New code must have complete Type Hints (Python >= 3.11).
 
 ## Forbidden patterns
 

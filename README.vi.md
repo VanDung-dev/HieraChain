@@ -1,6 +1,6 @@
 # HieraChain - Ledger doanh nghiệp phân cấp
 
-![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13%20|%203.14-blue)
+![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13%20|%203.14-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
 [![PyPI version](https://img.shields.io/pypi/v/HieraChain.svg)](https://pypi.org/project/HieraChain/)
@@ -102,7 +102,7 @@ Mở `http://localhost:2661/docs`. Kiểm tra `/api/ledger/ready` để xác nh�
 
 | Thành phần | Triển khai hiện tại |
 |------------|---------------------|
-| Python | 3.10, 3.11, 3.12, 3.13, 3.14 |
+| Python | 3.11, 3.12, 3.13, 3.14 |
 | Đồng thuận phân cấp | PoA / PoF; thành phần BFT riêng |
 | Chữ ký block | Ed25519, kể cả genesis |
 | Storage hierarchy | SQLite / PostgreSQL |

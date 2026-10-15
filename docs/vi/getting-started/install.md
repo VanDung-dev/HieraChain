@@ -6,7 +6,7 @@ icon: material/download
 
 # Cài đặt HieraChain
 
-Package yêu cầu Python từ 3.10; workflow tương thích kiểm thử Python 3.10–3.14. Dùng checkout mã nguồn khi làm theo tài liệu của triển khai hiện tại.
+Package yêu cầu Python từ 3.11; workflow tương thích kiểm thử Python 3.11–3.14. Dùng checkout mã nguồn khi làm theo tài liệu của triển khai hiện tại.
 
 ## Cài mã nguồn với uv
 

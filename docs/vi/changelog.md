@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (58)"
+??? warning "Breaking Changes (59)"
+
+    * 2026-10-15
+
+        * **Packaging (Ngừng Hỗ Trợ Python 3.10)**: `requires-python` trong `pyproject.toml` tăng từ `>=3.10` lên `>=3.11` và bỏ classifier `3.10`; Ruff `target-version` chuyển sang `py311`, Black bỏ `py310`, Mypy `python_version` chuyển sang `3.11`, ma trận tương thích CI trong `.github/workflows/test.yml` chỉ còn `3.11–3.14`, và `uv.lock` được tạo lại — môi trường còn ở Python 3.10 phải nâng cấp lên 3.11+ trước khi cài checkout này.
 
     * 2026-10-06
 

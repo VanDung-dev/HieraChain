@@ -170,7 +170,7 @@ python -m pytest tests/scenarios/test_recovery.py -v \
   --junitxml=log/report/recovery.xml
 ```
 
-The compatibility workflow currently tests Python 3.10 through 3.14, invoking
+The compatibility workflow currently tests Python 3.11 through 3.14, invoking
 pytest separately for each file in the three test directories. A separate
 required backend job starts PostgreSQL 16 and Redis 7.4, provisions audit roles,
 and uses `--fail-on-skip`. Inspect individual file outcomes and skips when

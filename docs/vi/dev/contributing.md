@@ -51,7 +51,7 @@ Chúng tôi sử dụng quy trình Fork & Pull tiêu chuẩn:
 
 * Tuân thủ tiêu chuẩn PEP 8.
 * Đảm bảo mã vượt qua các kiểm tra phân tích tĩnh (static analysis) trong thư mục `scripts/`.
-* Mã mới phải có Type Hints đầy đủ (Python >= 3.10).
+* Mã mới phải có Type Hints đầy đủ (Python >= 3.11).
 
 ## Quy tắc cấm
 

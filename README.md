@@ -1,6 +1,6 @@
 # HieraChain - Hierarchical Enterprise Ledger
 
-![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13%20|%203.14-blue)
+![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13%20|%203.14-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
 [![PyPI version](https://img.shields.io/pypi/v/HieraChain.svg)](https://pypi.org/project/HieraChain/)
@@ -102,7 +102,7 @@ Open `http://localhost:2661/docs`. Check `/api/ledger/ready` for hierarchy recov
 
 | Area | Current implementation |
 |------|------------------------|
-| Python | 3.10, 3.11, 3.12, 3.13, 3.14 |
+| Python | 3.11, 3.12, 3.13, 3.14 |
 | Hierarchical consensus | PoA / PoF; separate BFT components |
 | Block signatures | Ed25519, including genesis |
 | Hierarchical storage | SQLite / PostgreSQL |

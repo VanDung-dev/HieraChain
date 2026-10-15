@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (58)"
+??? warning "Breaking Changes (59)"
+
+    * 2026-10-15
+
+        * **Packaging (Drop Python 3.10 Support)**: `requires-python` in `pyproject.toml` rises from `>=3.10` to `>=3.11` with the `3.10` classifier removed; Ruff `target-version` moves to `py311`, Black drops `py310`, Mypy `python_version` moves to `3.11`, the CI compatibility matrix in `.github/workflows/test.yml` covers `3.11–3.14`, and `uv.lock` is regenerated — environments still on Python 3.10 must upgrade to 3.11+ before installing this checkout.
 
     * 2026-10-06
 

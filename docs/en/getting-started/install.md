@@ -6,7 +6,7 @@ icon: material/download
 
 # Installing HieraChain
 
-The package requires Python 3.10 or newer; the compatibility workflow tests Python 3.10–3.14. Use the source checkout when following documentation for the current implementation.
+The package requires Python 3.11 or newer; the compatibility workflow tests Python 3.11–3.14. Use the source checkout when following documentation for the current implementation.
 
 ## Source installation with uv
 

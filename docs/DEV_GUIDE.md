@@ -4,7 +4,7 @@ Run the commands in this guide from the repository root unless a linked procedur
 
 ## Install the development environment
 
-The Python CI matrix covers 3.10, 3.11, 3.12, 3.13 and 3.14 on Ubuntu. The commands below use a Linux/macOS shell. Native Windows server startup is not covered by that matrix; `python -m hierachain` imports `uvloop` unconditionally.
+The Python CI matrix covers 3.11, 3.12, 3.13 and 3.14 on Ubuntu. The commands below use a Linux/macOS shell. Native Windows server startup is not covered by that matrix; `python -m hierachain` imports `uvloop` unconditionally.
 
 From a source checkout, use the locked dependencies:
 
