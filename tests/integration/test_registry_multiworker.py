@@ -61,7 +61,8 @@ def managers(
         def factory() -> Any:
             return RedisLedgerAdapter(port=int(port), db=14)
         def cleanup() -> None:
-            store = factory()
+            # Cleanup must also work when the ledger durability check rejects setup.
+            store = redis_adapter.RedisStorageAdapter(port=int(port), db=14)
             try:
                 keys = list(store.client.scan_iter(match=prefix + ":*"))
                 if keys:
