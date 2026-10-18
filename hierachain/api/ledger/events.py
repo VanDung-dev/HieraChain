@@ -37,6 +37,7 @@ def _build_event_data(
         "event": safe_event_type,
         "timestamp": time.time(),
         "submitted_by": event_request.sender,
+        "sender": event_request.sender,
         "signature": event_request.signature,
     }
 

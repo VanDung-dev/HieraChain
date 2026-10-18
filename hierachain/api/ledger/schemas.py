@@ -72,6 +72,7 @@ class EventRequest(BaseModel):
     )
     details_nonce: str | None = Field(
         None,
+        validate_default=True,
         description="Encryption nonce (hex string) for decrypting IPFS data"
     )
     details_metadata: dict[str, Any] | None = Field(
