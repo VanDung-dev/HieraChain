@@ -54,7 +54,7 @@ These endpoints interact directly with ledger state:
 * `GET /api/ledger/chains` lists Main Chains and Sub-Chains.
 * `POST /api/ledger/chains/{chain_name}/create` provisions a new sub-chain.
 * `GET /api/ledger/chains/{chain_name}/stats` retrieves block, event, and proof counts.
-* `POST /api/ledger/chains/{chain_name}/events` submits an event, offloading oversized payloads to IPFS.
+* `POST /api/ledger/chains/{chain_name}/events` submits an event, offloading oversized payloads to IPFS. A supplied `details_cid` requires a nonempty, 24-character hexadecimal `details_nonce`; omission or null returns HTTP 422. The API preserves the signing identity as `sender` for ordering verification and keeps `submitted_by` for attribution. Legacy signatures cover `details.payload` when it is a string; the submission acknowledgement precedes certification.
 * `POST /api/ledger/chains/{chain_name}/submit-proof` submits cryptographic proofs from a sub-chain to the main chain.
 * `GET /api/ledger/chains/{chain_name}/blocks` lists blocks with pagination and optional CID decoding.
 * `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}` fetches a single block by index or hash.
@@ -75,7 +75,7 @@ These endpoints are for node and system operations:
 
 * `POST /api/admin/verify-identity` lets a node sign a challenge to prove its identity.
 * `GET /api/admin/status` is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.
-* `POST /api/admin/chains/{chain_name}/secure-events` checks the signature synchronously, then submits through asynchronous ordering; the response does not establish block commitment.
+* `POST /api/admin/chains/{chain_name}/secure-events` checks the canonical signature synchronously, then journals and queues the event. HTTP 200 returns `status="queued"`, an ordering event ID in `event_hash`, and the acknowledgement time in `timestamp`; clients expecting `committed` must update. This response does not establish block commitment. Ordering and journal replay reverify the original `signature_content` and its binding to the ordered fields. Queue backpressure returns HTTP 503 with `event_id` and `journaled` in `detail`.
 
 ## GraphQL API
 

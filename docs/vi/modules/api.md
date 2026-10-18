@@ -54,7 +54,7 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 * `GET /api/ledger/chains` liệt kê Main Chain và Sub-Chain.
 * `POST /api/ledger/chains/{chain_name}/create` khởi tạo một sub-chain mới.
 * `GET /api/ledger/chains/{chain_name}/stats` lấy số lượng block, event và proof.
-* `POST /api/ledger/chains/{chain_name}/events` gửi event, chuyển tải dữ liệu quá cỡ sang IPFS.
+* `POST /api/ledger/chains/{chain_name}/events` gửi event, chuyển tải dữ liệu quá cỡ sang IPFS. Khi cung cấp `details_cid`, bắt buộc có `details_nonce` khác rỗng gồm 24 ký tự hex; bỏ qua hoặc null trả HTTP 422. API giữ danh tính ký ở `sender` để ordering xác minh và giữ `submitted_by` cho thông tin người gửi. Chữ ký kiểu cũ bao phủ `details.payload` khi giá trị này là chuỗi; phản hồi tiếp nhận đến trước certification.
 * `POST /api/ledger/chains/{chain_name}/submit-proof` gửi bằng chứng mật mã từ sub-chain lên main chain.
 * `GET /api/ledger/chains/{chain_name}/blocks` liệt kê block có phân trang và tùy chọn giải mã CID.
 * `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}` lấy thông tin chi tiết một block theo chỉ số hoặc mã băm.
@@ -75,7 +75,7 @@ Các endpoint này dành cho vận hành node và hệ thống:
 
 * `POST /api/admin/verify-identity` cho phép node ký challenge để chứng minh danh tính.
 * `GET /api/admin/status` được miễn xác thực API key và trả uptime, số chain, version cùng cờ license được gán cố định.
-* `POST /api/admin/chains/{chain_name}/secure-events` kiểm tra chữ ký đồng bộ rồi gửi qua ordering bất đồng bộ; response không xác nhận block đã commit.
+* `POST /api/admin/chains/{chain_name}/secure-events` kiểm tra chữ ký canonical đồng bộ rồi ghi journal và đưa event vào hàng đợi. HTTP 200 trả `status="queued"`, ID event từ ordering trong `event_hash` và thời gian phản hồi trong `timestamp`; client đang chờ `committed` cần cập nhật. Response này không xác nhận block đã commit. Ordering và replay journal xác minh lại `signature_content` gốc cùng ràng buộc với các trường được đưa vào block. Khi hàng đợi quá tải, API trả HTTP 503 với `event_id` và `journaled` trong `detail`.
 
 ## GraphQL API
 
