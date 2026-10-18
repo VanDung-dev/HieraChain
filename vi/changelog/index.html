@@ -4443,8 +4443,14 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="warning">
-<summary>Breaking Changes (59)</summary>
+<summary>Breaking Changes (60)</summary>
 <ul>
+<li>
+<p>2026-10-18</p>
+<ul>
+<li><strong>API (Phản hồi Secure Event Ở trạng thái Queued)</strong>: <code>add_secure_event</code> (<code>hierachain/api/admin/endpoints.py</code>) đóng dấu <code>event</code>/<code>timestamp</code>, giữ nguyên nội dung đã ký trong <code>event_data["signature_content"]</code> trước khi ghi journal, trả <code>SecureEventResponse(status="queued")</code> với ID event từ ordering trong <code>event_hash</code> và thời gian phản hồi trong <code>timestamp</code>, đồng thời chuyển <code>OrderingBackpressureError</code> thành HTTP 503 (<code>{message, event_id, journaled}</code>) và <code>ValueError</code> thành 422; <code>SecureEventResponse</code> (<code>hierachain/api/admin/schemas.py</code>) nay mô tả <code>status</code> là <code>queued</code> với cam kết block bất đồng bộ — response không còn báo <code>"committed"</code>, nên client đang chờ trạng thái committed phải coi phản hồi là queued và chờ block commit.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-15</p>
 <ul>
@@ -4733,8 +4739,15 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (22)</summary>
+<summary>Fix (24)</summary>
 <ul>
+<li>
+<p>2026-10-18</p>
+<ul>
+<li><strong>API (Danh tính Sender Ledger &amp; Validate Nonce Mặc định)</strong>: <code>_build_event_data</code> (<code>hierachain/api/ledger/events.py</code>) nay ghi thêm <code>sender</code> bên cạnh <code>submitted_by</code> để ordering đọc được danh tính ký ở cả hai trường, và <code>EventRequest.details_nonce</code> (<code>hierachain/api/ledger/schemas.py</code>) bật <code>validate_default=True</code> để giá trị mặc định <code>None</code> cũng được validate — trước đây nonce mặc định bỏ qua validate hex/độ dài và event lưu thiếu <code>sender</code>.</li>
+<li><strong>Đồng thuận (Kiểm tra lại Chữ ký Canonical &amp; Drain khi Shutdown)</strong>: <code>_extract_verification_items</code> (<code>hierachain/consensus/ordering/processor.py</code>) bỏ qua event có <code>signature_content</code> (đã được certifier xác minh khi xử lý trực tiếp và replay), xác minh chữ ký kiểu cũ với sender/signature hex đã bỏ tiền tố <code>0x</code>, và poll <code>event_pool</code> tối đa mỗi <code>0.1s</code> mà vẫn giữ <code>batch_timeout</code>; <code>_verify_canonical_event()</code> mới (<code>hierachain/consensus/ordering/utils.py</code>) ràng buộc lại các trường nghiệp vụ được đưa vào block (<code>entity_id</code>, <code>event_type</code>, <code>event</code>, <code>timestamp</code>) với <code>signature_content</code> gốc đã ký, từ chối trường bị sửa hoặc thêm ngoài danh sách qua <code>SignatureVerifier().verify_event_signature()</code>, còn <code>verify_event_signature()</code> chạy nhánh canonical cho các envelope này thay vì đường payload kiểu cũ; <code>OrderingService.stop()</code> (<code>hierachain/consensus/ordering/service.py</code>) join processing thread không còn timeout 5 giây để thao tác đang chạy hoàn tất trước khi đóng storage và journal — trước đây event secure canonical chỉ được xác minh lại như payload kiểu cũ, trường bị sửa/thêm lọt qua kiểm tra ràng buộc, và shutdown có thể đóng storage khi batch còn đang chạy.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-07</p>
 <ul>

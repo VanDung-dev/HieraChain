@@ -4443,8 +4443,14 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="warning">
-<summary>Breaking Changes (59)</summary>
+<summary>Breaking Changes (60)</summary>
 <ul>
+<li>
+<p>2026-10-18</p>
+<ul>
+<li><strong>API (Queued Secure Event Acknowledgement)</strong>: <code>add_secure_event</code> (<code>hierachain/api/admin/endpoints.py</code>) stamps <code>event</code>/<code>timestamp</code>, retains the signed content in <code>event_data["signature_content"]</code> before journaling, returns <code>SecureEventResponse(status="queued")</code> with the ordering event ID in <code>event_hash</code> and the acknowledgement time in <code>timestamp</code>, and maps <code>OrderingBackpressureError</code> to HTTP 503 (<code>{message, event_id, journaled}</code>) plus <code>ValueError</code> to 422; <code>SecureEventResponse</code> (<code>hierachain/api/admin/schemas.py</code>) now describes <code>status</code> as <code>queued</code> with asynchronous block commitment — responses no longer report <code>"committed"</code>, so clients that awaited a committed status must treat the acknowledgement as queued and await block commitment.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-15</p>
 <ul>
@@ -4733,8 +4739,15 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (22)</summary>
+<summary>Fix (24)</summary>
 <ul>
+<li>
+<p>2026-10-18</p>
+<ul>
+<li><strong>API (Ledger Sender Identity &amp; Default Nonce Validation)</strong>: <code>_build_event_data</code> (<code>hierachain/api/ledger/events.py</code>) now also writes <code>sender</code> alongside <code>submitted_by</code> so ordering can read the signing identity from either field, and <code>EventRequest.details_nonce</code> (<code>hierachain/api/ledger/schemas.py</code>) sets <code>validate_default=True</code> so the <code>None</code> default is validated too — previously the default nonce bypassed hex/length validation and the stored event omitted <code>sender</code>.</li>
+<li><strong>Ordering (Canonical Signature Recheck &amp; Shutdown Drain)</strong>: <code>_extract_verification_items</code> (<code>hierachain/consensus/ordering/processor.py</code>) skips events carrying <code>signature_content</code> (already verified by the certifier during live processing and replay), verifies legacy signatures with <code>0x</code>-stripped hex sender/signature, and polls <code>event_pool</code> at most every <code>0.1s</code> while keeping <code>batch_timeout</code>; new <code>_verify_canonical_event()</code> (<code>hierachain/consensus/ordering/utils.py</code>) rebinds the ordered business fields (<code>entity_id</code>, <code>event_type</code>, <code>event</code>, <code>timestamp</code>) to the original signed <code>signature_content</code> and rejects altered or extra fields via <code>SignatureVerifier().verify_event_signature()</code>, while <code>verify_event_signature()</code> runs the canonical branch for such envelopes instead of the legacy payload path; <code>OrderingService.stop()</code> (<code>hierachain/consensus/ordering/service.py</code>) joins the processing thread without the 5-second timeout so in-flight work finishes before storage and the journal are closed — previously canonical secure events were re-verified only as legacy payloads, altered or extra fields escaped the binding checks, and shutdown could close storage under an active batch.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-07</p>
 <ul>

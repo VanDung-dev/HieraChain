@@ -4850,7 +4850,7 @@
 <li><code>GET /api/ledger/chains</code> liệt kê Main Chain và Sub-Chain.</li>
 <li><code>POST /api/ledger/chains/{chain_name}/create</code> khởi tạo một sub-chain mới.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/stats</code> lấy số lượng block, event và proof.</li>
-<li><code>POST /api/ledger/chains/{chain_name}/events</code> gửi event, chuyển tải dữ liệu quá cỡ sang IPFS.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/events</code> gửi event, chuyển tải dữ liệu quá cỡ sang IPFS. Khi cung cấp <code>details_cid</code>, bắt buộc có <code>details_nonce</code> khác rỗng gồm 24 ký tự hex; bỏ qua hoặc null trả HTTP 422. API giữ danh tính ký ở <code>sender</code> để ordering xác minh và giữ <code>submitted_by</code> cho thông tin người gửi. Chữ ký kiểu cũ bao phủ <code>details.payload</code> khi giá trị này là chuỗi; phản hồi tiếp nhận đến trước certification.</li>
 <li><code>POST /api/ledger/chains/{chain_name}/submit-proof</code> gửi bằng chứng mật mã từ sub-chain lên main chain.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/blocks</code> liệt kê block có phân trang và tùy chọn giải mã CID.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code> lấy thông tin chi tiết một block theo chỉ số hoặc mã băm.</li>
@@ -4869,7 +4869,7 @@
 <ul>
 <li><code>POST /api/admin/verify-identity</code> cho phép node ký challenge để chứng minh danh tính.</li>
 <li><code>GET /api/admin/status</code> được miễn xác thực API key và trả uptime, số chain, version cùng cờ license được gán cố định.</li>
-<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> kiểm tra chữ ký đồng bộ rồi gửi qua ordering bất đồng bộ; response không xác nhận block đã commit.</li>
+<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> kiểm tra chữ ký canonical đồng bộ rồi ghi journal và đưa event vào hàng đợi. HTTP 200 trả <code>status="queued"</code>, ID event từ ordering trong <code>event_hash</code> và thời gian phản hồi trong <code>timestamp</code>; client đang chờ <code>committed</code> cần cập nhật. Response này không xác nhận block đã commit. Ordering và replay journal xác minh lại <code>signature_content</code> gốc cùng ràng buộc với các trường được đưa vào block. Khi hàng đợi quá tải, API trả HTTP 503 với <code>event_id</code> và <code>journaled</code> trong <code>detail</code>.</li>
 </ul>
 <h2 id="graphql-api">GraphQL API</h2>
 <p>Endpoint: <code>/graphql</code></p>

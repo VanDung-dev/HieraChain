@@ -4850,7 +4850,7 @@
 <li><code>GET /api/ledger/chains</code> lists Main Chains and Sub-Chains.</li>
 <li><code>POST /api/ledger/chains/{chain_name}/create</code> provisions a new sub-chain.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/stats</code> retrieves block, event, and proof counts.</li>
-<li><code>POST /api/ledger/chains/{chain_name}/events</code> submits an event, offloading oversized payloads to IPFS.</li>
+<li><code>POST /api/ledger/chains/{chain_name}/events</code> submits an event, offloading oversized payloads to IPFS. A supplied <code>details_cid</code> requires a nonempty, 24-character hexadecimal <code>details_nonce</code>; omission or null returns HTTP 422. The API preserves the signing identity as <code>sender</code> for ordering verification and keeps <code>submitted_by</code> for attribution. Legacy signatures cover <code>details.payload</code> when it is a string; the submission acknowledgement precedes certification.</li>
 <li><code>POST /api/ledger/chains/{chain_name}/submit-proof</code> submits cryptographic proofs from a sub-chain to the main chain.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/blocks</code> lists blocks with pagination and optional CID decoding.</li>
 <li><code>GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code> fetches a single block by index or hash.</li>
@@ -4869,7 +4869,7 @@
 <ul>
 <li><code>POST /api/admin/verify-identity</code> lets a node sign a challenge to prove its identity.</li>
 <li><code>GET /api/admin/status</code> is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.</li>
-<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> checks the signature synchronously, then submits through asynchronous ordering; the response does not establish block commitment.</li>
+<li><code>POST /api/admin/chains/{chain_name}/secure-events</code> checks the canonical signature synchronously, then journals and queues the event. HTTP 200 returns <code>status="queued"</code>, an ordering event ID in <code>event_hash</code>, and the acknowledgement time in <code>timestamp</code>; clients expecting <code>committed</code> must update. This response does not establish block commitment. Ordering and journal replay reverify the original <code>signature_content</code> and its binding to the ordered fields. Queue backpressure returns HTTP 503 with <code>event_id</code> and <code>journaled</code> in <code>detail</code>.</li>
 </ul>
 <h2 id="graphql-api">GraphQL API</h2>
 <p>Endpoint: <code>/graphql</code></p>
