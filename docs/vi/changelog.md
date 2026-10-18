@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (59)"
+??? warning "Breaking Changes (60)"
+
+    * 2026-10-18
+
+        * **API (Phản hồi Secure Event Ở trạng thái Queued)**: `add_secure_event` (`hierachain/api/admin/endpoints.py`) đóng dấu `event`/`timestamp`, giữ nguyên nội dung đã ký trong `event_data["signature_content"]` trước khi ghi journal, trả `SecureEventResponse(status="queued")` với ID event từ ordering trong `event_hash` và thời gian phản hồi trong `timestamp`, đồng thời chuyển `OrderingBackpressureError` thành HTTP 503 (`{message, event_id, journaled}`) và `ValueError` thành 422; `SecureEventResponse` (`hierachain/api/admin/schemas.py`) nay mô tả `status` là `queued` với cam kết block bất đồng bộ — response không còn báo `"committed"`, nên client đang chờ trạng thái committed phải coi phản hồi là queued và chờ block commit.
 
     * 2026-10-15
 
@@ -226,7 +230,12 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (22)"
+??? warning "Fix (24)"
+
+    * 2026-10-18
+
+        * **API (Danh tính Sender Ledger & Validate Nonce Mặc định)**: `_build_event_data` (`hierachain/api/ledger/events.py`) nay ghi thêm `sender` bên cạnh `submitted_by` để ordering đọc được danh tính ký ở cả hai trường, và `EventRequest.details_nonce` (`hierachain/api/ledger/schemas.py`) bật `validate_default=True` để giá trị mặc định `None` cũng được validate — trước đây nonce mặc định bỏ qua validate hex/độ dài và event lưu thiếu `sender`.
+        * **Đồng thuận (Kiểm tra lại Chữ ký Canonical & Drain khi Shutdown)**: `_extract_verification_items` (`hierachain/consensus/ordering/processor.py`) bỏ qua event có `signature_content` (đã được certifier xác minh khi xử lý trực tiếp và replay), xác minh chữ ký kiểu cũ với sender/signature hex đã bỏ tiền tố `0x`, và poll `event_pool` tối đa mỗi `0.1s` mà vẫn giữ `batch_timeout`; `_verify_canonical_event()` mới (`hierachain/consensus/ordering/utils.py`) ràng buộc lại các trường nghiệp vụ được đưa vào block (`entity_id`, `event_type`, `event`, `timestamp`) với `signature_content` gốc đã ký, từ chối trường bị sửa hoặc thêm ngoài danh sách qua `SignatureVerifier().verify_event_signature()`, còn `verify_event_signature()` chạy nhánh canonical cho các envelope này thay vì đường payload kiểu cũ; `OrderingService.stop()` (`hierachain/consensus/ordering/service.py`) join processing thread không còn timeout 5 giây để thao tác đang chạy hoàn tất trước khi đóng storage và journal — trước đây event secure canonical chỉ được xác minh lại như payload kiểu cũ, trường bị sửa/thêm lọt qua kiểm tra ràng buộc, và shutdown có thể đóng storage khi batch còn đang chạy.
 
     * 2026-10-07
 

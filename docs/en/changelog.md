@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (59)"
+??? warning "Breaking Changes (60)"
+
+    * 2026-10-18
+
+        * **API (Queued Secure Event Acknowledgement)**: `add_secure_event` (`hierachain/api/admin/endpoints.py`) stamps `event`/`timestamp`, retains the signed content in `event_data["signature_content"]` before journaling, returns `SecureEventResponse(status="queued")` with the ordering event ID in `event_hash` and the acknowledgement time in `timestamp`, and maps `OrderingBackpressureError` to HTTP 503 (`{message, event_id, journaled}`) plus `ValueError` to 422; `SecureEventResponse` (`hierachain/api/admin/schemas.py`) now describes `status` as `queued` with asynchronous block commitment — responses no longer report `"committed"`, so clients that awaited a committed status must treat the acknowledgement as queued and await block commitment.
 
     * 2026-10-15
 
@@ -226,7 +230,12 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (22)"
+??? warning "Fix (24)"
+
+    * 2026-10-18
+
+        * **API (Ledger Sender Identity & Default Nonce Validation)**: `_build_event_data` (`hierachain/api/ledger/events.py`) now also writes `sender` alongside `submitted_by` so ordering can read the signing identity from either field, and `EventRequest.details_nonce` (`hierachain/api/ledger/schemas.py`) sets `validate_default=True` so the `None` default is validated too — previously the default nonce bypassed hex/length validation and the stored event omitted `sender`.
+        * **Ordering (Canonical Signature Recheck & Shutdown Drain)**: `_extract_verification_items` (`hierachain/consensus/ordering/processor.py`) skips events carrying `signature_content` (already verified by the certifier during live processing and replay), verifies legacy signatures with `0x`-stripped hex sender/signature, and polls `event_pool` at most every `0.1s` while keeping `batch_timeout`; new `_verify_canonical_event()` (`hierachain/consensus/ordering/utils.py`) rebinds the ordered business fields (`entity_id`, `event_type`, `event`, `timestamp`) to the original signed `signature_content` and rejects altered or extra fields via `SignatureVerifier().verify_event_signature()`, while `verify_event_signature()` runs the canonical branch for such envelopes instead of the legacy payload path; `OrderingService.stop()` (`hierachain/consensus/ordering/service.py`) joins the processing thread without the 5-second timeout so in-flight work finishes before storage and the journal are closed — previously canonical secure events were re-verified only as legacy payloads, altered or extra fields escaped the binding checks, and shutdown could close storage under an active batch.
 
     * 2026-10-07
 
