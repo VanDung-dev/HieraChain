@@ -47,7 +47,11 @@ def _extract_verification_items(
 
     for event in batch:
         data = event.event_data
-        if "signature" not in data or "sender" not in data:
+        if "signature_content" in data:
+            continue  # Canonical envelopes are verified by the certifier, including replay.
+        sender = data.get("sender")
+        signature = data.get("signature")
+        if not isinstance(sender, str) or not isinstance(signature, str):
             continue
         details = data.get("details", {})
         msg = (
@@ -55,11 +59,11 @@ def _extract_verification_items(
             if isinstance(details, dict)
             else None
         )
-        if msg:
+        if isinstance(msg, str):
             verification_items.append({
-                "public_key": data["sender"],
+                "public_key": sender.removeprefix("0x"),
                 "message": msg,
-                "signature": data["signature"],
+                "signature": signature.removeprefix("0x"),
             })
             events_to_verify.append(event)
 
@@ -167,7 +171,7 @@ class OrderingProcessor:
     async def _wait_and_drain_event(self, batch: list[PendingEvent]) -> None:
         """Wait for the next event in thread and drain any others that arrive."""
         try:
-            pending_event = await asyncio.to_thread(self.service.event_pool.get, timeout=self.batch_timeout)
+            pending_event = await asyncio.to_thread(self.service.event_pool.get, timeout=min(self.batch_timeout, 0.1))
             batch.append(pending_event)
             self._drain_event_pool(batch)
         except Empty:

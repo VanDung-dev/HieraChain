@@ -629,7 +629,8 @@ class OrderingService:
         with self.event_pool.not_full:
             self.event_pool.not_full.notify_all()
         if self.processing_thread and self.processing_thread.is_alive():
-            self.processing_thread.join(timeout=5.0)
+            # In-flight processing must finish before releasing its storage and writer lease.
+            self.processing_thread.join()
         self.storage_handler.close()
         self.journal.close()
         logger.info("Ordering service shutdown complete.")

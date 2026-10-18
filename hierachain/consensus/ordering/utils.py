@@ -54,6 +54,12 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
     signature = event.event_data.get("signature")
     sender = event.event_data.get("sender")
 
+    if "signature_content" in event.event_data:
+        if not _verify_canonical_event(event.event_data):
+            certification["valid"] = False
+            certification["validation_errors"].append("Invalid signature")
+        return
+
     if isinstance(signature, str) and isinstance(sender, str):
         details = event.event_data.get("details", {})
         payload = details.get("payload") if isinstance(details, dict) else None
@@ -63,9 +69,32 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
             return
 
         from hierachain.security.security_utils import verify_signature
-        if not verify_signature(sender, payload.encode('utf-8'), signature):
+        if not verify_signature(sender.removeprefix("0x"), payload.encode('utf-8'), signature.removeprefix("0x")):
             certification["valid"] = False
             certification["validation_errors"].append("Invalid signature")
+
+
+def _verify_canonical_event(data: dict[str, Any]) -> bool:
+    """Bind the ordered business fields to the original signed API content."""
+    from hierachain.security.verify.signature_verifier import SignatureVerifier
+
+    content = data.get("signature_content")
+    if not isinstance(content, dict) or not {"entity_id", "event_type"} <= content.keys():
+        return False
+    if not isinstance(data.get("sender"), str) or not isinstance(data.get("signature"), str):
+        return False
+    if data.get("event") != content["event_type"]:
+        return False
+    runtime_fields = {"event", "event_id", "channel_id", "timestamp", "signature_content", "sender", "signature"}
+    if data.keys() - content.keys() - runtime_fields:
+        return False
+    for key, value in content.items():
+        if key == "timestamp" and value is None:
+            continue
+        if key not in data or data[key] != value:
+            return False
+    signed_event = {**content, "sender": data["sender"], "signature": data["signature"]}
+    return SignatureVerifier().verify_event_signature(signed_event, data["sender"])
 
 
 def dump_forensic_data(
