@@ -156,6 +156,6 @@ class SecureEventRequest(BaseModel):
 
 class SecureEventResponse(BaseModel):
     """Response schema for high-integrity event submission"""
-    status: str = Field(..., description="Operation status (always 'committed' for admin)")
-    event_hash: str = Field(..., description="Cryptographic hash of the committed event")
-    timestamp: float = Field(..., description="Server-side commit timestamp")
+    status: str = Field(..., description="Submission status ('queued'; block commitment is asynchronous)")
+    event_hash: str = Field(..., description="Event identifier returned by ordering")
+    timestamp: float = Field(..., description="Server-side acknowledgement timestamp")

@@ -17,6 +17,7 @@ from hierachain.api.admin.schemas import (
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.config.settings import get_settings
 from hierachain.config.version import get_version
+from hierachain.consensus.ordering.types import OrderingBackpressureError
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.key_provider import CryptoError, LocalKeyProvider
 from hierachain.security.secure_logging import SecureLogger
@@ -175,7 +176,16 @@ async def add_secure_event(
                 detail="Cryptographic signature verification failed. Event integrity cannot be guaranteed."
             )
 
-        # 2. Add verified event to chain
+        # Retain the signed content so ordering and journal replay can verify it again.
+        event_data["signature_content"] = {
+            key: value for key, value in event_data.items()
+            if key not in {"sender", "signature"}
+        }
+        event_data["event"] = request.event_type
+        if request.timestamp is None:
+            event_data["timestamp"] = time.time()
+
+        # 2. Journal and queue the verified event for asynchronous ordering.
         event_hash = chain.add_event(event_data)
 
         logger.audit(
@@ -187,10 +197,16 @@ async def add_secure_event(
         )
 
         return SecureEventResponse(
-            status="committed", event_hash=event_hash, timestamp=time.time()
+            status="queued", event_hash=event_hash, timestamp=time.time()
         )
     except HTTPException:
         raise
+    except OrderingBackpressureError as exc:
+        raise HTTPException(status_code=503, detail={
+            "message": str(exc), "event_id": exc.event_id, "journaled": exc.journaled,
+        }) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as e:
         logger.error("Secure event submission failed", error=str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
