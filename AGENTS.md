@@ -25,6 +25,8 @@ python -m hierachain
 
 Follow PEP 8 with four-space indentation and the repository’s 120-character Flake8 limit. Add type hints to all function signatures. Use `snake_case` for modules, functions, and variables; `PascalCase` for classes; and `UPPER_CASE` for constants. Use logging instead of `print()` in library code, keep secrets in environment variables, and route persistence through storage adapters. Use domain terminology such as `event` and `entity_id`, not cryptocurrency terms.
 
+Do not add comments or docstrings on your own initiative. Only write them when the user explicitly asks for them; see `.agents/rules/05-code-comment-rules.md`.
+
 ## Testing Guidelines
 
 Name tests `test_*.py` and test functions `test_*`; use pytest markers such as `integration`, `critical`, `slow`, and `security` where appropriate. Add regression coverage with each behavior change and prefer running tests per file to avoid resource contention. Run security probes only against an isolated local server.
@@ -36,6 +38,8 @@ Use Conventional Commit prefixes found in the history, such as `feat:`, `fix:`, 
 ## Repository Rules
 
 Read the applicable files in `.agents/rules/` before changing terminology, architecture, changelogs, or documentation. Treat the implementation under `hierachain/` as the source of truth and never commit `.env` or credentials.
+
+Never add code comments or docstrings unless the user explicitly requests them. The rule list is `01-forbidden-terms.md`, `02-architecture-rules.md`, `03-changelog-rules.md`, `04-documentation-sync-rules.md`, and `05-code-comment-rules.md`.
 
 ## Agent skills
 
