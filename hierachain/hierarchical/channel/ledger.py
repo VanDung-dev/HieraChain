@@ -80,16 +80,22 @@ class ChannelLedger:
             raise RuntimeError("Invalid durable channel ledger record")
         kind, data = record.get("kind"), record.get("data")
         if kind == "snapshot" and self._sequence == 0:
+            if not isinstance(data, dict):
+                raise RuntimeError("Invalid channel ledger snapshot")
             self.restore(data)
             return [event for block in self.blocks for event in block.to_event_list()] + list(self.current_block_events)
         if self._sequence == 0:
             raise RuntimeError("Durable channel ledger is missing its initial snapshot")
         if kind == "event":
             self._validate_pending_event(data)
+            if not isinstance(data, dict):
+                raise RuntimeError("Invalid pending channel event")
             self.current_block_events.append(deepcopy(data))
             return [data]
         if kind == "block":
             try:
+                if not isinstance(data, dict):
+                    raise TypeError("Invalid channel block data")
                 block = Block.from_dict(data)
                 self._validate_block(block, self.height, self.blocks[-1] if self.blocks else None)
             except (KeyError, TypeError, ValueError) as exc:

@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from contextlib import ExitStack
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.hierarchy_manager.base import HierarchyManager
@@ -23,7 +23,10 @@ def _restore_main_chain(self: HierarchyManager) -> None:
     )
     from hierachain.hierarchical.main_chain.proofs import _refresh_durable_proofs
 
-    saved = self.storage.load_chain(self.main_chain.name)
+    storage = self.storage
+    if storage is None:
+        raise RuntimeError("Durable main chain storage is unavailable")
+    saved = storage.load_chain(self.main_chain.name)
     if not isinstance(saved, dict):
         raise RuntimeError("Could not load main chain from durable storage")
     rows = saved.get("chain", [])
@@ -96,7 +99,7 @@ def _restore_main_chain(self: HierarchyManager) -> None:
                 )
             restored_metadata = deepcopy(previous[0]) if previous else {}
             restored_metadata.update(deepcopy(metadata))
-            registrations[name] = (restored_metadata, float(event_timestamp))
+            registrations[name] = (restored_metadata, float(cast(int | float, event_timestamp)))
 
     for name, (metadata, registered_at) in registrations.items():
         consensus = main.consensus

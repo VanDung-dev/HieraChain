@@ -193,7 +193,7 @@ def _durable_block_events(
 ) -> list[dict[str, Any]]:
     """Read only signed block events confirmed in durable storage."""
     storage = getattr(chain, "proof_storage", None)
-    if not callable(getattr(storage, "get_block_by_index", None)):
+    if storage is None or not callable(getattr(storage, "get_block_by_index", None)):
         if strict:
             raise RuntimeError("Durable MainChain storage is unavailable")
         return []
