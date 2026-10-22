@@ -108,7 +108,7 @@ class HieraChainAsyncClient:
                 if data is not None else None
             ),
             params=params,
-            timeout=self.config.timeout,
+            timeout=aiohttp.ClientTimeout(total=self.config.timeout),
             allow_redirects=(
                 method.upper() in {"GET", "HEAD", "OPTIONS"}
                 and not session.headers.get("X-API-Key")

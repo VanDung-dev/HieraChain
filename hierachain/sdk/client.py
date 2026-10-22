@@ -107,10 +107,13 @@ class HieraChainClient:
         if response.headers.get("X-Lockdown-Mode") == "true":
             raise LockdownError("Node is in lockdown mode", status_code=503)
 
-        if response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+        status_code = response.status_code
+        if status_code is None:
+            raise HieraChainAPIError("Response has no HTTP status code")
+        if status_code == HTTPStatus.SERVICE_UNAVAILABLE:
             raise ServiceUnavailableError("Service unavailable (503)", status_code=503)
 
-        if not 200 <= response.status_code < 300:
+        if not 200 <= status_code < 300:
             raise HieraChainAPIError(
                 f"HTTP {response.status_code}", status_code=response.status_code
             )
