@@ -313,6 +313,8 @@ class ProofValidator:
             })
             return
 
+        sub_chain_name = cast(str, sub_chain_name)
+        proof_hash = cast(str, proof_hash)
         sub_chain = self._hm.get_sub_chain(sub_chain_name)
         if not sub_chain:
             _record_missing(

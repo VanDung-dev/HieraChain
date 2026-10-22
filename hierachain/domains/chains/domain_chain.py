@@ -508,8 +508,11 @@ class DomainChain(BaseChain):
             ):
                 return False
 
+            markers = self._transaction_event_markers
+            if markers is None:
+                return False
             if all(
-                (transaction_id, step) in self._transaction_event_markers
+                (transaction_id, step) in markers
                 for step in ("start", "complete")
             ):
                 if not self._reconcile_transaction_events(transaction_id):
@@ -556,8 +559,11 @@ class DomainChain(BaseChain):
             if pending_data is None:
                 if not self._load_transaction_event_markers():
                     return False
+                markers = self._transaction_event_markers
+                if markers is None:
+                    return False
                 if all(
-                    (transaction_id, step) in self._transaction_event_markers
+                    (transaction_id, step) in markers
                     for step in ("start", "complete")
                 ):
                     if not self._reconcile_transaction_events(transaction_id):

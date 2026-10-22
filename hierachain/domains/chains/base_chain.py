@@ -170,7 +170,7 @@ class BaseChain(SubChain, ABC):
             entity_id = event_data.get("entity_id")
             event_type = event_data.get("event")
             details = event_data.get("details")
-            if not isinstance(entity_id, str) or not isinstance(details, dict):
+            if not isinstance(entity_id, str) or not isinstance(event_type, str) or not isinstance(details, dict):
                 continue
 
             if event_type == "operation_complete":
