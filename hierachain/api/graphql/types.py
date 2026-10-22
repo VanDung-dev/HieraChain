@@ -3,7 +3,7 @@ GraphQL types for Hierachain API
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from graphene import (
     Boolean,
@@ -25,15 +25,17 @@ from hierachain.serialization import dumps_json
 
 
 class EventType(ObjectType):
-    cursor = String()
-    entity_id = String()
-    event_type = String()
-    details = String()
-    details_cid = String()
-    details_nonce = String()
-    is_offchain = Boolean()
-    timestamp = Float()
-    signature = String()
+    cursor = cast(str | None, String())
+    entity_id = cast(str | None, String())
+    event_type = cast(str | None, String())
+    details = cast(str | None, String())
+    details_cid = cast(str | None, String())
+    details_nonce = cast(str | None, String())
+    is_offchain = cast(bool | None, Boolean())
+    timestamp = cast(float | None, Float())
+    signature = cast(str | None, String())
+
+    details_metadata: dict[str, Any] | None = None
 
     async def resolve_details(self, _info, resolve_cid=True):
         if self._has_inline_details():
@@ -96,21 +98,21 @@ class EventType(ObjectType):
 
 
 class BlockMetadataType(ObjectType):
-    chain_name = String()
-    events_count = Int()
-    validator_signatures = List(String)
+    chain_name = cast(str | None, String())
+    events_count = cast(int | None, Int())
+    validator_signatures = cast(list[str] | None, List(String))
 
 
 class BlockType(ObjectType):
-    index = Int()
-    hash = String()
-    previous_hash = String()
-    timestamp = Float()
-    nonce = String()
-    events = List(EventType)
-    metadata = Field(BlockMetadataType)
+    index = cast(int | None, Int())
+    hash = cast(str | None, String())
+    previous_hash = cast(str | None, String())
+    timestamp = cast(float | None, Float())
+    nonce = cast(str | None, String())
+    events = cast(list[EventType] | None, List(EventType))
+    metadata = cast(BlockMetadataType | None, Field(BlockMetadataType))
 
-    def resolve_events(self, _info: Any) -> list[EventType]:
+    def resolve_events(self, _info: Any) -> list[EventType] | None:
         if hasattr(self, 'events'):
             return self.events
         return []
@@ -122,15 +124,15 @@ class BlockType(ObjectType):
 
 
 class ChainStatusType(ObjectType):
-    chain_name = String()
-    block_count = Int()
-    latest_block_index = Int()
-    latest_block_hash = String()
-    status = String()
+    chain_name = cast(str | None, String())
+    block_count = cast(int | None, Int())
+    latest_block_index = cast(int | None, Int())
+    latest_block_hash = cast(str | None, String())
+    status = cast(str | None, String())
 
 
 class AddEventInput(InputObjectType):
-    chain_name = String(required=True)
-    entity_id = String(required=True)
-    event_type = String(required=True)
-    details = String()
+    chain_name = cast(str | None, String(required=True))
+    entity_id = cast(str | None, String(required=True))
+    event_type = cast(str | None, String(required=True))
+    details = cast(str | None, String())

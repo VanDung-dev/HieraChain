@@ -31,7 +31,7 @@ router = APIRouter()
 
 @router.websocket("/ws")
 async def websocket_endpoint(
-    websocket: WebSocket, chain_name: str | None = Query("all")
+    websocket: WebSocket, chain_name: str = Query("all")
 ):
     """
     Main WebSocket endpoint for real-time communication.

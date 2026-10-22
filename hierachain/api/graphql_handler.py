@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from graphql import get_operation_ast, parse
+from graphql.language.ast import FragmentDefinitionNode
 
 from hierachain.api.graphql import security as graphql_security
 from hierachain.api.graphql.schema import schema as graphql_schema
@@ -118,7 +119,7 @@ def _required_graphql_permissions(query: str, operation_name: str | None) -> set
     fragments = {
         definition.name.value: definition
         for definition in document.definitions
-        if definition.kind == "fragment_definition"
+        if isinstance(definition, FragmentDefinitionNode)
     }
     root_fields: set[str] = set()
     includes_nested_events = False

@@ -2,7 +2,7 @@ import base64
 import binascii
 import json
 import time
-from typing import Any
+from typing import Any, cast
 
 import graphene
 from graphene import ObjectType
@@ -124,7 +124,11 @@ def resolve_events(
     entries = (
         chain.get_event_page(**filters)
         if isinstance(chain, Blockchain)
-        else select_event_page(chain.chain, **filters)
+        else select_event_page(
+            chain.chain, entity_id=entity_id, event_type=event_type,
+            from_timestamp=from_timestamp, to_timestamp=to_timestamp,
+            limit=effective_limit, after=position,
+        )
     )
     events = []
     for entry in entries:
@@ -168,9 +172,9 @@ class AddEventMutation(graphene.Mutation):
     class Arguments:
         event = AddEventInput(required=True)
 
-    success = graphene.Boolean()
-    block_index = graphene.Int()
-    error = graphene.String()
+    success = cast(bool | None, graphene.Boolean())
+    block_index = cast(int | None, graphene.Int())
+    error = cast(str | None, graphene.String())
 
     @classmethod
     def mutate(cls, _root, _info, event):
@@ -263,15 +267,14 @@ def _to_block_type(block, chain_name):
 
 def _to_event_type(event: Any) -> EventType:
     if isinstance(event, dict):
-        converted = EventType(
-            entity_id=event.get("entity_id", ""),
-            event_type=event.get("event_type") or event.get("event", ""),
-            details=dumps_json(event["details"]) if event.get("details") is not None else "",
-            details_cid=event.get("details_cid"),
-            details_nonce=event.get("details_nonce"),
-            timestamp=event.get("timestamp", 0),
-            signature=event.get("signature", ""),
-        )
+        converted = EventType()
+        converted.entity_id = event.get("entity_id", "")
+        converted.event_type = event.get("event_type") or event.get("event", "")
+        converted.details = dumps_json(event["details"]) if event.get("details") is not None else ""
+        converted.details_cid = event.get("details_cid")
+        converted.details_nonce = event.get("details_nonce")
+        converted.timestamp = event.get("timestamp", 0)
+        converted.signature = event.get("signature", "")
         converted.details_metadata = event.get("details_metadata")
         return converted
     details = ""
