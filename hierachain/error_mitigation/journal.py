@@ -16,7 +16,7 @@ import threading
 import time
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Literal
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -235,7 +235,7 @@ def _open_storage_directory(path: Path, create: bool = False) -> int:
         raise ValueError("Security: journal directory contains an unsafe path component") from exc
 
 
-def _open_safe_file(path: Path, mode: str, buffering: int = -1) -> BinaryIO:
+def _open_safe_file(path: Path, mode: Literal["rb", "ab", "wb", "r+b"], buffering: int = -1) -> BinaryIO:
     descriptor = _open_storage_directory(path.parent)
     try:
         def opener(name: str, flags: int) -> int:

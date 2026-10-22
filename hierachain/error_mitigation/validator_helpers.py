@@ -68,14 +68,10 @@ def _serialize_data_content(data: Any) -> str:
 def _check_forbidden_terms_in_array(
     array: pa.Array, field_name: str, forbidden_terms: list[str],
 ) -> None:
-    utf8_lower = pc.utf8_lower
-    match_substring = pc.match_substring
-    any_op = pc.any
-
-    lower_data = utf8_lower(array)
+    lower_data = pc.call_function("utf8_lower", [array])
     for term in forbidden_terms:
-        matches = match_substring(lower_data, term)
-        if any_op(matches).as_py():
+        matches = pc.call_function("match_substring", [lower_data], options=pc.MatchSubstringOptions(term))
+        if pc.call_function("any", [matches]).as_py():
             error_msg = f"Forbidden crypto term '{term}' found in column '{field_name}'"
             logger.error(error_msg)
             raise ValidationError(error_msg)
