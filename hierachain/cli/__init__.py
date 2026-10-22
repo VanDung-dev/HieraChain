@@ -54,20 +54,20 @@ hrc.add_command(cast(Command, event_group))
 hrc.add_command(cast(Command, key_group))
 
 # Node
-hrc.add_command(cast(Command, start_node))
-hrc.add_command(cast(Command, init_node))
+hrc.add_command(start_node)
+hrc.add_command(init_node)
 
 # Chain
-hrc.add_command(cast(Command, create_chain_cmd), name="create_chain")
-hrc.add_command(cast(Command, list_chains_cmd), name="list_chains")
-hrc.add_command(cast(Command, submit_proof_cmd), name="submit_proof")
-hrc.add_command(cast(Command, add_event_cmd), name="add_event")
-hrc.add_command(cast(Command, show_events_cmd), name="show_events")
+hrc.add_command(create_chain_cmd, name="create_chain")
+hrc.add_command(list_chains_cmd, name="list_chains")
+hrc.add_command(submit_proof_cmd, name="submit_proof")
+hrc.add_command(add_event_cmd, name="add_event")
+hrc.add_command(show_events_cmd, name="show_events")
 
 # Key
-hrc.add_command(cast(Command, generate_key_cmd), name="generate_key")
-hrc.add_command(cast(Command, show_key_cmd), name="show_key")
-hrc.add_command(cast(Command, verify_key_cmd), name="verify_key")
+hrc.add_command(generate_key_cmd, name="generate_key")
+hrc.add_command(show_key_cmd, name="show_key")
+hrc.add_command(verify_key_cmd, name="verify_key")
 
 if __name__ == '__main__':
     hrc()
