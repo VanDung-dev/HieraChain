@@ -227,7 +227,7 @@ class KeyManager:
                 category=UserWarning
             )
         
-        self.storage = storage_backend or {}  # In-memory fallback
+        self.storage: Any = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
         self.revocation_store = revocation_store
         self.key_cache = AdvancedCache(max_size=5000, eviction_policy="ttl")

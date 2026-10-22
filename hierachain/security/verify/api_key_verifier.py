@@ -165,7 +165,9 @@ class APIKeyVerifier:
         """Extract API key from request if not provided directly."""
         if api_key or not request:
             return api_key
-        return await self.api_key_dependency(request)
+        dependency = self.api_key_dependency
+        source = request.query_params if isinstance(dependency, APIKeyQuery) else request.headers
+        return dependency.check_api_key(source.get(dependency.model.name))
 
     async def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
         """Validate that API key is provided."""
