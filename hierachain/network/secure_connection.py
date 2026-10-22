@@ -168,9 +168,11 @@ def validate_msp_from_message(
     sender_msp_id = message.get("sender_msp_id")
     sender_public_key = message.get("sender_public_key")
 
-    if not all(
-        isinstance(value, str) and value
-        for value in (cert_id, sender_msp_id, sender_public_key, sender_id)
+    if (
+        not isinstance(cert_id, str) or not cert_id
+        or not isinstance(sender_msp_id, str) or not sender_msp_id
+        or not isinstance(sender_public_key, str) or not sender_public_key
+        or not isinstance(sender_id, str) or not sender_id
     ):
         logger.warning(
             "Handshake rejected from %s: "
