@@ -49,13 +49,13 @@ def _iter_block_rows(
         chunk = table.slice(offset, EVENT_QUERY_BATCH_SIZE)
         mask = pa.array([True] * len(chunk))
         if entity_id:
-            mask = pc.and_(mask, pc.equal(chunk["entity_id"], entity_id))
+            mask = pc.call_function("and", [mask, pc.call_function("equal", [chunk["entity_id"], entity_id])])
         timestamps = pc.fill_null(chunk["timestamp"], 0.0)
         if from_timestamp is not None:
-            mask = pc.and_(mask, pc.greater_equal(timestamps, from_timestamp))
+            mask = pc.call_function("and", [mask, pc.call_function("greater_equal", [timestamps, from_timestamp])])
         if to_timestamp is not None:
-            mask = pc.and_(mask, pc.less_equal(timestamps, to_timestamp))
-        for index in pc.indices_nonzero(pc.fill_null(mask, False)).to_pylist():
+            mask = pc.call_function("and", [mask, pc.call_function("less_equal", [timestamps, to_timestamp])])
+        for index in pc.call_function("indices_nonzero", [pc.fill_null(mask, False)]).to_pylist():
             # Decode one selected payload at a time so the result limit can stop work.
             yield offset + index, table_to_list_of_dicts(chunk.slice(index, 1))[0]
 

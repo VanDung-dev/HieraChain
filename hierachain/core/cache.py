@@ -50,7 +50,7 @@ class AdvancedCache(MutableMapping[str, Any]):
         self.misses = 0
         self.evictions = 0
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: object, default: Any = None) -> Any:
         key = str(key)
         with self.lock:
             if key not in self.cache:
