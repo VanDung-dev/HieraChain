@@ -50,7 +50,11 @@ Consensus integration, 2PC, data-flow and recovery tests use per-case temporary 
 
 CI installs `uv.lock` with `uv sync --frozen --extra dev` and runs test files sequentially. A separate PostgreSQL 16/Redis 7.4 job provisions isolated databases and separate audit-manifest roles, then uses `--fail-on-skip` for its required backend contracts. Local backend tests remain optional when their service URLs are absent; IPFS daemon checks need a separate running daemon.
 
-The required `ty` gate covers serialization, core block/Merkle handling and ordering storage, metrics and block building. Other modules are not covered by this gate. The older mypy ignore settings do not apply to it.
+The required `ty` gate checks the entire `hierachain/` package. The older mypy ignore settings do not apply to it. Run the same check locally:
+
+```bash
+uv run --frozen --extra dev ty check hierachain/
+```
 
 ### Durable Throughput Benchmark in Docker
 

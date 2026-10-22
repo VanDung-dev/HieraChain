@@ -50,7 +50,11 @@ Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQL
 
 CI cài theo `uv.lock` bằng `uv sync --frozen --extra dev` và chạy từng file test tuần tự. Job PostgreSQL 16/Redis 7.4 riêng tạo database cô lập và các role audit-manifest tách biệt, sau đó dùng `--fail-on-skip` cho những contract backend bắt buộc. Test backend cục bộ vẫn có thể bỏ qua khi thiếu URL dịch vụ; kiểm tra daemon IPFS cần daemon đang chạy riêng.
 
-Cổng `ty` bắt buộc kiểm tra serialization, block/Merkle lõi và storage, metrics, block building của ordering. Các module khác chưa nằm trong cổng này. Cấu hình bỏ qua lỗi mypy cũ không áp dụng cho cổng này.
+Cổng `ty` bắt buộc kiểm tra toàn bộ package `hierachain/`. Cấu hình bỏ qua lỗi mypy cũ không áp dụng cho cổng này. Chạy cùng phép kiểm tra ở máy cục bộ:
+
+```bash
+uv run --frozen --extra dev ty check hierachain/
+```
 
 ### Benchmark throughput bền vững bằng Docker
 
