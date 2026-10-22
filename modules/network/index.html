@@ -4584,6 +4584,7 @@
 <li><strong>Replay buffer</strong>: Retains at most 1,000 timestamp/nonce pairs with nonce strings of at most 128 characters. When all entries are still within the 60-second window, new messages are rejected until an entry expires.</li>
 </ul>
 <p><code>NetworkClient</code> tracks seed and manually registered peers in the same registry. Removing a peer also closes its outbound DEALER socket. A peer is initially healthy for 60 seconds after registration; each accepted inbound message from its registered socket identity renews that period. An idle peer becomes unhealthy when status or peers are read. This health indicator does not authenticate the peer or confirm delivery of outbound messages.</p>
+<p>If <code>ZmqNode.start()</code> fails, it closes the transport sockets and context before raising <code>NetworkError</code>. <code>NetworkClient.start()</code> releases a partially initialized transport and returns <code>False</code>; after resolving the cause, calling <code>start()</code> again creates a fresh transport. <code>NetworkClient.stop()</code> also cleans up a transport that never reached the running state and can be called repeatedly.</p>
 <h3 id="2-secure-connection-manager-secure_connectionpy">2. Secure Connection Manager (<code>secure_connection.py</code>)</h3>
 <p>Orchestrates the secure connection establishment process:</p>
 <ol>

@@ -4769,23 +4769,25 @@
 <p>Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQLite và journal trong thư mục tạm riêng cho từng test. Chúng không yêu cầu dịch vụ PostgreSQL trong <code>.env</code> của ứng dụng; test live-backend chuyên biệt kiểm tra PostgreSQL.</p>
 <h3 id="cac-cong-kiem-tra-ci-bat-buoc">Các cổng kiểm tra CI bắt buộc</h3>
 <p>CI cài theo <code>uv.lock</code> bằng <code>uv sync --frozen --extra dev</code> và chạy từng file test tuần tự. Job PostgreSQL 16/Redis 7.4 riêng tạo database cô lập và các role audit-manifest tách biệt, sau đó dùng <code>--fail-on-skip</code> cho những contract backend bắt buộc. Test backend cục bộ vẫn có thể bỏ qua khi thiếu URL dịch vụ; kiểm tra daemon IPFS cần daemon đang chạy riêng.</p>
-<p>Cổng <code>ty</code> bắt buộc kiểm tra serialization, block/Merkle lõi và storage, metrics, block building của ordering. Các module khác chưa nằm trong cổng này. Cấu hình bỏ qua lỗi mypy cũ không áp dụng cho cổng này.</p>
+<p>Cổng <code>ty</code> bắt buộc kiểm tra toàn bộ package <code>hierachain/</code>. Cấu hình bỏ qua lỗi mypy cũ không áp dụng cho cổng này. Chạy cùng phép kiểm tra ở máy cục bộ:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>ty<span class="w"> </span>check<span class="w"> </span>hierachain/
+</code></pre></div>
 <h3 id="benchmark-throughput-ben-vung-bang-docker">Benchmark throughput bền vững bằng Docker</h3>
 <p>Chạy benchmark từ source hiện tại với PostgreSQL 16, giới hạn 1 CPU, 1 GiB RAM
 và bật ghi journal bền vững:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>--abort-on-container-exit
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>--abort-on-container-exit
 </code></pre></div>
 <p>Có thể đổi workload bằng <code>BENCHMARK_EVENTS</code>, <code>BENCHMARK_BATCH_SIZE</code>,
 <code>BENCHMARK_CPUS</code> và <code>BENCHMARK_MEMORY</code>. Fsync journal luôn được bật.
 Hãy chạy <code>down -v</code> trước khi cần benchmark với
 database sạch; xóa phần còn lại của Compose bằng:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>down<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>down<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="bo-kiem-thu-runtime-chuyen-biet-cho-docker">Bộ kiểm thử runtime chuyên biệt cho Docker</h3>
 <p>Chạy các kiểm tra xác định cho image, dependency native, replay journal và
 PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.test.yml<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--profile<span class="w"> </span>docker-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>docker-tests
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.test.yml<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--profile<span class="w"> </span>docker-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>docker-tests
 </code></pre></div>
 <p>Profile này khởi động PostgreSQL 16 riêng và lưu journal append-only tại
 <code>/app/data</code>. Fsync journal luôn được bật. Có thể đổi giới hạn container bằng
@@ -4795,16 +4797,16 @@ PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
 <p>Stress ở chế độ production cần <code>HRC_API_KEY</code> trong <code>.env</code> gốc hoặc môi trường, dùng key đã được cấp trong <code>HRC_API_KEYS_SOURCE_FILE</code> với quyền <code>chains</code>, <code>events</code>và <code>proofs</code> (hoặc <code>all</code>). Không đưa key vào log hay báo cáo. Launcher kiểm tra có cấu hình key trước triển khai; pytest kiểm tra truy cập chain có xác thực trên từng node trước khi chạy test. Thiếu key, phản hồi 401/403/429 hoặc node không kết nối được sẽ dừng phiên test. Client HTTP và WebSocket dùng cùng key và <code>HRC_API_KEY_NAME</code> (mặc định <code>X-API-Key</code>).</p>
 <p>Stage source của Docker xuất constraint dependency từ <code>uv.lock</code>; stage production cài wheel và công cụ test theo constraint đó rồi chạy <code>pip check</code>. Build lại image sau khi đổi lockfile.</p>
 <p>Sau khi sửa source, build lại wheel và image. Lệnh build wheel xóa thư mục sinh tự động <code>build/</code> để module đã xóa không còn sót trong cache setuptools:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'source docker/lib/common.sh; build_wheel'</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>production<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'source docker/lib/common.sh; build_wheel'</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>production<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 </code></pre></div>
 <p>Khi cluster đã dùng image mới, chạy với <code>--reuse</code> để giữ deployment và volume. Lệnh stress mặc định triển khai lại và xóa volume. Kiểm tra riêng từng file trước khi chạy toàn bộ suite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>.env<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>.env<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse
 </code></pre></div>
 <p>Fixture crypto ký event/block và cung cấp public key tin cậy. Benchmark assert kết quả xác minh thành công. Khi chỉ kiểm tra crypto cục bộ không cần preflight mạng, đặt <code>REAL_REQUESTS=false</code>; kết quả này không xác minh dịch vụ thật.</p>
 <p><code>--duration</code> điều khiển các test đọc <code>TEST_DURATION</code>; đây không phải giới hạn thời gian của toàn bộ suite. Tsunami flood đầy đủ vẫn yêu cầu 5.000 event. Pha gửi có ngân sách <code>STRESS_TIMEOUT</code> riêng (mặc định 120 giây), sau bước chờ node và tạo chain. Worker dừng khi hết giờ, batch còn trong hàng đợi bị hủy và request HTTP đang chạy dùng thời gian còn lại, không retry trong flood. Lần chạy chưa đủ event báo <code>timed_out</code> cùng <code>unattempted_events</code> và không đạt tiêu chí chấp nhận. Launcher hiển thị kết quả từng test, traceback lỗi ngắn và mười test chậm nhất. Live log, log đã capture trên console và stack thread theo thời gian được ẩn mặc định; log INFO vẫn được capture trong báo cáo HTML, cùng kết quả XML.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">STRESS_TIMEOUT</span><span class="o">=</span><span class="m">120</span><span class="w"> </span>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">STRESS_TIMEOUT</span><span class="o">=</span><span class="m">120</span><span class="w"> </span>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
 </code></pre></div>
 <p>HTTP 200 từ <code>/api/ledger/health</code> xác nhận tiến trình còn hoạt động; <code>/api/ledger/ready</code> kiểm tra recovery của hệ phân cấp. Stress dùng <code>/api/ledger/ready</code> mà không chuyển sang liveness; bước chờ node chia sẻ timeout cho các request và không tự retry HTTP. Bước tạo chain yêu cầu đủ mọi node đã cấu hình, còn poison setup probe từng node một lần. Bootstrap hệ phân cấp thất bại sẽ đóng storage pool, journal của coordinator và các sub-chain đã khởi động. Request đồng thời với bootstrap nhận HTTP 503 ngay; lần khởi tạo thất bại chờ năm giây trước khi thử lại. Event đã ký cho phép trường <code>sender</code> cấp ngoài, trong khi nội dung nghiệp vụ vẫn phải qua kiểm tra thuật ngữ; API admin vẫn bắt buộc xác minh chữ ký. Khi khởi động, orderer kiểm tra liên kết block đã lưu trước khi replay journal. Lỗi <code>Chain link BROKEN</code> cần khôi phục từ dữ liệu tin cậy hoặc được chấp thuận rõ ràng để reset dữ liệu test có thể bỏ. Build lại image không sửa block đã lưu. Sub-chain chờ replay journal hoàn tất, không hủy backlog hợp lệ sau mười giây; lỗi processor hoặc shutdown vẫn dừng bootstrap. Rehydration của sub-chain cập nhật trạng thái cục bộ mà không ghi lùi chỉ số block hoặc cache của orderer đang hoạt động.</p>
 <p>Block của sub-chain được hoàn tất consensus, tuân thủ khoảng thời gian tối thiểu của consensus và ký header bằng khóa tin cậy trước khi orderer lưu. Consumer xác minh và áp dụng block đã commit mà không đổi index, hash, event hay chữ ký, và không ghi lại block. Lỗi consensus hoặc storage không được tăng chỉ số block hoặc đưa block vào commit queue. Consumer và lệnh flush đồng thời lấy block theo đúng thứ tự. Test throughput consensus qua HTTP chờ tối đa 120 giây để mọi event nghiệp vụ đã nhận được commit, loại event consensus PoA trong mỗi block mới khỏi số đếm. Throughput tính cả thời gian chờ commit, nên test restart tiếp theo không nhận backlog từ test throughput đã pass. Recovery vẫn yêu cầu primary vừa restart phải ledger-ready trong 60 giây; các test này dùng chain PoA generic và không chứng minh view change của giao thức BFT.</p>
@@ -4813,31 +4815,31 @@ PostgreSQL adapter mà không cần khởi động cluster bốn node:</p>
 <ul>
 <li>
 <p>Xây dựng cấu hình và chạy stress test với báo cáo định dạng HTML:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
 </code></pre></div>
 </li>
 <li>
 <p>Chạy stress test trên mạng thực tế (gửi các yêu cầu HTTP thực tế tới các node):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v<span class="w"> </span>-s
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v<span class="w"> </span>-s
 </code></pre></div>
 </li>
 <li>
 <p>Chạy không cần xuất báo cáo HTML:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester
 </code></pre></div>
 </li>
 <li>
 <p>Dừng và dọn dẹp các container:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>down<span class="w"> </span>--remove-orphans
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>down<span class="w"> </span>--remove-orphans
 </code></pre></div>
 </li>
 </ul>
 <p>Các báo cáo kết quả được lưu tại thư mục <code>log/report/</code>.</p>
 <h3 id="kiem-thu-ap-luc-voi-kubernetes">Kiểm thử Áp lực với Kubernetes</h3>
 <p>Script triển khai chung sử dụng cluster Kubernetes đã có. Với OrbStack cục bộ:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>orbctl<span class="w"> </span>start<span class="w"> </span>k8s
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>orbctl<span class="w"> </span>start<span class="w"> </span>k8s
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
 </code></pre></div>
 <p>Lệnh đầu build và triển khai bốn node dùng SQLite, bốn pod IPFS riêng tư,
 Redis và gateway. Triển khai giữ nguyên PVC và khóa hiện có; identity K8s được
@@ -4857,53 +4859,50 @@ và exec vào bốn pod node. Chỉ dùng cho kiểm thử cô lập. <code>setu
 <h2 id="cac-kich-ban-ho-tro-developer-developer-scripts">Các Kịch bản Hỗ trợ Developer (Developer Scripts)</h2>
 <p>Thư mục <code>scripts/</code> chứa các công cụ tiện ích hỗ trợ nhà phát triển.</p>
 <h3 id="phan-tich-tinh-static-analysis">Phân tích Tĩnh (Static Analysis)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Run default</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Export results to file</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Run default</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Export results to file</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
 </code></pre></div>
 <h3 id="ra-quet-kiem-tra-bao-mat-security-auditing">Rà quét &amp; Kiểm tra Bảo mật (Security Auditing)</h3>
 <p>Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ chuyên dụng:</p>
 <ul>
 <li>
 <p><strong>Bandit</strong> (Phân tích bảo mật mã nguồn tĩnh SAST cho Python):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Full security scan across all severity levels</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Full security scan across all severity levels</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
 </code></pre></div>
 </li>
 <li>
 <p><strong>pip-audit</strong> (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Scan all installed dependencies</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Scan all installed dependencies</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
 </code></pre></div>
 </li>
 <li>
-<p><strong>Semgrep</strong> (Phân tích ngữ nghĩa &amp; quy tắc bảo mật API):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Auto-detect relevant rules</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>auto<span class="w"> </span>hierachain/
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Run OWASP Top 10 ruleset</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>p/owasp-top-ten<span class="w"> </span>hierachain/
+<p><strong>Cổng Bandit trong CI</strong> (phát hiện mức High làm job thất bại):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-lll
 </code></pre></div>
 </li>
 </ul>
+<p>Job Bandit trong CI còn lưu báo cáo JSON đầy đủ, gồm cả các phát hiện mức Medium và Low. <a href="../../../../.github/workflows/codeql.yml">Workflow CodeQL</a> hiện có bổ sung phân tích bảo mật Python. Bandit thay dependency Semgrep cục bộ; bộ quy tắc của hai công cụ không có độ bao phủ giống nhau. Cần đối chiếu mã nguồn trước khi coi một phát hiện là lỗ hổng đã xác nhận.</p>
 <h3 id="kiem-thu-hieu-nang-benchmarking">Kiểm thử Hiệu năng (Benchmarking)</h3>
 <ul>
 <li>
 <p><strong>Hiệu năng Băm</strong> (So sánh băm cây Merkle vs băm JSON):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
 </code></pre></div>
 </li>
 <li>
 <p><strong>Đo lường Băng thông</strong> (Đo tốc độ xử lý sự kiện):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 </li>
 </ul>
@@ -4911,7 +4910,7 @@ và exec vào bốn pod node. Chỉ dùng cho kiểm thử cô lập. <code>setu
 <ul>
 <li>
 <p><strong>Xác minh tính Bền vững Lưu trữ</strong> (Kiểm tra độ bền lưu trữ cục bộ):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>python<span class="w"> </span>scripts/verify_storage.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>scripts/verify_storage.py
 </code></pre></div>
 </li>
 </ul>
@@ -4930,8 +4929,8 @@ và exec vào bốn pod node. Chỉ dùng cho kiểm thử cô lập. <code>setu
 </li>
 </ul>
 <h2 id="vi-du-chay-kiem-thu-theo-marker">Ví dụ chạy kiểm thử theo Marker</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="cac-nguyen-tac-kiem-thu">Các Nguyên tắc Kiểm thử</h2>
 <ul>

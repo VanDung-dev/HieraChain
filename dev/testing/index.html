@@ -4769,23 +4769,25 @@
 <p>Consensus integration, 2PC, data-flow and recovery tests use per-case temporary SQLite databases and journals. They do not require the PostgreSQL service from the application's <code>.env</code>; dedicated live-backend tests exercise PostgreSQL.</p>
 <h3 id="required-ci-gates">Required CI gates</h3>
 <p>CI installs <code>uv.lock</code> with <code>uv sync --frozen --extra dev</code> and runs test files sequentially. A separate PostgreSQL 16/Redis 7.4 job provisions isolated databases and separate audit-manifest roles, then uses <code>--fail-on-skip</code> for its required backend contracts. Local backend tests remain optional when their service URLs are absent; IPFS daemon checks need a separate running daemon.</p>
-<p>The required <code>ty</code> gate covers serialization, core block/Merkle handling and ordering storage, metrics and block building. Other modules are not covered by this gate. The older mypy ignore settings do not apply to it.</p>
+<p>The required <code>ty</code> gate checks the entire <code>hierachain/</code> package. The older mypy ignore settings do not apply to it. Run the same check locally:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>ty<span class="w"> </span>check<span class="w"> </span>hierachain/
+</code></pre></div>
 <h3 id="durable-throughput-benchmark-in-docker">Durable Throughput Benchmark in Docker</h3>
 <p>Run the benchmark from the current source tree with PostgreSQL 16, 1 CPU,
 1 GiB RAM, and durable journal writes enabled:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>--abort-on-container-exit
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>--abort-on-container-exit
 </code></pre></div>
 <p>Override the workload with <code>BENCHMARK_EVENTS</code>, <code>BENCHMARK_BATCH_SIZE</code>,
 <code>BENCHMARK_CPUS</code>, and <code>BENCHMARK_MEMORY</code>. Journal fsync always stays enabled.
 Run <code>down -v</code> before a clean-database comparison;
 clean any Compose leftovers with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>down<span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.benchmark.yml<span class="w"> </span>down<span class="w"> </span>-v
 </code></pre></div>
 <h3 id="docker-specific-runtime-tests">Docker-specific Runtime Tests</h3>
 <p>Run deterministic checks for the image, native dependencies, journal replay,
 and PostgreSQL adapter wiring without starting the four-node cluster:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.test.yml<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--profile<span class="w"> </span>docker-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>docker-tests
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.test.yml<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--profile<span class="w"> </span>docker-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>docker-tests
 </code></pre></div>
 <p>The profile starts an isolated PostgreSQL 16 service and stores the append-only
 journal under <code>/app/data</code>. Journal fsync is always enabled. Override
@@ -4796,16 +4798,16 @@ journal under <code>/app/data</code>. Journal fsync is always enabled. Override
 <p>Production stress requires <code>HRC_API_KEY</code> in the root <code>.env</code> or environment, using a key already provisioned in <code>HRC_API_KEYS_SOURCE_FILE</code> with <code>chains</code>, <code>events</code>, and <code>proofs</code> permissions (or <code>all</code>). Never paste the key into logs or reports. The launcher checks that a key is configured before deployment; pytest checks authenticated chain access on every node before running tests. Missing keys, 401/403/429 responses, and unreachable nodes stop the session. HTTP and WebSocket clients use the same key and <code>HRC_API_KEY_NAME</code> (default <code>X-API-Key</code>).</p>
 <p>The Docker source stage exports dependency constraints from <code>uv.lock</code>; the production stage installs the wheel and test tools under those constraints and runs <code>pip check</code>. Rebuild the image after changing the lockfile.</p>
 <p>After source changes, rebuild the wheel and image. The wheel build clears generated <code>build/</code> so deleted modules cannot survive in setuptools' cache:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'source docker/lib/common.sh; build_wheel'</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>production<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'source docker/lib/common.sh; build_wheel'</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>production<span class="w"> </span>-t<span class="w"> </span>hierachain:latest<span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 </code></pre></div>
 <p>Once the cluster uses the new image, run with <code>--reuse</code> to preserve its deployment and volumes. The default stress command redeploys and removes volumes. Check an individual file before running the full suite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>.env<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>.env<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse
 </code></pre></div>
 <p>Crypto fixtures sign events and blocks and provide a trusted public key. Their benchmarks assert verification succeeds. For local crypto-only checks without network preflight, set <code>REAL_REQUESTS=false</code>; this does not validate live services.</p>
 <p><code>--duration</code> controls tests that read <code>TEST_DURATION</code>; it is not a time limit for the entire suite. The full tsunami flood still requests 5,000 events. Its send phase has a separate <code>STRESS_TIMEOUT</code> budget (default 120 seconds), after node readiness and chain creation. Workers stop at the deadline, queued batches are cancelled, and active HTTP calls use the remaining budget without flood retries. Incomplete runs report <code>timed_out</code> and <code>unattempted_events</code> and fail acceptance. The launcher shows each test result, short failure tracebacks, and the ten slowest tests. Live logs, captured console logs, and timed thread stack dumps are hidden by default; INFO logs remain captured for the HTML report, alongside the XML results.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">STRESS_TIMEOUT</span><span class="o">=</span><span class="m">120</span><span class="w"> </span>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">STRESS_TIMEOUT</span><span class="o">=</span><span class="m">120</span><span class="w"> </span>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>docker<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
 </code></pre></div>
 <p>An HTTP 200 from <code>/api/ledger/health</code> confirms liveness; <code>/api/ledger/ready</code> checks hierarchy recovery. Stress readiness uses <code>/api/ledger/ready</code> without falling back to liveness; node polling shares its timeout across requests, without automatic HTTP retries. Chain setup requires every configured node, and poison setup probes each node once. Failed hierarchy bootstrap closes its storage pool, coordinator journal, and any started sub-chains. Concurrent bootstrap requests receive HTTP 503 immediately; failed attempts have a five-second retry cooldown. The signed event envelope permits its top-level <code>sender</code> field while business content still follows terminology checks; signature validation remains required by the admin API. Ordering startup validates persisted block links before replaying the journal. A <code>Chain link BROKEN</code> error requires recovery from trusted data or an explicitly approved reset of disposable test data. Rebuilding an image does not repair persisted blocks. Sub-chain startup waits for journal replay to finish, without cancelling a valid backlog after ten seconds; processor failure or shutdown still aborts bootstrap. Sub-chain rehydration updates local state without rewinding the active orderer's block index or cache.</p>
 <p>Sub-chain blocks complete consensus, respect its minimum block interval, and receive the trusted header signature before the orderer saves them. The consumer validates and applies these committed blocks without changing their index, hash, events or signature, and never writes them again. Consensus or storage failure cannot advance the commit queue or block index. Concurrent consumer and flush calls drain the queue in order. HTTP consensus throughput checks wait up to 120 seconds for every accepted business event to commit, excluding the PoA consensus event in each new block. Throughput includes this drain time, so subsequent restart tests inherit no backlog from a passing throughput test. Recovery still requires the restarted primary to become ledger-ready within 60 seconds; they exercise a generic PoA chain and do not prove BFT protocol view changes.</p>
@@ -4814,31 +4816,31 @@ journal under <code>/app/data</code>. Journal fsync is always enabled. Override
 <ul>
 <li>
 <p>Build and run stress tests with HTML report:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
 </code></pre></div>
 </li>
 <li>
 <p>Run real network stress tests (sends actual HTTP requests to nodes):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v<span class="w"> </span>-s
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>docker/stress/test_real_network.py<span class="w"> </span>-v<span class="w"> </span>-s
 </code></pre></div>
 </li>
 <li>
 <p>Run without HTML report:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>stress-tester
 </code></pre></div>
 </li>
 <li>
 <p>Stop and clean up containers:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>down<span class="w"> </span>--remove-orphans
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>down<span class="w"> </span>--remove-orphans
 </code></pre></div>
 </li>
 </ul>
 <p>Reports are saved to <code>log/report/</code> directory.</p>
 <h3 id="kubernetes-stress-testing">Kubernetes Stress Testing</h3>
 <p>The unified wrapper targets an existing Kubernetes cluster. For local OrbStack:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>orbctl<span class="w"> </span>start<span class="w"> </span>k8s
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>orbctl<span class="w"> </span>start<span class="w"> </span>k8s
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>bash<span class="w"> </span>docker/hierachain.sh<span class="w"> </span>stress<span class="w"> </span>k8s<span class="w"> </span>--reuse<span class="w"> </span>--duration<span class="w"> </span><span class="m">15</span>
 </code></pre></div>
 <p>The first command builds and deploys four SQLite-backed nodes, four private
 IPFS pods, Redis and the gateway. Deployment preserves existing PVCs and keys;
@@ -4859,53 +4861,50 @@ its PVCs; <code>setup k8s</code> preserves data by default.</p>
 <h2 id="developer-scripts">Developer Scripts</h2>
 <p>The <code>scripts/</code> directory contains utility tools.</p>
 <h3 id="static-analysis">Static Analysis</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Run default</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Export results to file</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Run default</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Export results to file</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
 </code></pre></div>
 <h3 id="security-auditing-code-scanning">Security Auditing &amp; Code Scanning</h3>
 <p>Automated security checks across codebase and dependencies:</p>
 <ul>
 <li>
 <p><strong>Bandit</strong> (SAST security analysis for Python code):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Full security scan across all severity levels</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Full security scan across all severity levels</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
 </code></pre></div>
 </li>
 <li>
 <p><strong>pip-audit</strong> (Vulnerability &amp; CVE scanner for packages):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Scan all installed dependencies</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Scan all installed dependencies</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
 </code></pre></div>
 </li>
 <li>
-<p><strong>Semgrep</strong> (Semantic API security &amp; taint analysis):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Auto-detect relevant rules</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>auto<span class="w"> </span>hierachain/
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Run OWASP Top 10 ruleset</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>p/owasp-top-ten<span class="w"> </span>hierachain/
+<p><strong>Bandit CI gate</strong> (high-severity findings block the job):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-lll
 </code></pre></div>
 </li>
 </ul>
+<p>The Bandit CI job also stores a full JSON report, including medium- and low-severity findings. The existing <a href="../../../../.github/workflows/codeql.yml">CodeQL workflow</a> provides additional Python security analysis. Bandit replaces the local Semgrep dependency; its rules do not provide identical coverage. Review findings against the source before treating them as confirmed vulnerabilities.</p>
 <h3 id="benchmarking">Benchmarking</h3>
 <ul>
 <li>
 <p><strong>Hashing Performance</strong> (Compare Merkle tree hash vs JSON):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
 </code></pre></div>
 </li>
 <li>
 <p><strong>Throughput Benchmark</strong> (Measure event processing throughput):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 </li>
 </ul>
@@ -4913,7 +4912,7 @@ its PVCs; <code>setup k8s</code> preserves data by default.</p>
 <ul>
 <li>
 <p><strong>Verify Storage Persistence</strong> (Test local storage durability):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>python<span class="w"> </span>scripts/verify_storage.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>scripts/verify_storage.py
 </code></pre></div>
 </li>
 </ul>
@@ -4932,8 +4931,8 @@ its PVCs; <code>setup k8s</code> preserves data by default.</p>
 </li>
 </ul>
 <h2 id="running-by-marker-example">Running by Marker Example</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_data_flow.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="testing-principles">Testing Principles</h2>
 <ul>
