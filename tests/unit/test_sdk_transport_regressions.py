@@ -7,12 +7,21 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Iterator
 
 import pytest
+import requests
 
 from hierachain.sdk.async_client import HieraChainAsyncClient
 from hierachain.sdk.client import HieraChainClient
 from hierachain.sdk.exceptions import HieraChainAPIError
 from hierachain.sdk.types import HieraChainClientConfig
 from hierachain.serialization import loads_json
+
+
+def test_sync_client_rejects_response_without_http_status() -> None:
+    client = HieraChainClient()
+    response = requests.Response()
+
+    with pytest.raises(HieraChainAPIError, match="no HTTP status code"):
+        client._handle_response(response)
 
 
 def test_sync_health_check_uses_supported_ledger_route(monkeypatch: pytest.MonkeyPatch) -> None:

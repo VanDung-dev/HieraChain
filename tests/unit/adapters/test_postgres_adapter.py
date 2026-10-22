@@ -3,12 +3,14 @@ Unit tests for PostgreSQL adapter.
 """
 
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
 
 from hierachain.adapters.database import PostgresAdapter as ExportedPostgresAdapter
+from hierachain.adapters.database.audit_manifest import PostgresAuditManifest
 from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.core import Blockchain
@@ -24,6 +26,22 @@ def no_database_connection(monkeypatch):
 def test_export():
     """Test PostgresAdapter is exported from database adapters package."""
     assert ExportedPostgresAdapter is PostgresAdapter
+
+
+@pytest.mark.parametrize("row", [None, (None,)])
+def test_audit_manifest_rejects_missing_table(
+    row: tuple[str | None] | None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = MagicMock()
+    cursor = connection.__enter__.return_value.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = row
+    monkeypatch.setattr(
+        "hierachain.adapters.database.audit_manifest.psycopg.connect",
+        lambda *_args, **_kwargs: connection,
+    )
+
+    with pytest.raises(RuntimeError, match="table is not initialized"):
+        PostgresAuditManifest("postgresql://localhost/manifest")
 
 
 def test_initialization():
@@ -288,6 +306,23 @@ def test_store_proof_with_mock_conn():
     assert result is True
     mock_cursor.execute.assert_called_once()
     mock_conn.commit.assert_called_once()
+
+
+def test_store_proof_through_base_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    adapter = PostgresAdapter(database_url="postgresql://user:pass@localhost:5432/testdb")
+    connection = MagicMock()
+
+    @contextmanager
+    def get_connection() -> Iterator[MagicMock]:
+        yield connection
+
+    monkeypatch.setattr(adapter, "_get_connection", get_connection)
+    monkeypatch.setattr("hierachain.adapters.database.postgres_adapter.time.time", lambda: 123.0)
+
+    assert adapter.store_proof("main", "sub", "proof-hash", 10, {"summary": "test"}) is True
+    parameters = connection.cursor.return_value.execute.call_args.args[1]
+    assert parameters == ("main", "sub", "proof-hash", 10, '{"summary":"test"}', 123.0, 123.0)
+    connection.commit.assert_called_once()
 
 
 def test_query_events_filter_with_mock_conn():

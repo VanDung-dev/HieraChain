@@ -1,11 +1,14 @@
 """Regression coverage for GraphQL, WebSocket, and private-data API boundaries."""
 
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
+from starlette.requests import HTTPConnection, Request
+from starlette.types import Scope
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from hierachain.api import graphql_handler
 from hierachain.api.business import state as business_state
@@ -17,6 +20,26 @@ from hierachain.api.websocket.manager import ws_manager
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("connection_type", [Request, WebSocket])
+@pytest.mark.parametrize("location", ["header", "query"])
+async def test_api_key_extraction_for_both_transports(
+    connection_type: type[HTTPConnection], location: str,
+) -> None:
+    verifier = APIKeyVerifier({"key_location": location, "key_name": "X-API-Key"})
+    scope: Scope = {
+        "type": "http" if connection_type is Request else "websocket",
+        "headers": [(b"x-api-key", b"header-value")],
+        "query_string": b"X-API-Key=query-value",
+    }
+    connection = (
+        WebSocket(scope, AsyncMock(), AsyncMock())
+        if connection_type is WebSocket else Request(scope)
+    )
+    assert await verifier._extract_api_key(connection, None) == f"{location}-value"
+    assert await verifier._extract_api_key(connection, "explicit-value") == "explicit-value"
 
 
 def _build_authenticated_app(key_manager: KeyManager) -> FastAPI:

@@ -74,6 +74,24 @@ def _journal_event() -> dict[str, Any]:
     }
 
 
+def test_callable_validation_rule_reports_its_class_name() -> None:
+    class RejectEvent:
+        def __call__(self, _event: dict[str, Any]) -> bool:
+            return False
+
+    certifier = EventCertifier()
+    certifier.add_validation_rule(RejectEvent())
+    event = PendingEvent(
+        event_id="event-1", event_data=_journal_event(), channel_id="channel-1",
+        submitter_org="test-org", received_at=time.time(), status=EventStatus.PENDING,
+    )
+
+    result = certifier.validate(event)
+
+    assert result["valid"] is False
+    assert result["validation_errors"] == ["Validation rule failed: RejectEvent"]
+
+
 def test_save_block_failure_during_replay_keeps_service_in_maintenance(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
