@@ -16,7 +16,7 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from queue import Empty, Full, Queue
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import httpx
 
@@ -188,6 +188,14 @@ def _get_severity_symbol(severity: AlertSeverity) -> str:
 # =====================================================================
 
 
+class _AlertStatistics(TypedDict):
+    total_alerts: int
+    alerts_by_severity: defaultdict[str, int]
+    alerts_by_category: defaultdict[str, int]
+    notifications_sent: int
+    notifications_failed: int
+
+
 class AlertManager:
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = config or {}
@@ -209,7 +217,7 @@ class AlertManager:
         self._notification_lock = threading.Lock()
         self.last_alert_times: dict[str, float] = {}
         self.escalation_timers: dict[str, threading.Timer] = {}
-        self.stats = {
+        self.stats: _AlertStatistics = {
             "total_alerts": 0,
             "alerts_by_severity": defaultdict(int),
             "alerts_by_category": defaultdict(int),
@@ -398,9 +406,9 @@ class AlertManager:
         self.alert_history.append(alert)
         if len(self.alert_history) > self.max_history_size:
             self.alert_history = self.alert_history[-self.max_history_size :]
-        self.stats["total_alerts"] = cast(int, self.stats["total_alerts"]) + 1
-        cast(defaultdict, self.stats["alerts_by_severity"])[alert.severity.value] += 1
-        cast(defaultdict, self.stats["alerts_by_category"])[alert.category.value] += 1
+        self.stats["total_alerts"] += 1
+        self.stats["alerts_by_severity"][alert.severity.value] += 1
+        self.stats["alerts_by_category"][alert.category.value] += 1
         self.last_alert_times[rule.rule_id] = time.time()
         self._queue_notification(alert)
         if rule.escalation_time > 0:
