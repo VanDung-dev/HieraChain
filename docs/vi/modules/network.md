@@ -65,6 +65,8 @@ Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket **ROUTER
 
 `NetworkClient` theo dõi seed và peer đăng ký thủ công trong cùng registry. Gỡ peer cũng đóng socket DEALER gửi đi của peer đó. Peer được xem là healthy trong 60 giây đầu sau khi đăng ký; mỗi thông điệp nhận vào hợp lệ từ định danh socket đã đăng ký sẽ gia hạn khoảng này. Peer im lặng chuyển unhealthy khi đọc trạng thái hoặc danh sách peer. Chỉ báo health này không xác thực peer hay xác nhận thông điệp gửi đi đã được nhận.
 
+Nếu `ZmqNode.start()` thất bại, nó đóng socket và context của transport trước khi ném `NetworkError`. `NetworkClient.start()` giải phóng transport khởi tạo dở và trả về `False`; sau khi xử lý nguyên nhân, gọi lại `start()` sẽ tạo transport mới. `NetworkClient.stop()` cũng dọn transport chưa chuyển sang trạng thái chạy và có thể được gọi nhiều lần.
+
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Điều phối quy trình thiết lập kết nối an toàn:
 

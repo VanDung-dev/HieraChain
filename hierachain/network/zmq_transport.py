@@ -109,7 +109,8 @@ class ZmqNode:
             # Start receiver loop in background
             asyncio.create_task(_receiver_loop(self))
         except Exception as e:
-            raise NetworkError(f"Failed to start node {self.node_id}: {e}")
+            await self.stop()
+            raise NetworkError(f"Failed to start node {self.node_id}: {e}") from e
 
     async def stop(self) -> None:
         """Stop the node and close sockets."""

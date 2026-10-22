@@ -158,13 +158,11 @@ class NetworkClient:
         except Exception as e:
             logger.error("Failed to start NetworkClient: %s", e)
             self._is_running = False
+            await self.stop()
             return False
 
     async def stop(self) -> None:
         """Stop the P2P network."""
-        if not self._is_running:
-            return
-
         try:
             if self._zmq_node:
                 await self._zmq_node.stop()

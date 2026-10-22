@@ -65,6 +65,8 @@ Implements the asynchronous P2P model using **ROUTER** (for receiving) and **DEA
 
 `NetworkClient` tracks seed and manually registered peers in the same registry. Removing a peer also closes its outbound DEALER socket. A peer is initially healthy for 60 seconds after registration; each accepted inbound message from its registered socket identity renews that period. An idle peer becomes unhealthy when status or peers are read. This health indicator does not authenticate the peer or confirm delivery of outbound messages.
 
+If `ZmqNode.start()` fails, it closes the transport sockets and context before raising `NetworkError`. `NetworkClient.start()` releases a partially initialized transport and returns `False`; after resolving the cause, calling `start()` again creates a fresh transport. `NetworkClient.stop()` also cleans up a transport that never reached the running state and can be called repeatedly.
+
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Orchestrates the secure connection establishment process:
 
