@@ -17,7 +17,8 @@ class PostgresAuditManifest:
         with psycopg.connect(self.database_url, connect_timeout=3) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT to_regclass('public.audit_event_digests')")
-                if cursor.fetchone()[0] is None:
+                row = cursor.fetchone()
+                if row is None or row[0] is None:
                     raise RuntimeError("Audit manifest table is not initialized")
 
     def write_digest(self, event_id: str, digest: str) -> None:

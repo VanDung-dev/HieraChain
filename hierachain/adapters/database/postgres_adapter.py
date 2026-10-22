@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import time
 from contextlib import contextmanager
+from importlib import import_module
 from typing import Any
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
@@ -67,8 +68,8 @@ class PostgresAdapter(SQLBase):
             logger.info("Initialized psycopg3 connection pool for PostgreSQL")
         except ImportError:
             try:
-                from psycopg2.extras import RealDictCursor
-                from psycopg2.pool import ThreadedConnectionPool
+                RealDictCursor = import_module("psycopg2.extras").RealDictCursor
+                ThreadedConnectionPool = import_module("psycopg2.pool").ThreadedConnectionPool
 
                 self._pool = ThreadedConnectionPool(
                     minconn=self.pool_min,
@@ -176,19 +177,21 @@ class PostgresAdapter(SQLBase):
         cursor.execute(query, tuple(params))
         return [self._create_event_from_row(row) for row in cursor.fetchall()]
 
+    @staticmethod
     def _execute_store_proof(
-        self,
         conn: Any,
         main_chain_name: str,
         sub_chain_name: str,
         proof_hash: str,
         block_index: int,
         metadata: dict[str, Any] | None,
-        submitted_at: float,
-        created_at: float
+        submitted_at: float | None = None,
+        created_at: float | None = None,
     ) -> bool:
         cursor = conn.cursor()
         meta_json = dumps_json(metadata) if metadata else None
+        submitted_at = time.time() if submitted_at is None else submitted_at
+        created_at = time.time() if created_at is None else created_at
         cursor.execute(
             """
             INSERT INTO proofs

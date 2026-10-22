@@ -1,6 +1,7 @@
 """Append-only channel records shared by SQLite and PostgreSQL adapters."""
 
-from typing import Any
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Any
 
 from hierachain.serialization import dumps_json, loads_json
 
@@ -24,6 +25,9 @@ class ChannelLedgerSQLStorage:
     _ledger_placeholder = "?"
     _ledger_registry_lock_suffix = ""
     _ledger_begin = "BEGIN IMMEDIATE"
+
+    if TYPE_CHECKING:
+        def _get_connection(self) -> AbstractContextManager[Any]: ...
 
     def _initialize_channel_ledgers(self, conn: Any, snapshots: dict[str, Any]) -> None:
         """Called in the same transaction as registry creation or legacy migration."""

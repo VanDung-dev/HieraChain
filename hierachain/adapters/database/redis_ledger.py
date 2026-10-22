@@ -167,7 +167,8 @@ class RedisLedgerAdapter(RedisStorageAdapter):
     def get_latest_block(self, chain_name: str | None = None) -> dict[str, Any] | None:
         names = [chain_name] if chain_name is not None else self.list_block_chain_names()
         tips = [self.get_block_by_index(self.client.llen(self._blocks_key(name)) - 1, name) for name in names]
-        return max((tip for tip in tips if tip is not None), key=lambda tip: tip["index"], default=None)
+        valid_tips = [tip for tip in tips if tip is not None]
+        return max(valid_tips, key=lambda tip: tip["index"]) if valid_tips else None
 
     def get_entity_events(self, entity_id: str, chain_name: str | None = None) -> list[dict[str, Any]]:
         return self._query_events("entity_id", entity_id, chain_name)

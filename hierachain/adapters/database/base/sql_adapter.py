@@ -812,7 +812,7 @@ class SQLBase(ChannelLedgerSQLStorage, ABC):
     @staticmethod
     def _execute_update_state(
         conn: Any, key: str, value: Any, last_block_hash: str,
-    ) -> None:
+    ) -> bool | None:
         """Default SQLite implementation."""
         cursor = conn.cursor()
         cursor.execute(
