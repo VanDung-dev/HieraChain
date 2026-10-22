@@ -93,7 +93,7 @@ def _verify_anchor_exists(
     """Verify that the anchor survives a signed durable-storage readback."""
     block = _find_anchor_block(mainchain, subchain_id, state_root, proof_hash)
     storage = getattr(mainchain, "proof_storage", None)
-    if block is None or not callable(getattr(storage, "get_block_by_index", None)):
+    if block is None or storage is None or not callable(getattr(storage, "get_block_by_index", None)):
         return False
     try:
         stored = storage.get_block_by_index(block.index, mainchain.name)
