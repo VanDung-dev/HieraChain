@@ -200,10 +200,10 @@ Automated security checks across codebase and dependencies:
 
     ```bash
     # Full security scan across all severity levels
-    uv run bandit -r hierachain/
+    uv run --frozen --extra dev bandit -r hierachain/
 
     # Scan Medium and High severity issues only
-    uv run bandit -r hierachain/ -ll
+    uv run --frozen --extra dev bandit -r hierachain/ -ll
     ```
 
 * **pip-audit** (Vulnerability & CVE scanner for packages):
@@ -216,15 +216,13 @@ Automated security checks across codebase and dependencies:
     uv run pip-audit --strict
     ```
 
-* **Semgrep** (Semantic API security & taint analysis):
+* **Bandit CI gate** (high-severity findings block the job):
 
     ```bash
-    # Auto-detect relevant rules
-    uv run semgrep --config=auto hierachain/
-
-    # Run OWASP Top 10 ruleset
-    uv run semgrep --config=p/owasp-top-ten hierachain/
+    uv run --frozen --extra dev bandit -r hierachain/ -lll
     ```
+
+The Bandit CI job also stores a full JSON report, including medium- and low-severity findings. The existing [CodeQL workflow](../../../.github/workflows/codeql.yml) provides additional Python security analysis. Bandit replaces the local Semgrep dependency; its rules do not provide identical coverage. Review findings against the source before treating them as confirmed vulnerabilities.
 
 ### Benchmarking
 

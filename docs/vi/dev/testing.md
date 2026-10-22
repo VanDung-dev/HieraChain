@@ -198,10 +198,10 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
 
     ```bash
     # Full security scan across all severity levels
-    uv run bandit -r hierachain/
+    uv run --frozen --extra dev bandit -r hierachain/
 
     # Scan Medium and High severity issues only
-    uv run bandit -r hierachain/ -ll
+    uv run --frozen --extra dev bandit -r hierachain/ -ll
     ```
 
 * **pip-audit** (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):
@@ -214,15 +214,13 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
     uv run pip-audit --strict
     ```
 
-* **Semgrep** (Phân tích ngữ nghĩa & quy tắc bảo mật API):
+* **Cổng Bandit trong CI** (phát hiện mức High làm job thất bại):
 
     ```bash
-    # Auto-detect relevant rules
-    uv run semgrep --config=auto hierachain/
-
-    # Run OWASP Top 10 ruleset
-    uv run semgrep --config=p/owasp-top-ten hierachain/
+    uv run --frozen --extra dev bandit -r hierachain/ -lll
     ```
+
+Job Bandit trong CI còn lưu báo cáo JSON đầy đủ, gồm cả các phát hiện mức Medium và Low. [Workflow CodeQL](../../../.github/workflows/codeql.yml) hiện có bổ sung phân tích bảo mật Python. Bandit thay dependency Semgrep cục bộ; bộ quy tắc của hai công cụ không có độ bao phủ giống nhau. Cần đối chiếu mã nguồn trước khi coi một phát hiện là lỗ hổng đã xác nhận.
 
 ### Kiểm thử Hiệu năng (Benchmarking)
 

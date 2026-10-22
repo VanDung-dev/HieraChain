@@ -14,7 +14,7 @@ source .venv/bin/activate
 python --version
 ```
 
-`uv sync` creates or reuses `.venv`. The `dev` extra supplies pytest, Bandit, pip-audit, Semgrep, Ruff and packaging tools. The `doc` extra supplies Zensical:
+`uv sync` creates or reuses `.venv`. The `dev` extra supplies pytest, Bandit, pip-audit, Ruff and packaging tools. The `doc` extra supplies Zensical:
 
 ```bash
 uv sync --frozen --extra dev --extra doc
@@ -107,14 +107,13 @@ python -m pip_audit --strict
 
 pip-audit checks installed dependencies against the selected advisory service. `--strict` also fails if dependency collection fails; it is not a switch that enables vulnerability detection. These commands use an external advisory service.
 
-### Semgrep
+### CI security checks
 
 ```bash
-semgrep --config=auto hierachain/
-semgrep --config=p/owasp-top-ten hierachain/
+python -m bandit -r hierachain/ -lll
 ```
 
-The selected rules determine the source checks; remote registry configurations require network access. Review findings against the code and its callers.
+The Bandit CI job stores a full JSON report and fails on high-severity findings. Medium- and low-severity findings remain in the report for review. The existing [CodeQL workflow](../.github/workflows/codeql.yml) provides additional Python security analysis. Bandit replaces the local Semgrep dependency; its rules do not provide identical coverage. Review findings against the code and its callers.
 
 Security probes in `scripts/security/` send requests to a running server. Run them only against an isolated local server. See [developer scripts](../scripts/README.md).
 
