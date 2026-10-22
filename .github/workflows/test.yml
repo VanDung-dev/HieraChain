@@ -235,9 +235,7 @@ jobs:
       - name: Run type checking
         run: >-
           uv run --frozen --extra dev ty check
-          hierachain/serialization.py hierachain/core/block.py hierachain/core/merkle_tree.py
-          hierachain/consensus/ordering/storage.py hierachain/consensus/ordering/metrics.py
-          hierachain/consensus/ordering/block_builder.py
+          hierachain/
           > type-check-results.txt 2>&1
 
       - name: Upload type check results
