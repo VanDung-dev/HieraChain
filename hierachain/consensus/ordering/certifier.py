@@ -102,7 +102,7 @@ def _run_custom_rules(
             if not rule(event_data):
                 certification["valid"] = False
                 certification["validation_errors"].append(
-                    f"Validation rule failed: {rule.__name__}"
+                    f"Validation rule failed: {getattr(rule, '__name__', type(rule).__name__)}"
                 )
         except Exception as e:
             certification["valid"] = False

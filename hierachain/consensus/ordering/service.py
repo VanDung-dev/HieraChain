@@ -226,6 +226,8 @@ class OrderingService:
             if existing_kind in {"pending", "batch", "processed", "stored"}:
                 return event_id
             if existing_kind == "journal":
+                if journal_row is None:
+                    raise ValueError(f"Missing journal record for event ID {event_id}")
                 # A prior journal append may have succeeded before the caller
                 # lost its acknowledgement. Requeue that exact durable record.
                 journal_body = _event_body_from_journal(journal_row)
@@ -308,7 +310,7 @@ class OrderingService:
                 event_id, channel_id, stored.get("chain_name"),
                 stored_data, candidate_data,
             )
-            if stored_data.get("event_id") != event_id:
+            if not isinstance(stored_data, dict) or stored_data.get("event_id") != event_id:
                 raise ValueError(
                     f"Cannot verify existing event content for ID {event_id}"
                 )

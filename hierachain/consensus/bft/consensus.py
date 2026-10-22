@@ -169,7 +169,7 @@ class BFTConsensus:
                 "client_id": operation.get("client_id", "unknown"),
                 "timestamp": time.time()
             }
-            digest = hash_request(cast(dict[str, Any], self.current_request))
+            digest = hash_request(self.current_request)
             data = {"request": deepcopy(self.current_request), "digest": digest}
             
             msg = _create_signed_bft_message(
