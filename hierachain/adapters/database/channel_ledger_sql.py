@@ -27,7 +27,8 @@ class ChannelLedgerSQLStorage:
     _ledger_begin = "BEGIN IMMEDIATE"
 
     if TYPE_CHECKING:
-        def _get_connection(self) -> AbstractContextManager[Any]: ...
+        def _get_connection(self) -> AbstractContextManager[Any]:
+            ...
 
     def _initialize_channel_ledgers(self, conn: Any, snapshots: dict[str, Any]) -> None:
         """Called in the same transaction as registry creation or legacy migration."""
