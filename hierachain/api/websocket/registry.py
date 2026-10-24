@@ -6,6 +6,7 @@ This module provides connection registry for tracking WebSocket connections.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -33,6 +34,7 @@ class WebSocketConnection:
         self.websocket = websocket
         self.subscription = subscription
         self._closed = False
+        self.authorize_chain: Callable[[str], bool] | None = None
         
     async def send(self, message: dict):
         """Send message to client"""

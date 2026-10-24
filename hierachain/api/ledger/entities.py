@@ -5,6 +5,7 @@ Trace an entity's events across the main chain and all sub-chains.
 
 from fastapi import APIRouter, Depends
 
+from hierachain.api.ledger.access import authenticated_user_id, enforce_chain_access
 from hierachain.api.ledger.chains import validate_chain_exists
 from hierachain.api.ledger.depds import get_entity_tracer, get_hierarchy_manager
 from hierachain.api.ledger.schemas import EntityTraceResponse
@@ -50,15 +51,20 @@ async def trace_entity(
     chain_name: str | None = None,
     resolve_cid: bool = False,
     manager: HierarchyManager = Depends(get_hierarchy_manager),
-    tracer: EntityTracer = Depends(get_entity_tracer)
+    tracer: EntityTracer = Depends(get_entity_tracer),
+    auth_context: dict = Depends(require_chain_access),
 ):
     safe_entity_id = sanitize_string(entity_id)
 
     if chain_name:
+        enforce_chain_access(manager, chain_name, auth_context)
         validate_chain_exists(manager, chain_name)
         events = _extract_events_for_specific_chain(tracer, safe_entity_id, chain_name)
     else:
-        events = _extract_events_across_all_chains(tracer, safe_entity_id)
+        events = []
+        for name in manager.get_all_sub_chains():
+            if manager.can_access_chain(name, authenticated_user_id(auth_context), "read"):
+                events.extend(_extract_events_for_specific_chain(tracer, safe_entity_id, name))
 
     if resolve_cid and is_ipfs_enabled():
         events = await resolve_multiple_events(events, resolve=True)

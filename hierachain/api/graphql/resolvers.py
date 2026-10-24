@@ -14,6 +14,7 @@ from hierachain.api.graphql.types import (
     ChainStatusType,
     EventType,
 )
+from hierachain.api.ledger.access import authenticated_user_id
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.event_query import select_event_page
@@ -27,8 +28,16 @@ def _bounded_limit(limit: int | None) -> int:
     return MAX_QUERY_RESULTS if limit is None else max(0, min(limit, MAX_QUERY_RESULTS))
 
 
-def _get_chain_for_name(chain_name: str) -> Any | None:
+def _can_access_chain(manager: Any, chain_name: str, info: Any, permission: str = "read") -> bool:
+    context = getattr(info, "context", None)
+    auth_context = context.get("auth_context") if isinstance(context, dict) else None
+    return bool(manager.can_access_chain(chain_name, authenticated_user_id(auth_context), permission))
+
+
+def _get_chain_for_name(chain_name: str, info: Any = None) -> Any | None:
     manager = get_hierarchy_manager()
+    if not _can_access_chain(manager, chain_name, info):
+        raise PermissionError("Access to this chain is not permitted")
     sub_chains = manager.get_all_sub_chains()
     if chain_name in sub_chains:
         return sub_chains[chain_name]
@@ -46,7 +55,7 @@ def _get_block_from_chain(chain, block_index, chain_name):
 
 
 def resolve_block(_root: Any, _info: Any, chain_name: str, block_index: int) -> BlockType | None:
-    chain = _get_chain_for_name(chain_name)
+    chain = _get_chain_for_name(chain_name, _info)
     if chain is None:
         return None
     return _get_block_from_chain(chain, block_index, chain_name)
@@ -72,7 +81,7 @@ def resolve_blocks(
     _root: Any, _info: Any, chain_name: str,
     from_index: int | None = None, to_index: int | None = None, limit: int | None = None,
 ) -> list[BlockType]:
-    chain = _get_chain_for_name(chain_name)
+    chain = _get_chain_for_name(chain_name, _info)
     if not chain:
         return []
     return _get_blocks_from_chain(chain, from_index, to_index, _bounded_limit(limit), chain_name)
@@ -112,7 +121,7 @@ def resolve_events(
     after: str | None = None,
 ) -> list[EventType]:
     position = _decode_event_cursor(after, chain_name)
-    chain = _get_chain_for_name(chain_name)
+    chain = _get_chain_for_name(chain_name, _info)
     effective_limit = _bounded_limit(limit)
     if not chain or effective_limit == 0:
         return []
@@ -140,6 +149,8 @@ def resolve_events(
 
 def resolve_chain_status(_root, _info, chain_name):
     manager = get_hierarchy_manager()
+    if not _can_access_chain(manager, chain_name, _info):
+        raise PermissionError("Access to this chain is not permitted")
 
     sub_chains = manager.get_all_sub_chains()
     if chain_name in sub_chains:
@@ -163,6 +174,8 @@ def resolve_all_chains(_root, _info):
 
     sub_chains = manager.get_all_sub_chains()
     for chain_name, chain in sub_chains.items():
+        if not _can_access_chain(manager, chain_name, _info):
+            continue
         statuses.append(_to_chain_status(chain, chain_name))
 
     return statuses
@@ -179,6 +192,8 @@ class AddEventMutation(graphene.Mutation):
     @classmethod
     def mutate(cls, _root, _info, event):
         manager = get_hierarchy_manager()
+        if not _can_access_chain(manager, event.chain_name, _info, "write"):
+            raise PermissionError("Access to this chain is not permitted")
 
         sub_chains = manager.get_all_sub_chains()
         if event.chain_name in sub_chains:

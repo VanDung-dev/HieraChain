@@ -9,7 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Callable, cast
 
 from hierachain.serialization import dumps_json
 
@@ -134,7 +134,8 @@ class WebSocketManager:
         connection_id: str, 
         websocket,
         chain_name: str = "all",
-        auth_token: str | None = None
+        auth_token: str | None = None,
+        *, authorize_chain: Callable[[str], bool] | None = None,
     ) -> WebSocketConnection:
         """Add a new WebSocket connection."""
         async with self._lock:
@@ -142,6 +143,9 @@ class WebSocketManager:
                 raise Exception("Maximum connections reached")
             
             conn = create_connection(connection_id, websocket, chain_name, auth_token)
+            conn.authorize_chain = authorize_chain
+            if chain_name != "all" and authorize_chain is not None and not authorize_chain(chain_name):
+                raise PermissionError("Access to this chain is not permitted")
             await self._registry.add(connection_id, conn)
             
             # Register subscription
@@ -183,6 +187,9 @@ class WebSocketManager:
         async with self._lock:
             conn = self._registry.get(connection_id)
             if not conn:
+                return False
+
+            if chain_name != "all" and conn.authorize_chain is not None and not conn.authorize_chain(chain_name):
                 return False
             
             old_chain = conn.subscription.chain_name
@@ -233,9 +240,9 @@ class WebSocketManager:
         subscribers = self._subscriptions.get_chain_subscribers(chain_name)
         if not subscribers:
             return
-        await self._send_to_subscribers(subscribers, message)
+        await self._send_to_subscribers(subscribers, message, chain_name)
             
-    async def _send_to_subscribers(self, subscribers: list, message: dict):
+    async def _send_to_subscribers(self, subscribers: list, message: dict, chain_name: str | None = None):
         """Send message to list of subscriber connections"""
         message_json = dumps_json(message)
         
@@ -243,6 +250,13 @@ class WebSocketManager:
             conn = self._registry.get(connection_id)
             if conn and not conn.is_closed:
                 try:
+                    target_chain = chain_name or message.get("chain_name")
+                    if conn.authorize_chain is not None:
+                        if isinstance(target_chain, str):
+                            if not conn.authorize_chain(target_chain):
+                                continue
+                        elif message.get("type") in {"block_added", "event", "chain_status"}:
+                            continue
                     await conn.websocket.send_text(message_json)
                 except Exception as e:
                     logger.error(f"Broadcast error to {connection_id}: {e}")
@@ -257,7 +271,7 @@ class WebSocketManager:
         subscribers = self._subscriptions.get_event_type_subscribers(chain_name, event_type)
         if not subscribers:
             return
-        await self._send_to_subscribers(subscribers, message)
+        await self._send_to_subscribers(subscribers, message, chain_name)
 
     async def broadcast_new_block(self, chain_name: str, block_data: dict):
         """Broadcast a new block to chain subscribers."""

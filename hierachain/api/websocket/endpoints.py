@@ -19,6 +19,8 @@ from fastapi import (
 )
 from starlette.requests import HTTPConnection
 
+from hierachain.api.ledger.access import authenticated_user_id
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.websocket.manager import WebSocketMessageType, ws_manager
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import ResourcePermissionChecker
@@ -63,6 +65,15 @@ async def websocket_endpoint(
             reason="WebSocket streaming requires chains and events permissions",
         )
         return
+
+    try:
+        allowed = _can_stream_chain(chain_name, auth_context)
+    except Exception:
+        logger.exception("Could not authorize WebSocket chain subscription")
+        allowed = False
+    if not allowed:
+        await websocket.close(code=1008, reason="Access to this chain is not permitted")
+        return
     
     # Accept the connection
     await websocket.accept()
@@ -72,7 +83,8 @@ async def websocket_endpoint(
         await ws_manager.connect(
             connection_id=connection_id,
             websocket=websocket,
-            chain_name=chain_name
+            chain_name=chain_name,
+            authorize_chain=lambda name: _can_stream_chain(name, auth_context),
         )
         
         # Send welcome message
@@ -83,6 +95,7 @@ async def websocket_endpoint(
         
     except Exception as e:
         logger.error("WebSocket error: %s", e)
+        await websocket.close(code=1008, reason="Chain access is unavailable")
         
     finally:
         # Cleanup
@@ -213,7 +226,7 @@ async def handle_websocket_message(
         
     elif msg_type == "get_stats":
         # Return connection statistics
-        stats = ws_manager.get_stats()
+        stats = _scoped_stats(auth_context)
         await ws_manager.send_to_connection(connection_id, {
             "type": "stats",
             "data": stats
@@ -291,8 +304,23 @@ async def websocket_status(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Authentication required")
     if auth_context is not None and not ResourcePermissionChecker.has_permission(auth_context, "chains"):
         raise HTTPException(status_code=403, detail="WebSocket status requires chains permission")
-    stats = ws_manager.get_stats()
+    stats = _scoped_stats(auth_context)
     return {
         "status": "running",
         "stats": stats
     }
+
+
+def _scoped_stats(auth_context: dict | None) -> dict:
+    stats = ws_manager.get_stats()
+    stats["chains"] = {
+        name: count for name, count in stats["chains"].items()
+        if _can_stream_chain(name, auth_context)
+    }
+    return stats
+
+
+def _can_stream_chain(chain_name: str, auth_context: dict | None) -> bool:
+    return chain_name == "all" or get_hierarchy_manager().can_access_chain(
+        chain_name, authenticated_user_id(auth_context), "read",
+    )

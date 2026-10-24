@@ -8,6 +8,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from hierachain.api.ledger.access import require_chain_read
 from hierachain.api.ledger.chains import get_chain_by_name
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.storage.endpoint_helpers import (
@@ -16,7 +17,6 @@ from hierachain.api.storage.endpoint_helpers import (
 )
 from hierachain.core.utils import get_block_events as _get_block_events_data
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain"])
 
@@ -70,7 +70,7 @@ async def _resolve_blocks_cids(
 
 
 @router.get(
-    "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_access)]
+    "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_read)]
 )
 async def get_chain_blocks(
     chain_name: str,
@@ -112,7 +112,7 @@ def _find_block(chain_blocks: list[Any], index_or_hash: str) -> Any | None:
 
 @router.get(
     "/chains/{chain_name}/blocks/{index_or_hash}",
-    dependencies=[Depends(require_chain_access)]
+    dependencies=[Depends(require_chain_read)]
 )
 async def get_block_detail(
     chain_name: str,

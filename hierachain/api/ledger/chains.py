@@ -5,10 +5,12 @@ List chains, get chain stats, and create sub-chains.
 
 import os
 import re
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
+from hierachain.api.ledger.access import authenticated_user_id, require_chain_read
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.ledger.schemas import ChainInfoResponse, ChainStatsResponse
 from hierachain.core.blockchain import Blockchain
@@ -46,7 +48,10 @@ def validate_chain_exists(
     response_model=list[ChainInfoResponse],
     dependencies=[Depends(require_chain_access)]
 )
-async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)):
+async def list_chains(
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+    auth_context: dict[str, Any] = Depends(require_chain_access),
+):
     try:
         chains = []
 
@@ -63,6 +68,8 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
             ))
 
         for sub_chain_name, sub_chain in manager.get_all_sub_chains().items():
+            if not manager.can_access_chain(sub_chain_name, authenticated_user_id(auth_context), "read"):
+                continue
             chains.append(ChainInfoResponse(
                 name=sub_chain_name,
                 type="sub",
@@ -105,7 +112,7 @@ def _get_extended_chain_stats(
 @router.get(
     "/chains/{chain_name}/stats",
     response_model=ChainStatsResponse,
-    dependencies=[Depends(require_chain_access)]
+    dependencies=[Depends(require_chain_read)]
 )
 async def get_chain_stats(
     chain_name: str,
@@ -180,7 +187,7 @@ def _register_new_sub_chain(
 
 
 @router.post(
-    "/chains/{chain_name}/create", dependencies=[Depends(require_chain_access)]
+    "/chains/{chain_name}/create", dependencies=[Depends(require_chain_read)]
 )
 async def create_sub_chain(
     chain_name: str,

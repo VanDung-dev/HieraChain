@@ -5,11 +5,11 @@ Submit cryptographic proofs from a sub-chain to the main chain.
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from hierachain.api.ledger.access import require_chain_proof
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.ledger.schemas import ProofSubmissionResponse
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.secure_logging import SecureLogger
-from hierachain.security.verify.api_key_verifier import require_proof_access
 
 router = APIRouter(tags=["HieraChain"])
 api_logger = SecureLogger("hierachain.api.ledger")
@@ -18,7 +18,7 @@ api_logger = SecureLogger("hierachain.api.ledger")
 @router.post(
     "/chains/{chain_name}/submit-proof",
     response_model=ProofSubmissionResponse,
-    dependencies=[Depends(require_proof_access)]
+    dependencies=[Depends(require_chain_proof)]
 )
 async def submit_proof(
     chain_name: str, manager: HierarchyManager = Depends(get_hierarchy_manager)

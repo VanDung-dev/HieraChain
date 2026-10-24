@@ -10,6 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
+from hierachain.api.ledger.access import require_chain_write
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.ledger.schemas import EventRequest, EventResponse
 from hierachain.api.storage.endpoint_helpers import process_event_details
@@ -78,7 +79,7 @@ def _log_event_success(
 @router.post(
     "/chains/{chain_name}/events",
     response_model=EventResponse,
-    dependencies=[Depends(require_event_access)]
+    dependencies=[Depends(require_chain_write)]
 )
 async def add_event(
     chain_name: str,

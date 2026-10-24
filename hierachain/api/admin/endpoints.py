@@ -14,6 +14,7 @@ from hierachain.api.admin.schemas import (
     VerifyIdentityRequest,
     VerifyIdentityResponse,
 )
+from hierachain.api.ledger.access import require_chain_write
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.config.settings import get_settings
 from hierachain.config.version import get_version
@@ -130,7 +131,7 @@ async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager))
 @router.post(
     "/chains/{chain_name}/secure-events",
     response_model=SecureEventResponse,
-    dependencies=[Depends(require_chain_access)]
+    dependencies=[Depends(require_chain_access), Depends(require_chain_write)]
 )
 async def add_secure_event(
     chain_name: str,
