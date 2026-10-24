@@ -14,13 +14,11 @@ import pytest
 from hierachain.config import Settings
 from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.error_mitigation import (
-    ConsensusValidator,
     EncryptionValidator,
     ErrorCategory,
     ErrorClassifier,
     PriorityLevel,
     ResourceValidator,
-    ValidationError,
 )
 from hierachain.error_mitigation.journal import TransactionJournal
 
@@ -1090,37 +1088,6 @@ def test_error_classification_with_complex_data():
     assert complex_error_info.priority in PriorityLevel
 
 
-def test_consensus_validator_with_edge_cases():
-    """Test consensus validator with edge case configurations"""
-    # Test with f=0 (no fault tolerance)
-    config_no_fault = {"f": 0}
-    validator_no_fault = ConsensusValidator(config_no_fault)
-    assert validator_no_fault.f == 0
-
-    # Minimum nodes should be 1 (3*0 + 1)
-    try:
-        validator_no_fault.validate_node_count([])  # 0 nodes
-        assert False, "Should have raised ValidationError"
-    except ValidationError:
-        pass  # Expected
-
-    assert validator_no_fault.validate_node_count([1])  # 1 node should be enough
-
-    # Test with large f value
-    config_large_f = {"f": 100}
-    validator_large_f = ConsensusValidator(config_large_f)
-    assert validator_large_f.f == 100
-
-    # Required nodes should be 301 (3*100 + 1)
-    nodes_300 = list(range(300))
-    try:
-        validator_large_f.validate_node_count(nodes_300)
-        assert False, "Should have raised ValidationError"
-    except ValidationError:
-        pass  # Expected
-
-    nodes_301 = list(range(301))
-    assert validator_large_f.validate_node_count(nodes_301)
 
 
 def test_encryption_validator_with_large_keys() -> None:

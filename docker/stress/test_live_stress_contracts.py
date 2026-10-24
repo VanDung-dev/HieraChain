@@ -10,8 +10,8 @@ import docker.stress.conftest as stress_conftest
 import docker.stress.docker_helper as docker_helper
 import docker.stress.real_stress_client as real_client
 import docker.stress.resource_monitoring as resource_monitoring
-import docker.stress.test_bft_consensus as bft
 import docker.stress.test_chaos as chaos
+import docker.stress.test_ledger_consensus as ledger
 import docker.stress.test_network_conditions as network_conditions
 import docker.stress.test_resource_monitoring as resource_test_module
 import docker.stress.test_websocket_load as websocket_test_module
@@ -27,8 +27,8 @@ def test_consensus_stress_requires_block_growth(monkeypatch: pytest.MonkeyPatch,
     from types import SimpleNamespace
 
     ticks = count()
-    monkeypatch.setattr(bft, "time", SimpleNamespace(monotonic=lambda: next(ticks), sleep=Mock()))
-    test = bft.TestBFTThroughput()
+    monkeypatch.setattr(ledger, "time", SimpleNamespace(monotonic=lambda: next(ticks), sleep=Mock()))
+    test = ledger.TestLedgerThroughput()
     test.client = Mock(node_status={"node1": SimpleNamespace(is_healthy=True, url="http://node1:2661")})
     test.client.submit_event.return_value = True
     test.client.session.get.return_value = Mock(
@@ -45,10 +45,10 @@ def test_consensus_throughput_waits_for_all_business_events(
     from types import SimpleNamespace
 
     now = [0.0]
-    monkeypatch.setattr(bft, "time", SimpleNamespace(
+    monkeypatch.setattr(ledger, "time", SimpleNamespace(
         monotonic=lambda: now[0], sleep=lambda delay: now.__setitem__(0, now[0] + delay),
     ))
-    test = bft.TestBFTThroughput()
+    test = ledger.TestLedgerThroughput()
     test.client = Mock(node_status={"node1": SimpleNamespace(url="http://node1:2661")})
 
     def stats() -> dict[str, int]:
@@ -66,16 +66,16 @@ def test_consensus_throughput_waits_for_all_business_events(
         assert now[0] == 120
 
 
-def test_consensus_stress_requires_restarted_primary_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_consensus_stress_requires_restarted_node_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import call
 
-    test = bft.TestBFTViewChange()
+    test = ledger.TestLedgerRecovery()
     test.client = Mock()
     monkeypatch.setattr(test, "_find_healthy", lambda: ["node1", "node2", "node3"])
     monkeypatch.setattr(test, "_run_node_command", Mock())
     monkeypatch.setattr(test, "_poll_recovery", Mock(side_effect=[0.1, None]))
-    with pytest.raises(AssertionError, match="Restarted primary must recover"):
-        test.test_view_change_recovery_time()
+    with pytest.raises(AssertionError, match="Restarted node must recover"):
+        test.test_node_restart_recovery_time()
     assert test._run_node_command.call_args_list == [call("node1", "stop"), call("node1", "start")]
     assert [call.args[0] for call in test._poll_recovery.call_args_list] == [["node2", "node3"], ["node1"]]
     test.client.wait_for_nodes.assert_not_called()
@@ -85,10 +85,10 @@ def test_consensus_recovery_checks_every_target_with_one_deadline(monkeypatch: p
     from types import SimpleNamespace
 
     now = [0.0]
-    monkeypatch.setattr(bft, "time", SimpleNamespace(
+    monkeypatch.setattr(ledger, "time", SimpleNamespace(
         monotonic=lambda: now[0], sleep=lambda delay: now.__setitem__(0, now[0] + delay),
     ))
-    test = bft.TestBFTViewChange()
+    test = ledger.TestLedgerRecovery()
     test._check_node_recovered = Mock(side_effect=lambda node_id, _deadline: node_id == "node2")
     assert test._poll_recovery(["node2", "node1"], 0.0) is None
     assert now[0] == 60.0
@@ -97,10 +97,10 @@ def test_consensus_recovery_checks_every_target_with_one_deadline(monkeypatch: p
 
 
 def test_consensus_recovery_requires_ledger_readiness_before_stats() -> None:
-    test = bft.TestBFTViewChange()
+    test = ledger.TestLedgerRecovery()
     test.client = Mock()
     test.client.check_health.return_value = False
-    assert not test._check_node_recovered("node1", bft.time.monotonic() + 60)
+    assert not test._check_node_recovered("node1", ledger.time.monotonic() + 60)
     test.client.session.get.assert_not_called()
 
 
@@ -551,7 +551,7 @@ def test_k8s_session_requires_four_ready_nodes(monkeypatch: pytest.MonkeyPatch) 
 
 
 @pytest.mark.parametrize("node,index", [("node1", 0), ("node4", 3)])
-def test_k8s_bft_recovery_targets_stateful_pod(
+def test_k8s_ledger_recovery_targets_stateful_pod(
     monkeypatch: pytest.MonkeyPatch, node: str, index: int,
 ) -> None:
     import subprocess
@@ -559,10 +559,10 @@ def test_k8s_bft_recovery_targets_stateful_pod(
     run = Mock(return_value=Mock(returncode=0))
     monkeypatch.setattr(subprocess, "run", run)
     monkeypatch.setenv("K8S_NAMESPACE", "hierachain")
-    bft.TestBFTViewChange._run_node_command(node, "stop")
+    ledger.TestLedgerRecovery._run_node_command(node, "stop")
     assert run.call_args.args[0] == ["kubectl", "delete", "pod", "-n", "hierachain", f"hierachain-node-{index}"]
     assert run.call_args.kwargs["timeout"] > 30
-    bft.TestBFTViewChange._run_node_command(node, "start")
+    ledger.TestLedgerRecovery._run_node_command(node, "start")
     run.assert_called_once()
 
 
@@ -647,6 +647,7 @@ def test_ipfs_resolution_waits_for_commit_and_fails_on_missing_refs(
     monkeypatch: pytest.MonkeyPatch, commits: bool,
 ) -> None:
     from types import SimpleNamespace
+
     from docker.stress import test_ipfs_stress as ipfs
 
     now = [0.0]

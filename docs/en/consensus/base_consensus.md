@@ -8,7 +8,7 @@ icon: material/puzzle-outline
 
 ## Scope
 
-`BaseConsensus` defines the interface implemented by PoA and PoF. `BFTConsensus` is a separate class and does not inherit this interface. The base class stores `name` and `config`; concrete implementations supply block validation and finalization.
+`BaseConsensus` defines the interface implemented by PoA and PoF. The base class stores `name` and `config`; concrete implementations supply block validation and finalization.
 
 ## Abstract methods
 

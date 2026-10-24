@@ -15,7 +15,7 @@ HieraChain là ledger Python dành cho event nghiệp vụ. Sub-Chain theo domai
 
 * Bảng event Apache Arrow, truy vấn entity/event qua index và gom batch ordering bất đồng bộ.
 * Chữ ký Ed25519 với bản đồ khóa tin cậy do operator cấp, storage SQLite/PostgreSQL bền vững và journal ordering.
-* PoA mặc định; có thể cấu hình PoF với luân phiên validator. Thành phần BFT tách biệt với runtime MainChain/Sub-Chain.
+* PoA mặc định; có thể cấu hình PoF với luân phiên validator. Hai luồng này không cung cấp đồng thuận nhân bản chịu lỗi Byzantine hay tự động chuyển leader khi lỗi.
 * REST, GraphQL, WebSocket, client Python đồng bộ/bất đồng bộ và công cụ CLI.
 * Xác thực API key khi được bật, policy organization/channel, audit log và payload IPFS mã hóa AES-256-GCM tùy chọn.
 
@@ -103,7 +103,7 @@ Mở `http://localhost:2661/docs`. Kiểm tra `/api/ledger/ready` để xác nh�
 | Thành phần | Triển khai hiện tại |
 |------------|---------------------|
 | Python | 3.11, 3.12, 3.13, 3.14 |
-| Đồng thuận phân cấp | PoA / PoF; thành phần BFT riêng |
+| Đồng thuận phân cấp | PoA / PoF |
 | Chữ ký block | Ed25519, kể cả genesis |
 | Storage hierarchy | SQLite / PostgreSQL |
 | Mã hóa off-chain | IPFS AES-256-GCM tùy chọn |

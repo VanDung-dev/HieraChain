@@ -8,7 +8,7 @@ icon: material/chart-line
 
 ## Overview
 
-The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and disk use. It also records HieraChain metrics, including event throughput, block closing time, and BFT consensus success rate.
+The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and disk use. It also records HieraChain metrics, including event throughput, block closing time, and consensus success rate.
 
 The module is opt-in. Importing `PerformanceMonitor` loads metric collection independently of alerting; importing `AlertManager` loads the alert engine independently of metric collection. The host application starts and stops monitoring explicitly, records ledger activity through the `record_*` methods, and can register `add_alert_handler()` callbacks for its existing observability system. Collection, threshold checks and reports belong to `PerformanceMonitor`; rules, alert state and delivery belong to `AlertManager`.
 

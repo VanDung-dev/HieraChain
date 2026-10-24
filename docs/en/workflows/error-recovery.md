@@ -1,6 +1,6 @@
 ---
 title: "Error Handling and Recovery"
-description: "Runtime validation, durable event journaling, and BFT view changes."
+description: "Runtime validation and durable event journaling."
 icon: material/alert-decagram
 ---
 
@@ -8,8 +8,7 @@ icon: material/alert-decagram
 
 HieraChain keeps recovery responsibilities close to the component that owns the
 state: `ErrorClassifier` records and classifies failures, `TransactionJournal`
-protects pending events, and the BFT consensus implementation handles view
-changes when a leader becomes unavailable. Snapshot and infrastructure recovery
+protects pending events, and `OrderingRecovery` replays them after restart. Snapshot and infrastructure recovery
 are deployment responsibilities, not automatic services in this package.
 
 ## Runtime flow
@@ -21,18 +20,9 @@ flowchart TD
     EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
-    LEADER["Leader unavailable"] --> VIEW["BFTConsensus\nBFTViewChangeManager"]
-    VIEW --> CONSENSUS["Install new view\nresume BFT phases"]
 ```
 
-These are separate component-owned paths, not a dispatch chain from `ErrorClassifier`. Its `classify_error()` records and returns an `ErrorInfo`; it may invoke the optional lockdown callback only for CRITICAL security/performance errors or HIGH security errors, and only when a callback is configured. `OrderingRecovery` replays journal entries, while `BFTConsensus` owns leader-failure view changes.
-
-## Consensus recovery
-
-`BFTConsensus` owns leader failure handling through `BFTViewChangeManager`.
-The manager broadcasts view-change messages, collects the quorum, and installs
-the new view. This path is part of the consensus runtime and does not depend on
-a separate recovery engine.
+These are separate component-owned paths, not a dispatch chain from `ErrorClassifier`. Its `classify_error()` records and returns an `ErrorInfo`; it may invoke the optional lockdown callback only for CRITICAL security/performance errors or HIGH security errors, and only when a callback is configured. `OrderingRecovery` replays journal entries.
 
 ## Event durability
 
@@ -62,6 +52,5 @@ node autoscaling through `error_mitigation` classes.
 
 ## Related
 
-- [BFT Consensus](./bft-consensus.md): View Change detail
 - [Chain Rehydration](./chain-rehydration.md): full chain reload from DB
 - [Error Mitigation Module](../modules/error-mitigation.md): validation and journaling

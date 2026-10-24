@@ -122,6 +122,5 @@ event = {
 
 - [Consensus Mechanisms](./consensus_mechanisms.md): PoA and PoF sub-diagrams
 - [Proof Anchoring](./proof-anchoring.md): triggered after block finalized
-- [BFT Consensus](./bft-consensus.md): full 3-phase PBFT flow
 - [Policy Enforcement](./policy-enforcement.md): policy checks for operations explicitly routed through `PolicyEngine`
 - [MSP Identity](./msp-identity.md): membership checks for callers using `HierarchicalMSP`

@@ -78,7 +78,7 @@ assert poa.can_create_block("node_branch_1")
 ## Ưu điểm và Hạn chế
 
 * Kiểm tra thành viên và chữ ký authority không dùng cơ chế đồng thuận dựa trên tính toán công việc. Throughput phụ thuộc vào batching, đồng bộ journal và lưu trữ.
-*   Hạn chế: Tính phi tập trung thấp hơn so với BFT, chỉ phù hợp cho mạng có sự tin tưởng nhất định giữa các thành viên.
+*   Hạn chế: Cần tin tưởng các authority đã đăng ký; không cung cấp đồng thuận nhân bản chịu lỗi Byzantine hay tự động chuyển leader khi lỗi.
 
 ## Liên quan
 

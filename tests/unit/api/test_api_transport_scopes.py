@@ -157,7 +157,9 @@ def test_graphql_enforces_verified_scope_for_queries_and_mutations(
 
 
 
-def test_websocket_requires_scopes_for_combined_chain_and_event_streams() -> None:
+def test_websocket_requires_scopes_for_combined_chain_and_event_streams(
+    isolated_api_hierarchy: None,
+) -> None:
     key_manager = KeyManager()
     chains_key = key_manager.create_key("chain-reader", ["chains"])
     events_key = key_manager.create_key("event-reader", ["events"])
@@ -190,7 +192,9 @@ def test_websocket_requires_scopes_for_combined_chain_and_event_streams() -> Non
             assert connected["connection_id"] in ws_manager.chain_subscribers["main_chain"]
 
 
-def test_websocket_still_allows_connections_when_authentication_is_disabled() -> None:
+def test_websocket_still_allows_connections_when_authentication_is_disabled(
+    isolated_api_hierarchy: None,
+) -> None:
     app = FastAPI()
     app.include_router(websocket_router)
 

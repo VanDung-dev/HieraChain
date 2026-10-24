@@ -80,7 +80,9 @@ def test_authenticated_http_backpressure_reports_unjournaled_event(
     app.include_router(router)
     app.dependency_overrides[get_hierarchy_manager] = lambda: SimpleNamespace(
         get_sub_chain=lambda _: chain,
-        can_access_chain=lambda chain_name, user_id, permission: True,
+        can_access_chain=lambda name, user, permission: (
+            name == "p2" and user == "p2-user" and permission == "write"
+        ),
     )
     service.event_pool = Queue(maxsize=1)
     service.event_pool.put(object())

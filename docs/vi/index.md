@@ -18,7 +18,7 @@ Lưu ý quan trọng về phạm vi:
 
 ## Phạm vi triển khai hiện tại
 
-Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có cấu hình AOF bền dữ liệu. PoA mặc định; PoF cần cấp validator và BFT là thành phần riêng. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; triển khai Redis ledger cần [chính sách persistence đã ghi rõ](modules/storage.md#redis-ledger). Xem [phạm vi tính năng](modules/hierarchical.md) và [bắt đầu nhanh có cấu hình ký](getting-started/quickstart.md).
+Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có cấu hình AOF bền dữ liệu. PoA mặc định; PoF cần cấp validator. ZK production, thực thi contract và ghi private data chưa triển khai. ERP vendor có sẵn chỉ mô phỏng; triển khai Redis ledger cần [chính sách persistence đã ghi rõ](modules/storage.md#redis-ledger). Xem [phạm vi tính năng](modules/hierarchical.md) và [bắt đầu nhanh có cấu hình ký](getting-started/quickstart.md).
 
 ## Điều hướng theo chủ đề
 
@@ -49,7 +49,7 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
 
     * [Tổng quan](workflows/overview.md) · [Cơ chế đồng thuận](workflows/consensus_mechanisms.md)
     * [Gửi Sự kiện](workflows/event-submission.md) · [Neo giữ Bằng chứng](workflows/proof-anchoring.md)
-    * [Sự kiện Liên chuỗi (2PC)](workflows/cross-chain-2pc.md) · [Đồng thuận BFT](workflows/bft-consensus.md)
+    * [Sự kiện Liên chuỗi (2PC)](workflows/cross-chain-2pc.md)
     * [Giảm thiểu Lỗi & Phục hồi](workflows/error-recovery.md)
     * [Truy vết Thực thể](workflows/entity-tracing.md) · [Khôi phục trạng thái chuỗi](workflows/chain-rehydration.md)
     * [Xác thực Tính toàn vẹn](workflows/integrity-validation.md) · [Thực thi Chính sách](workflows/policy-enforcement.md)
@@ -85,7 +85,6 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
     ---
 
     * [Base Consensus](consensus/base_consensus.md)
-    * [BFT Consensus](consensus/bft_consensus.md)
     * [Ordering](consensus/ordering.md)
     * [PoA](consensus/poa.md) · [PoF](consensus/pof.md)
 

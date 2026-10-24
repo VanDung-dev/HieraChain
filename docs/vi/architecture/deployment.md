@@ -8,7 +8,7 @@ icon: material/server-network
 
 ## Giới hạn runtime
 
-Một process API khởi tạo `HierarchyManager` gồm MainChain và các Sub-Chain đã đăng ký. MainChain/Sub-Chain dùng PoA hoặc PoF; engine BFT là thành phần riêng cần tích hợp rõ ràng. Chỉ triển khai bốn replica API không tạo PBFT finality hoặc failover leader. Xem [Phạm vi đồng thuận](../workflows/consensus_mechanisms.md).
+Một process API khởi tạo `HierarchyManager` gồm MainChain và các Sub-Chain đã đăng ký. MainChain/Sub-Chain dùng PoA hoặc PoF. Chỉ triển khai nhiều replica API không tạo đồng thuận nhân bản hoặc failover leader. Xem [Phạm vi đồng thuận](../workflows/consensus_mechanisms.md).
 
 ## Mạng và cấu hình
 

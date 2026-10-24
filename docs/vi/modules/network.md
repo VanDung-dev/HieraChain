@@ -154,7 +154,6 @@ async def send_proposal() -> bool:
 ## Liên quan
 
 *   [Bảo mật và MSP (Security)](./security.md)
-*   [Đồng thuận BFT (Consensus)](../consensus/bft_consensus.md)
 *   [Giám sát mạng (Monitoring)](./monitoring.md)
 
 ZeroMQ nhận frame tối đa 1 MiB và đúng hai frame ứng dụng (định danh bên gửi và nội dung); frame thừa được đọc bỏ, không gom vào danh sách multipart Python. Kết nối secure xác minh danh tính và chữ ký trước khi lưu replay, với cache riêng tối đa 1.000 mục mỗi peer đã xác minh. Transport plain yêu cầu peer ID đã cấu hình và tách cache theo peer; không bảo đảm danh tính bằng chữ ký. Các giới hạn này cần đi cùng kiểm soát kết nối và băng thông ở tầng triển khai.

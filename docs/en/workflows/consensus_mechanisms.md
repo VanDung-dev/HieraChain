@@ -1,6 +1,6 @@
 ---
 title: "Consensus mechanisms"
-description: "Comparison and technical specifications of PoA, PoF, and BFT consensus mechanisms in HieraChain."
+description: "Comparison and technical specifications of PoA and PoF consensus mechanisms in HieraChain."
 icon: material/sync
 ---
 
@@ -8,18 +8,18 @@ icon: material/sync
 
 ## Runtime selection
 
-MainChain selects `HRC_MAINCHAIN_CONSENSUS`, falling back to `HRC_CONSENSUS_TYPE`; the default is `proof_of_authority`. Sub-Chains default to PoA and accept a Python `config` with `consensus_type="proof_of_federation"`. BFT is a separate implementation under `hierachain/consensus/bft/`; setting `BFT_ENABLED` does not wire it into these chain paths. Use the documented PoA/PoF selectors; another value is not a BFT activation switch.
+MainChain selects `HRC_MAINCHAIN_CONSENSUS`, falling back to `HRC_CONSENSUS_TYPE`; the default is `proof_of_authority`. Sub-Chains default to PoA and accept a Python `config` with `consensus_type="proof_of_federation"`. Use the documented PoA/PoF selectors.
 
 ## Implementation comparison
 
-| Aspect | PoA | PoF | BFT component |
-|--------|-----|-----|---------------|
-| Hierarchical runtime | Default MainChain/Sub-Chain | Explicit federation selection | Separate integration required |
-| Finalization signer | Registered authority | Registered validator; validation enforces scheduled leader when rotation is enabled | PBFT voting protocol |
-| Default interval | 0.0 seconds | 5.0 seconds | Protocol timeout configuration |
-| Timestamp spacing check | At least half of a positive interval | At least 80% of interval (4 seconds by default) | Separate protocol |
-| Membership | At least one authority | `min_validators=3` for block creation | `n >= 3f + 1` |
-| ZK | Shared optional verification | Shared optional verification | Shared environment flag; see BFT input limitations |
+| Aspect | PoA | PoF |
+|--------|-----|-----|
+| Hierarchical runtime | Default MainChain/Sub-Chain | Explicit federation selection |
+| Finalization signer | Registered authority | Registered validator; validation enforces scheduled leader when rotation is enabled |
+| Default interval | 0.0 seconds | 5.0 seconds |
+| Timestamp spacing check | At least half of a positive interval | At least 80% of interval (4 seconds by default) |
+| Membership | At least one authority | `min_validators=3` for block creation |
+| ZK | Shared optional verification | Shared optional verification |
 
 ## Ordering and durability
 
@@ -44,10 +44,9 @@ HRC_ENABLE_ZK_PROOFS=false
 HRC_ZK_REQUIRED_MAINCHAIN=false
 ```
 
-PoF's `block_interval` is a separate consensus configuration value; `HRC_BLOCK_INTERVAL` controls PoA. Current chain constructors do not apply `CONSENSUS_FEDERATION_CONFIG`. BFT uses the shared ZK flag, but its helper and request wrapper have different operation locations; see [BFT](../consensus/bft_consensus.md) before relying on that check.
+PoF's `block_interval` is a separate consensus configuration value; `HRC_BLOCK_INTERVAL` controls PoA. Current chain constructors do not apply `CONSENSUS_FEDERATION_CONFIG`.
 
 ## Related
 
 * [PoA](../consensus/poa.md) · [PoF](../consensus/pof.md)
-* [BFT workflow](bft-consensus.md)
 * [Event submission](event-submission.md) · [Proof anchoring](proof-anchoring.md)

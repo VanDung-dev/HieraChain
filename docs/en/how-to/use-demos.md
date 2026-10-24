@@ -24,20 +24,11 @@ Steps performed in the demo:
 * Send business events.
 * Create a Private Data Collection shared only between two parties.
 
-## 2. BFT Consensus over ZeroMQ Demo
-
-Demonstrates the consensus capability of 4 nodes using the BFT protocol over a ZeroMQ network.
-
-```bash
-# Run the BFT demo
-python demo/demo_zmq_consensus.py
-```
-
-## 3. Key backup and recovery
+## 2. Key backup and recovery
 
 Follow [Key Backup](../workflows/key-backup.md) for CLI key files, complete node identities and encrypted development vaults. The repository has no `demo_key_backup.py` or `KeyBackupManager`.
 
-## 4. IPFS Integration Demo
+## 3. IPFS Integration Demo
 
 Illustrates how to store large data/documents on IPFS with AES-256 encryption.
 
@@ -48,7 +39,7 @@ python demo/demo_ipfs.py
 
 The script tries the local IPFS daemon on port 5001 and can fall back to an in-memory mock. Mock CIDs do not prove encrypted persistence or retrieval from a real daemon.
 
-## 5. Blockchain Explorer Demo
+## 4. Blockchain Explorer Demo
 
 A simple web interface for viewing blocks and events.
 

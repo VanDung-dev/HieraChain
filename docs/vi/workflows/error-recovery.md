@@ -1,6 +1,6 @@
 ---
 title: "Xử lý lỗi và phục hồi"
-description: "Xác thực runtime, ghi nhật ký sự kiện bền vững và view change BFT."
+description: "Xác thực runtime và ghi nhật ký sự kiện bền vững."
 icon: material/alert-decagram
 ---
 
@@ -8,8 +8,7 @@ icon: material/alert-decagram
 
 HieraChain giữ trách nhiệm phục hồi gần với component sở hữu trạng thái:
 `ErrorClassifier` ghi log và phân loại lỗi, `TransactionJournal` bảo vệ các sự
-kiện đang chờ, còn implementation BFT xử lý view change khi leader không khả
-dụng. Snapshot và phục hồi hạ tầng thuộc về deployment, không phải các service
+kiện đang chờ, còn `OrderingRecovery` phát lại chúng sau restart. Snapshot và phục hồi hạ tầng thuộc về deployment, không phải các service
 tự động trong package này.
 
 ## Luồng runtime
@@ -21,18 +20,9 @@ flowchart TD
     EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
-    LEADER["Leader unavailable"] --> VIEW["BFTConsensus\nBFTViewChangeManager"]
-    VIEW --> CONSENSUS["Install new view\nresume BFT phases"]
 ```
 
-Đây là các luồng riêng do từng component phụ trách, không phải chuỗi điều phối từ `ErrorClassifier`. `classify_error()` ghi lại và trả về `ErrorInfo`; hàm chỉ có thể gọi callback lockdown tùy chọn đối với lỗi security/performance mức CRITICAL hoặc lỗi security mức HIGH, và chỉ khi đã cấu hình callback. `OrderingRecovery` phát lại các mục trong journal, còn `BFTConsensus` phụ trách view change khi leader gặp sự cố.
-
-## Phục hồi đồng thuận
-
-`BFTConsensus` sở hữu việc xử lý leader hỏng thông qua
-`BFTViewChangeManager`. Manager phát các message view-change, thu thập quorum
-và cài đặt view mới. Luồng này là một phần của consensus runtime và không phụ
-thuộc vào recovery engine riêng.
+Đây là các luồng riêng do từng component phụ trách, không phải chuỗi điều phối từ `ErrorClassifier`. `classify_error()` ghi lại và trả về `ErrorInfo`; hàm chỉ có thể gọi callback lockdown tùy chọn đối với lỗi security/performance mức CRITICAL hoặc lỗi security mức HIGH, và chỉ khi đã cấu hình callback. `OrderingRecovery` phát lại các mục trong journal.
 
 ## Độ bền sự kiện
 
@@ -62,6 +52,5 @@ class trong `error_mitigation`.
 
 ## Tài liệu liên quan
 
-- [Đồng thuận BFT](./bft-consensus.md): Chi tiết View Change
 - [Nạp lại trạng thái chuỗi](./chain-rehydration.md): Tải lại toàn bộ chuỗi từ DB
 - [Module Error Mitigation](../modules/error-mitigation.md): Xác thực và journaling

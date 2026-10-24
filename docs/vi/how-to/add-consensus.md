@@ -1,6 +1,6 @@
 ---
 title: "Thêm/Tùy biến Consensus"
-description: "Hướng dẫn cấu hình PoA/PoF hoặc bổ sung cơ chế đồng thuận mới; tham chiếu hierachain/consensus/base_consensus.py và hierachain/consensus/bft/."
+description: "Hướng dẫn cấu hình PoA/PoF hoặc bổ sung cơ chế đồng thuận mới; tham chiếu hierachain/consensus/base_consensus.py."
 icon: material/cog-sync
 ---
 
@@ -18,7 +18,7 @@ Hướng dẫn này trình bày cách cấu hình PoA hoặc PoF cho MainChain v
     HRC_ZK_REQUIRED_MAINCHAIN=false         # if using ZK, set true
     ```
 
-Trong luồng runtime hiện tại, MainChain và SubChain dùng PoA hoặc PoF. BFT có triển khai riêng trong `hierachain/consensus/bft/`; API Ledger không chọn cơ chế này và không có biến môi trường `HRC_BFT_ENABLED`. SubChain mặc định dùng PoA; truyền `config={"consensus_type": "proof_of_federation"}` khi khởi tạo để dùng PoF.
+Trong luồng runtime hiện tại, MainChain và SubChain dùng PoA hoặc PoF. SubChain mặc định dùng PoA; truyền `config={"consensus_type": "proof_of_federation"}` khi khởi tạo để dùng PoF.
 
 2. Khởi động API server và xác minh luồng cơ bản hoạt động:
 
@@ -49,7 +49,6 @@ curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proo
     * Base: `hierachain/consensus/base_consensus.py`
     * PoA: `hierachain/consensus/proof_of_authority.py`
     * PoF: `hierachain/consensus/proof_of_federation.py`
-    * BFT (triển khai riêng, không được chọn bởi cấu hình MainChain/SubChain hiện tại): `hierachain/consensus/bft/`
 
 2. Tạo lớp mới kế thừa `BaseConsensus` (ví dụ):
 

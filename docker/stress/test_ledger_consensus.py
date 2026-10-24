@@ -1,29 +1,15 @@
-"""
-BFT Consensus Stress Test — indirect throughput measurement via HTTP API.
-
-How it works:
-  Stress tester cannot send raw ZMQ/BFT messages (different internal network).
-  Instead, it uses HTTP API to send events and monitor block growth to infer
-  BFT pipeline throughput.
-
-Environment:
-  - Docker Compose: 4 nodes (node1-4), gateway
-  - K8s: single NodePort endpoint
-
-The generic test chain uses proof_of_authority. Node recovery is checked via
-ledger readiness and chain stats; this does not prove BFT protocol view changes.
-"""
-
-import time
 import logging
 import os
+import time
+from typing import Any
+
 import pytest
 import requests
 from urllib3.util import Timeout
 
 from docker.stress.real_stress_client import (
-    RealStressClient,
     REAL_REQUESTS,
+    RealStressClient,
     generate_event,
 )
 
@@ -31,14 +17,14 @@ logger = logging.getLogger(__name__)
 
 pytestmark = pytest.mark.skipif(
     not REAL_REQUESTS,
-    reason="BFT consensus tests require REAL_REQUESTS=true"
+    reason="Ledger consensus tests require REAL_REQUESTS=true"
 )
 
-BFT_CHAIN = os.getenv("BFT_CHAIN_NAME", "bft_stress_test")
+LEDGER_CHAIN = os.getenv("LEDGER_CHAIN_NAME", "ledger_stress_test")
 
 
 def _first_healthy_response(
-    client: RealStressClient, method: str, path: str, **kwargs
+    client: RealStressClient, method: str, path: str, **kwargs: Any
 ) -> requests.Response | None:
     """Make HTTP request to first healthy node. Returns response or None."""
     for nid, st in client.node_status.items():
@@ -54,31 +40,31 @@ def get_chain_stats(client: RealStressClient, node_id: str, timeout: float = 10)
     """Read committed block and event counts on a node."""
     status = client.node_status[node_id]
     resp = client.session.get(
-        f"{status.url}/api/ledger/chains/{BFT_CHAIN}/stats", timeout=Timeout(total=timeout),
+        f"{status.url}/api/ledger/chains/{LEDGER_CHAIN}/stats", timeout=Timeout(total=timeout),
     )
     assert resp.status_code == 200, f"Cannot read chain stats on {node_id}: HTTP {resp.status_code}"
     return resp.json()
 
 
-def get_chain_list(client: RealStressClient) -> list[dict]:
+def get_chain_list(client: RealStressClient) -> list[dict[str, Any]]:
     """Get chain list from the first healthy node."""
     resp = _first_healthy_response(client, "GET", "/api/ledger/chains", timeout=10)
     return resp.json() if resp and resp.status_code == 200 else []
 
 
-def create_bft_chain(client: RealStressClient) -> bool:
+def create_ledger_chain(client: RealStressClient) -> bool:
     """Prepare the dedicated chain on every configured target node."""
-    return client.create_chains_on_nodes(BFT_CHAIN)
+    return client.create_chains_on_nodes(LEDGER_CHAIN)
 
 
-class TestBFTThroughput:
+class TestLedgerThroughput:
     """Measure generic PoA chain throughput by monitoring block growth."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         self.client = RealStressClient()
         assert self.client.wait_for_nodes(timeout=30), "Configured nodes did not become ledger-ready"
-        assert create_bft_chain(self.client), "Could not prepare BFT chain on every target node"
+        assert create_ledger_chain(self.client), "Could not prepare ledger chain on every target node"
 
     def _wait_for_committed_events(self, node_id: str, before: dict[str, int], sent: int) -> int:
         """Drain accepted events before a subsequent test restarts this node."""
@@ -99,7 +85,7 @@ class TestBFTThroughput:
         assert new_blocks > 0, "Accepted events must produce committed blocks"
         raise AssertionError(f"Only {committed}/{sent} accepted events committed within 120s on {node_id}")
 
-    def test_poa_throughput_baseline(self):
+    def test_poa_throughput_baseline(self) -> None:
         """Baseline: measure throughput with proof_of_authority (default consensus)."""
         # Get block count before
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
@@ -116,7 +102,7 @@ class TestBFTThroughput:
         sent = 0
         while time.monotonic() < end_time:
             event = generate_event()
-            if self.client.submit_event(node_id, event, chain_name=BFT_CHAIN):
+            if self.client.submit_event(node_id, event, chain_name=LEDGER_CHAIN):
                 sent += 1
 
         blocks_created = self._wait_for_committed_events(node_id, before, sent)
@@ -127,7 +113,7 @@ class TestBFTThroughput:
         logger.info("Blocks created: %d", blocks_created)
         logger.info("Committed events/sec (including drain): %.2f", throughput)
 
-    def test_events_per_block_ratio(self):
+    def test_events_per_block_ratio(self) -> None:
         """Measure events/block ratio to determine actual batch size."""
         node_id = next(
             (nid for nid, s in self.client.node_status.items() if s.is_healthy),
@@ -141,7 +127,7 @@ class TestBFTThroughput:
         batch_size = 100
         sent = 0
         for _ in range(batch_size):
-            sent += bool(self.client.submit_event(node_id, generate_event(), chain_name=BFT_CHAIN))
+            sent += bool(self.client.submit_event(node_id, generate_event(), chain_name=LEDGER_CHAIN))
 
         new_blocks = self._wait_for_committed_events(node_id, before, sent)
 
@@ -150,30 +136,30 @@ class TestBFTThroughput:
 
 
 @pytest.mark.stress
-class TestBFTViewChange:
-    """Check ledger availability and recovery after restarting the inferred primary."""
+class TestLedgerRecovery:
+    """Check ledger availability and recovery after restarting a selected node."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         self.client = RealStressClient()
         assert self.client.wait_for_nodes(timeout=30), "Configured nodes did not become ledger-ready"
-        assert create_bft_chain(self.client), "Could not prepare BFT chain on every target node"
+        assert create_ledger_chain(self.client), "Could not prepare ledger chain on every target node"
 
     def _find_healthy(self) -> list[str]:
         return [nid for nid, s in self.client.node_status.items() if s.is_healthy]
 
-    def _infer_primary_node(self) -> str | None:
+    def _select_restart_node(self) -> str | None:
         sorted_nodes = sorted(self._find_healthy())
         return sorted_nodes[0] if sorted_nodes else None
 
     @staticmethod
-    def _run_node_command(primary: str, action: str) -> None:
+    def _run_node_command(target_node: str, action: str) -> None:
         import subprocess
-        container_name = f"hierachain-{primary}"
+        container_name = f"hierachain-{target_node}"
         try:
             ns = os.environ.get("K8S_NAMESPACE")
             if ns and action == "stop":
-                pod = f"hierachain-node-{int(primary.removeprefix('node')) - 1}"
+                pod = f"hierachain-node-{int(target_node.removeprefix('node')) - 1}"
                 subprocess.run(["kubectl", "delete", "pod", "-n", ns, pod],
                                capture_output=True, timeout=45, check=True)
             elif ns:
@@ -184,11 +170,11 @@ class TestBFTViewChange:
                 docker_cmd = "stop" if action == "stop" else "start"
                 stdout, stderr = run_docker_container_action(container_name, docker_cmd)
                 if stderr:
-                    raise RuntimeError(f"Failed to {action} {primary}: {stderr}")
+                    raise RuntimeError(f"Failed to {action} {target_node}: {stderr}")
                 else:
-                    logger.info("Successfully %s %s via helper: %s", action, primary, stdout)
+                    logger.info("Successfully %s %s via helper: %s", action, target_node, stdout)
         except Exception as e:
-            logger.error("Failed to %s %s: %s", action, primary, e)
+            logger.error("Failed to %s %s: %s", action, target_node, e)
             raise
 
     def _check_node_recovered(self, node_id: str, deadline: float) -> bool:
@@ -203,7 +189,7 @@ class TestBFTViewChange:
             return False
         try:
             resp = self.client.session.get(
-                f"{status.url}/api/ledger/chains/{BFT_CHAIN}/stats",
+                f"{status.url}/api/ledger/chains/{LEDGER_CHAIN}/stats",
                 timeout=Timeout(total=min(5, remaining)),
             )
             return resp.status_code == 200
@@ -220,30 +206,30 @@ class TestBFTViewChange:
             time.sleep(min(1, max(0, deadline - time.monotonic())))
         return None
 
-    def test_view_change_recovery_time(self):
-        """Kill primary, measure cluster recovery time."""
-        primary = self._infer_primary_node()
-        if not primary:
-            pytest.skip("Cannot determine primary node")
+    def test_node_restart_recovery_time(self) -> None:
+        """Restart one node and measure ledger recovery time."""
+        target_node = self._select_restart_node()
+        if not target_node:
+            pytest.skip("Cannot select a node to restart")
 
-        logger.info("Inferred primary: %s", primary)
+        logger.info("Selected node: %s", target_node)
         healthy = self._find_healthy()
-        others = [n for n in healthy if n != primary]
+        others = [n for n in healthy if n != target_node]
 
         event = generate_event()
         for nid in others:
-            self.client.submit_event(nid, event, chain_name=BFT_CHAIN)
+            self.client.submit_event(nid, event, chain_name=LEDGER_CHAIN)
 
-        logger.info("Killing primary node: %s", primary)
+        logger.info("Stopping node: %s", target_node)
         try:
-            self._run_node_command(primary, "stop")
+            self._run_node_command(target_node, "stop")
 
             recovery_time = self._poll_recovery(others, time.monotonic())
             logger.info("Recovery time: %.2fs", recovery_time or -1)
-            assert recovery_time is not None, "Cluster should recover after view change"
+            assert recovery_time is not None, "Cluster should recover while one node is stopped"
             assert recovery_time < 60, "Recovery should complete within 60s"
         finally:
-            self._run_node_command(primary, "start")
-        recovery_time = self._poll_recovery([primary], time.monotonic())
-        assert recovery_time is not None, "Restarted primary must recover its ledger and chain within 60s"
+            self._run_node_command(target_node, "start")
+        recovery_time = self._poll_recovery([target_node], time.monotonic())
+        assert recovery_time is not None, "Restarted node must recover its ledger and chain within 60s"
         assert self.client.wait_for_nodes(timeout=30), "All configured nodes must be ledger-ready after recovery"

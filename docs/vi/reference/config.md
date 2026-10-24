@@ -45,7 +45,6 @@ print(settings.AUTH_ENABLED)
 * `HRC_BLOCK_INTERVAL` (mặc định `0.0` giây): giãn cách bổ sung PoA; khi dương, validation dùng ít nhất nửa interval. Không điều khiển interval PoF. Batching Sub-Chain mặc định vẫn dùng 50 event và timeout 1 giây.
 * `CONSENSUS_FEDERATION_CONFIG`: cấu hình federation (min_validators: 3, block_interval: 5.0). Đây là thuộc tính Settings, không phải biến môi trường.
 * `VALIDATOR_TIMEOUT` (mặc định: `30` giây). Thuộc tính Settings.
-* `BFT_ENABLED` (mặc định: `True`), `BFT_FAULT_TOLERANCE` (mặc định: `1`), `BFT_NODE_COUNT` (mặc định: `4`). Là thuộc tính Settings (không có biến môi trường `HRC_BFT_ENABLED`).
 * Giới hạn block: `BLOCK_SIZE_LIMIT` (mặc định: `1000` events/block ở dev, `10` ở test)
 * `PROOF_SUBMISSION_INTERVAL` (mặc định: `300` giây ở dev, `10` ở test)
 * `HRC_VALIDATOR_IDENTITY`: đường dẫn tệp danh tính nút đầy đủ (mặc định: `validator_key.json`). Tệp phải có ID nút/MSP, khóa ký riêng/công khai và khóa truyền tải riêng/công khai; đầu ra hai trường của `hrc key generate` chưa đủ. Xem [Khởi động nhanh](../getting-started/quickstart.md).

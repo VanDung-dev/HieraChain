@@ -122,6 +122,5 @@ event = {
 
 - [Cơ chế Đồng thuận](./consensus_mechanisms.md): sơ đồ phụ PoA và PoF
 - [Neo giữ Bằng chứng](./proof-anchoring.md): kích hoạt sau khi khối hoàn tất
-- [Đồng thuận BFT](./bft-consensus.md): luồng PBFT 3 pha đầy đủ
 - [Thực thi chính sách](./policy-enforcement.md): kiểm tra chính sách cho các thao tác được chuyển rõ ràng qua `PolicyEngine`
 - [Danh tính MSP](./msp-identity.md): kiểm tra thành viên cho bên gọi sử dụng `HierarchicalMSP`

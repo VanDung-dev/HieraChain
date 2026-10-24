@@ -138,7 +138,7 @@ Preserve EN/VI front matter and mirror source paths, API fields, examples and di
 
 ## Demos and deployment utilities
 
-The current `demo/` scripts are `demo.py`, `demo_explorer.py`, `demo_ipfs.py` and `demo_zmq_consensus.py`. Read [demo prerequisites](../demo/README.md) before running them. Private-collection models and BFT demos do not enable REST private-data storage or make BFT the hierarchical consensus backend.
+The current `demo/` scripts are `demo.py`, `demo_explorer.py` and `demo_ipfs.py`. Read [demo prerequisites](../demo/README.md) before running them. Private-collection models do not enable REST private-data storage.
 
 The unified deployment script provides Docker Compose and Kubernetes setup/stress workflows. Use an isolated deployment and inspect the [Docker guide](../docker/README.md) before running:
 

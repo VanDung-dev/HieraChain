@@ -57,7 +57,7 @@ crypto_terms = [
 Khi người dùng hỏi về "Consensus" (Đồng thuận):
 
 * **Đừng nghĩ đến**: Proof of Work (Bitcoin), Proof of Stake (Ethereum).
-* **Hãy nghĩ đến**: Raft, Paxos, PBFT, Proof of Authority (PoA), Proof of Federation (PoF).
+* **Hãy nghĩ đến**: Raft, Paxos, Proof of Authority (PoA), Proof of Federation (PoF).
 
 Khi người dùng hỏi về "Ledger" (Sổ cái):
 

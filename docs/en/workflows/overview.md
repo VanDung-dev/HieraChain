@@ -32,8 +32,7 @@ This table lists all workflows for quick lookup:
 | [Event Submission](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API returns `event_id`; block is created and finalized asynchronously | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Proof Anchoring](./proof-anchoring.md) | A | Block finalized on Sub-Chain | Proof hash on Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
 | [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK`, or recoverable `IN_DOUBT` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
-| [BFT Consensus](./bft-consensus.md) | B | BFT component used explicitly; not selected through MainChain/SubChain configuration | Separate BFT consensus workflow | `consensus/bft/consensus.py` |
-| [Error Mitigation](./error-recovery.md) | C | Validation error / leader timeout / interrupted event | Classified error, journal replay, or BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
+| [Error Mitigation](./error-recovery.md) | C | Validation error / interrupted event | Classified error or journal replay | `error_mitigation/error_classifier.py` + `journal.py` |
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Integrity Validation](./integrity-validation.md) | D | Explicit application call | Health summary or block/proof consistency report | `hierarchical/hierarchy_manager/validation.py` |
@@ -67,7 +66,6 @@ Workflows are grouped into six areas. Use the dashboard to find the group that m
 
     Block finalization. For PoA/PoF alternatives, see [Consensus Mechanisms](./consensus_mechanisms.md).
 
-    * [BFT Consensus (3-Phase PBFT)](./bft-consensus.md)
 
 * :material-server-security:{ .lg .middle } __Group C: Cluster management__
 
@@ -131,7 +129,6 @@ flowchart TD
     App --> Rehydrate[Explicit sync_chain]
     Rehydrate -->|Rebuild chain and indexes| WF1
     Trace[Entity tracing] -->|Read finalized history| WF1
-    App --> BFT[Separate BFT library]
     App --> TwoPC[Cross-chain 2PC coordinator]
 ```
 

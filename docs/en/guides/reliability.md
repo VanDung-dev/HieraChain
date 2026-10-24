@@ -12,7 +12,7 @@ Provides practices to ensure stable system operation and easy recovery from fail
 
 ## Related Components
 
-* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`, and BFT view change in `hierachain/consensus/bft/view_change.py`
+* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`
 * Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` via `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Patterns

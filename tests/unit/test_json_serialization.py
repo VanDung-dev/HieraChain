@@ -12,7 +12,6 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from hierachain.api.storage.ipfs_client import IPFSClient
-from hierachain.consensus.bft.helpers import hash_request
 from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.monitoring.alert_system import WebhookNotifier
 from hierachain.monitoring.types import Alert, AlertCategory, AlertSeverity
@@ -28,21 +27,19 @@ from hierachain.serialization import dumps_canonical_json, dumps_json, loads_jso
     {"keys": {False: "no", True: "yes"}},
     {"keys": {0.00001: "small", 10.0: "large"}},
 ])
-def test_bft_digest_preserves_legacy_json_bytes(details: dict[str, Any]) -> None:
+def test_canonical_json_preserves_legacy_json_bytes(details: dict[str, Any]) -> None:
     request = {"operation": {"entity_id": "asset-1", "details": details}}
-    # This fixed encoder configuration is the established BFT request format.
     legacy = json.dumps(
         request, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False,
     ).encode("utf-8")
 
     assert dumps_canonical_json(request) == legacy
-    assert hash_request(request) == hashlib.sha256(legacy).hexdigest()
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 def test_non_finite_values_cannot_become_null_in_request_digests(value: float) -> None:
     with pytest.raises(ValueError, match="JSON compliant"):
-        hash_request({"operation": {"details": {"measurements": [value]}}})
+        dumps_canonical_json({"operation": {"details": {"measurements": [value]}}})
 
 
 def test_canonical_json_rejects_cycles_but_allows_shared_values() -> None:

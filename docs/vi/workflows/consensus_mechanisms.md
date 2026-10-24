@@ -1,6 +1,6 @@
 ---
 title: "Cơ chế đồng thuận"
-description: "So sánh và đặc tả kỹ thuật của các cơ chế đồng thuận PoA, PoF và BFT trong HieraChain."
+description: "So sánh và đặc tả kỹ thuật của các cơ chế đồng thuận PoA và PoF trong HieraChain."
 icon: material/sync
 ---
 
@@ -8,18 +8,18 @@ icon: material/sync
 
 ## Lựa chọn runtime
 
-MainChain chọn `HRC_MAINCHAIN_CONSENSUS`, fallback về `HRC_CONSENSUS_TYPE`; mặc định là `proof_of_authority`. Sub-Chain mặc định PoA và nhận `config` Python với `consensus_type="proof_of_federation"`. BFT là triển khai riêng trong `hierachain/consensus/bft/`; đặt `BFT_ENABLED` không nối BFT vào các đường chain này. Dùng selector PoA/PoF được tài liệu hóa; giá trị khác không phải công tắc kích hoạt BFT.
+MainChain chọn `HRC_MAINCHAIN_CONSENSUS`, fallback về `HRC_CONSENSUS_TYPE`; mặc định là `proof_of_authority`. Sub-Chain mặc định PoA và nhận `config` Python với `consensus_type="proof_of_federation"`. Dùng selector PoA/PoF được tài liệu hóa.
 
 ## So sánh triển khai
 
-| Thuộc tính | PoA | PoF | Thành phần BFT |
-|------------|-----|-----|----------------|
-| Runtime hierarchy | Mặc định MainChain/Sub-Chain | Chọn federation rõ ràng | Cần tích hợp riêng |
-| Signer finalization | Authority đã đăng ký | Validator đã đăng ký; validation buộc đúng leader nếu bật rotation | Giao thức bỏ phiếu PBFT |
-| Interval mặc định | 0.0 giây | 5.0 giây | Cấu hình timeout giao thức |
-| Kiểm tra giãn cách timestamp | Ít nhất nửa interval dương | Ít nhất 80% interval (mặc định 4 giây) | Giao thức riêng |
-| Thành viên | Ít nhất một authority | `min_validators=3` để tạo block | `n >= 3f + 1` |
-| ZK | Xác minh tùy chọn dùng chung | Xác minh tùy chọn dùng chung | Cờ môi trường dùng chung; xem giới hạn đầu vào BFT |
+| Thuộc tính | PoA | PoF |
+|------------|-----|-----|
+| Runtime hierarchy | Mặc định MainChain/Sub-Chain | Chọn federation rõ ràng |
+| Signer finalization | Authority đã đăng ký | Validator đã đăng ký; validation buộc đúng leader nếu bật rotation |
+| Interval mặc định | 0.0 giây | 5.0 giây |
+| Kiểm tra giãn cách timestamp | Ít nhất nửa interval dương | Ít nhất 80% interval (mặc định 4 giây) |
+| Thành viên | Ít nhất một authority | `min_validators=3` để tạo block |
+| ZK | Xác minh tùy chọn dùng chung | Xác minh tùy chọn dùng chung |
 
 ## Ordering và độ bền dữ liệu
 
@@ -44,10 +44,9 @@ HRC_ENABLE_ZK_PROOFS=false
 HRC_ZK_REQUIRED_MAINCHAIN=false
 ```
 
-`block_interval` của PoF là cấu hình đồng thuận riêng; `HRC_BLOCK_INTERVAL` điều khiển PoA. Hàm khởi tạo chuỗi hiện không áp dụng `CONSENSUS_FEDERATION_CONFIG`. BFT dùng cờ ZK chung, nhưng helper và lớp bọc request đặt operation ở các vị trí khác nhau; xem [BFT](../consensus/bft_consensus.md) trước khi dựa vào kiểm tra đó.
+`block_interval` của PoF là cấu hình đồng thuận riêng; `HRC_BLOCK_INTERVAL` điều khiển PoA. Hàm khởi tạo chuỗi hiện không áp dụng `CONSENSUS_FEDERATION_CONFIG`.
 
 ## Liên quan
 
 * [PoA](../consensus/poa.md) · [PoF](../consensus/pof.md)
-* [Luồng BFT](bft-consensus.md)
 * [Gửi event](event-submission.md) · [Neo proof](proof-anchoring.md)

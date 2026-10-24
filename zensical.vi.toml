@@ -33,7 +33,6 @@ nav = [
     { "Gửi Sự kiện" = "workflows/event-submission.md" },
     { "Neo giữ Bằng chứng" = "workflows/proof-anchoring.md" },
     { "Sự kiện Liên chuỗi (2PC)" = "workflows/cross-chain-2pc.md" },
-    { "Đồng thuận BFT" = "workflows/bft-consensus.md" },
     { "Khóa băng Cụm" = "workflows/cluster-lockdown.md" },
     { "Giảm thiểu Lỗi & Phục hồi" = "workflows/error-recovery.md" },
     { "Truy vết Thực thể" = "workflows/entity-tracing.md" },
@@ -79,7 +78,6 @@ nav = [
     { "Base Consensus" = "consensus/base_consensus.md" },
     { "Proof of Authority" = "consensus/poa.md" },
     { "Proof of Federation" = "consensus/pof.md" },
-    { "BFT Consensus" = "consensus/bft_consensus.md" },
     { Ordering = "consensus/ordering.md" },
   ] },
   { "Tham chiếu" = [

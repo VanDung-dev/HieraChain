@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (60)"
+??? warning "Breaking Changes (61)"
+
+    * 2026-10-24
+
+        * **Consensus (Remove BFT)**: Remove `hierachain.consensus.bft`, its public exports (`BFTConsensus`, message types, signing/validation helpers and `create_bft_network`), `Settings.BFT_ENABLED`, `BFT_FAULT_TOLERANCE`, `BFT_NODE_COUNT`, and `ConsensusValidator`. Callers importing these names must migrate. Consensus classification advice no longer recommends view changes. MainChain/SubChain retain PoA/PoF; this removal does not add replicated consensus or automatic leader failover and does not rewrite stored blocks or journals.
 
     * 2026-10-18
 

@@ -8,7 +8,7 @@ icon: material/chart-line
 
 ## Tổng quan
 
-Module **Monitoring** theo dõi các chỉ số hạ tầng như CPU, RAM và dung lượng đĩa. Module cũng ghi nhận chỉ số của HieraChain, gồm thông lượng event, thời gian đóng block và tỷ lệ thành công của BFT.
+Module **Monitoring** theo dõi các chỉ số hạ tầng như CPU, RAM và dung lượng đĩa. Module cũng ghi nhận chỉ số của HieraChain, gồm thông lượng event, thời gian đóng block và tỷ lệ thành công của đồng thuận.
 
 Module được bật theo nhu cầu. Import `PerformanceMonitor` nạp phần thu thập metric độc lập với alerting; import `AlertManager` nạp phần cảnh báo độc lập với thu thập metric. Ứng dụng chủ quản chủ động khởi chạy và dừng monitoring, ghi nhận hoạt động ledger qua các phương thức `record_*`, và có thể đăng ký callback `add_alert_handler()` cho hệ thống observability hiện có. Thu thập, kiểm tra ngưỡng và báo cáo thuộc `PerformanceMonitor`; rule, trạng thái cảnh báo và gửi thông báo thuộc `AlertManager`.
 

@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (60)"
+??? warning "Breaking Changes (61)"
+
+    * 2026-10-24
+
+        * **Đồng thuận (Loại bỏ BFT)**: Bỏ `hierachain.consensus.bft`, các export public (`BFTConsensus`, kiểu message, helper ký/xác thực và `create_bft_network`), `Settings.BFT_ENABLED`, `BFT_FAULT_TOLERANCE`, `BFT_NODE_COUNT` và `ConsensusValidator`. Bên gọi import các tên này phải chuyển đổi. Khuyến nghị phân loại lỗi đồng thuận không còn đề xuất view change. MainChain/SubChain giữ PoA/PoF; việc loại bỏ không bổ sung đồng thuận nhân bản hay tự động chuyển leader khi lỗi và không ghi lại block hoặc journal đã lưu.
 
     * 2026-10-18
 

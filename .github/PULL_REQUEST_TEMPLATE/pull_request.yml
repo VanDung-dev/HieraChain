@@ -51,7 +51,7 @@ body:
       options:
         - Core (Block, Blockchain)
         - Hierarchical (MainChain, SubChain, HierarchyManager)
-        - Consensus (Ordering, BFT, ZKP)
+        - Consensus (Ordering, PoA, PoF)
         - Security (Verification, MSP, Policy, Key Management)
         - API (REST, GraphQL, WebSocket)
         - Storage (SQL, Redis, IPFS)

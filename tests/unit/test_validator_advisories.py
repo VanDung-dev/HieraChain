@@ -9,43 +9,10 @@ import pytest
 
 from hierachain.core.parquet_log import read_parquet_log
 from hierachain.error_mitigation import (
-    ConsensusValidator,
     EncryptionValidator,
     ResourceValidator,
-    ValidationError,
 )
 from hierachain.serialization import loads_json
-
-
-@pytest.mark.parametrize("healthy_count", [0, 3, 4])
-def test_node_health_advice_preserves_membership_and_quorum(
-    healthy_count: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("hierachain.error_mitigation.consensus_validator.time.time", lambda: 100.0)
-    nodes = [SimpleNamespace(health_status="active", last_heartbeat=100.0) for _ in range(healthy_count)]
-    if healthy_count == 3:
-        nodes.append(SimpleNamespace(health_status="active", last_heartbeat=70.0))
-    original = list(nodes)
-    validator = ConsensusValidator({"f": 1})
-    with caplog.at_level(logging.INFO):
-        healthy = validator.monitor_and_scale(nodes)
-        if healthy_count < 4:
-            with pytest.raises(ValidationError):
-                validator.validate_node_count(healthy)
-        else:
-            assert validator.validate_node_count(healthy)
-    assert healthy == original[:healthy_count]
-    assert nodes == original
-    rows = read_parquet_log("log/error_mitigation/consensus_scaling.parquet").to_pylist()
-    assert len(rows) == int(healthy_count < 4)
-    if rows:
-        record = loads_json(rows[0]["data"])
-        assert record["event"] == record["payload"]["event"] == "consensus_capacity_recommendation"
-        assert record["payload"]["healthy_nodes_count"] == healthy_count
-        assert record["payload"]["required_nodes"] == 4
-    assert "Auto-scaling initiated" not in caplog.text
-    assert "auto_scaling_triggered" not in caplog.text
 
 
 @pytest.mark.parametrize("auto_scale", [False, True])
@@ -112,16 +79,6 @@ def test_resource_log_failure_preserves_error_result(monkeypatch: pytest.MonkeyP
     assert writer.call_args.args[1]["resource_type"] == "cpu"
 
 
-def test_consensus_log_failure_does_not_discard_healthy_nodes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("hierachain.error_mitigation.consensus_validator.time.time", lambda: 100.0)
-    monkeypatch.setattr("hierachain.core.parquet_log.write_parquet_log", Mock(side_effect=OSError("disk unavailable")))
-    node = SimpleNamespace(health_status="active", last_heartbeat=100.0)
-    failed = SimpleNamespace(health_status="failed", last_heartbeat=100.0)
-    assert ConsensusValidator({"f": 1}).monitor_and_scale([node, failed]) == [node]
-    assert "Failed to log capacity recommendation" in caplog.text
 
 
 @pytest.mark.parametrize("interval", [0, 2592000, 2592001])

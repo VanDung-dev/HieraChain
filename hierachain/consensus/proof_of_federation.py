@@ -32,8 +32,6 @@ class ProofOfFederation(BaseConsensus):
     Key Features:
     - Rotating Leader: Authorities take turns creating blocks based on block height.
     - Deterministic Schedule: Leader = (BlockHeight) % (TotalAuthorities).
-    - Fault Tolerance: If a leader misses their turn, the protocol can skip to the next
-    (implementation handled via timeout/view-change logic in higher layers).
     """
     __slots__ = ('_signing_key', 'validator_metadata', 'validators')
 
@@ -341,7 +339,6 @@ def _get_required_quorum_count(
     """Calculate the required number of signatures for a quorum."""
     if manually_required is not None:
         return manually_required
-    # Default BFT-style quorum: 2/3 + 1
     return (total_validators * 2) // 3 + 1
 
 

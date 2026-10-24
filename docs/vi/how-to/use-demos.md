@@ -24,20 +24,11 @@ Các bước diễn ra trong demo:
 * Gửi các sự kiện (Events) nghiệp vụ.
 * Tạo Private Data Collection chỉ chia sẻ giữa hai bên.
 
-## 2. Demo Đồng thuận BFT qua ZeroMQ
-
-Trình diễn khả năng đồng thuận của 4 node sử dụng giao thức BFT qua mạng ZeroMQ.
-
-```bash
-# Run the BFT demo
-python demo/demo_zmq_consensus.py
-```
-
-## 3. Sao lưu và khôi phục khóa
+## 2. Sao lưu và khôi phục khóa
 
 Xem [Sao lưu khóa](../workflows/key-backup.md) để biết file khóa CLI, node identity đầy đủ và vault mã hóa cho phát triển. Repository không có `demo_key_backup.py` hay `KeyBackupManager`.
 
-## 4. Demo Tích hợp IPFS
+## 3. Demo Tích hợp IPFS
 
 Minh họa cách lưu trữ dữ liệu lớn/tài liệu lên IPFS với mã hóa AES-256.
 
@@ -48,7 +39,7 @@ python demo/demo_ipfs.py
 
 Script thử kết nối IPFS daemon cục bộ trên cổng 5001 và có thể chuyển sang mock trong bộ nhớ. CID của mock không chứng minh dữ liệu được lưu mã hóa hay truy xuất được từ daemon thật.
 
-## 5. Trình khám phá Blockchain (Explorer)
+## 4. Trình khám phá Blockchain (Explorer)
 
 Giao diện web đơn giản để xem danh sách block và sự kiện.
 

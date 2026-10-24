@@ -56,7 +56,7 @@ Các trường header không phải một lược đồ sự kiện Arrow bổ s
 3. Bộ xử lý nền chứng nhận và gom sự kiện thành lô. Block manager gán chỉ số và liên kết khối, chạy bước hoàn tất đồng thuận, ký header và lưu khối bền vững trước khi xếp hàng cho consumer của Sub-Chain.
 4. Consumer xác thực và áp dụng nguyên trạng khối đã lưu, cập nhật WorldState và kiểm tra đã đến lúc gửi bằng chứng hay chưa.
 
-Xem [Gửi sự kiện](../workflows/event-submission.md) để biết cách xử lý lỗi. BFT là triển khai thư viện riêng; runtime MainChain/SubChain chọn PoA hoặc PoF.
+Xem [Gửi sự kiện](../workflows/event-submission.md) để biết cách xử lý lỗi. Runtime MainChain/SubChain chọn PoA hoặc PoF.
 
 ## Tuần tự hóa và truyền tải
 

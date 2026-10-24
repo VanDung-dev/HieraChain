@@ -1,6 +1,6 @@
 ---
 title: "Consensus & Ordering"
-description: "Overview of PoA/PoF/BFT and Ordering Service in HieraChain; configuration, flow, and invariants."
+description: "Overview of PoA/PoF and Ordering Service in HieraChain; configuration, flow, and invariants."
 icon: material/sync
 ---
 
@@ -12,10 +12,9 @@ This page describes the consensus mechanisms and the Ordering Service that Hiera
 
 ## Architecture and concepts
 
-* Base Consensus: `hierachain/consensus/base_consensus.py` defines the base interface for PoA and PoF; BFT uses a separate API.
+* Base Consensus: `hierachain/consensus/base_consensus.py` defines the base interface for PoA and PoF.
 * Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py` provides intra-organization consensus with a single MainChain that manages internal domain Sub-Chains.
 * Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py` implements federation membership, rotating leader validation and a leader signature for consortium integration; ordinary block validation does not collect multi-party quorum votes.
-* BFT Consensus: `hierachain/consensus/bft/` contains a separate implementation. The runtime paths for MainChain and SubChain use PoA or PoF.
 * Ordering Service: `hierachain/consensus/ordering/` orders events before block creation and is built from several components (Processor, Certifier, BlockBuilder).
 
 ### Typical flow
@@ -50,8 +49,7 @@ sequenceDiagram
 Variables in `hierachain/config/settings.py`:
 
 * `CONSENSUS_TYPE`: `proof_of_authority` (default) or `proof_of_federation`.
-* `BFT_ENABLED`: the `Settings` class defines this attribute, but it does not select consensus for MainChain or SubChain. It is not an environment variable.
-* `VALIDATOR_TIMEOUT`: declared validator timeout exposed by the settings helper; it does not configure the BFT view-change timer.
+* `VALIDATOR_TIMEOUT`: declared validator timeout exposed by the settings helper.
 * `CONSENSUS_FEDERATION_CONFIG`: declared federation defaults; current MainChain/SubChain constructors do not apply this dictionary to PoF. Configure the actual consensus instance consistently across nodes.
 
 Environment example:
@@ -65,7 +63,6 @@ HRC_ZK_REQUIRED_MAINCHAIN=false
 
 * PoA trusts registered authorities. Throughput depends on batching, journal synchronization and storage.
 * PoF balances trust and distribution, but it requires federation membership to be managed.
-* The BFT implementation lives under `hierachain/consensus/bft/` and is separate from the MainChain and SubChain runtime paths.
 * Ordering keeps event order and batching stable before a block is finalized.
 
 ## Related

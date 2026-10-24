@@ -8,7 +8,7 @@ icon: material/bug
 
 ## 1. Tổng quan
 
-Module `error_mitigation` cung cấp các primitive runtime để xác thực trạng thái, ghi nhật ký bền vững và phân loại lỗi. View change của đồng thuận và khôi phục vận hành thuộc về các tầng runtime hoặc deployment tương ứng.
+Module `error_mitigation` cung cấp các primitive runtime để xác thực trạng thái, ghi nhật ký bền vững và phân loại lỗi. Khôi phục vận hành thuộc về tầng deployment.
 
 ## 2. Các thành phần lõi
 
@@ -55,7 +55,6 @@ Ví dụ này giữ khóa trong bộ nhớ. Caller production phải giữ khóa
 
 ### 2.4 Khuyến nghị về tài nguyên và xoay khóa
 
-`ConsensusValidator.validate_node_count()` vẫn từ chối số node dưới `3f+1`. Phương thức legacy `monitor_and_scale()` chỉ trả các node khỏe và ghi khuyến nghị bổ sung tài nguyên khi tỷ lệ này dưới `auto_scale_threshold`; nó không thay đổi thành viên hay khôi phục quorum. Runtime BFT gọi validator số node nhưng không tự gọi bộ kiểm tra sức khỏe này.
 
 `ResourceValidator.validate_resources()` báo các vi phạm ngưỡng CPU, memory và disk. Cờ legacy `auto_scale=True` ghi thêm khuyến nghị tài nguyên CPU/memory; vi phạm disk chỉ tạo cảnh báo. Caller phải tự gọi các kiểm tra này và thực hiện cấp phát qua hạ tầng của host.
 
@@ -63,7 +62,7 @@ Ngưỡng mặc định là CPU 70%, memory 80% và disk 85%, cấu hình qua `c
 
 `EncryptionValidator.validate_config()` cảnh báo khi `key_rotation_interval` dưới `min_key_rotation_interval` hiện có (2.592.000 giây). Đây là so sánh cấu hình để tham khảo, không đánh giá tuổi khóa hay áp dụng chính sách hết hạn. Nó không tạo lịch, deadline hoặc khóa thay thế. Ứng dụng host quản lý việc xoay khóa và giữ khóa cũ.
 
-Bên đọc log cần cập nhật bộ lọc sự kiện: `auto_scaling_triggered` và wrapper `consensus_scaling` đổi thành `consensus_capacity_recommendation`; `resource_scaling_triggered` đổi thành `resource_capacity_recommendation`. Các đường dẫn Parquet legacy `log/error_mitigation/consensus_scaling.parquet` và `log/error_mitigation/resource_scaling.parquet`, field payload (gồm `auto_scale_enabled`) và record hiện có vẫn tương thích. Log gây hiểu nhầm `key_rotation_scheduled` và field `next_rotation` được bỏ; cảnh báo về interval vẫn còn.
+Bên đọc log cần cập nhật bộ lọc sự kiện: `resource_scaling_triggered` đổi thành `resource_capacity_recommendation`. Đường dẫn Parquet legacy `log/error_mitigation/resource_scaling.parquet`, field payload (gồm `auto_scale_enabled`) và record hiện có vẫn tương thích. Log gây hiểu nhầm `key_rotation_scheduled` và field `next_rotation` được bỏ; cảnh báo về interval vẫn còn.
 
 ## 3. Chiến lược phân loại lỗi
 

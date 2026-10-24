@@ -109,9 +109,6 @@ class Settings:
         "block_interval": 5.0
     }
     VALIDATOR_TIMEOUT = 30  # seconds
-    BFT_ENABLED = True  # Enable Byzantine Fault Tolerance consensus
-    BFT_FAULT_TOLERANCE = 1  # Number of Byzantine faults to tolerate (f)
-    BFT_NODE_COUNT = 4  # Total number of nodes (must be >= 3f + 1)
     
     # Block Creation Mode: "event_driven" (creates block only when event arrives) or "batch_or_timer"
     BLOCK_CREATION_MODE = os.getenv("HRC_BLOCK_CREATION_MODE", "event_driven")

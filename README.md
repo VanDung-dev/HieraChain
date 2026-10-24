@@ -15,7 +15,7 @@ HieraChain is a Python ledger for business events. Domain Sub-Chains record even
 
 * Apache Arrow event tables, indexed entity/event queries and asynchronous ordering batches.
 * Ed25519 signatures with an operator-approved trusted-key map, durable SQLite/PostgreSQL storage and ordering journals.
-* PoA by default; configurable PoF with validator rotation. BFT components are separate from the MainChain/Sub-Chain runtime.
+* PoA by default; configurable PoF with validator rotation. Neither path provides replicated Byzantine consensus or automatic leader failover.
 * REST, GraphQL, WebSocket, Python sync/async clients and CLI tools.
 * API-key authentication when enabled, organization/channel policies, audit logging and optional AES-256-GCM encrypted IPFS payloads.
 
@@ -103,7 +103,7 @@ Open `http://localhost:2661/docs`. Check `/api/ledger/ready` for hierarchy recov
 | Area | Current implementation |
 |------|------------------------|
 | Python | 3.11, 3.12, 3.13, 3.14 |
-| Hierarchical consensus | PoA / PoF; separate BFT components |
+| Hierarchical consensus | PoA / PoF |
 | Block signatures | Ed25519, including genesis |
 | Hierarchical storage | SQLite / PostgreSQL |
 | Off-chain encryption | Optional IPFS AES-256-GCM |

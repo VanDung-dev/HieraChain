@@ -27,7 +27,6 @@ This document maps concepts in technical documentation to specific source code f
 | Block Manager | `hierachain/consensus/ordering/block_manager.py` | Manages block lifecycle in the ordering system. |
 | Proof of Authority | `hierachain/consensus/proof_of_authority.py` | PoA consensus mechanism (Intra-Organization). |
 | Proof of Federation | `hierachain/consensus/proof_of_federation.py` | PoF consensus mechanism (Inter-Organization Consortium). |
-| BFT Consensus | `hierachain/consensus/bft/consensus.py` | Separate Byzantine Fault Tolerant consensus component. |
 
 ## API and interfaces
 

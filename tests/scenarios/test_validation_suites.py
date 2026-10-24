@@ -1,42 +1,11 @@
-"""Behavioral validation of quorum size, API keys and certificate expiry."""
+"""Behavioral validation of API keys and certificate expiry."""
 
-import pytest
 from unittest.mock import Mock
 
-from hierachain.error_mitigation import (
-    ConsensusValidator,
-    SecurityError,
-    ValidationError,
-    validate_certificate
-)
-from hierachain.security import (
-    KeyManager
-)
+import pytest
 
-
-@pytest.mark.critical
-def test_bft_node_count_validation():
-    """
-    Test BFT consensus node count validation.
-    Validates requirement: n >= 3f + 1 nodes for Byzantine Fault Tolerance.
-    """
-    config = {"f": 1, "auto_scale_threshold": 0.8}
-    validator = ConsensusValidator(config)
-    
-    # Test insufficient nodes (should raise ValidationError)
-    with pytest.raises(ValidationError, match="Insufficient nodes"):
-        validator.validate_node_count(["node1", "node2", "node3"])  # 3 < 4
-    
-    # Test sufficient nodes (should pass)
-    result = validator.validate_node_count(["node1", "node2", "node3", "node4"])
-    assert result is True
-    
-    # Test with f=2 (requires 7 nodes)
-    validator_f2 = ConsensusValidator({"f": 2})
-    with pytest.raises(ValidationError):
-        validator_f2.validate_node_count(["n1", "n2", "n3", "n4", "n5", "n6"])  # 6 < 7
-    
-    assert validator_f2.validate_node_count([f"node{i}" for i in range(1, 8)]) is True
+from hierachain.error_mitigation import SecurityError, validate_certificate
+from hierachain.security import KeyManager
 
 
 @pytest.mark.low

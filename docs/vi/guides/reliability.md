@@ -12,7 +12,7 @@ icon: material/check-decagram
 
 ## Thành phần liên quan
 
-* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py` và BFT view change trong `hierachain/consensus/bft/view_change.py`
+* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`
 * Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` qua `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Mẫu hình

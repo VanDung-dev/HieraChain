@@ -4,7 +4,7 @@ Poison Pill Test - CPU & Signature Stress Test.
 This test sends events designed to stress:
 - CPU-intensive signature verification
 - Malformed/invalid signature handling
-- Byzantine event rejection
+- Invalid event rejection
 - Resource exhaustion prevention
 """
 

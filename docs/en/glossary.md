@@ -11,16 +11,15 @@ icon: material/alphabetical
 | Chain | Logical block chain; HieraChain has Main Chain and Sub-Chain. |
 | Block | Data unit containing Events; defined in `hierachain/core/block.py`. |
 | Blockchain | Block chain management; `hierachain/core/blockchain.py`. |
-| Consensus | Block approval mechanism (PoA, PoF, BFT); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
+| Consensus | Block approval mechanism (PoA, PoF); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
 | Membership Service Provider | MSP; identity/organization management; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
 | Policy | Access/resource control; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. No `resource_guard.py` (fabricated). |
 | World State | Current data state; `hierachain/state/world_state.py`. |
 | Journal | Transaction log; `hierachain/error_mitigation/journal.py`. |
 | Rollback | Transaction rollback owned by `hierachain/hierarchical/transaction_manager.py`; no global state rollback manager is provided. |
-| Recovery | Runtime recovery through journal replay, validation, BFT view change, and deployment procedures. |
+| Recovery | Runtime recovery through journal replay, validation, and deployment procedures. |
 | Ordering | Event ordering; `hierachain/consensus/ordering/*`. |
 | Transport | Network communication; `hierachain/network/zmq_transport.py`. |
-| Byzantine Fault Tolerance | BFT; `hierachain/consensus/bft/*`. |
 | Proof of Authority | PoA; Intra-Organization consensus; `hierachain/consensus/proof_of_authority.py`. |
 | Proof of Federation | PoF; Inter-Organization P2P MainChain Alliance consensus; `hierachain/consensus/proof_of_federation.py`. |
 | API Key | API access key; `hierachain/security/verify/api_key_verifier.py`. |

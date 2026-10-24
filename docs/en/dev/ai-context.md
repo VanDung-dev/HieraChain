@@ -57,7 +57,7 @@ crypto_terms = [
 When users ask about "Consensus":
 
 * **Don't think of**: Proof of Work (Bitcoin), Proof of Stake (Ethereum).
-* **Think of**: Raft, Paxos, PBFT, Proof of Authority (PoA), Proof of Federation (PoF).
+* **Think of**: Raft, Paxos, Proof of Authority (PoA), Proof of Federation (PoF).
 
 When users ask about "Ledger":
 

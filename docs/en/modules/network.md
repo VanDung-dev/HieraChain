@@ -154,7 +154,6 @@ async def send_proposal() -> bool:
 ## Related
 
 *   [Security and MSP](./security.md)
-*   [BFT Consensus](../consensus/bft_consensus.md)
 *   [Network Monitoring](./monitoring.md)
 
 ZeroMQ accepts frames up to 1 MiB and exactly two application frames (sender identity and body); excess frames are drained without accumulating a Python multipart list. Secure connections validate identities and signatures before retaining replay entries, with a separate 1,000-entry cache per verified peer. Plain transport requires configured peer IDs and isolates their caches; it provides no cryptographic identity guarantee. These limits do not replace upstream connection and bandwidth controls.

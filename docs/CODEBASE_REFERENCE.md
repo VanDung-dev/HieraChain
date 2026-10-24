@@ -64,13 +64,12 @@ See [Hierarchy](en/modules/hierarchical.md) · [Phân cấp](vi/modules/hierarch
 
 ## Consensus and ordering
 
-MainChain selects PoA or PoF through `HRC_MAINCHAIN_CONSENSUS`; `HRC_CONSENSUS_TYPE` is a fallback alias. SubChain defaults to PoA and accepts `consensus_type` in its constructor config. Setting a BFT name does not activate the separate BFT engine.
+MainChain selects PoA or PoF through `HRC_MAINCHAIN_CONSENSUS`; `HRC_CONSENSUS_TYPE` is a fallback alias. SubChain defaults to PoA and accepts `consensus_type` in its constructor config. Use only the documented PoA/PoF selectors.
 
 | Source | Responsibility |
 | --- | --- |
 | `hierachain/consensus/proof_of_authority.py` | Authority-based block creation and validation; default spacing is 0 seconds |
 | `hierachain/consensus/proof_of_federation.py` | Validator registration and rotating leader schedule; separate 5-second interval |
-| `hierachain/consensus/bft/` | BFT engine, dispatcher, message types and view changes |
 | `hierachain/consensus/ordering/service.py` | Ordering facade, event acceptance and lifecycle |
 | `hierachain/consensus/ordering/certifier.py` | Event certification |
 | `hierachain/consensus/ordering/block_builder.py` | Event batches |
@@ -81,7 +80,7 @@ MainChain selects PoA or PoF through `HRC_MAINCHAIN_CONSENSUS`; `HRC_CONSENSUS_T
 | `hierachain/consensus/ordering/maintenance.py` | Ordering pause, lockdown and resume |
 | `hierachain/consensus/ordering/metrics.py` | Ordering statistics |
 
-PoF uses `Validators[block_index % validator_count]` for the expected leader. Its ordinary block verification checks that leader's trusted signature; the separate quorum helper does not automatically collect multiple signatures or provide leader failover. BFT requires explicit application integration and is not the MainChain/SubChain ordering backend.
+PoF uses `Validators[block_index % validator_count]` for the expected leader. Its ordinary block verification checks that leader's trusted signature; the separate quorum helper does not automatically collect multiple signatures or provide leader failover.
 
 ```mermaid
 flowchart LR
@@ -116,7 +115,7 @@ See [Consensus](en/architecture/consensus.md) · [Đồng thuận](vi/architectu
 
 The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedgerAdapter`, or process-local memory storage. Redis requires healthy AOF, fsync on every write, no eviction, no fsync bypass during rewrites, and no truncated AOF loading. CLI chain/event commands require SQLite or PostgreSQL. Preserve both the database and the per-chain ordering journals for recovery.
 
-`ErrorClassifier` does not automatically dispatch every error to journal or BFT recovery. Recovery depends on configured callbacks and the owning component's actual error-handling path.
+`ErrorClassifier` does not automatically dispatch every error to journal recovery. Recovery depends on configured callbacks and the owning component's actual error-handling path.
 
 ## API, clients and CLI
 

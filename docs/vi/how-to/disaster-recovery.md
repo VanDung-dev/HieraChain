@@ -1,12 +1,12 @@
 ---
 title: "Độ bền dữ liệu và phục hồi sau sự cố"
-description: "Cách HieraChain bảo vệ sự kiện đang chờ và tiếp tục đồng thuận sau gián đoạn."
+description: "Cách HieraChain bảo vệ sự kiện đang chờ và phục hồi trạng thái chuỗi sau gián đoạn."
 icon: material/backup-restore
 ---
 
 # Độ bền dữ liệu và phục hồi sau sự cố
 
-Repository cung cấp journaling sự kiện và view change của đồng thuận. Backup
+Repository cung cấp journaling sự kiện và phục hồi trạng thái chuỗi. Backup
 database, snapshot filesystem, khôi phục khóa và mở rộng hạ tầng thuộc về
 deployment.
 
@@ -37,9 +37,9 @@ journal.log_event(event_dict)
 
 ## 2. Hành vi của đồng thuận sau restart
 
-`BFTConsensus` sử dụng `BFTViewChangeManager` khi leader hiện tại hỏng hoặc
-timeout view change hết hạn. Manager điều phối quorum và cài đặt view mới để
-đồng thuận tiếp tục mà không cần recovery engine riêng.
+Sau restart, node nạp lại block đã lưu và phát lại các sự kiện journal đang chờ.
+Kiểm tra ledger readiness trước khi nhận lưu lượng. PoA/PoF không tự bầu leader
+thay thế hoặc tự đồng bộ các replica API độc lập.
 
 ## 3. Trách nhiệm phục hồi của deployment
 

@@ -78,7 +78,7 @@ assert poa.can_create_block("node_branch_1")
 ## Advantages and limitations
 
 * Authority membership and signature checks avoid work-based consensus. Throughput depends on batching, journal synchronization and storage.
-*   Limitations: Lower decentralization compared to BFT, only suitable for networks with a certain level of trust between members.
+*   Limitations: Requires trust in the registered authorities; no replicated Byzantine fault tolerance or automatic leader failover.
 
 ## Related
 

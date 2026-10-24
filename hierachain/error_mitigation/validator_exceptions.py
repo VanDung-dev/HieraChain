@@ -6,7 +6,6 @@ LOCALIZED_MESSAGES = {
     "default": "Unknown error occurred",
     "invalid_input": "Invalid input provided",
     "security_violation": "Security policy violation detected",
-    "insufficient_nodes": "Insufficient nodes for BFT consensus",
 }
 
 

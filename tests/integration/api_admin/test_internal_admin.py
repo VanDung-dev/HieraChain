@@ -91,7 +91,7 @@ def test_verify_identity_no_identity():
     # Restore original path
     settings.VALIDATOR_IDENTITY_PATH = original_path
 
-def test_node_status():
+def test_node_status(isolated_api_hierarchy: None) -> None:
     """Test GET /api/admin/status endpoint"""
     print("\nTEST: GET /api/admin/status")
     

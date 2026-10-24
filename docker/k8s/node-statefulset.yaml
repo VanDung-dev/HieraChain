@@ -176,7 +176,7 @@ spec:
               chmod 600 /identity-storage/identity.json
               cp /identities-secret/trusted-block-keys /identity-storage/trusted_block_keys.json
               
-              # Build HRC_PEERS string for ZMQ BFT consensus
+              # Build HRC_PEERS string for ZMQ peer communication
               # Format: node_id@host:port:pub_key
               # We build it directly into a file to avoid shell expansion of keys containing special characters like $
               rm -f /identity-storage/peers.raw

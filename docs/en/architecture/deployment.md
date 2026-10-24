@@ -8,7 +8,7 @@ icon: material/server-network
 
 ## Runtime boundaries
 
-An API process initializes a `HierarchyManager` with MainChain and registered Sub-Chains. MainChain/Sub-Chain use PoA or PoF; the BFT engine is a separate component requiring explicit integration. Deploying four API replicas alone does not establish PBFT finality or leader failover. See [Consensus scope](../workflows/consensus_mechanisms.md).
+An API process initializes a `HierarchyManager` with MainChain and registered Sub-Chains. MainChain/Sub-Chain use PoA or PoF. Deploying multiple API replicas alone does not establish replicated consensus or leader failover. See [Consensus scope](../workflows/consensus_mechanisms.md).
 
 ## Network and configuration
 

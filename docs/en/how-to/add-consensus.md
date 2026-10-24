@@ -1,6 +1,6 @@
 ---
 title: "Add/Customize Consensus"
-description: "Guide to configuring PoA/PoF or adding new consensus mechanisms; reference hierachain/consensus/base_consensus.py and hierachain/consensus/bft/."
+description: "Guide to configuring PoA/PoF or adding new consensus mechanisms; reference hierachain/consensus/base_consensus.py."
 icon: material/cog-sync
 ---
 
@@ -18,7 +18,7 @@ Use this guide to configure PoA or PoF for MainChain and SubChain, or to integra
     HRC_ZK_REQUIRED_MAINCHAIN=false         # if using ZK, set true
     ```
 
-MainChain and SubChain use PoA or PoF in the current runtime flow. BFT has a separate implementation under `hierachain/consensus/bft/`; the API Ledger does not select it, and there is no `HRC_BFT_ENABLED` environment variable. SubChain uses PoA by default; pass `config={"consensus_type": "proof_of_federation"}` when initializing it to use PoF.
+MainChain and SubChain use PoA or PoF in the current runtime flow. SubChain uses PoA by default; pass `config={"consensus_type": "proof_of_federation"}` when initializing it to use PoF.
 
 2. Start API server and verify basic flow works:
 
@@ -49,7 +49,6 @@ curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proo
     * Base: `hierachain/consensus/base_consensus.py`
     * PoA: `hierachain/consensus/proof_of_authority.py`
     * PoF: `hierachain/consensus/proof_of_federation.py`
-    * BFT (separate implementation, not selected by current MainChain/SubChain configuration): `hierachain/consensus/bft/`
 
 2. Create new class extending `BaseConsensus` (example):
 

@@ -49,7 +49,6 @@ HieraChain runs alongside existing enterprise Web2 systems:
 * **Request handling**: HieraChain can use its resources for:
 
     * Event signature verification.
-    * BFT consensus in the separate BFT component.
     * Ledger integrity checks.
 
 ## Standard Enterprise Deployment

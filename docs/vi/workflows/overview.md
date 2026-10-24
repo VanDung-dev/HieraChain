@@ -32,8 +32,7 @@ Bảng này liệt kê tất cả luồng để tra cứu nhanh:
 | [Gửi Sự kiện](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API trả `event_id`; block được tạo và finalize ở xử lý nền | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Sub-Chain | Mã băm bằng chứng trên Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
 | [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK` hoặc `IN_DOUBT` có thể phục hồi | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
-| [Đồng thuận BFT](./bft-consensus.md) | B | Thành phần consensus BFT được sử dụng tường minh; không được chọn qua biến cấu hình MainChain/SubChain | Quy trình đồng thuận BFT riêng | `consensus/bft/consensus.py` |
-| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi xác thực / hết hạn leader / sự kiện bị gián đoạn | Lỗi được phân loại, replay journal hoặc BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
+| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi xác thực / sự kiện bị gián đoạn | Lỗi được phân loại hoặc replay journal | `error_mitigation/error_classifier.py` + `journal.py` |
 | [Truy vết Thực thể](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Dấu vết kiểm toán liên chuỗi đầy đủ | `domains/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại node hoặc lệch mã băm | Chuỗi trong bộ nhớ đồng bộ với DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Kiểm tra tính toàn vẹn](./integrity-validation.md) | D | Lời gọi chủ động từ ứng dụng | Tổng hợp sức khỏe hoặc báo cáo nhất quán khối/bằng chứng | `hierarchical/hierarchy_manager/validation.py` |
@@ -67,7 +66,6 @@ Các luồng được nhóm thành sáu khu vực. Dùng bảng điều khiển 
 
     Hoàn thiện khối. Với lựa chọn PoA/PoF, xem [Cơ chế Đồng thuận](./consensus_mechanisms.md).
 
-    * [Đồng thuận BFT (PBFT 3 pha)](./bft-consensus.md)
 
 * :material-server-security:{ .lg .middle } __Nhóm C: Quản lý cụm__
 
@@ -131,7 +129,6 @@ flowchart TD
     App --> Rehydrate[Explicit sync_chain]
     Rehydrate -->|Rebuild chain and indexes| WF1
     Trace[Entity tracing] -->|Read finalized history| WF1
-    App --> BFT[Separate BFT library]
     App --> TwoPC[Cross-chain 2PC coordinator]
 ```
 

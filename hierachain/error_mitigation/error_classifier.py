@@ -93,7 +93,7 @@ class ErrorClassifier:
             if pattern.lower() in error_text:
                 return ErrorCategory(cat_name)
         category_keywords = {
-            ErrorCategory.CONSENSUS: ["consensus", "bft", "leader", "view"],
+            ErrorCategory.CONSENSUS: ["consensus", "leader"],
             ErrorCategory.SECURITY: ["security", "encryption", "key", "certificate"],
             ErrorCategory.PERFORMANCE: ["performance", "resource", "cpu", "memory"],
             ErrorCategory.STORAGE: ["storage", "backup", "database", "persistence"],
@@ -138,9 +138,9 @@ def _assess_impact(error_data: dict[str, Any], category: ErrorCategory) -> Impac
 
 
 def _assess_consensus_impact(error_type: str) -> ImpactLevel:
-    if "insufficient nodes" in error_type or "bft" in error_type:
+    if "insufficient nodes" in error_type:
         return ImpactLevel.CATASTROPHIC
-    if "leader failure" in error_type or "view change" in error_type:
+    if "leader failure" in error_type:
         return ImpactLevel.MAJOR
     return ImpactLevel.MODERATE
 
@@ -220,9 +220,7 @@ def _log_classification(error_info: ErrorInfo) -> None:
 def _load_error_patterns() -> dict[str, str]:
     return {
         "insufficient nodes": "consensus",
-        "bft consensus": "consensus",
         "leader failure": "consensus",
-        "view change": "consensus",
         "message ordering": "consensus",
         "signature verification": "security",
         "encryption": "security",
@@ -249,8 +247,8 @@ def _load_error_patterns() -> dict[str, str]:
 def _load_mitigation_strategies() -> dict[str, str]:
     return {
         "consensus_critical": "lockdown_and_manual_recovery",
-        "consensus_high": "validate_nodes_and_view_change",
-        "consensus_medium": "monitor_and_view_change",
+        "consensus_high": "validate_nodes_and_alert",
+        "consensus_medium": "monitor_and_alert",
         "consensus_low": "log_and_monitor",
         "security_critical": "immediate_lockdown_and_investigation",
         "security_high": "rotate_keys_and_audit",

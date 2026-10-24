@@ -49,7 +49,6 @@ HieraChain chạy cùng các hệ thống Web2 doanh nghiệp:
 * **Xử lý request**: HieraChain có thể dùng tài nguyên cho:
 
     * Xác thực chữ ký sự kiện (Event signatures).
-    * Đồng thuận trong thành phần BFT triển khai riêng.
     * Kiểm tra tính toàn vẹn của sổ cái.
 
 ## Cách triển khai chuẩn Enterprise

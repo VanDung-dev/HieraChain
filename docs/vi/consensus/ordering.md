@@ -111,4 +111,3 @@ Mỗi đường dẫn journal cục bộ chỉ có một instance/process sở h
 
 *   [Hệ thống ghi nhật ký (Journal)](../modules/error-mitigation.md)
 *   [Cấu trúc Khối (Block)](../modules/core.md)
-*   [Đồng thuận BFT](./bft_consensus.md)

@@ -7,6 +7,7 @@ Ensures project root is on sys.path so test imports like `import api`, `import c
 
 import json
 import os
+from collections.abc import Iterator
 
 os.environ.setdefault("HRC_ENV", "test")
 # prevent product .env from enabling auth/strict CORS in tests when .env is product
@@ -48,6 +49,21 @@ def isolated_chain_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HRC_STORAGE_BACKEND", "sqlite")
     monkeypatch.setattr(settings, "DATABASE_URL", f"sqlite:///{tmp_path / 'main.db'}")
+
+
+@pytest.fixture
+def isolated_api_hierarchy(
+    isolated_chain_storage: None, monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[None]:
+    from hierachain.api.ledger import depds
+
+    monkeypatch.setattr(depds, "_hierarchy_manager", None)
+    monkeypatch.setattr(depds, "_entity_tracer", None)
+    monkeypatch.setattr(depds, "_hierarchy_retry_at", 0.0)
+    try:
+        yield
+    finally:
+        depds.close_hierarchy_manager()
 
 
 def _remove_data_dir_with_retry(max_retries=3, delay=0.5):

@@ -111,4 +111,3 @@ A local journal path has one owning instance/process at a time, enforced by a no
 
 *   [Journal System](../modules/error-mitigation.md)
 *   [Block Structure](../modules/core.md)
-*   [BFT Consensus](./bft_consensus.md)

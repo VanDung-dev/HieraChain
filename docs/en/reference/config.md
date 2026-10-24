@@ -45,7 +45,6 @@ print(settings.AUTH_ENABLED)
 * `HRC_BLOCK_INTERVAL` (default `0.0` seconds): additional PoA spacing; a positive interval requires at least half that spacing during validation. It does not control PoF. Default Sub-Chain batching still uses 50 events and a 1-second timeout.
 * `CONSENSUS_FEDERATION_CONFIG`: federation config (min_validators: 3, block_interval: 5.0). This is a Settings attribute, not an env var.
 * `VALIDATOR_TIMEOUT` (default: `30` seconds). Settings attribute.
-* `BFT_ENABLED` (default: `True`), `BFT_FAULT_TOLERANCE` (default: `1`), `BFT_NODE_COUNT` (default: `4`). Settings attributes (no `HRC_BFT_ENABLED` env var).
 * Block limits: `BLOCK_SIZE_LIMIT` (default: `1000` events/block in dev, `10` in test)
 * `PROOF_SUBMISSION_INTERVAL` (default: `300` seconds in dev, `10` in test)
 * `HRC_VALIDATOR_IDENTITY`: complete node identity file path (default: `validator_key.json`). It requires node/MSP IDs, signing private/public keys and transport private/public keys; the two-field `hrc key generate` output alone is insufficient. See [Quickstart](../getting-started/quickstart.md).

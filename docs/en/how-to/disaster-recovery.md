@@ -1,12 +1,12 @@
 ---
 title: "Durability and Disaster Recovery"
-description: "How HieraChain protects pending events and resumes consensus after interruptions."
+description: "How HieraChain protects pending events and restores chain state after interruptions."
 icon: material/backup-restore
 ---
 
 # Durability and disaster recovery
 
-The repository provides event journaling and consensus view changes. Database
+The repository provides event journaling and chain-state recovery. Database
 backups, filesystem snapshots, key recovery, and infrastructure scaling remain
 deployment responsibilities.
 
@@ -37,9 +37,9 @@ journal.log_event(event_dict)
 
 ## 2. Consensus restart behavior
 
-`BFTConsensus` uses `BFTViewChangeManager` when the current leader fails or a
-view-change timeout expires. The manager coordinates the quorum and installs a
-new view so consensus can continue without a separate recovery engine.
+On restart, the node reloads stored blocks and replays pending journal events.
+Check ledger readiness before accepting traffic. PoA/PoF do not elect a replacement
+leader or synchronize independent API replicas automatically.
 
 ## 3. Deployment recovery responsibilities
 

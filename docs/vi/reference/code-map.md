@@ -27,7 +27,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật sang
 | Block Manager | `hierachain/consensus/ordering/block_manager.py` | Quản lý lifecycle của block trong hệ thống ordering. |
 | Proof of Authority | `hierachain/consensus/proof_of_authority.py` | Cơ chế đồng thuận PoA (Nội bộ 1 Doanh nghiệp). |
 | Proof of Federation | `hierachain/consensus/proof_of_federation.py` | Cơ chế đồng thuận PoF (Liên minh các MainChain đa tổ chức). |
-| BFT Consensus | `hierachain/consensus/bft/consensus.py` | Thành phần đồng thuận chịu lỗi Byzantine riêng. |
 
 ## API và giao diện
 

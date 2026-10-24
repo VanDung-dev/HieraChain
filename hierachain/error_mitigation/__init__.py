@@ -5,7 +5,7 @@ This module provides the runtime error mitigation primitives used by HieraChain:
 - Data validation
 - Error classification and risk assessment
 - Transaction journaling for durability
-- Validators for consensus, encryption, and resources
+- Validators for encryption and resources
 """
 
 # Data validation
@@ -18,7 +18,6 @@ from hierachain.error_mitigation.classifier_types import (
 )
 
 # Validators
-from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.data_validator import (
     DataValidator,
     ValidationLevel,
@@ -71,7 +70,6 @@ __all__ = [
     # Transaction journal
     "TransactionJournal",
     # Validators
-    "ConsensusValidator",
     "EncryptionValidator",
     "ResourceValidator",
     "ValidationError",

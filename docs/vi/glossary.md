@@ -13,16 +13,15 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Chain | Chuỗi | Chuỗi khối logic gồm các Block; HieraChain có Main Chain và Sub-Chain. |
 | Block | Khối | Đơn vị dữ liệu chứa Event; định nghĩa trong `hierachain/core/block.py`. |
 | Blockchain | Chuỗi khối | Quản trị chuỗi Block; `hierachain/core/blockchain.py`. |
-| Consensus | Đồng thuận | Cơ chế chấp thuận Block (PoA, PoF, BFT); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
+| Consensus | Đồng thuận | Cơ chế chấp thuận Block (PoA, PoF); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
 | Membership Service Provider | MSP | Quản lý danh tính/tổ chức; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
 | Policy | Chính sách | Kiểm soát truy cập/tài nguyên; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. Không có `resource_guard.py`. |
 | World State | World State | Trạng thái hiện tại của dữ liệu; `hierachain/state/world_state.py`. |
 | Journal | Nhật ký | Ghi log giao dịch; `hierachain/error_mitigation/journal.py`. |
 | Rollback | Hoàn tác | Hoàn tác transaction do `hierachain/hierarchical/transaction_manager.py` sở hữu; không có manager rollback trạng thái toàn cục. |
-| Recovery | Phục hồi | Phục hồi runtime qua replay journal, validation, BFT view change và quy trình deployment. |
+| Recovery | Phục hồi | Phục hồi runtime qua replay journal, validation và quy trình deployment. |
 | Ordering | Sắp xếp | Xếp thứ tự Event; `hierachain/consensus/ordering/*`. |
 | Transport | Truyền tải | Giao tiếp mạng; `hierachain/network/zmq_transport.py`. |
-| Byzantine Fault Tolerance | BFT | Chịu lỗi Byzantine; `hierachain/consensus/bft/*`. |
 | Proof of Authority | PoA | Đồng thuận trong một tổ chức; `hierachain/consensus/proof_of_authority.py`. |
 | Proof of Federation | PoF | Đồng thuận liên minh P2P giữa các MainChain độc lập; `hierachain/consensus/proof_of_federation.py`. |
 | API Key | API key | Khóa truy cập API; `hierachain/security/verify/api_key_verifier.py`. |

@@ -1,15 +1,18 @@
 """Business API health and authentication boundary tests."""
 
+from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 
-from hierachain.api import app, server
+from hierachain.api import server
 
 
 @pytest.fixture
-def client():
+def client(isolated_api_hierarchy: None) -> Iterator[TestClient]:
     """Create a test client for the API"""
-    return TestClient(app)
+    with TestClient(server.create_app()) as instance:
+        yield instance
 
 
 @pytest.fixture

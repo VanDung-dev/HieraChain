@@ -8,7 +8,7 @@ icon: material/puzzle-outline
 
 ## Phạm vi
 
-`BaseConsensus` định nghĩa giao diện được PoA và PoF triển khai. `BFTConsensus` là lớp riêng, không kế thừa giao diện này. Lớp cơ sở lưu `name` và `config`; các triển khai cụ thể cung cấp việc xác thực và hoàn tất khối.
+`BaseConsensus` định nghĩa giao diện được PoA và PoF triển khai. Lớp cơ sở lưu `name` và `config`; các triển khai cụ thể cung cấp việc xác thực và hoàn tất khối.
 
 ## Phương thức trừu tượng
 

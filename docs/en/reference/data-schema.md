@@ -56,7 +56,7 @@ Header fields are not an additional Arrow event schema. Verifiers use the operat
 3. The background processor certifies events and batches them. The block manager assigns the block index and link, runs consensus finalization, signs the header and persists the block before queueing it for the Sub-Chain consumer.
 4. The consumer validates and applies the persisted block unchanged, updates WorldState, and checks whether proof submission is due.
 
-See [Event Submission](../workflows/event-submission.md) for failure handling. BFT is a separate library implementation; MainChain/SubChain runtime selection uses PoA or PoF.
+See [Event Submission](../workflows/event-submission.md) for failure handling. MainChain/SubChain runtime selection uses PoA or PoF.
 
 ## Serialization and transport
 

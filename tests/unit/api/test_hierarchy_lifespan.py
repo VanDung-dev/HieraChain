@@ -15,6 +15,7 @@ from hierachain.hierarchical import HierarchyManager
 @pytest.mark.parametrize("startup_failure", [False, True])
 def test_api_shutdown_releases_coordinator_and_resets_providers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, startup_failure: bool,
+    isolated_api_hierarchy: None,
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(HierarchyManager, "_create_storage",

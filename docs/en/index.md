@@ -18,7 +18,7 @@ Important scope notes:
 
 ## Current implementation scope
 
-The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redis with durable AOF configuration. PoA is the default; PoF needs validator provisioning and BFT is separate. Production ZK, contract execution and private-data writes are unimplemented. Built-in ERP vendors are simulations; Redis ledger deployment requires the [documented persistence policy](modules/storage.md#redis-ledger). See [feature support](modules/hierarchical.md) and [configured quickstart](getting-started/quickstart.md).
+The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redis with durable AOF configuration. PoA is the default; PoF needs validator provisioning. Production ZK, contract execution and private-data writes are unimplemented. Built-in ERP vendors are simulations; Redis ledger deployment requires the [documented persistence policy](modules/storage.md#redis-ledger). See [feature support](modules/hierarchical.md) and [configured quickstart](getting-started/quickstart.md).
 
 ## Navigation by Topic
 
@@ -49,7 +49,7 @@ The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redi
 
     * [Overview](workflows/overview.md) · [Consensus Mechanisms](workflows/consensus_mechanisms.md)
     * [Event Submission](workflows/event-submission.md) · [Proof Anchoring](workflows/proof-anchoring.md)
-    * [Cross-Chain 2PC](workflows/cross-chain-2pc.md) · [BFT Consensus](workflows/bft-consensus.md)
+    * [Cross-Chain 2PC](workflows/cross-chain-2pc.md)
     * [Error Recovery](workflows/error-recovery.md)
     * [Entity Tracing](workflows/entity-tracing.md) · [Chain Rehydration](workflows/chain-rehydration.md)
     * [Integrity Validation](workflows/integrity-validation.md) · [Policy Enforcement](workflows/policy-enforcement.md)
@@ -85,7 +85,6 @@ The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redi
     ---
 
     * [Base Consensus](consensus/base_consensus.md)
-    * [BFT Consensus](consensus/bft_consensus.md)
     * [Ordering](consensus/ordering.md)
     * [PoA](consensus/poa.md) · [PoF](consensus/pof.md)
 
