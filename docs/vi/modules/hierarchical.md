@@ -44,7 +44,7 @@ Khởi động đọc header block và event theo thứ tự bằng một truy v
 | Tính năng | Hành vi hiện tại |
 | :--- | :--- |
 | Registry tổ chức/thành viên/channel | SQLite/PostgreSQL lưu bền vững và kiểm tra revision; chế độ memory tường minh chỉ giữ dữ liệu tạm. |
-| Gán tổ chức vào chain | `assign_organization_to_chain()` trả `False`; ID hợp lệ ghi cảnh báo thao tác chưa được hỗ trợ. Method không cấp quyền. Cấu hình thành viên và policy của channel để kiểm soát truy cập channel. |
+| Gán tổ chức vào chain | Lưu bền vững quyền SubChain gồm `read`, `write`, `proofs`; áp dụng tại REST, GraphQL và WebSocket API. Thành viên channel vẫn được quản lý riêng. |
 | Private collection | Object thư viện có data store trong bộ nhớ; manager không persist collection vào registry. Ghi private data qua REST trả HTTP 501. |
 | ZK proof | Hash mock là fixture phát triển. Tạo/xác minh production chưa triển khai; xem [phạm vi ZK](../security/decentralized-zkp.md). |
 | Connector ERP theo hãng | Fixture SAP/Oracle/Dynamics yêu cầu opt-in mô phỏng tường minh. Ứng dụng cung cấp transport thật; xem [Integration](./integration.md). |
@@ -65,6 +65,55 @@ Restart replay record của channel, khôi phục pending events, kiểm tra t�
 * `multi_org.py`: Quản lý các tổ chức thành viên, chứng chỉ và định danh MSP.
 * `channel/manager.py`: Phân vùng giao tiếp giữa các nhóm tổ chức cụ thể.
 * `private_data.py`: Cung cấp collection mã hóa trong bộ nhớ và helper hash; lưu bền vững và tự động neo vào ledger cần tích hợp từ ứng dụng gọi.
+
+### 2.5 Quyền truy cập Organization–SubChain
+
+Tổ chức và SubChain có quan hệ nhiều–nhiều. Quyền áp dụng cho thành viên đã đăng ký, có identity lưu trữ khớp user ID, tổ chức và role. User ID lấy từ xác thực API; request body không thể chọn identity khác. API key vẫn phải có quyền tài nguyên tương ứng bên cạnh quyền của tổ chức.
+
+| Quyền | Hành vi API |
+| :--- | :--- |
+| `read` | Đọc block, event, thống kê chain, trace entity và nhận thông báo WebSocket của chain. Danh sách chain và trace liên chuỗi bỏ qua SubChain không được phép truy cập. |
+| `write` | Gửi event qua REST, endpoint secure event và GraphQL. API key vẫn cần `events`; endpoint secure còn yêu cầu `chains`. |
+| `proofs` | Gửi proof qua endpoint ledger REST; API key vẫn cần `proofs`. |
+
+Endpoint đọc yêu cầu `chains`. GraphQL và WebSocket giữ kiểm tra tài nguyên của transport hiện có; stream WebSocket yêu cầu cả `chains` và `events`. Các quyền độc lập: `write` không bao hàm `read`, và role trong tổ chức không tự thêm quyền. Dùng scope API key giới hạn để kiểm soát từng người dùng.
+
+Quản lý assignment yêu cầu key đã xác thực với cả `chains` và `chains:manage`. Administrator tổ chức không tự có quyền quản lý chain. Scope tài nguyên `all` hiện bao hàm quyền quản lý, vì vậy chỉ cấp cho administrator nền tảng.
+
+| Method | Path | Hành vi |
+| :--- | :--- | :--- |
+| GET | `/api/ledger/chains/{chain_name}/organizations` | Trả `managed` và mapping tổ chức–quyền. |
+| PUT | `/api/ledger/chains/{chain_name}/organizations/{org_id}` | Thay quyền của tổ chức đó; body: `{"permissions":["read","write"]}`. |
+| DELETE | `/api/ledger/chains/{chain_name}/organizations/{org_id}` | Thu hồi assignment của tổ chức đó. |
+
+SubChain và tổ chức phải tồn tại trước. PUT yêu cầu danh sách quyền không rỗng, chỉ gồm `read`, `write`, `proofs`; body không hợp lệ trả HTTP 422. Tài nguyên/assignment không tồn tại trả HTTP 404; thiếu quyền quản lý trả HTTP 403. Tạo tổ chức và đăng ký thành viên qua business API hiện có trước khi gán quyền.
+
+```python
+manager.assign_organization_to_chain("logistics", "supply_chain", permissions=["read", "write"])
+manager.can_access_chain("supply_chain", "alice", "read")
+manager.get_chain_access("supply_chain")
+manager.revoke_organization_from_chain("logistics", "supply_chain")
+```
+
+Method gán quyền Python mặc định dùng `read` và `write` nếu bỏ qua permissions, trả `False` khi thiếu tổ chức/SubChain và ném `ValueError` khi quyền không hợp lệ. Lệnh thay thế danh sách quyền hiện có của tổ chức đó. `get_chain_access()` trả `None` khi chain chưa được quản lý quyền và bản sao mapping khi đã được quản lý.
+
+Tương thích và triển khai: chain chưa có assignment giữ hành vi API cũ theo scope tài nguyên hiện có. Assignment đầu tiên bật kiểm tra tổ chức cho mọi lượt đọc API đối với dữ liệu quá khứ và tương lai của SubChain đó. Thu hồi assignment cuối giữ mapping rỗng ở trạng thái được quản lý, từ chối thành viên cho đến khi cấp quyền mới. Không có API chuyển về trạng thái chưa quản lý. Nâng cấp toàn bộ API worker và registry writer trước khi bật assignment; không hỗ trợ chạy lẫn phiên bản. Tắt xác thực không cho phép truy cập chain đã quản lý quyền.
+
+Quyền nằm trong trường `chain_access` của hierarchy registry hiện có, dùng retry revision và rollback; snapshot cũ thiếu trường này được tải như trạng thái chưa quản lý. Manager dùng chung SQLite/PostgreSQL/Redis làm mới registry khi kiểm tra quyền và từ chối nếu không đọc được trạng thái đã lưu. Manager chỉ dùng memory vẫn là dữ liệu tạm. WebSocket kiểm tra khi subscribe và trước mỗi broadcast của chain, kể cả subscription wildcard và theo loại event; thu hồi quyền chặn lượt gửi được kiểm tra sau đó nhưng không thu hồi dữ liệu đã gửi hoặc đã vào hàng đợi. Request đã vượt qua bước kiểm tra quyền có thể hoàn tất; ghi event SubChain không so sánh revision registry nguyên tử tại thời điểm append.
+
+Đây là phân quyền API, không tạo ledger mã hóa riêng cho từng tổ chức. Proof MainChain, metadata đăng ký và bộ đếm tổng hợp của node vẫn dùng chung. Lời gọi trực tiếp đến object chain trong tiến trình là thao tác tin cậy; ứng dụng nhúng phải gọi `can_access_chain()` trước khi mở cho người dùng. Policy và ledger của channel vẫn độc lập, không tự gán SubChain hay neo proof.
+
+#### Kiểm chứng Docker
+
+```bash
+.venv/bin/python docker/scripts/verify_chain_access.py --context orbstack
+```
+
+Bỏ `--context orbstack` để dùng Docker context hiện tại. Runner dựng wheel production và cả hai stage image Docker từ bản sao tạm của checkout hiện tại, gồm cả thay đổi cục bộ. Nó tạo identity và API key tạm, khởi động ba container API production có xác thực với SQLite/PostgreSQL/Redis, rồi gọi HTTP/WebSocket thật từ container kiểm thử riêng. Kiểm thử live không thay thế dependency của API.
+
+Các bước kiểm tra gồm scope quản lý, quyền tổ chức đã chọn, ghi/đọc REST và GraphQL, secure event có chữ ký, gửi proof, trace entity, cho phép kết nối/thu hồi subscription WebSocket và hai lần tạo lại container ứng dụng với volume được giữ lại. Runner còn chạy bộ Docker runtime và lần lượt 20 file hồi quy trong Linux container, gồm kiểm thử backend registry dùng chung và coi skip là thất bại. Bộ hồi quy kiểm tra lọc broadcast; bộ live không thêm publisher tự động từ ledger sang WebSocket. Phạm vi này xác minh organization–chain, không kiểm thử consensus P2P hay stress/soak.
+
+Log và JUnit XML được giữ trong thư mục báo cáo tạm mà runner in ra. Runner xóa container, network, volume và thông tin xác thực do nó tạo ngay cả khi thất bại. Deployment hiện có và thư mục dữ liệu của repository không được mount vào stack kiểm thử. Xem các service cô lập tại `docker/docker-compose.chain-access.yml`.
 
 ## 3. Luồng dữ liệu
 
