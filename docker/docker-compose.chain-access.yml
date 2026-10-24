@@ -1,0 +1,114 @@
+x-app: &app
+  image: ${HRC_CHAIN_IMAGE:?}
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+    target: production
+  environment: &environment
+    HRC_ENV: production
+    HRC_AUTH_ENABLED: "true"
+    HRC_API_KEYS_FILE: /run/chain-config/api-keys.json
+    HRC_VALIDATOR_IDENTITY: /run/chain-config/identity.json
+    HRC_BLOCK_TRUSTED_KEYS_FILE: /run/chain-config/trusted.json
+    HRC_API_HOST: 0.0.0.0
+    HRC_P2P_ENABLED: "false"
+    HRC_IPFS_ENABLED: "false"
+    HRC_RATE_LIMIT: "false"
+    HRC_CORS_ALLOW_ALL: "false"
+    HRC_BLOCK_INTERVAL: "0"
+    HRC_DATABASE_URL: sqlite:////app/data/ledger.db
+    DATABASE_URL: sqlite:////app/data/ledger.db
+  volumes:
+    - ${HRC_CHAIN_CONFIG:?}:/run/chain-config:ro
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:2661/api/ledger/health', timeout=5)"]
+    interval: 2s
+    timeout: 6s
+    retries: 30
+  mem_limit: 1g
+  stop_grace_period: 30s
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${HRC_CHAIN_PASSWORD:?}
+      POSTGRES_DB: hierachain
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hierachain"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always", "--aof-load-truncated", "no", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - redis-data:/data
+  app-sqlite:
+    <<: *app
+    environment:
+      <<: *environment
+      HRC_STORAGE_BACKEND: sqlite
+    volumes:
+      - ${HRC_CHAIN_CONFIG:?}:/run/chain-config:ro
+      - sqlite-data:/app/data
+  app-postgres:
+    <<: *app
+    environment:
+      <<: *environment
+      HRC_STORAGE_BACKEND: postgres
+      DATABASE_URL: postgresql://postgres:${HRC_CHAIN_PASSWORD:?}@postgres:5432/hierachain
+      HRC_DATABASE_URL: postgresql://postgres:${HRC_CHAIN_PASSWORD:?}@postgres:5432/hierachain
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${HRC_CHAIN_CONFIG:?}:/run/chain-config:ro
+      - postgres-app-data:/app/data
+  app-redis:
+    <<: *app
+    environment:
+      <<: *environment
+      HRC_STORAGE_BACKEND: redis
+      HRC_REDIS_HOST: redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ${HRC_CHAIN_CONFIG:?}:/run/chain-config:ro
+      - redis-app-data:/app/data
+  checks:
+    image: ${HRC_CHAIN_TEST_IMAGE:?}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+    environment:
+      HRC_ENV: test
+      HRC_AUTH_ENABLED: "false"
+      HRC_STORAGE_BACKEND: sqlite
+      DATABASE_URL: sqlite:////tmp/checks.db
+      HRC_P2P_ENABLED: "false"
+      HRC_IPFS_ENABLED: "false"
+      HRC_RATE_LIMIT: "false"
+      HRC_CHAIN_CONFIG: /run/chain-config/api-keys.json
+      HRC_TEST_POSTGRES_URL: postgresql://postgres:${HRC_CHAIN_PASSWORD:?}@postgres:5432/hierachain
+      HRC_TEST_REDIS_PORT: "6379"
+      HRC_REDIS_HOST: redis
+    volumes:
+      - ${HRC_CHAIN_CONFIG:?}:/run/chain-config:ro
+      - ${HRC_CHAIN_REPORTS:?}:/reports
+
+volumes:
+  postgres-data:
+  redis-data:
+  sqlite-data:
+  postgres-app-data:
+  redis-app-data:

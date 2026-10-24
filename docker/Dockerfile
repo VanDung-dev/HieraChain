@@ -14,7 +14,6 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock README.md pytest.ini ./
 COPY hierachain ./hierachain
-COPY docker/tests ./docker/tests
 COPY docker/scripts/benchmark_throughput.py ./docker/scripts/benchmark_throughput.py
 COPY scripts/benchmark_throughput.py ./scripts/benchmark_throughput.py
 
@@ -26,7 +25,10 @@ RUN uv sync --frozen --no-dev && \
 FROM source AS test
 
 RUN uv pip install --python /app/.venv/bin/python \
-      --constraint /app/runtime-constraints.txt pytest
+      --constraint /app/runtime-constraints.txt pytest pytest-asyncio
+
+COPY tests ./tests
+COPY docker/tests ./docker/tests
 
 CMD ["python", "-m", "pytest", "docker/tests", "-m", "docker", "-v"]
 
