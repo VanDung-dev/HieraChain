@@ -35,6 +35,7 @@ def _hierarchy_registry_snapshot(self: HierarchyManager) -> dict[str, Any]:
                 raise ValueError("Channel organization is not in the manager registry")
     return {
         "_channel_ledger_version": 1,
+        "chain_access": deepcopy(self.chain_access),
         "organizations": {
             org_id: {
                 "msp": {
@@ -155,6 +156,20 @@ def _apply_hierarchy_registry(self: HierarchyManager, state: dict[str, Any]) -> 
         org.members = members
         organizations[org_id] = org
 
+    chain_access = state.get("chain_access", {})
+    if not isinstance(chain_access, dict):
+        raise RuntimeError("Invalid chain access registry")
+    for chain_name, grants in chain_access.items():
+        if not isinstance(chain_name, str) or not chain_name or not isinstance(grants, dict):
+            raise RuntimeError("Invalid chain access registry")
+        for org_id, permissions in grants.items():
+            if (
+                not isinstance(org_id, str) or org_id not in organizations
+                or not isinstance(permissions, list) or not permissions
+                or any(not isinstance(item, str) or item not in {"read", "write", "proofs"} for item in permissions)
+            ):
+                raise RuntimeError("Invalid organization chain permissions")
+
     from hierachain.hierarchical.channel.ledger import ChannelLedger
 
     legacy = state.get("_channel_ledger_version") != 1
@@ -225,6 +240,7 @@ def _apply_hierarchy_registry(self: HierarchyManager, state: dict[str, Any]) -> 
     self.organizations = organizations
     self.network = network
     self.channels = channels
+    self.chain_access = deepcopy(chain_access)
     self._registry_state = deepcopy(state)
 
 

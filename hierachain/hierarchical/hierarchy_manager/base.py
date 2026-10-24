@@ -84,6 +84,7 @@ class HierarchyManager:
         }
 
         self.organizations: dict[str, Any] = {}
+        self.chain_access: dict[str, dict[str, list[str]]] = {}
         self.network: MultiOrgNetwork | None = None
         self.channels: dict[str, Channel] = {}
         self.private_collections: dict[str, PrivateCollection] = {}
@@ -544,27 +545,64 @@ class HierarchyManager:
     ) -> PrivateCollection:
         return self.create_private_collection(name, org_ids, config)
 
-    def assign_organization_to_chain(self, org_id: str, chain_name: str) -> bool:
-        """Return False: organization-to-chain access assignment is not implemented.
+    def assign_organization_to_chain(
+        self, org_id: str, chain_name: str, *, permissions: list[str] | None = None,
+    ) -> bool:
+        grants = ["read", "write"] if permissions is None else permissions
+        if (
+            not isinstance(grants, list) or not grants
+            or any(not isinstance(item, str) or item not in {"read", "write", "proofs"} for item in grants)
+        ):
+            raise ValueError("Chain permissions must contain read, write, or proofs")
 
-        Organization/channel membership and channel policies provide the
-        supported access path. Looking up a chain does not grant access to it.
-        """
-        org = self.get_organization(org_id)
-        if not org:
+        def change() -> bool:
+            if org_id not in self.organizations or self.get_sub_chain(chain_name) is None:
+                return False
+            self.chain_access.setdefault(chain_name, {})[org_id] = sorted(set(grants))
+            return True
+
+        return self._mutate_registry(change, "Failed to persist chain access")
+
+    def revoke_organization_from_chain(self, org_id: str, chain_name: str) -> bool:
+        def change() -> bool:
+            grants = self.chain_access.get(chain_name)
+            if grants is None or org_id not in grants:
+                return False
+            del grants[org_id]
+            return True
+
+        return self._mutate_registry(change, "Failed to persist chain access revocation")
+
+    def get_chain_access(self, chain_name: str) -> dict[str, list[str]] | None:
+        with self._registry_lock:
+            if not self._registry_mutating:
+                self._restore_hierarchy_registry()
+            grants = self.chain_access.get(chain_name)
+            return deepcopy(grants) if grants is not None else None
+
+    def can_access_chain(self, chain_name: str, user_id: str | None, permission: str) -> bool:
+        with self._registry_lock:
+            if not self._registry_mutating:
+                self._restore_hierarchy_registry()
+            grants = self.chain_access.get(chain_name)
+            if grants is None:
+                return True
+            if not isinstance(user_id, str) or not user_id:
+                return False
+            for org_id, permissions in grants.items():
+                if permission not in permissions:
+                    continue
+                organization = self.organizations.get(org_id)
+                member = organization.members.get(user_id) if organization is not None else None
+                identity = member.get("identity") if isinstance(member, dict) else None
+                if (
+                    isinstance(member, dict) and isinstance(identity, dict) and identity.get("user_id") == user_id
+                    and identity.get("org_id") == org_id
+                    and isinstance(member.get("role"), str) and bool(member["role"])
+                    and identity.get("role") == member["role"]
+                ):
+                    return True
             return False
-
-        chain = self.get_sub_chain(chain_name)
-        if not chain:
-            return False
-
-        logger.warning(
-            "Organization-to-chain assignment is not implemented (%s, %s); "
-            "configure channel membership and policies instead",
-            org_id,
-            chain_name,
-        )
-        return False
 
     @staticmethod
     def _create_storage() -> Any | None:
