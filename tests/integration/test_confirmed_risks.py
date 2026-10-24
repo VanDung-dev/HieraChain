@@ -139,7 +139,8 @@ def harness(
     app.include_router(events_router)
     app.include_router(admin_router)
     app.dependency_overrides[get_hierarchy_manager] = lambda: SimpleNamespace(
-        get_sub_chain=lambda name: chain
+        get_sub_chain=lambda name: chain,
+        can_access_chain=lambda chain_name, user_id, permission: True,
     )
     # Only manager lookup is replaced. Auth, real SubChain, worker, consensus and storage run normally.
     with TestClient(app) as client:
