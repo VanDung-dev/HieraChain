@@ -2045,6 +2045,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#25-quyen-truy-cap-organizationsubchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2.5 Quyền truy cập Organization–SubChain
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Quyền truy cập Organization–SubChain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kiem-chung-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm chứng Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4441,6 +4469,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#25-quyen-truy-cap-organizationsubchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2.5 Quyền truy cập Organization–SubChain
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Quyền truy cập Organization–SubChain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kiem-chung-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kiểm chứng Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4574,7 +4630,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">Gán tổ chức vào chain</td>
-<td style="text-align: left;"><code>assign_organization_to_chain()</code> trả <code>False</code>; ID hợp lệ ghi cảnh báo thao tác chưa được hỗ trợ. Method không cấp quyền. Cấu hình thành viên và policy của channel để kiểm soát truy cập channel.</td>
+<td style="text-align: left;">Lưu bền vững quyền SubChain gồm <code>read</code>, <code>write</code>, <code>proofs</code>; áp dụng tại REST, GraphQL và WebSocket API. Thành viên channel vẫn được quản lý riêng.</td>
 </tr>
 <tr>
 <td style="text-align: left;">Private collection</td>
@@ -4605,6 +4661,74 @@
 <li><code>channel/manager.py</code>: Phân vùng giao tiếp giữa các nhóm tổ chức cụ thể.</li>
 <li><code>private_data.py</code>: Cung cấp collection mã hóa trong bộ nhớ và helper hash; lưu bền vững và tự động neo vào ledger cần tích hợp từ ứng dụng gọi.</li>
 </ul>
+<h3 id="25-quyen-truy-cap-organizationsubchain">2.5 Quyền truy cập Organization–SubChain</h3>
+<p>Tổ chức và SubChain có quan hệ nhiều–nhiều. Quyền áp dụng cho thành viên đã đăng ký, có identity lưu trữ khớp user ID, tổ chức và role. User ID lấy từ xác thực API; request body không thể chọn identity khác. API key vẫn phải có quyền tài nguyên tương ứng bên cạnh quyền của tổ chức.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Quyền</th>
+<th style="text-align: left;">Hành vi API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>read</code></td>
+<td style="text-align: left;">Đọc block, event, thống kê chain, trace entity và nhận thông báo WebSocket của chain. Danh sách chain và trace liên chuỗi bỏ qua SubChain không được phép truy cập.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write</code></td>
+<td style="text-align: left;">Gửi event qua REST, endpoint secure event và GraphQL. API key vẫn cần <code>events</code>; endpoint secure còn yêu cầu <code>chains</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>proofs</code></td>
+<td style="text-align: left;">Gửi proof qua endpoint ledger REST; API key vẫn cần <code>proofs</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Endpoint đọc yêu cầu <code>chains</code>. GraphQL và WebSocket giữ kiểm tra tài nguyên của transport hiện có; stream WebSocket yêu cầu cả <code>chains</code> và <code>events</code>. Các quyền độc lập: <code>write</code> không bao hàm <code>read</code>, và role trong tổ chức không tự thêm quyền. Dùng scope API key giới hạn để kiểm soát từng người dùng.</p>
+<p>Quản lý assignment yêu cầu key đã xác thực với cả <code>chains</code> và <code>chains:manage</code>. Administrator tổ chức không tự có quyền quản lý chain. Scope tài nguyên <code>all</code> hiện bao hàm quyền quản lý, vì vậy chỉ cấp cho administrator nền tảng.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Path</th>
+<th style="text-align: left;">Hành vi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">GET</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations</code></td>
+<td style="text-align: left;">Trả <code>managed</code> và mapping tổ chức–quyền.</td>
+</tr>
+<tr>
+<td style="text-align: left;">PUT</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations/{org_id}</code></td>
+<td style="text-align: left;">Thay quyền của tổ chức đó; body: <code>{"permissions":["read","write"]}</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">DELETE</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations/{org_id}</code></td>
+<td style="text-align: left;">Thu hồi assignment của tổ chức đó.</td>
+</tr>
+</tbody>
+</table>
+<p>SubChain và tổ chức phải tồn tại trước. PUT yêu cầu danh sách quyền không rỗng, chỉ gồm <code>read</code>, <code>write</code>, <code>proofs</code>; body không hợp lệ trả HTTP 422. Tài nguyên/assignment không tồn tại trả HTTP 404; thiếu quyền quản lý trả HTTP 403. Tạo tổ chức và đăng ký thành viên qua business API hiện có trước khi gán quyền.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">manager</span><span class="o">.</span><span class="n">assign_organization_to_chain</span><span class="p">(</span><span class="s2">"logistics"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">])</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">manager</span><span class="o">.</span><span class="n">can_access_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"alice"</span><span class="p">,</span> <span class="s2">"read"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">manager</span><span class="o">.</span><span class="n">get_chain_access</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">manager</span><span class="o">.</span><span class="n">revoke_organization_from_chain</span><span class="p">(</span><span class="s2">"logistics"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">)</span>
+</code></pre></div>
+<p>Method gán quyền Python mặc định dùng <code>read</code> và <code>write</code> nếu bỏ qua permissions, trả <code>False</code> khi thiếu tổ chức/SubChain và ném <code>ValueError</code> khi quyền không hợp lệ. Lệnh thay thế danh sách quyền hiện có của tổ chức đó. <code>get_chain_access()</code> trả <code>None</code> khi chain chưa được quản lý quyền và bản sao mapping khi đã được quản lý.</p>
+<p>Tương thích và triển khai: chain chưa có assignment giữ hành vi API cũ theo scope tài nguyên hiện có. Assignment đầu tiên bật kiểm tra tổ chức cho mọi lượt đọc API đối với dữ liệu quá khứ và tương lai của SubChain đó. Thu hồi assignment cuối giữ mapping rỗng ở trạng thái được quản lý, từ chối thành viên cho đến khi cấp quyền mới. Không có API chuyển về trạng thái chưa quản lý. Nâng cấp toàn bộ API worker và registry writer trước khi bật assignment; không hỗ trợ chạy lẫn phiên bản. Tắt xác thực không cho phép truy cập chain đã quản lý quyền.</p>
+<p>Quyền nằm trong trường <code>chain_access</code> của hierarchy registry hiện có, dùng retry revision và rollback; snapshot cũ thiếu trường này được tải như trạng thái chưa quản lý. Manager dùng chung SQLite/PostgreSQL/Redis làm mới registry khi kiểm tra quyền và từ chối nếu không đọc được trạng thái đã lưu. Manager chỉ dùng memory vẫn là dữ liệu tạm. WebSocket kiểm tra khi subscribe và trước mỗi broadcast của chain, kể cả subscription wildcard và theo loại event; thu hồi quyền chặn lượt gửi được kiểm tra sau đó nhưng không thu hồi dữ liệu đã gửi hoặc đã vào hàng đợi. Request đã vượt qua bước kiểm tra quyền có thể hoàn tất; ghi event SubChain không so sánh revision registry nguyên tử tại thời điểm append.</p>
+<p>Đây là phân quyền API, không tạo ledger mã hóa riêng cho từng tổ chức. Proof MainChain, metadata đăng ký và bộ đếm tổng hợp của node vẫn dùng chung. Lời gọi trực tiếp đến object chain trong tiến trình là thao tác tin cậy; ứng dụng nhúng phải gọi <code>can_access_chain()</code> trước khi mở cho người dùng. Policy và ledger của channel vẫn độc lập, không tự gán SubChain hay neo proof.</p>
+<h4 id="kiem-chung-docker">Kiểm chứng Docker</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>.venv/bin/python<span class="w"> </span>docker/scripts/verify_chain_access.py<span class="w"> </span>--context<span class="w"> </span>orbstack
+</code></pre></div>
+<p>Bỏ <code>--context orbstack</code> để dùng Docker context hiện tại. Runner dựng wheel production và cả hai stage image Docker từ bản sao tạm của checkout hiện tại, gồm cả thay đổi cục bộ. Nó tạo identity và API key tạm, khởi động ba container API production có xác thực với SQLite/PostgreSQL/Redis, rồi gọi HTTP/WebSocket thật từ container kiểm thử riêng. Kiểm thử live không thay thế dependency của API.</p>
+<p>Các bước kiểm tra gồm scope quản lý, quyền tổ chức đã chọn, ghi/đọc REST và GraphQL, secure event có chữ ký, gửi proof, trace entity, cho phép kết nối/thu hồi subscription WebSocket và hai lần tạo lại container ứng dụng với volume được giữ lại. Runner còn chạy bộ Docker runtime và lần lượt 20 file hồi quy trong Linux container, gồm kiểm thử backend registry dùng chung và coi skip là thất bại. Bộ hồi quy kiểm tra lọc broadcast; bộ live không thêm publisher tự động từ ledger sang WebSocket. Phạm vi này xác minh organization–chain, không kiểm thử consensus P2P hay stress/soak.</p>
+<p>Log và JUnit XML được giữ trong thư mục báo cáo tạm mà runner in ra. Runner xóa container, network, volume và thông tin xác thực do nó tạo ngay cả khi thất bại. Deployment hiện có và thư mục dữ liệu của repository không được mount vào stack kiểm thử. Xem các service cô lập tại <code>docker/docker-compose.chain-access.yml</code>.</p>
 <h2 id="3-luong-du-lieu">3. Luồng dữ liệu</h2>
 <p>Dữ liệu chi tiết được lưu trữ tại Sub-Chain. Merkle root và proof block có chữ ký được neo lên Main Chain. Nhánh ZK tùy chọn trong luồng thiết kế này chỉ có triển khai mock:</p>
 <pre class="mermaid"><code>graph TD
@@ -4632,14 +4756,14 @@
 <p>Gọi <code>HierarchyManager.close()</code> khi chủ sở hữu kết thúc. Hàm đóng orderer của sub-chain, coordinator đã mở và storage mà không tạo journal chưa dùng. <code>SubChain.stop()</code> xử lý các block đã commit rồi giải phóng orderer và lease, cho phép instance thay thế khôi phục cùng đường dẫn. Validation entity theo dõi operation và status riêng cho từng chain.</p>
 <p><code>CrossChainTransactionManager</code> trong <code>hierachain/hierarchical/transaction_manager.py</code> triển khai giao thức Two-Phase Commit để duy trì tính nguyên tử qua các Sub-Chain:</p>
 <p>ACK pha của coordinator và ACK commit của participant vẫn yêu cầu đọc lại journal bền vững. Journal gốc dùng <code>read_since(cursor)</code> để decode record mới sau lượt quét lịch sử đầu tiên, kể cả record trong file đã rotate. Participant thử lại giữ ID event bền vững để tránh ghi trùng; submission không rõ kết quả làm mất hiệu lực snapshot marker. Journal tùy chỉnh chỉ có <code>replay()</code> tiếp tục dùng replay toàn bộ. Lịch sử transaction và số archive vẫn chưa có giới hạn; thay đổi này không thêm retention hay compaction.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"finance_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"INV-100"</span><span class="p">,</span> <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"settle_payment"</span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"finance_chain"</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"INV-100"</span><span class="p">,</span> <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"settle_payment"</span><span class="p">}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="5-tinh-rieng-tu-va-xac-thuc-zero-knowledge">5. Tính riêng tư và xác thực zero-knowledge</h2>
 <ul>

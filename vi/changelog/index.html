@@ -4598,8 +4598,15 @@
 </ul>
 </details>
 <details class="note">
-<summary>Improvements (57)</summary>
+<summary>Improvements (59)</summary>
 <ul>
+<li>
+<p>2026-10-24</p>
+<ul>
+<li><strong>Hierarchy (Cấp quyền Tổ chức → SubChain Bền)</strong>: <code>HierarchyManager</code> (<code>hierachain/hierarchical/hierarchy_manager/base.py</code>) thay <code>assign_organization_to_chain()</code> no-op bằng map <code>chain_access</code> được persist theo chain rồi tổ chức, ghi qua <code>_mutate_registry()</code> với mặc định <code>read</code>/<code>write</code> khi bỏ trống <code>permissions</code> và <code>ValueError</code> khi danh sách rỗng, không phải list hoặc chứa giá trị lạ, đồng thời thêm <code>revoke_organization_from_chain()</code>, <code>get_chain_access()</code> (trả bản sao grants, <code>None</code> với chain chưa quản lý) và <code>can_access_chain()</code> đối chiếu membership, identity đã lưu và role của caller với <code>read</code>/<code>write</code>/<code>proofs</code> trong khi vẫn cho qua chain chưa quản lý; registry hierarchy (<code>hierachain/hierarchical/hierarchy_manager/registry.py</code>) persist <code>chain_access</code> dưới cơ chế retry revision sẵn có và validate tên chain, tổ chức đã đăng ký cùng giá trị quyền khi restore, còn snapshot legacy thiếu field này được nạp ở trạng thái chưa quản lý — trước đây assignment luôn trả <code>False</code> và không cấp quyền gì.</li>
+<li><strong>API (Kiểm soát Truy cập Theo Chain &amp; Quản lý Cấp quyền)</strong>: các dependency mới <code>require_chain_read</code>/<code>require_chain_write</code>/<code>require_chain_proof</code> (<code>hierachain/api/ledger/access.py</code>) kết hợp kiểm tra resource của API key với <code>can_access_chain()</code> và trả HTTP 403 khi bị từ chối, thay các guard thô cho blocks, thống kê/tạo chain, events, proofs và <code>/api/admin/chains/{chain_name}/secure-events</code>; <code>list_chains</code> và trace entity liên chain (<code>hierachain/api/ledger/chains.py</code>, <code>hierachain/api/ledger/entities.py</code>) bỏ qua SubChain không đọc được; resolver GraphQL (<code>hierachain/api/graphql/resolvers.py</code>) raise <code>PermissionError</code> khi truy cập block, event, trạng thái và add-event đồng thời lọc <code>allChains</code>; endpoint mới <code>GET</code>/<code>PUT</code>/<code>DELETE /api/ledger/chains/{chain_name}/organizations</code> (<code>hierachain/api/ledger/chain_access.py</code>) liệt kê, thay và thu hồi grant tổ chức sau quyền <code>chains:manage</code>, trả 422 với danh sách quyền không hợp lệ và 404 khi thiếu chain/tổ chức/assignment; subscription và broadcast WebSocket (<code>hierachain/api/websocket/endpoints.py</code>, <code>hierachain/api/websocket/manager.py</code>, <code>hierachain/api/websocket/registry.py</code>) từ chối chain không có quyền ngay khi kết nối, đóng với mã <code>1008</code>, kiểm tra lại grant khi đổi subscription và trước mỗi lần gửi (kể cả stream wildcard và event-type), đồng thời giới hạn <code>get_stats</code> theo chain đọc được — trước đây API key có resource scope đọc, ghi hoặc stream mọi SubChain. Grants vẫn độc lập (<code>write</code> không bao hàm <code>read</code>) và chain chưa có assignment giữ hành vi scope thô như cũ.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-22</p>
 <ul>

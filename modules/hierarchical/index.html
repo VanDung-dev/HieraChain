@@ -2045,6 +2045,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#25-organization-to-subchain-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2.5 Organization-to-SubChain access
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Organization-to-SubChain access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker verification
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4441,6 +4469,34 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#25-organization-to-subchain-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2.5 Organization-to-SubChain access
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Organization-to-SubChain access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker verification
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4574,7 +4630,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">Organization-to-chain assignment</td>
-<td style="text-align: left;"><code>assign_organization_to_chain()</code> returns <code>False</code>; valid IDs log an unsupported-operation warning. It grants no access. Configure channel membership and policies for channel access.</td>
+<td style="text-align: left;">Persistent SubChain grants for <code>read</code>, <code>write</code>, and <code>proofs</code>; enforced by REST, GraphQL, and WebSocket APIs. Channel membership remains separate.</td>
 </tr>
 <tr>
 <td style="text-align: left;">Private collections</td>
@@ -4605,6 +4661,74 @@
 <li><code>channel/manager.py</code>: Partitions communication between specific groups of organizations.</li>
 <li><code>private_data.py</code>: Provides in-memory encrypted collections and hash helpers; durable storage and automatic ledger anchoring require caller integration.</li>
 </ul>
+<h3 id="25-organization-to-subchain-access">2.5 Organization-to-SubChain access</h3>
+<p>Organizations and SubChains have a many-to-many relationship. Grants apply to registered organization members whose stored identity matches their user ID, organization, and role. API authentication supplies the user ID; request bodies cannot select a different identity. API key resource permissions remain required alongside the organization grant.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Grant</th>
+<th style="text-align: left;">API behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>read</code></td>
+<td style="text-align: left;">Read blocks, events, chain statistics and entity traces; receive WebSocket chain messages. Chain lists and cross-chain traces omit inaccessible SubChains.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write</code></td>
+<td style="text-align: left;">Submit events through REST, the secure event endpoint, and GraphQL. API keys still need <code>events</code>; the secure endpoint also requires <code>chains</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>proofs</code></td>
+<td style="text-align: left;">Submit a proof through the ledger REST endpoint; the API key still needs <code>proofs</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Read endpoints require <code>chains</code>. GraphQL and WebSocket retain their existing transport resource checks; WebSocket streams require both <code>chains</code> and <code>events</code>. Grants are independent: <code>write</code> does not imply <code>read</code>, and organization roles do not add grants. Use restricted API key scopes for per-user limits.</p>
+<p>Management requires an authenticated key with both <code>chains</code> and <code>chains:manage</code>. An organization administrator does not automatically receive chain management rights. The existing <code>all</code> resource scope includes management, so reserve it for platform administrators.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Path</th>
+<th style="text-align: left;">Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">GET</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations</code></td>
+<td style="text-align: left;">Return <code>managed</code> and the organization-to-permissions mapping.</td>
+</tr>
+<tr>
+<td style="text-align: left;">PUT</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations/{org_id}</code></td>
+<td style="text-align: left;">Replace that organization's grants; body: <code>{"permissions":["read","write"]}</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">DELETE</td>
+<td style="text-align: left;"><code>/api/ledger/chains/{chain_name}/organizations/{org_id}</code></td>
+<td style="text-align: left;">Revoke that organization's assignment.</td>
+</tr>
+</tbody>
+</table>
+<p>The SubChain and organization must already exist. PUT requires a nonempty permission list drawn from <code>read</code>, <code>write</code>, and <code>proofs</code>; invalid bodies return HTTP 422. Missing resources/assignments return HTTP 404, and insufficient management rights return HTTP 403. Create organizations and register their members through the existing business API before assigning them.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">manager</span><span class="o">.</span><span class="n">assign_organization_to_chain</span><span class="p">(</span><span class="s2">"logistics"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">])</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">manager</span><span class="o">.</span><span class="n">can_access_chain</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">,</span> <span class="s2">"alice"</span><span class="p">,</span> <span class="s2">"read"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">manager</span><span class="o">.</span><span class="n">get_chain_access</span><span class="p">(</span><span class="s2">"supply_chain"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">manager</span><span class="o">.</span><span class="n">revoke_organization_from_chain</span><span class="p">(</span><span class="s2">"logistics"</span><span class="p">,</span> <span class="s2">"supply_chain"</span><span class="p">)</span>
+</code></pre></div>
+<p>The Python assignment method defaults to <code>read</code> and <code>write</code> when permissions are omitted, returns <code>False</code> for a missing organization/SubChain, and raises <code>ValueError</code> for invalid permissions. It replaces that organization's existing list. <code>get_chain_access()</code> returns <code>None</code> for an unmanaged chain and a copied mapping for a managed chain.</p>
+<p>Compatibility and deployment: chains without assignments retain legacy API access under existing resource scopes. The first assignment enables organization checks for all historical and future API reads of that SubChain. Revoking the final assignment leaves a managed empty mapping, denying member access until a new grant is added. There is no API operation to restore unmanaged access. Deploy the upgraded version to every API worker and registry writer before enabling assignments; mixed versions are unsupported. Disabled authentication cannot access managed chains.</p>
+<p>Grants are stored in <code>chain_access</code> inside the existing hierarchy registry with revision retries and rollback; legacy snapshots without that field load as unmanaged. Shared SQLite/PostgreSQL/Redis managers refresh the registry on access checks and fail closed if persisted state is unavailable. Memory-only managers remain ephemeral. WebSocket subscriptions check access when subscribing and before each chain broadcast, including wildcard and event-type subscriptions; revocation prevents later authorized sends but cannot retract data already sent or queued. A request already past its authorization check may finish; SubChain event writes do not atomically compare the registry revision at append time.</p>
+<p>This is API authorization, not a separate encrypted ledger per organization. MainChain proofs, registration metadata and aggregate node counters remain shared. Trusted in-process calls to chain objects are privileged; embedding applications must call <code>can_access_chain()</code> before exposing them to users. Channel policies and channel ledgers remain independent, with no automatic SubChain assignment or anchoring.</p>
+<h4 id="docker-verification">Docker verification</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>.venv/bin/python<span class="w"> </span>docker/scripts/verify_chain_access.py<span class="w"> </span>--context<span class="w"> </span>orbstack
+</code></pre></div>
+<p>Omit <code>--context orbstack</code> to use the current Docker context. The runner builds a production wheel and both Docker image stages from a disposable copy of the current checkout, including local changes. It generates temporary identities and API keys, starts three authenticated production API containers with SQLite/PostgreSQL/Redis, and calls their real HTTP/WebSocket endpoints from a separate test container. No API dependencies are replaced in the live tests.</p>
+<p>Checks cover management scopes, selected organization permissions, REST/GraphQL writes and reads, signed secure events, proof submission, entity traces, WebSocket admission/subscription revocation, and two application-container recreations with retained volumes. They also run the Docker runtime suite and 20 regression files individually inside Linux containers, including shared-registry backend tests with skips treated as failures. Broadcast filtering is exercised by the regression tests; the live suite does not introduce an automatic ledger-to-WebSocket publisher. This is scoped organization–chain verification, not a P2P consensus or stress/soak test.</p>
+<p>Logs and JUnit XML remain in the printed temporary reports directory. The runner removes its own containers, networks, volumes and generated credentials even on failure. Existing deployments and repository data directories are not mounted into the test stack. See <code>docker/docker-compose.chain-access.yml</code> for the isolated services.</p>
 <h2 id="3-data-flow">3. Data flow</h2>
 <p>Detailed data remains on Sub-Chains. Merkle roots and signed block proofs anchor to the Main Chain. The optional ZK branch in this design flow has only a mock implementation:</p>
 <pre class="mermaid"><code>graph TD
@@ -4632,14 +4756,14 @@
 <p>Call <code>HierarchyManager.close()</code> when its owner finishes. It closes sub-chain orderers, an acquired coordinator, and storage without creating an unused journal. <code>SubChain.stop()</code> drains committed blocks and releases its orderer and writer lease, allowing a replacement instance to recover the same paths. Entity consistency validation tracks operation and status state separately for each chain.</p>
 <p><code>CrossChainTransactionManager</code> in <code>hierachain/hierarchical/transaction_manager.py</code> implements a two-phase commit protocol to maintain atomicity across Sub-Chains:</p>
 <p>Coordinator phase ACKs and participant commit ACKs still require durable journal read-back. Native journals use <code>read_since(cursor)</code> to decode new records after an initial history scan, including records in rotated files. Participant retries retain durable event IDs to avoid duplicate appends; ambiguous submissions invalidate their marker snapshot. Custom journals exposing only <code>replay()</code> keep the full replay path. Transaction history and archive count remain unbounded; this change does not add retention or compaction.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"finance_chain"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"INV-100"</span><span class="p">,</span> <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"settle_payment"</span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.hierarchy_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"finance_chain"</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"INV-100"</span><span class="p">,</span> <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"settle_payment"</span><span class="p">}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="5-privacy-and-zero-knowledge-verification">5. Privacy and zero-knowledge verification</h2>
 <ul>

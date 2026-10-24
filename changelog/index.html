@@ -4598,8 +4598,15 @@
 </ul>
 </details>
 <details class="note">
-<summary>Improvements (57)</summary>
+<summary>Improvements (59)</summary>
 <ul>
+<li>
+<p>2026-10-24</p>
+<ul>
+<li><strong>Hierarchy (Persistent Organization-to-SubChain Grants)</strong>: <code>HierarchyManager</code> (<code>hierachain/hierarchical/hierarchy_manager/base.py</code>) replaces the no-op <code>assign_organization_to_chain()</code> with a persisted <code>chain_access</code> map keyed by chain then organization, written through <code>_mutate_registry()</code> with a default of <code>read</code>/<code>write</code> when <code>permissions</code> is omitted and <code>ValueError</code> for empty, non-list, or unknown permissions, and adds <code>revoke_organization_from_chain()</code>, <code>get_chain_access()</code> (deep-copied grants, <code>None</code> for an unmanaged chain), and <code>can_access_chain()</code> which matches the caller's organization membership, stored identity, and role against <code>read</code>/<code>write</code>/<code>proofs</code> while letting unmanaged chains pass; the hierarchy registry (<code>hierachain/hierarchical/hierarchy_manager/registry.py</code>) persists <code>chain_access</code> under the existing revision retries and validates chain names, registered organizations, and permission values on restore, with legacy snapshots missing the field loading as unmanaged — previously assignments returned <code>False</code> and granted nothing.</li>
+<li><strong>API (Per-Chain Access Enforcement &amp; Grant Management)</strong>: new <code>require_chain_read</code>/<code>require_chain_write</code>/<code>require_chain_proof</code> dependencies (<code>hierachain/api/ledger/access.py</code>) combine the existing API-key resource checks with <code>can_access_chain()</code> and raise HTTP 403 on denial, replacing the coarse guards for blocks, chain statistics/creation, events, proofs, and <code>/api/admin/chains/{chain_name}/secure-events</code>; <code>list_chains</code> and cross-chain entity traces (<code>hierachain/api/ledger/chains.py</code>, <code>hierachain/api/ledger/entities.py</code>) omit unreadable SubChains; GraphQL resolvers (<code>hierachain/api/graphql/resolvers.py</code>) raise <code>PermissionError</code> for block, event, status, and add-event access and filter <code>allChains</code>; new <code>GET</code>/<code>PUT</code>/<code>DELETE /api/ledger/chains/{chain_name}/organizations</code> (<code>hierachain/api/ledger/chain_access.py</code>) list, replace, and revoke organization grants behind <code>chains:manage</code>, returning 422 for invalid permission lists and 404 for unknown chains/organizations/assignments; WebSocket subscriptions and broadcast fan-out (<code>hierachain/api/websocket/endpoints.py</code>, <code>hierachain/api/websocket/manager.py</code>, <code>hierachain/api/websocket/registry.py</code>) reject unauthorized chains at connect time, close with code <code>1008</code>, re-check grants on resubscribe and before every send (including wildcard and event-type streams), and scope <code>get_stats</code> to readable chains — previously any API key holding a resource scope could read, write, or stream every SubChain. Grants remain independent (<code>write</code> does not imply <code>read</code>) and chains without assignments keep the previous coarse-scope behavior.</li>
+</ul>
+</li>
 <li>
 <p>2026-10-22</p>
 <ul>
