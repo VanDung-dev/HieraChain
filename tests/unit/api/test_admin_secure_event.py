@@ -40,6 +40,9 @@ def test_secure_event_preserves_signed_fields_and_rejects_tampering() -> None:
         def get_sub_chain(self, name: str) -> Chain | None:
             return Chain() if name == "test-chain" else None
 
+        def can_access_chain(self, name: str, _user_id: str | None, _permission: str) -> bool:
+            return name == "test-chain"
+
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_hierarchy_manager] = Manager

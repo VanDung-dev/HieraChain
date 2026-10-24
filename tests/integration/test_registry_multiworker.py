@@ -6,6 +6,7 @@ import uuid
 from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -93,6 +94,98 @@ def _app(manager: HierarchyManager, verifier: APIKeyVerifier) -> FastAPI:
         return manager
     app.dependency_overrides[get_hierarchy_manager] = current_manager
     return app
+
+
+def test_chain_access_refresh_revocation_and_restart(
+    managers: tuple[HierarchyManager, HierarchyManager],
+) -> None:
+    first, second = managers
+    org_id, chain_name = _name(), _name()
+    first.create_organization(org_id, org_id, ["alice"])
+    first.sub_chains[chain_name] = SimpleNamespace(shutdown=lambda: None)
+    assert first.assign_organization_to_chain(org_id, chain_name, permissions=["read"])
+    assert second.can_access_chain(chain_name, "alice", "read")
+    assert not second.can_access_chain(chain_name, "alice", "write")
+    assert first.assign_organization_to_chain(org_id, chain_name, permissions=["write"])
+    assert not second.can_access_chain(chain_name, "alice", "read")
+    assert second.can_access_chain(chain_name, "alice", "write")
+    restarted = HierarchyManager("registry-main")
+    try:
+        assert restarted.can_access_chain(chain_name, "alice", "write")
+        assert first.revoke_organization_from_chain(org_id, chain_name)
+        assert not restarted.can_access_chain(chain_name, "alice", "write")
+        assert second.get_chain_access(chain_name) == {}
+        assert first.storage.load_hierarchy_registry()["chain_access"][chain_name] == {}
+    finally:
+        restarted.close()
+
+
+def test_concurrent_chain_assignments_preserve_both_grants(
+    managers: tuple[HierarchyManager, HierarchyManager], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first, second = managers
+    chain_name = _name()
+    org_ids = [_name(), _name()]
+    for org_id, user_id in zip(org_ids, ("alice", "bob")):
+        first.create_organization(org_id, org_id, [user_id])
+    barrier = threading.Barrier(2)
+    errors: list[Exception] = []
+    for manager in managers:
+        manager.sub_chains[chain_name] = SimpleNamespace(shutdown=lambda: None)
+        original = manager.storage.save_hierarchy_registry
+
+        def synchronize(save: Any) -> Any:
+            initial = True
+
+            def wrapped(state: dict[str, Any], **kwargs: Any) -> bool:
+                nonlocal initial
+                if initial:
+                    initial = False
+                    barrier.wait(timeout=5)
+                return save(state, **kwargs)
+
+            return wrapped
+
+        monkeypatch.setattr(manager.storage, "save_hierarchy_registry", synchronize(original))
+
+    def assign(manager: HierarchyManager, org_id: str) -> None:
+        try:
+            assert manager.assign_organization_to_chain(org_id, chain_name, permissions=["read"])
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=assign, args=(manager, org_id))
+               for manager, org_id in zip(managers, org_ids)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+    assert all(not thread.is_alive() for thread in threads)
+    assert not errors
+    assert set(second.get_chain_access(chain_name)) == set(org_ids)
+    assert second.can_access_chain(chain_name, "alice", "read")
+    assert second.can_access_chain(chain_name, "bob", "read")
+
+
+def test_chain_access_fails_closed_on_backend_error(
+    managers: tuple[HierarchyManager, HierarchyManager], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first, second = managers
+    org_id, chain_name = _name(), _name()
+    first.create_organization(org_id, org_id, ["alice"])
+    first.sub_chains[chain_name] = SimpleNamespace(shutdown=lambda: None)
+    assert first.assign_organization_to_chain(org_id, chain_name)
+    assert second.can_access_chain(chain_name, "alice", "read")
+
+    def unavailable() -> None:
+        raise RuntimeError("backend unavailable")
+
+    monkeypatch.setattr(second.storage, "load_hierarchy_registry", unavailable)
+    with pytest.raises(RuntimeError, match="backend unavailable"):
+        second.can_access_chain(chain_name, "alice", "read")
+    monkeypatch.setattr(second.storage, "load_hierarchy_registry", lambda: None)
+    with pytest.raises(RuntimeError, match="registry is missing"):
+        second.can_access_chain(chain_name, "alice", "read")
 
 
 def test_authenticated_workers_preserve_organizations_and_read_fresh_state(

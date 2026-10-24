@@ -35,7 +35,7 @@ def chain(monkeypatch: pytest.MonkeyPatch) -> Blockchain:
                          "timestamp": float(index), "details": {"nested": {"index": index}}}
                         for index in range(start, start + 60)])
     chain.add_event({"entity_id": "shared", "event": "created", "timestamp": 121.0})
-    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name: chain)
+    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name, _info=None: chain)
     return chain
 
 
@@ -81,7 +81,7 @@ def test_arrow_time_filter_decodes_only_selected_payloads(monkeypatch: pytest.Mo
     block = Block(0, [{"entity_id": "item", "event": "created", "timestamp": float(index),
                        "details": {"index": index}} for index in range(5000)])
     external = SimpleNamespace(chain=[block])
-    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name: external)
+    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name, _info=None: external)
     decoded = []
     decode = event_query.table_to_list_of_dicts
     def capture(table: Any) -> list[dict[str, Any]]:
@@ -103,7 +103,8 @@ def test_cursor_pages_keep_order_and_exclude_pending_events(
     chain: Blockchain, monkeypatch: pytest.MonkeyPatch, indexed: bool,
 ) -> None:
     if not indexed:
-        monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name: SimpleNamespace(chain=chain.chain))
+        monkeypatch.setattr(resolvers, "_get_chain_for_name",
+                            lambda _name, _info=None: SimpleNamespace(chain=chain.chain))
     query = '''query Page($after: String) {
       events(chainName: "query-chain", entityId: "shared", limit: 17, after: $after) {
         timestamp cursor
@@ -154,7 +155,7 @@ def test_external_object_events_keep_legacy_payload_behavior(monkeypatch: pytest
     external = SimpleNamespace(chain=[SimpleNamespace(index=0, events=[
         SimpleNamespace(entity_id="item", event_type="created", timestamp=0.0, data={"value": "owned"}),
     ])])
-    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name: external)
+    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda _name, _info=None: external)
     rows = resolvers.resolve_events(None, None, "external", entity_id="item", from_timestamp=0, to_timestamp=0)
     assert len(rows) == 1 and rows[0].details == dumps_json({"value": "owned"})
 
@@ -183,7 +184,8 @@ def test_http_event_pages_keep_verified_scope_checks(
     manager.sub_chains[chain.name] = chain
     monkeypatch.setattr(depds, "_hierarchy_manager", manager)
     # Use the actual manager lookup rather than the fixture resolver shortcut.
-    monkeypatch.setattr(resolvers, "_get_chain_for_name", lambda name: manager.get_all_sub_chains().get(name))
+    monkeypatch.setattr(resolvers, "_get_chain_for_name",
+                        lambda name, _info=None: manager.get_all_sub_chains().get(name))
     monkeypatch.setattr(graphql_handler.graphql_security, "check_rate_limit", lambda _ip: True)
     keys = KeyManager()
     read_key = keys.create_key("reader", ["events"])
