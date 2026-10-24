@@ -395,6 +395,7 @@ def test_hierarchy_manager_channel_uses_registered_member_role_and_fails_closed(
     manager = HierarchyManager.__new__(HierarchyManager)
     manager.main_chain = MainChain("member_access_test")
     manager.organizations = {org_id: org}
+    manager.chain_access = {}
     manager.channels = {}
     manager.storage = None
     manager._registry_lock = threading.RLock()
