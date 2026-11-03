@@ -1,6 +1,6 @@
 ---
 title: "Module API"
-description: "Hệ thống API đa giao thức: REST ledger/business/admin, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
+description: "Hệ thống API đa giao thức: REST ledger/business/admin và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
 icon: material/api
 ---
 
@@ -8,7 +8,7 @@ icon: material/api
 
 ## Tổng quan
 
-Module API xử lý giao tiếp giữa client bên ngoài và lõi HieraChain. Nó chạy trên FastAPI và hỗ trợ REST, GraphQL và WebSocket. Mục tiêu chính là hiệu năng, nên cùng một service có thể phục vụ cả ba giao thức mà không cần triển khai riêng.
+Module API xử lý giao tiếp giữa client bên ngoài và lõi HieraChain. Nó chạy trên FastAPI và hỗ trợ REST và WebSocket. Mục tiêu chính là hiệu năng, nên cùng một service có thể phục vụ cả hai giao thức mà không cần triển khai riêng.
 
 ### Thành phần cốt lõi
 
@@ -16,7 +16,6 @@ Import helper của API client, như `hierachain.api.storage.ipfs_client`, khôn
 
 * FastAPI server (`server.py`) là điểm khởi chạy. Nó thiết lập middleware, xác thực và router.
 * REST API có ba nhóm (ledger, business, admin) cho thao tác lõi, tính năng nghiệp vụ và quản trị hệ thống.
-* GraphQL endpoint cho phép chọn field linh hoạt với giới hạn depth và complexity.
 * Gateway WebSocket quản lý subscription và helper broadcast; ứng dụng phải nối sự kiện ledger vào các helper này.
 * Tích hợp IPFS xử lý dữ liệu off-chain với mã hóa AES-256-GCM. Payload lớn nằm ngoài chain, chỉ CID được lưu trên chain.
 
@@ -41,7 +40,7 @@ Mặc định là 100 request mỗi phút, được cấu hình qua `HRC_RATE_LI
 
 ### Xác thực
 
-`APIKeyVerifier` kiểm tra header `X-API-Key` cho HTTP và WebSocket. Production bắt buộc `HRC_AUTH_ENABLED=true` và file key `HRC_API_KEYS_FILE` đã được cấp; dev/test có thể tắt xác thực. Khi bật xác thực, GraphQL kiểm tra scope cho từng operation: query chain và block cần `chains`, query event và `addEvent` cần `events`, còn query block chọn event lồng bên trong cần cả hai scope. WebSocket truyền cả message block và event, nên kết nối và đăng ký cần `chains` và `events` (hoặc `all`). Trong production, GraphQL và WebSocket từ chối yêu cầu nếu app không có verifier đang bật hoặc verifier không trả auth context.
+`APIKeyVerifier` kiểm tra header `X-API-Key` cho HTTP và WebSocket. Production bắt buộc `HRC_AUTH_ENABLED=true` và file key `HRC_API_KEYS_FILE` đã được cấp; dev/test có thể tắt xác thực. WebSocket truyền cả message block và event, nên kết nối và đăng ký cần `chains` và `events` (hoặc `all`). Trong production và WebSocket từ chối yêu cầu nếu app không có verifier đang bật hoặc verifier không trả auth context.
 
 ## Tham chiếu REST API
 
@@ -76,32 +75,6 @@ Các endpoint này dành cho vận hành node và hệ thống:
 * `POST /api/admin/verify-identity` cho phép node ký challenge để chứng minh danh tính.
 * `GET /api/admin/status` được miễn xác thực API key và trả uptime, số chain, version cùng cờ license được gán cố định.
 * `POST /api/admin/chains/{chain_name}/secure-events` kiểm tra chữ ký canonical đồng bộ rồi ghi journal và đưa event vào hàng đợi. HTTP 200 trả `status="queued"`, ID event từ ordering trong `event_hash` và thời gian phản hồi trong `timestamp`; client đang chờ `committed` cần cập nhật. Response này không xác nhận block đã commit. Ordering và replay journal xác minh lại `signature_content` gốc cùng ràng buộc với các trường được đưa vào block. Khi hàng đợi quá tải, API trả HTTP 503 với `event_id` và `journaled` trong `detail`.
-
-## GraphQL API
-
-Endpoint: `/graphql`
-
-Dùng GraphQL khi client cần chọn field cụ thể hoặc giảm kích thước payload.
-
-### Giới hạn bảo mật
-
-* Depth của query giới hạn ở 10 cấp.
-* Complexity giới hạn ở 1000 điểm mỗi query, tính theo số field và phép toán.
-* Introspection (`__schema`) bị tắt ở production.
-
-### Ví dụ query
-
-Query event cần quyền `events`. Query block và chain cần `chains`; chọn event lồng trong block cần cả hai quyền.
-
-```graphql
-query {
-  events(chainName: "supply_chain", entityId: "PROD-001", limit: 20) {
-    eventType
-    details
-    timestamp
-  }
-}
-```
 
 ## WebSocket (truyền dữ liệu thời gian thực)
 
@@ -159,7 +132,6 @@ curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 * [Storage & IPFS Integration](./storage.md)
 * [Security & Identity](../security/encryption-keys.md)
 
-GraphQL đọc sự kiện Arrow theo hàng và chờ resolver bất đồng bộ, gồm trường details. Đọc sự kiện bên trong block cần cả quyền `chains` và `events`. Tên chain không tồn tại trả kết quả truy vấn rỗng và từ chối mutation; không tự chuyển sang main chain.
 
 ### Mã hóa JSON
 

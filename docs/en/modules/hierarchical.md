@@ -44,7 +44,7 @@ Startup loads block headers and ordered events with one SQL range query, while r
 | Feature | Current behavior |
 | :--- | :--- |
 | Organization/member/channel registry | SQLite/PostgreSQL persistence and revision checks; explicit memory mode is ephemeral. |
-| Organization-to-chain assignment | Persistent SubChain grants for `read`, `write`, and `proofs`; enforced by REST, GraphQL, and WebSocket APIs. Channel membership remains separate. |
+| Organization-to-chain assignment | Persistent SubChain grants for `read`, `write`, and `proofs`; enforced by REST and WebSocket APIs. Channel membership remains separate. |
 | Private collections | Library objects provide an in-memory data store; the manager does not persist collections in its registry. REST private-data writes return HTTP 501. |
 | ZK proofs | Mock hashes are development fixtures. Production proving/verification are unimplemented; see [ZK scope](../security/decentralized-zkp.md). |
 | ERP vendor connectors | SAP/Oracle/Dynamics fixtures require explicit simulation opt-in. Real transport is application-provided; see [Integration](./integration.md). |
@@ -73,10 +73,10 @@ Organizations and SubChains have a many-to-many relationship. Grants apply to re
 | Grant | API behavior |
 | :--- | :--- |
 | `read` | Read blocks, events, chain statistics and entity traces; receive WebSocket chain messages. Chain lists and cross-chain traces omit inaccessible SubChains. |
-| `write` | Submit events through REST, the secure event endpoint, and GraphQL. API keys still need `events`; the secure endpoint also requires `chains`. |
+| `write` | Submit events through REST, and the secure event endpoint. API keys still need `events`; the secure endpoint also requires `chains`. |
 | `proofs` | Submit a proof through the ledger REST endpoint; the API key still needs `proofs`. |
 
-Read endpoints require `chains`. GraphQL and WebSocket retain their existing transport resource checks; WebSocket streams require both `chains` and `events`. Grants are independent: `write` does not imply `read`, and organization roles do not add grants. Use restricted API key scopes for per-user limits.
+Read endpoints require `chains`. WebSocket streams require both `chains` and `events`. Grants are independent: `write` does not imply `read`, and organization roles do not add grants. Use restricted API key scopes for per-user limits.
 
 Management requires an authenticated key with both `chains` and `chains:manage`. An organization administrator does not automatically receive chain management rights. The existing `all` resource scope includes management, so reserve it for platform administrators.
 
@@ -111,7 +111,7 @@ This is API authorization, not a separate encrypted ledger per organization. Mai
 
 Omit `--context orbstack` to use the current Docker context. The runner builds a production wheel and both Docker image stages from a disposable copy of the current checkout, including local changes. It generates temporary identities and API keys, starts three authenticated production API containers with SQLite/PostgreSQL/Redis, and calls their real HTTP/WebSocket endpoints from a separate test container. No API dependencies are replaced in the live tests.
 
-Checks cover management scopes, selected organization permissions, REST/GraphQL writes and reads, signed secure events, proof submission, entity traces, WebSocket admission/subscription revocation, and two application-container recreations with retained volumes. They also run the Docker runtime suite and 20 regression files individually inside Linux containers, including shared-registry backend tests with skips treated as failures. Broadcast filtering is exercised by the regression tests; the live suite does not introduce an automatic ledger-to-WebSocket publisher. This is scoped organization–chain verification, not a P2P consensus or stress/soak test.
+Checks cover management scopes, selected organization permissions, REST writes and reads, signed secure events, proof submission, entity traces, WebSocket admission/subscription revocation, and two application-container recreations with retained volumes. They also run the Docker runtime suite and 18 regression files individually inside Linux containers, including shared-registry backend tests with skips treated as failures. Broadcast filtering is exercised by the regression tests; the live suite does not introduce an automatic ledger-to-WebSocket publisher. This is scoped organization–chain verification, not a P2P consensus or stress/soak test.
 
 Logs and JUnit XML remain in the printed temporary reports directory. The runner removes its own containers, networks, volumes and generated credentials even on failure. Existing deployments and repository data directories are not mounted into the test stack. See `docker/docker-compose.chain-access.yml` for the isolated services.
 

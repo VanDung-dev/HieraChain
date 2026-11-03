@@ -16,7 +16,7 @@ HieraChain là ledger Python dành cho event nghiệp vụ. Sub-Chain theo domai
 * Bảng event Apache Arrow, truy vấn entity/event qua index và gom batch ordering bất đồng bộ.
 * Chữ ký Ed25519 với bản đồ khóa tin cậy do operator cấp, storage SQLite/PostgreSQL bền vững và journal ordering.
 * PoA mặc định; có thể cấu hình PoF với luân phiên validator. Hai luồng này không cung cấp đồng thuận nhân bản chịu lỗi Byzantine hay tự động chuyển leader khi lỗi.
-* REST, GraphQL, WebSocket, client Python đồng bộ/bất đồng bộ và công cụ CLI.
+* REST, WebSocket, client Python đồng bộ/bất đồng bộ và công cụ CLI.
 * Xác thực API key khi được bật, policy organization/channel, audit log và payload IPFS mã hóa AES-256-GCM tùy chọn.
 
 ## Giới hạn hiện tại

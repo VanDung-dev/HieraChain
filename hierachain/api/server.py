@@ -32,7 +32,6 @@ from hierachain.adapters.database.auth_state import (
 from hierachain.api.admin.endpoints import router as admin_router
 from hierachain.api.business.router import business_router
 from hierachain.api.context import get_p2p_client, set_p2p_client
-from hierachain.api.graphql_handler import _register_graphql_router
 from hierachain.api.ledger.depds import close_hierarchy_manager
 from hierachain.api.ledger.router import ledger_router
 from hierachain.api.middleware import (
@@ -309,7 +308,6 @@ def register_routers(fast_app: FastAPI):
     _register_api_router(fast_app, business_router, "business")
     _register_api_router(fast_app, admin_router, "admin")
     _register_websocket_router(fast_app)
-    _register_graphql_router(fast_app)
     _register_root_endpoint(fast_app)
 
 

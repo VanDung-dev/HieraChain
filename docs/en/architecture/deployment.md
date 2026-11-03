@@ -14,7 +14,7 @@ An API process initializes a `HierarchyManager` with MainChain and registered Su
 
 | Setting | Runtime default | Purpose |
 |---------|-----------------|---------|
-| `HRC_API_PORT` | `2661` | REST, GraphQL and WebSocket API |
+| `HRC_API_PORT` | `2661` | REST and WebSocket API |
 | `HRC_P2P_PORT` | `5555` | ZeroMQ transport; container manifests override it |
 | `HRC_PEERS` | Empty | Comma-separated seed peers; `peer-id@host:port` identifies a peer |
 | `HRC_P2P_ENABLED` | `true` | Starts the API lifecycle's network layer |

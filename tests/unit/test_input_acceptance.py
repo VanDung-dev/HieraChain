@@ -6,7 +6,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import requests
@@ -14,7 +14,6 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from hierachain.adapters.database.redis_rate_limiter import RedisRateLimiter
-from hierachain.api.graphql.schema import schema
 from hierachain.api.middleware import add_rate_limit
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.utils import sanitize_metadata_for_main_chain
@@ -105,26 +104,6 @@ def test_main_chain_registration_never_exposes_raw_metadata() -> None:
     assert chain.register_sub_chain("p2-sub", metadata)
     assert chain.get_sub_chain_summary("p2-sub")["metadata"] == {"summary": [{"safe": 1}]}
     assert chain.pending_events[-1]["details"]["metadata"] == {"summary": [{"safe": 1}]}
-
-
-@pytest.mark.parametrize("query,variables", [
-    ('{ blocks(chainName: "test", limit: 10000) { index } events(chainName: "test", limit: 10000) { entityId } }', None),
-    ('query($n: Int!) { blocks(chainName: "test", limit: $n) { index } events(chainName: "test", limit: $n) { entityId } }', {"n": 10000}),
-])
-def test_graphql_bounds_literal_and_variable_limits(query: str, variables: dict | None) -> None:
-    from hierachain.api.ledger import depds
-
-    blocks = [SimpleNamespace(index=i, hash=str(i), previous_hash="", timestamp=1.0,
-                              nonce="", metadata=None,
-                              events=[SimpleNamespace(entity_id=str(i), event_type="created", timestamp=1.0)])
-              for i in range(150)]
-    manager = Mock()
-    manager.get_all_sub_chains.return_value = {"test": SimpleNamespace(chain=blocks)}
-    with patch.object(depds, "_hierarchy_manager", manager):
-        result = schema.execute(query, variable_values=variables)
-    assert result.errors is None
-    assert len(result.data["blocks"]) == 100
-    assert len(result.data["events"]) == 100
 
 
 @pytest.mark.asyncio

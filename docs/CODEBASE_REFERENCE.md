@@ -127,7 +127,6 @@ The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedg
 | `hierachain/api/business/router.py`, `hierachain/api/business/schemas.py` | Business routes and schemas |
 | `hierachain/api/business/` | Business endpoint implementations |
 | `hierachain/api/admin/endpoints.py` | Admin identity/status endpoints |
-| `hierachain/api/graphql/` | GraphQL schema, resolvers, types and query checks |
 | `hierachain/api/websocket/` | Connections, subscriptions, message builders and broadcast helpers |
 | `hierachain/api/blockchain_explorer.py`, `hierachain/api/explorer_components.py` | Explorer dashboard and component handlers |
 | `hierachain/api/storage/ipfs_client.py`, `hierachain/api/storage/encryption.py` | Explicit IPFS upload/download with AES-256-GCM |

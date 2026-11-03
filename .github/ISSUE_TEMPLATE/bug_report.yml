@@ -54,7 +54,7 @@ body:
         - Consensus (Ordering, PoA, PoF)
         - Security (MSP, Policy, Key Management)
         - Network (Transport, Messaging)
-        - API (REST, GraphQL, WebSocket)
+        - API (REST, WebSocket)
         - Storage / Adapters (SQL, Redis, IPFS)
         - State Machine
         - Cluster / Rollback

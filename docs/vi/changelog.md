@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (61)"
+??? warning "Breaking Changes (62)"
+
+    * 2026-11-03
+
+        * **API (Loại bỏ GraphQL)**: Xóa `POST /graphql` và schema GraphQL Python. Client có thể dùng các endpoint REST cho chain, block và trace entity, đồng thời gửi event vào sub-chain qua REST. REST chưa có thao tác tương đương cho chọn trường GraphQL, truy vấn event có bộ lọc và cursor, hay gửi event trực tiếp vào main chain.
 
     * 2026-10-24
 

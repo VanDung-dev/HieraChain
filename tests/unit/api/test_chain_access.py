@@ -8,7 +8,6 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from hierachain.api import graphql_handler
 from hierachain.api.admin.endpoints import router as admin_router
 from hierachain.api.ledger import depds
 from hierachain.api.ledger.router import ledger_router
@@ -38,7 +37,6 @@ def setup(
         )
     assert manager.assign_organization_to_chain("org-a", "private", permissions=["read", "write", "proofs"])
     monkeypatch.setattr(depds, "_hierarchy_manager", manager)
-    monkeypatch.setattr(graphql_handler.graphql_security, "check_rate_limit", lambda _ip: True)
     keys = KeyManager()
     headers = {
         user: {"X-API-Key": keys.create_key(user, permissions)}
@@ -60,7 +58,6 @@ def setup(
     app.include_router(ledger_router)
     app.include_router(admin_router)
     app.include_router(websocket_router)
-    graphql_handler._register_graphql_router(app)
     yield app, manager, headers
     manager.close()
 
@@ -131,32 +128,6 @@ def test_management_and_last_revocation(setup: tuple) -> None:
         policy = client.get("/api/ledger/chains/private/organizations", headers=headers["platform"]).json()
         assert policy["managed"] is True and policy["organizations"] == {}
         assert not manager.can_access_chain("private", "alice", "read")
-
-
-@pytest.mark.parametrize("query", [
-    '{ blocks(chainName:"private") { index } }',
-    '{ block(chainName:"private", blockIndex:0) { index } }',
-    '{ events(chainName:"private") { entityId } }',
-    '{ chainStatus(chainName:"private") { chainName } }',
-    'mutation { addEvent(event:{chainName:"private", entityId:"item", eventType:"created"}) { success } }',
-])
-def test_graphql_named_queries_and_mutations_are_scoped(setup: tuple, query: str) -> None:
-    app, manager, headers = setup
-    with TestClient(app) as client:
-        denied = client.post("/graphql", json={"query": query}, headers=headers["bob"])
-        assert denied.status_code == 400 and denied.json()["errors"]
-        allowed = client.post("/graphql", json={"query": query}, headers=headers["alice"])
-        assert allowed.status_code == 200, allowed.text
-    if "mutation" in query:
-        assert manager.sub_chains["private"].add_event.call_count == 1
-
-
-def test_graphql_all_chains_filters_results(setup: tuple) -> None:
-    app, _manager, headers = setup
-    with TestClient(app) as client:
-        data = client.post("/graphql", json={"query": "{ allChains { chainName } }"}, headers=headers["bob"]).json()
-        names = [entry["chainName"] for entry in data["data"]["allChains"]]
-        assert "private" not in names and "public" in names
 
 
 def test_websocket_subscription_and_live_revocation(setup: tuple) -> None:

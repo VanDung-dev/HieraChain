@@ -32,7 +32,6 @@ dependencies = [
     "click>=8.4.1",
     "cryptography>=50.0.0",
     "fastapi>=0.136.3",
-    "graphene>=3.4.3",
     "httpx>=0.28.1",
     "hvac>=2.4.0",
     "prometheus-client>=0.25.0",
@@ -178,10 +177,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "hierachain.domains.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "hierachain.api.graphql.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]

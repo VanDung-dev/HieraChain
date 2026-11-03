@@ -40,12 +40,6 @@ def policy(api: httpx.Client, keys: dict, org: str, permissions: list[str]) -> N
                    headers=keys["platform"], json={"permissions": permissions}))
 
 
-def events(api: httpx.Client, headers: dict[str, str]) -> httpx.Response:
-    return api.post("/graphql", headers=headers, json={
-        "query": '{ events(chainName:"access-private") { entityId eventType } }',
-    })
-
-
 def test_live_access(api: httpx.Client, keys: dict) -> None:
     expect(api.get("/api/ledger/chains"), 401)
     for org, member in (("org-a", "alice"), ("org-b", "bob")):
@@ -66,18 +60,11 @@ def test_live_access(api: httpx.Client, keys: dict) -> None:
                         json={"entity_id": "blocked", "event_type": "created"}), 403)
         expect(api.post(path + "/submit-proof", headers=keys[user]), 403)
         expect(api.post("/api/admin/chains/access-private/secure-events", headers=keys[user], json={}), 403)
-        expect(events(api, keys[user]), 400)
         listed = expect(api.get("/api/ledger/chains", headers=keys[user]))
         assert "access-private" not in [chain["name"] for chain in listed]
-        listed = expect(api.post("/graphql", headers=keys[user], json={"query": "{ allChains { chainName } }"}))
-        assert "access-private" not in [chain["chainName"] for chain in listed["data"]["allChains"]]
     payload = {"entity_id": "docker-item", "event_type": "created", "details": {"value": "private"}}
     expect(api.post(path + "/events", headers=keys["reader"], json=payload), 403)
     expect(api.post(path + "/events", headers=keys["alice"], json=payload))
-    mutation = {"query": 'mutation { addEvent(event:{chainName:"access-private", entityId:"graphql-item", '
-                         'eventType:"created"}) { success } }'}
-    expect(api.post("/graphql", headers=keys["bob"], json=mutation), 400)
-    assert expect(api.post("/graphql", headers=keys["alice"], json=mutation))["data"]["addEvent"]["success"]
     signer = KeyPair.generate()
     signed = {"entity_id": "secure-item", "event_type": "created", "details": {},
               "sender": "0x" + signer.public_key}
@@ -87,12 +74,10 @@ def test_live_access(api: httpx.Client, keys: dict) -> None:
     while True:
         blocks = expect(api.get(path + "/blocks", headers=keys["alice"]))["blocks"]
         committed = {event.get("entity_id") for block in blocks for event in block["events"]}
-        if {"docker-item", "graphql-item", "secure-item"} <= committed:
+        if {"docker-item", "secure-item"} <= committed:
             break
         assert time.monotonic() < deadline, "Accepted event did not commit"
         time.sleep(0.1)
-    found = expect(events(api, keys["alice"]))["data"]["events"]
-    assert any(event["entityId"] == "docker-item" for event in found)
     expect(api.post(path + "/submit-proof", headers=keys["alice"]))
     trace = expect(api.get("/api/ledger/entities/docker-item/trace", headers=keys["bob"]))
     assert not trace["events"]
@@ -118,13 +103,13 @@ def test_live_access(api: httpx.Client, keys: dict) -> None:
 
 
 def test_recovered_access(api: httpx.Client, keys: dict) -> None:
-    data = expect(events(api, keys["alice"]))
-    assert {"docker-item", "graphql-item", "secure-item"} <= {
-        event["entityId"] for event in data["data"]["events"]
-    }
-    assert expect(api.get("/api/ledger/chains/main_chain/stats", headers=keys["alice"]))["proof_count"] > 0
-    expect(events(api, keys["bob"]), 400)
     path = "/api/ledger/chains/access-private"
+    data = expect(api.get(path + "/blocks", headers=keys["alice"]))
+    assert {"docker-item", "secure-item"} <= {
+        event["entity_id"] for block in data["blocks"] for event in block["events"]
+    }
+    expect(api.get(path + "/blocks", headers=keys["bob"]), 403)
+    assert expect(api.get("/api/ledger/chains/main_chain/stats", headers=keys["alice"]))["proof_count"] > 0
     saved = expect(api.get(path + "/organizations", headers=keys["platform"]))
     assert saved["managed"] and saved["organizations"] == {"org-a": ["read"]}
     payload = {"entity_id": "blocked", "event_type": "created"}
@@ -139,5 +124,4 @@ def test_empty_policy_survives_recreation(api: httpx.Client, keys: dict) -> None
     assert saved["managed"] and saved["organizations"] == {}
     for user in ("alice", "bob", "outsider"):
         expect(api.get(path + "/blocks", headers=keys[user]), 403)
-        expect(events(api, keys[user]), 400)
         expect(api.get("/api/ledger/chains/access-public/blocks", headers=keys[user]))

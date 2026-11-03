@@ -32,6 +32,15 @@ def _run_server_lifespan() -> None:
     asyncio.run(run())
 
 
+def test_graphql_route_is_removed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HRC_ENV", "test")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "false")
+    app = create_app()
+    with TestClient(app) as client:
+        assert client.post("/graphql", json={"query": "{ allChains { chainName } }"}).status_code == 404
+        assert client.get("/api/ledger/health").status_code == 200
+
+
 def test_json_responses_preserve_http_and_validation_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HRC_AUTH_ENABLED", "false")
     monkeypatch.setenv("HRC_ENV", "test")

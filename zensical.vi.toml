@@ -84,7 +84,6 @@ nav = [
     { "Codebase map" = "reference/code-map.md" },
     { Config = "reference/config.md" },
     { "Python SDK" = "reference/sdk-reference.md" },
-    { "GraphQL API" = "reference/graphql-api.md" },
     { "API ledger" = "reference/api-ledger.md" },
     { "API business" = "reference/api-business.md" },
     { "API admin" = "reference/api-admin.md" },

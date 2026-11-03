@@ -37,7 +37,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật sang
 | API Business | `hierachain/api/business/router.py` | API nâng cao (Events, Domain). |
 | API Admin | `hierachain/api/admin/` | API hệ thống (Admin, Health). |
 | WebSocket Manager | `hierachain/api/websocket/manager.py` | Quản lý kết nối WebSocket thời gian thực. |
-| GraphQL Schema | `hierachain/api/graphql/schema.py` | Schema GraphQL cho truy vấn linh hoạt. |
 | IPFS Client | `hierachain/api/storage/ipfs_client.py` | Tích hợp lưu trữ Off-chain (AES-256-GCM). |
 | Blockchain Explorer | `hierachain/api/blockchain_explorer.py` | Giao diện phân tích và hiển thị chuỗi. |
 | Điểm khởi chạy API server | `hierachain/__main__.py` | `python -m hierachain` khởi chạy API; `hrc` phân phối lệnh CLI. |

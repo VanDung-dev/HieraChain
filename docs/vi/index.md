@@ -93,7 +93,7 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
     ---
 
     * [Config](reference/config.md)
-    * [Python SDK](reference/sdk-reference.md) · [GraphQL API](reference/graphql-api.md)
+    * [Python SDK](reference/sdk-reference.md)
     * [API Ledger](reference/api-ledger.md) · [API business](reference/api-business.md) · [API Admin](reference/api-admin.md)
     * [Data Models](reference/data-models.md) · [Data Schema](reference/data-schema.md)
     * [Code Map](reference/code-map.md) · [Thuật ngữ](glossary.md)

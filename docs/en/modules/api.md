@@ -1,6 +1,6 @@
 ---
 title: "API Module"
-description: "Multi-protocol API system: REST ledger/business/admin, GraphQL and WebSocket. Multi-layer security integration and IPFS data management."
+description: "Multi-protocol API system: REST ledger/business/admin and WebSocket. Multi-layer security integration and IPFS data management."
 icon: material/api
 ---
 
@@ -8,7 +8,7 @@ icon: material/api
 
 ## Overview
 
-The API module handles communication between external clients and the HieraChain core. It is built on FastAPI and supports REST, GraphQL, and WebSocket. Performance is the main design goal, so the same service can serve all three protocols without separate deployments.
+The API module handles communication between external clients and the HieraChain core. It is built on FastAPI and supports REST and WebSocket. Performance is the main design goal, so the same service can serve both protocols without separate deployments.
 
 ### Core components
 
@@ -16,7 +16,6 @@ Importing API client helpers, such as `hierachain.api.storage.ipfs_client`, does
 
 * FastAPI server (`server.py`) is the entry point. It sets up middleware, authentication, and routers.
 * Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.
-* GraphQL endpoint offers flexible field selection with depth and complexity limits.
 * WebSocket gateway manages subscriptions and broadcast helpers; the application must connect ledger events to those helpers.
 * IPFS integration handles off-chain data with AES-256-GCM encryption. Large payloads stay off chain and only the CID is stored on chain.
 
@@ -41,7 +40,7 @@ The default limit is 100 requests per minute, configured with `HRC_RATE_LIMIT_RP
 
 ### Authentication
 
-`APIKeyVerifier` checks the `X-API-Key` header for HTTP and WebSocket access. Production requires `HRC_AUTH_ENABLED=true` and a provisioned `HRC_API_KEYS_FILE`; dev/test can disable authentication. With authentication enabled, GraphQL checks scopes for every operation: chain and block queries require `chains`, event queries and `addEvent` require `events`, and a block query that selects nested events requires both scopes. WebSocket streams contain both block and event messages, so connecting and subscribing requires `chains` and `events` (or `all`). Production GraphQL and WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.
+`APIKeyVerifier` checks the `X-API-Key` header for HTTP and WebSocket access. Production requires `HRC_AUTH_ENABLED=true` and a provisioned `HRC_API_KEYS_FILE`; dev/test can disable authentication. WebSocket streams contain both block and event messages, so connecting and subscribing requires `chains` and `events` (or `all`). Production WebSocket requests fail closed if the app has no enabled verifier or the verifier returns no auth context.
 
 ## REST API reference
 
@@ -76,32 +75,6 @@ These endpoints are for node and system operations:
 * `POST /api/admin/verify-identity` lets a node sign a challenge to prove its identity.
 * `GET /api/admin/status` is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.
 * `POST /api/admin/chains/{chain_name}/secure-events` checks the canonical signature synchronously, then journals and queues the event. HTTP 200 returns `status="queued"`, an ordering event ID in `event_hash`, and the acknowledgement time in `timestamp`; clients expecting `committed` must update. This response does not establish block commitment. Ordering and journal replay reverify the original `signature_content` and its binding to the ordered fields. Queue backpressure returns HTTP 503 with `event_id` and `journaled` in `detail`.
-
-## GraphQL API
-
-Endpoint: `/graphql`
-
-Use GraphQL when clients need to select specific fields or reduce payload size.
-
-### Security limits
-
-* Query depth is limited to 10 levels.
-* Complexity is limited to 1000 points per query, based on field and operation counts.
-* Introspection (`__schema`) is disabled in production.
-
-### Query example
-
-Event queries require the `events` permission. Block and chain queries require `chains`; selecting events nested under a block requires both.
-
-```graphql
-query {
-  events(chainName: "supply_chain", entityId: "PROD-001", limit: 20) {
-    eventType
-    details
-    timestamp
-  }
-}
-```
 
 ## WebSocket (real-time streaming)
 
@@ -159,7 +132,6 @@ curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 * [Storage & IPFS Integration](./storage.md)
 * [Security & Identity](../security/encryption-keys.md)
 
-GraphQL reads Arrow events as rows and awaits asynchronous field resolvers, including event details. Nested block events require both `chains` and `events` scopes. Unknown chain names return no query result and reject mutations; they do not fall back to the main chain.
 
 ### JSON encoding
 

@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (61)"
+??? warning "Breaking Changes (62)"
+
+    * 2026-11-03
+
+        * **API (Remove GraphQL)**: Remove `POST /graphql` and the Python GraphQL schema. Clients can use REST chain, block and entity-trace endpoints and submit events to sub-chains through REST. GraphQL field selection, filtered cursor-based event queries and direct main-chain event submission have no equivalent REST operation.
 
     * 2026-10-24
 

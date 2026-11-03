@@ -53,7 +53,7 @@ body:
         - Hierarchical (MainChain, SubChain, HierarchyManager)
         - Consensus (Ordering, PoA, PoF)
         - Security (Verification, MSP, Policy, Key Management)
-        - API (REST, GraphQL, WebSocket)
+        - API (REST, WebSocket)
         - Storage (SQL, Redis, IPFS)
         - CLI / SDK
         - Integration (ERP, Arrow)

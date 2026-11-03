@@ -44,7 +44,7 @@ Khởi động đọc header block và event theo thứ tự bằng một truy v
 | Tính năng | Hành vi hiện tại |
 | :--- | :--- |
 | Registry tổ chức/thành viên/channel | SQLite/PostgreSQL lưu bền vững và kiểm tra revision; chế độ memory tường minh chỉ giữ dữ liệu tạm. |
-| Gán tổ chức vào chain | Lưu bền vững quyền SubChain gồm `read`, `write`, `proofs`; áp dụng tại REST, GraphQL và WebSocket API. Thành viên channel vẫn được quản lý riêng. |
+| Gán tổ chức vào chain | Lưu bền vững quyền SubChain gồm `read`, `write`, `proofs`; áp dụng tại REST và WebSocket API. Thành viên channel vẫn được quản lý riêng. |
 | Private collection | Object thư viện có data store trong bộ nhớ; manager không persist collection vào registry. Ghi private data qua REST trả HTTP 501. |
 | ZK proof | Hash mock là fixture phát triển. Tạo/xác minh production chưa triển khai; xem [phạm vi ZK](../security/decentralized-zkp.md). |
 | Connector ERP theo hãng | Fixture SAP/Oracle/Dynamics yêu cầu opt-in mô phỏng tường minh. Ứng dụng cung cấp transport thật; xem [Integration](./integration.md). |
@@ -73,10 +73,10 @@ Tổ chức và SubChain có quan hệ nhiều–nhiều. Quyền áp dụng cho
 | Quyền | Hành vi API |
 | :--- | :--- |
 | `read` | Đọc block, event, thống kê chain, trace entity và nhận thông báo WebSocket của chain. Danh sách chain và trace liên chuỗi bỏ qua SubChain không được phép truy cập. |
-| `write` | Gửi event qua REST, endpoint secure event và GraphQL. API key vẫn cần `events`; endpoint secure còn yêu cầu `chains`. |
+| `write` | Gửi event qua REST và endpoint secure event. API key vẫn cần `events`; endpoint secure còn yêu cầu `chains`. |
 | `proofs` | Gửi proof qua endpoint ledger REST; API key vẫn cần `proofs`. |
 
-Endpoint đọc yêu cầu `chains`. GraphQL và WebSocket giữ kiểm tra tài nguyên của transport hiện có; stream WebSocket yêu cầu cả `chains` và `events`. Các quyền độc lập: `write` không bao hàm `read`, và role trong tổ chức không tự thêm quyền. Dùng scope API key giới hạn để kiểm soát từng người dùng.
+Endpoint đọc yêu cầu `chains`. Stream WebSocket yêu cầu cả `chains` và `events`. Các quyền độc lập: `write` không bao hàm `read`, và role trong tổ chức không tự thêm quyền. Dùng scope API key giới hạn để kiểm soát từng người dùng.
 
 Quản lý assignment yêu cầu key đã xác thực với cả `chains` và `chains:manage`. Administrator tổ chức không tự có quyền quản lý chain. Scope tài nguyên `all` hiện bao hàm quyền quản lý, vì vậy chỉ cấp cho administrator nền tảng.
 
@@ -111,7 +111,7 @@ Quyền nằm trong trường `chain_access` của hierarchy registry hiện có
 
 Bỏ `--context orbstack` để dùng Docker context hiện tại. Runner dựng wheel production và cả hai stage image Docker từ bản sao tạm của checkout hiện tại, gồm cả thay đổi cục bộ. Nó tạo identity và API key tạm, khởi động ba container API production có xác thực với SQLite/PostgreSQL/Redis, rồi gọi HTTP/WebSocket thật từ container kiểm thử riêng. Kiểm thử live không thay thế dependency của API.
 
-Các bước kiểm tra gồm scope quản lý, quyền tổ chức đã chọn, ghi/đọc REST và GraphQL, secure event có chữ ký, gửi proof, trace entity, cho phép kết nối/thu hồi subscription WebSocket và hai lần tạo lại container ứng dụng với volume được giữ lại. Runner còn chạy bộ Docker runtime và lần lượt 20 file hồi quy trong Linux container, gồm kiểm thử backend registry dùng chung và coi skip là thất bại. Bộ hồi quy kiểm tra lọc broadcast; bộ live không thêm publisher tự động từ ledger sang WebSocket. Phạm vi này xác minh organization–chain, không kiểm thử consensus P2P hay stress/soak.
+Các bước kiểm tra gồm scope quản lý, quyền tổ chức đã chọn, ghi/đọc REST, secure event có chữ ký, gửi proof, trace entity, cho phép kết nối/thu hồi subscription WebSocket và hai lần tạo lại container ứng dụng với volume được giữ lại. Runner còn chạy bộ Docker runtime và lần lượt 18 file hồi quy trong Linux container, gồm kiểm thử backend registry dùng chung và coi skip là thất bại. Bộ hồi quy kiểm tra lọc broadcast; bộ live không thêm publisher tự động từ ledger sang WebSocket. Phạm vi này xác minh organization–chain, không kiểm thử consensus P2P hay stress/soak.
 
 Log và JUnit XML được giữ trong thư mục báo cáo tạm mà runner in ra. Runner xóa container, network, volume và thông tin xác thực do nó tạo ngay cả khi thất bại. Deployment hiện có và thư mục dữ liệu của repository không được mount vào stack kiểm thử. Xem các service cô lập tại `docker/docker-compose.chain-access.yml`.
 

@@ -14,7 +14,7 @@ Một process API khởi tạo `HierarchyManager` gồm MainChain và các Sub-C
 
 | Cấu hình | Mặc định runtime | Mục đích |
 |----------|------------------|----------|
-| `HRC_API_PORT` | `2661` | API REST, GraphQL và WebSocket |
+| `HRC_API_PORT` | `2661` | API REST và WebSocket |
 | `HRC_P2P_PORT` | `5555` | Transport ZeroMQ; manifest container ghi đè |
 | `HRC_PEERS` | Rỗng | Seed peer phân tách dấu phẩy; `peer-id@host:port` định danh peer |
 | `HRC_P2P_ENABLED` | `true` | Khởi động lớp mạng trong lifecycle API |

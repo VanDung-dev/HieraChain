@@ -37,7 +37,6 @@ This document maps concepts in technical documentation to specific source code f
 | API Business | `hierachain/api/business/router.py` | Advanced API (Events, Domain). |
 | API Admin | `hierachain/api/admin/` | System API (Admin, Health). |
 | WebSocket Manager | `hierachain/api/websocket/manager.py` | Manages real-time WebSocket connections. |
-| GraphQL Schema | `hierachain/api/graphql/schema.py` | GraphQL schema for flexible queries. |
 | IPFS Client | `hierachain/api/storage/ipfs_client.py` | Off-chain storage integration (AES-256-GCM). |
 | Blockchain Explorer | `hierachain/api/blockchain_explorer.py` | Chain analysis and visualization interface. |
 | API server entry | `hierachain/__main__.py` | `python -m hierachain` starts the API; `hrc` dispatches CLI commands. |

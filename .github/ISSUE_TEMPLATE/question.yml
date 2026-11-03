@@ -45,7 +45,7 @@ body:
         - Consensus (Ordering, PoA, PoF)
         - Security (Verification, MSP, Policy, Key Management)
         - Network (Transport, Messaging)
-        - API (REST, GraphQL, WebSocket)
+        - API (REST, WebSocket)
         - Storage (SQL, Redis, IPFS)
         - CLI
         - SDK
