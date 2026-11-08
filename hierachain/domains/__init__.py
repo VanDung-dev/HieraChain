@@ -17,12 +17,11 @@ from hierachain.domains.events import (
     create_resource_allocation,
     create_status_update,
 )
-from hierachain.domains.utils import CrossChainValidator, EntityTracer
+from hierachain.domains.utils import EntityTracer
 
 __all__ = [
     "BaseChain",
     "BaseEvent",
-    "CrossChainValidator",
     "DomainChain",
     "DomainEvent",
     "EntityTracer",
