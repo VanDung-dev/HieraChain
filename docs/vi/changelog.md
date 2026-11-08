@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (62)"
+??? warning "Breaking Changes (63)"
+
+    * 2026-11-08
+
+        * **Core, API, Config, Network, Security, Error Mitigation (Xóa Module Runtime Không Dùng và Dead Settings)**: Xóa các package/module không dùng hoặc không tham gia runtime: `hierachain/monitoring/*`, `hierachain/integration/*`, `hierachain/risk_management/*`, `hierachain/config/secret_manager.py`, `hierachain/cluster/lockdown_types.py`, `hierachain/domains/utils/cross_chain_validator.py`, `hierachain/domains/utils/compliance_checker.py`, `hierachain/api/blockchain_explorer.py`, `hierachain/api/explorer_components.py`, `hierachain/api/storage/explorer_helpers.py`, và `hierachain/adapters/database/audit_manifest.py`. Bỏ các thành phần bảo mật P2P cũ (`hierachain/network/secure_connection.py`, `peer_trust_manager.py`, `message_cryptographic.py`) và stack MSP/policy/identity (`hierachain/security/msp.py`, `policy_engine.py`, `policy_types.py`, `identity.py`). Giữ `hierachain/error_mitigation/journal.py` và xóa các validator/classifier còn lại trong `error_mitigation`; tinh gọn `hierachain/hierarchical/multi_org.py` còn helper tổ chức và affiliation. Xóa endpoint business trả HTTP 501 cùng state contract/private-data trong RAM; tạo private collection nay ủy quyền cho `Channel.create_private_collection()`. Bỏ dead settings/getter và export `check_security_config()`; `settings.get_p2p_config()` chỉ trả `enabled`, `host`, `port` và `seed_nodes`. Bên gọi import tên, endpoint hoặc setting đã xóa cần chuyển đổi.
 
     * 2026-11-03
 
@@ -132,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (59)"
+??? note "Improvements (61)"
+
+    * 2026-11-09
+
+        * **Docker & K8s (Xóa Explorer Dashboard và Wiring Gateway/Node Cũ)**: Bỏ route nginx status/explorer chẩn đoán bảo vệ bằng token khỏi `docker/default.conf.template` và `docker/k8s/web2-node.yaml`, bỏ xử lý `EXPLORER_TOKEN`/`HRC_NODES` và mount `status.html` khỏi manifest Compose/K8s và helper shell, xóa biến cũ `HRC_P2P_TRUST_POLICY`/`HRC_P2P_REQUIRE_SIGNATURES`/`HRC_HSTS_ENABLED` khỏi `docker/.env.HRC.example`, `docker/docker-compose.yml` và cấu hình node, xóa `docker/status.html` và `docker/stress/test_extreme_chaos.py`, đồng thời cập nhật `docker/README.md` và `docker/hierachain.sh` để bỏ tham chiếu node-discovery và trang status.
+        * **Tài liệu & Cấu hình (Căn chỉnh Tài liệu Runtime/Kiến trúc và Điều hướng)**: Căn chỉnh các trang bảo mật, runtime, kiến trúc, glossary, module, workflow và tham chiếu (EN/VI) theo implementation hiện tại sau Lot A–D; làm rõ giới hạn khởi động/runtime P2P, bỏ tham chiếu MSP/policy/audit/HSTS/resource-guard/certificate cũ, cập nhật `docs/ARCHITECTURE.md` và `docs/CODEBASE_REFERENCE.md`, và gỡ các mục nav/how-to/module/workflow lỗi thời khỏi `zensical.toml` và `zensical.vi.toml`.
 
     * 2026-10-24
 
@@ -247,7 +256,11 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (33)"
+??? warning "Fix (34)"
+
+    * 2026-11-09
+
+        * **Script Bảo mật (Chuyển Probe sang Business API Hiện tại)**: Cập nhật `scripts/security/ssrf_probe.py` để probe `POST /api/business/organizations` với payload `org_id`/`ca_config` thay cho endpoint `/api/business/contracts` đã xóa, và bỏ case lưu/truy xuất business contract lỗi thời khỏi `scripts/security/stored_injection_probe.py`.
 
     * 2026-10-22
 

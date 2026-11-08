@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (62)"
+??? warning "Breaking Changes (63)"
+
+    * 2026-11-08
+
+        * **Core, API, Config, Network, Security, Error Mitigation (Remove Unused Runtime Modules and Dead Settings)**: Delete unused or non-runtime packages and modules: `hierachain/monitoring/*`, `hierachain/integration/*`, `hierachain/risk_management/*`, `hierachain/config/secret_manager.py`, `hierachain/cluster/lockdown_types.py`, `hierachain/domains/utils/cross_chain_validator.py`, `hierachain/domains/utils/compliance_checker.py`, `hierachain/api/blockchain_explorer.py`, `hierachain/api/explorer_components.py`, `hierachain/api/storage/explorer_helpers.py`, and `hierachain/adapters/database/audit_manifest.py`. Remove legacy P2P security components (`hierachain/network/secure_connection.py`, `peer_trust_manager.py`, `message_cryptographic.py`) and the MSP/policy/identity stack (`hierachain/security/msp.py`, `policy_engine.py`, `policy_types.py`, `identity.py`). Keep `hierachain/error_mitigation/journal.py` and remove the other `error_mitigation` validators/classifiers; simplify `hierachain/hierarchical/multi_org.py` to organization and affiliation helpers. Remove HTTP 501 business endpoints and in-memory contract/private-data state; private collection creation now delegates to `Channel.create_private_collection()`. Remove dead settings/getters and `check_security_config()` exports; `settings.get_p2p_config()` returns only `enabled`, `host`, `port`, and `seed_nodes`. Callers importing removed names, endpoints, or settings must migrate.
 
     * 2026-11-03
 
@@ -132,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (59)"
+??? note "Improvements (61)"
+
+    * 2026-11-09
+
+        * **Docker & K8s (Remove Explorer Dashboard and Legacy Gateway/Node Wiring)**: Remove token-protected status/explorer and diagnostic nginx routes from `docker/default.conf.template` and `docker/k8s/web2-node.yaml`, drop `EXPLORER_TOKEN`/`HRC_NODES` handling and `status.html` mounts from Compose/K8s manifests and shell helpers, remove legacy `HRC_P2P_TRUST_POLICY`/`HRC_P2P_REQUIRE_SIGNATURES`/`HRC_HSTS_ENABLED` from `docker/.env.HRC.example`, `docker/docker-compose.yml`, and node configuration, delete `docker/status.html` and `docker/stress/test_extreme_chaos.py`, and update `docker/README.md` and `docker/hierachain.sh` to remove node-discovery and status-page references.
+        * **Docs & Config (Align Runtime/Architecture Docs and Navigation)**: Align security, runtime, architecture, glossary, module, workflow, and reference pages (EN/VI) with the current implementation after Lot A–D removals; clarify P2P startup/runtime limits, remove stale MSP/policy/audit/HSTS/resource-guard/certificate references, update `docs/ARCHITECTURE.md` and `docs/CODEBASE_REFERENCE.md`, and remove obsolete nav/how-to/module/workflow entries from `zensical.toml` and `zensical.vi.toml`.
 
     * 2026-10-24
 
@@ -247,7 +256,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (33)"
+??? warning "Fix (34)"
+
+    * 2026-11-09
+
+        * **Security Scripts (Retarget Probes to Current Business API)**: Update `scripts/security/ssrf_probe.py` to probe `POST /api/business/organizations` with `org_id`/`ca_config` payload fields instead of the removed `/api/business/contracts` endpoint, and remove the obsolete business contract store/retrieve case from `scripts/security/stored_injection_probe.py`.
 
     * 2026-10-22
 
