@@ -5,10 +5,8 @@ Provides identity management, access control, key management,
 and verification services for the HieraChain Ledger.
 """
 
-# Identity Management
 # Access Control & Protection
 from hierachain.security.brute_force_protector import BruteForceProtector
-from hierachain.security.identity import IdentityError, IdentityManager
 from hierachain.security.identity_loader import load_node_identity
 
 # Key Management
@@ -17,22 +15,6 @@ from hierachain.security.key_provider import (
     FileVaultProvider,
     KeyProvider,
     LocalKeyProvider,
-)
-from hierachain.security.msp import (
-    Certificate,
-    CertificateAuthority,
-    HierarchicalMSP,
-    OrganizationPolicies,
-)
-
-# Policy Engine
-from hierachain.security.policy_engine import (
-    ComparisonOperator,
-    Policy,
-    PolicyCondition,
-    PolicyEffect,
-    PolicyEngine,
-    PolicyType,
 )
 from hierachain.security.sanitization import (
     ValidationError,
@@ -91,14 +73,7 @@ from hierachain.security.zk_prover import (
 )
 
 __all__ = [
-    # Identity Management
-    "IdentityManager",
-    "IdentityError",
     "load_node_identity",
-    "Certificate",
-    "CertificateAuthority",
-    "OrganizationPolicies",
-    "HierarchicalMSP",
 
     # Key Management
     "KeyManager",
@@ -109,10 +84,6 @@ __all__ = [
 
     # Access Control & Protection
     "BruteForceProtector",
-    "Policy",
-    "PolicyType",
-    "PolicyEffect",
-    "PolicyEngine",
     "sanitize_string",
     "sanitize_dict",
     "sanitize_list",
@@ -157,8 +128,4 @@ __all__ = [
     "get_zk_prover",
     "generate_zk_proof",
     "reset_zk_prover",
-
-    # Policy Engine
-    "PolicyCondition",
-    "ComparisonOperator",
 ]
