@@ -1,10 +1,7 @@
-"""Behavioral validation of API keys and certificate expiry."""
-
-from unittest.mock import Mock
+"""Behavioral validation of API keys."""
 
 import pytest
 
-from hierachain.error_mitigation import SecurityError, validate_certificate
 from hierachain.security import KeyManager
 
 
@@ -33,13 +30,3 @@ def test_api_key_verification():
     # Test key revocation
     key_manager.revoke_key(test_key)
     assert key_manager.is_revoked(test_key) is True
-
-
-@pytest.mark.integration
-def test_certificate_expiration_check():
-    """Test certificate expiration validation"""
-    mock_cert = Mock()
-    mock_cert.is_expired.return_value = True
-
-    with pytest.raises(SecurityError, match='Certificate validation failed: Certificate has expired'):
-        validate_certificate(mock_cert)

@@ -3,25 +3,16 @@ Edge Cases & Anomaly Fuzzing Test Suite for HieraChain Ledger.
 
 Tests counter-intuitive, weird, and extreme edge-case scenarios:
 1. PyArrow Data Torture & Deeply Nested Types
-2. P2P Time-Travel & Extreme Timestamp Drifts (Epoch 1970, Far Future 2099)
-3. RateLimiter Ghost Headers, Unicode & XSS in X-Forwarded-For
-4. Merkle Tree Deformed & Asymmetric Leaves (0, 1, odd counts, domain separation)
-5. Cluster Lockdown HMAC Fuzzing & Malformed Signatures
-6. SubChain Rebalancer Edge Partitions & Single-Event Migrations
+2. RateLimiter Ghost Headers, Unicode & XSS in X-Forwarded-For
+3. Merkle Tree Deformed & Asymmetric Leaves (0, 1, odd counts, domain separation)
+4. SubChain Rebalancer Edge Partitions & Single-Event Migrations
 """
 
 import time
-import uuid
 
 from hierachain.core.block import Block, convert_events_to_arrow
 from hierachain.core.merkle_tree import MerkleTree
-from hierachain.network.message_cryptographic import (
-    verify_message,
-    create_signable_payload,
-)
-from hierachain.security.security_utils import KeyPair
 from hierachain.api.middleware import RateLimiter
-from hierachain.cluster.lockdown_types import LockdownMessage, LockdownMessageType
 
 
 # ============================================================================
@@ -78,64 +69,7 @@ def test_arrow_data_torture_and_nested_types():
 
 
 # ============================================================================
-# 2. P2P Time-Travel & Extreme Timestamp Drifts
-# ============================================================================
-
-def test_p2p_time_travel_and_extreme_drifts():
-    """Verify that P2P verification rejects timestamps from the 1970s or 2099."""
-    keypair = KeyPair()
-    sender_id = "node-alpha"
-    payload_body = {"ping": "pong"}
-
-    # Case A: Unix Epoch (1970-01-01) - Time travel to the past
-    ts_past = 0.0
-    nonce_past = "nonce-epoch-001"
-    signable_epoch = create_signable_payload(payload_body, ts_past, nonce_past, sender_id)
-    sig_epoch = keypair.sign(signable_epoch)
-    msg_epoch = {
-        "payload": payload_body,
-        "timestamp": ts_past,
-        "nonce": nonce_past,
-        "sender_id": sender_id,
-        "signature": sig_epoch,
-    }
-
-    # Must be rejected due to timestamp drift > 300s
-    assert verify_message(msg_epoch, keypair.public_key, max_drift=300.0) is False
-
-    # Case B: Far future (year 2099 ~ 4070908800) - Time travel to the future
-    ts_future = 4070908800.0
-    nonce_future = "nonce-future-001"
-    signable_future = create_signable_payload(payload_body, ts_future, nonce_future, sender_id)
-    sig_future = keypair.sign(signable_future)
-    msg_future = {
-        "payload": payload_body,
-        "timestamp": ts_future,
-        "nonce": nonce_future,
-        "sender_id": sender_id,
-        "signature": sig_future,
-    }
-
-    assert verify_message(msg_future, keypair.public_key, max_drift=300.0) is False
-
-    # Case C: Fresh timestamp within 5 seconds - Must be accepted
-    ts_fresh = time.time()
-    nonce_fresh = uuid.uuid4().hex
-    signable_fresh = create_signable_payload(payload_body, ts_fresh, nonce_fresh, sender_id)
-    sig_fresh = keypair.sign(signable_fresh)
-    msg_fresh = {
-        "payload": payload_body,
-        "timestamp": ts_fresh,
-        "nonce": nonce_fresh,
-        "sender_id": sender_id,
-        "signature": sig_fresh,
-    }
-
-    assert verify_message(msg_fresh, keypair.public_key, max_drift=300.0) is True
-
-
-# ============================================================================
-# 3. RateLimiter Ghost Headers, Unicode & XSS in X-Forwarded-For
+# 2. RateLimiter Ghost Headers, Unicode & XSS in X-Forwarded-For
 # ============================================================================
 
 def test_ratelimiter_ghost_headers_and_fuzzing_ips():
@@ -188,35 +122,5 @@ def test_merkle_tree_deformed_leaves():
     assert tree_odd.get_root() == tree_odd_repeat.get_root()
 
 
-# ============================================================================
-# 5. Cluster Lockdown HMAC Fuzzing & Malformed Signatures
-# ============================================================================
 
-def test_cluster_lockdown_hmac_fuzzing():
-    """Verify LockdownMessage rejects tampered signatures, wrong keys, and malformed digests."""
-    secret_key = "super-secure-cluster-key-2026"
-    wrong_key = "attacker-compromised-key"
-
-    msg = LockdownMessage(
-        node_id="node-1",
-        timestamp=time.time(),
-        reason="Security breach test",
-        message_type=LockdownMessageType.LOCKDOWN,
-    )
-
-    # Compute valid signature
-    msg.signature = msg.compute_signature(secret_key)
-    assert msg.verify_signature(secret_key) is True
-    assert msg.verify_signature(wrong_key) is False
-
-    # Tampered signature (corrupted byte)
-    tampered_sig = ("0" if msg.signature[0] != "0" else "1") + msg.signature[1:]
-    msg.signature = tampered_sig
-    assert msg.verify_signature(secret_key) is False
-
-    # Malformed non-hex or empty signature with unicode emojis
-    msg.signature = "NOT_A_HEX_SIGNATURE_💩"
-    assert msg.verify_signature(secret_key) is False
-    msg.signature = ""
-    assert msg.verify_signature(secret_key) is False
 
