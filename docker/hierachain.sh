@@ -76,7 +76,6 @@ case "$COMMAND" in
     else
       generate_keys
       generate_identities
-      discover_nodes
       build_image
       down_cluster
       echo ""; echo "[4/6] Starting cluster..."

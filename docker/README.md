@@ -76,12 +76,9 @@ they do not deploy nodes in different geographic regions.
 | Gateway liveness | `http://localhost:2660/gateway-health` |
 | Node liveness through the gateway | `http://localhost:2660/api/ledger/health` |
 | Node readiness through the gateway | `http://localhost:2660/api/ledger/ready` |
-| Status page | `http://localhost:2660/<EXPLORER_TOKEN>/status` |
 | PostgreSQL | Loopback ports `5432`, `5433`, `5434`, and `5435` |
 
 The gateway binds to `127.0.0.1:2660`; node APIs listen on container port `2661`.
-The setup summary prints the status-page token. The Compose file mounts
-`status.html` but does not provide an `explorer.html` file for its explorer route.
 Setup checks gateway and node liveness, and a failed final gateway check only
 prints a message. A successful wrapper exit alone does not establish readiness
 or cluster-wide consistency.
@@ -96,8 +93,7 @@ to the nodes' `HRC_IPFS_ENCRYPTION_KEY`.
 
 Keep the encryption key available when reusing data. `setup` resets the swarm
 key and node identities, but it does not intentionally rotate the persisted
-payload encryption key. Set `EXPLORER_TOKEN` in the calling environment if you
-need a stable status-page path; otherwise the wrapper generates one.
+payload encryption key.
 
 ### Stress tests
 
@@ -133,8 +129,8 @@ log/report/docker_stress_report.xml
 
 Direct Compose startup does not generate identities, peer environment files,
 trusted key maps, or IPFS keys. First prepare them with the wrapper. To restart
-that prepared environment, supply the same API-key source file,
-`IPFS_ENCRYPTION_KEY`, and `EXPLORER_TOKEN` through your shell or `.env`:
+that prepared environment, supply the same API-key source file and
+`IPFS_ENCRYPTION_KEY` through your shell or `.env`:
 
 ```bash
 docker compose --env-file .env -f docker/docker-compose.yml up -d

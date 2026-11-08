@@ -143,11 +143,6 @@ ensure_keys() {
     exit 1
   fi
   export IPFS_ENCRYPTION_KEY
-  if [ -z "${EXPLORER_TOKEN:-}" ]; then
-    local tkn
-    tkn=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
-    export EXPLORER_TOKEN="hrc_${tkn}"
-  fi
 }
 
 generate_keys() {
@@ -374,8 +369,6 @@ json.dump(secret, sys.stdout)
   fi
   if ! kubectl get secret hierachain-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
     kubectl create secret generic hierachain-secrets -n "$NAMESPACE" \
-      --from-literal=EXPLORER_TOKEN="$EXPLORER_TOKEN" \
-      --from-literal=HRC_NODES="node1,node2,node3,node4" \
       --from-literal=IPFS_ENCRYPTION_KEY="$IPFS_ENCRYPTION_KEY" || return 1
   fi
   if ! kubectl get secret hierachain-ipfs-swarm -n "$NAMESPACE" >/dev/null 2>&1; then
@@ -430,11 +423,7 @@ run_tests() {
     "
 }
 
-discover_nodes() {
-  HRC_NODES=$(grep "hostname:" docker/docker-compose.yml | awk '{print $2}' | grep -v -E "gateway|redis|ipfs|postgres" | tr '\n' ',' | sed 's/,$//')
-  export HRC_NODES
-  echo "  Nodes: $HRC_NODES"
-}
+
 
 get_container_ip() {
   local container=$1
@@ -456,7 +445,6 @@ print_setup_summary() {
   if $K8S; then
     echo "Kubernetes namespace: $NAMESPACE"
     echo "  Gateway status: http://localhost:${port}/web2-status"
-    echo "  Get explorer token: kubectl -n $NAMESPACE get secret hierachain-secrets -o jsonpath='{.data.EXPLORER_TOKEN}' | base64 --decode"
     for i in $(seq 0 3); do
       echo "  node$((i+1)) → hierachain-node-$i.hierachain-node-headless:2661"
       echo "  IPFS → ipfs-$i.ipfs-headless:5001"
@@ -465,16 +453,10 @@ print_setup_summary() {
     echo "  Cleanup: bash docker/hierachain.sh down k8s"
     return 0
   fi
-  echo "Developer Helper:"
-  echo "  Get token: docker exec ${CONTAINER_PREFIX}gateway env | grep EXPLORER_TOKEN"
-
+  echo "Gateway: http://localhost:${port}"
+  echo "  Health: http://localhost:${port}/gateway-health"
   echo ""
-  echo "Stealth Explorer (Secure Access):"
-  echo "  Token:    ${EXPLORER_TOKEN}"
-  echo "  Status:   http://localhost:${port}/${EXPLORER_TOKEN}/status"
-  echo "  Explorer: http://localhost:${port}/${EXPLORER_TOKEN}/explorer"
 
-  echo ""
   echo "HieraChain Nodes (WireGuard Mesh):"
   echo "  node1 (US region)   → 10.200.1.1"
   echo "  node2 (EU region)   → 10.200.2.1"

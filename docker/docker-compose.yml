@@ -61,9 +61,6 @@ services:
       - HRC_ENV=product
       - HRC_CORS_ALLOW_ALL=false
       - HRC_CORS_ORIGINS=
-      - HRC_P2P_TRUST_POLICY=strict
-      - HRC_P2P_REQUIRE_SIGNATURES=true
-      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_BLOCK_INTERVAL=1
@@ -130,9 +127,6 @@ services:
       - HRC_ENV=product
       - HRC_CORS_ALLOW_ALL=false
       - HRC_CORS_ORIGINS=
-      - HRC_P2P_TRUST_POLICY=strict
-      - HRC_P2P_REQUIRE_SIGNATURES=true
-      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_BLOCK_INTERVAL=1
@@ -199,9 +193,6 @@ services:
       - HRC_ENV=product
       - HRC_CORS_ALLOW_ALL=false
       - HRC_CORS_ORIGINS=
-      - HRC_P2P_TRUST_POLICY=strict
-      - HRC_P2P_REQUIRE_SIGNATURES=true
-      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_BLOCK_INTERVAL=1
@@ -268,9 +259,6 @@ services:
       - HRC_ENV=product
       - HRC_CORS_ALLOW_ALL=false
       - HRC_CORS_ORIGINS=
-      - HRC_P2P_TRUST_POLICY=strict
-      - HRC_P2P_REQUIRE_SIGNATURES=true
-      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_BLOCK_INTERVAL=1
@@ -313,12 +301,8 @@ services:
   gateway:
     image: nginx:alpine
     container_name: hierachain-gateway
-    environment:
-      - EXPLORER_TOKEN=${EXPLORER_TOKEN:-default_token}
-      - HRC_NODES=${HRC_NODES:-node1,node2,node3,node4}
     volumes:
       - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./status.html:/usr/share/nginx/html/status.html:ro
     ports:
       - "127.0.0.1:2660:80"
     networks:
