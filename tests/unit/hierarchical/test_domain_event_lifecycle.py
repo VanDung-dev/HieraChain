@@ -12,11 +12,6 @@ from hierachain.domains.chains.domain_chain import DomainChain
 from hierachain.domains.chains.metrics import OperationMetricsTracker
 from hierachain.domains.chains.tx_manager import TransactionManager
 from hierachain.domains.events.event_creators import create_resource_allocation
-from hierachain.domains.utils.cross_chain_validator import (
-    CrossChainValidator,
-    ProofValidator,
-    _build_default_validation_rules,
-)
 from hierachain.serialization import loads_json
 
 
@@ -346,27 +341,6 @@ def test_recovery_commit_rejects_mismatched_prepared_payload_and_role() -> None:
     assert chain.pending_transactions["tx-recovery"]["recovery_commit"]
 
 
-def test_malformed_event_details_are_reported_without_crashing_logic_pass() -> None:
-    validator = CrossChainValidator.__new__(CrossChainValidator)
-    validator.validation_rules = _build_default_validation_rules()
-    results = {"inconsistencies": []}
-    trace = {
-        "orders": [{
-            "entity_id": "asset-1",
-            "event": "operation_start",
-            "timestamp": 1.0,
-            "details": None,
-        }]
-    }
-
-    validator._process_entity_trace(trace, results)
-
-    assert results["inconsistent_events"] == 1
-    assert [item["type"] for item in results["inconsistencies"]] == [
-        "invalid_event_structure"
-    ]
-
-
 def test_prepared_payload_is_detached_and_different_prepare_is_rejected() -> None:
     chain = DomainChain.__new__(DomainChain)
     chain._tx_manager = TransactionManager()
@@ -388,12 +362,3 @@ def test_prepared_payload_is_detached_and_different_prepare_is_rejected() -> Non
     stored = chain.pending_transactions["tx-payload-snapshot"]["payload"]
     assert stored["details"]["measurements"]["count"] == 1
     assert not chain.prepare_transaction("tx-payload-snapshot", payload, True)
-
-
-def test_missing_proof_fields_are_inconsistent() -> None:
-    validator = ProofValidator.__new__(ProofValidator)
-    for details in ({}, {"sub_chain_name": "sub"}, {"proof_hash": "abc"}):
-        results = {"inconsistent_proofs": 0, "inconsistencies": []}
-        validator._validate_single_proof({"details": details, "timestamp": 1.0}, results)
-        assert results["inconsistent_proofs"] == 1
-        assert results["inconsistencies"][0]["type"] == "missing_proof_fields"

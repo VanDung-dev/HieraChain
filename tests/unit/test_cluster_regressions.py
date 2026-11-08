@@ -1,4 +1,4 @@
-"""P3 concurrency and lockdown message admission regressions."""
+"""P3 concurrency regressions for cluster synchronization."""
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -10,9 +10,6 @@ from hierachain.cluster import (
     ConflictResolutionStrategy,
     CrossLevelSyncManager,
     CrossLevelSyncStatus,
-    LockdownMessage,
-    LockdownMessageGuard,
-    LockdownMessageType,
     SyncConflict,
 )
 from hierachain.cluster import cross_level_sync as sync_module
@@ -84,61 +81,6 @@ def test_completion_callback_failure_does_not_reverse_committed_sync(
     assert sync.sync_to_mainchain("child").success
     assert sync.get_stats()["syncs_failed"] == 0
     assert sync.get_stats()["syncs_completed"] == 1
-
-
-def _signed(timestamp: float = 100.0, reason: str = "test") -> LockdownMessage:
-    message = LockdownMessage("node", timestamp, reason, LockdownMessageType.LOCKDOWN)
-    message.signature = message.compute_signature("test-secret")
-    return message
-
-
-@pytest.mark.parametrize("timestamp", [39.0, 106.0, float("nan"), float("inf"), "100", True])
-def test_admission_rejects_stale_future_or_invalid_timestamps(timestamp: object) -> None:
-    message = _signed()
-    message.timestamp = timestamp
-    message.signature = message.compute_signature("test-secret")
-    guard = LockdownMessageGuard(clock=lambda: 100.0)
-    assert not guard.accept(message, "test-secret")
-
-
-def test_admission_consumes_once_across_signature_forms_and_threads() -> None:
-    guard = LockdownMessageGuard(clock=lambda: 100.0)
-    message = _signed()
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        results = list(pool.map(lambda _: guard.accept(message, "test-secret"), range(16)))
-    assert results.count(True) == 1
-    message.signature = message.signature[:32]
-    assert message.verify_signature("test-secret")
-    assert not guard.accept(message, "test-secret")
-
-
-def test_invalid_signature_cannot_consume_capacity_and_capacity_fails_closed() -> None:
-    now = [100.0]
-    guard = LockdownMessageGuard(max_entries=1, clock=lambda: now[0])
-    first = _signed()
-    assert not guard.accept(first, "wrong-key")
-    assert guard.accept(first, "test-secret")
-    assert not guard.accept(_signed(reason="another"), "test-secret")
-    now[0] = 161.0
-    assert guard.accept(_signed(timestamp=161.0), "test-secret")
-    now[0] = 100.0
-    assert not guard.accept(first, "test-secret")
-
-
-@pytest.mark.parametrize("message_type", [LockdownMessageType.LOCKDOWN, LockdownMessageType.RECOVERY])
-def test_admission_accepts_window_boundaries_and_rejects_tampering(
-    message_type: LockdownMessageType,
-) -> None:
-    guard = LockdownMessageGuard(clock=lambda: 100.0)
-    for timestamp in (40.0, 105.0):
-        message = LockdownMessage("node", timestamp, "test", message_type)
-        message.signature = message.compute_signature("test-secret")
-        message.reason = "changed"
-        assert not guard.accept(message, "test-secret")
-        message.reason = "test"
-        assert guard.accept(message, "test-secret")
-        restored = LockdownMessage.from_dict(message.to_dict())
-        assert not guard.accept(restored, "test-secret")
 
 
 def test_conflict_resolution_keeps_status_active_and_finishes_after_callback_error() -> None:

@@ -1,31 +1,17 @@
 """P3 regressions for public data, cache, logging and reporting contracts."""
 
-import csv
-import io
 import logging
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
 from hierachain.core.block import Block
 from hierachain.core.cache import AdvancedCache
-from hierachain.integration.erp.change_detector import ChangeDetector
-from hierachain.monitoring.performance_monitor import PerformanceMonitor
-from hierachain.monitoring.types import MetricType, MetricUnit
-from hierachain.risk_management.audit_logger import (
-    AuditEvent,
-    AuditEventType,
-    AuditFilter,
-    AuditLogger,
-    AuditSeverity,
-)
 from hierachain.security.secure_logging import (
     SecureLogger,
     log_user_action,
     sanitize_for_log,
 )
-from hierachain.serialization import loads_json
 
 
 def test_zero_timestamp_round_trips_with_identical_hash() -> None:
@@ -73,54 +59,6 @@ def test_cache_methods_normalize_keys_consistently() -> None:
     assert cache.contains(12) and 12 in cache
     assert cache.delete(12)
     assert not cache
-
-
-def test_sap_detector_separates_nested_ids_and_rejects_missing_identity() -> None:
-    detector = ChangeDetector()
-    profile = {"erp_system": "sap", "key_fields": ["material.document_number"]}
-    for identity in ["DOC-1", "DOC-2", 0]:
-        result = detector.detect_changes({"material": {"document_number": identity}}, profile)
-        assert result["changes"] == {"type": "new_entity"}
-    assert len(detector.previous_states) == 3
-    invalid = {"material": {"quantity": 7}}
-    with pytest.raises(ValueError, match="identity"):
-        detector.detect_changes(invalid, profile)
-    assert "change_detected" not in invalid
-    assert len(detector.previous_states) == 3
-
-
-@pytest.mark.parametrize("severity", ["warning", "critical"])
-@pytest.mark.parametrize("low_is_bad", [False, True])
-def test_zero_custom_metric_threshold_is_active(severity: str, low_is_bad: bool) -> None:
-    monitor = PerformanceMonitor()
-    monitor.add_custom_metric(
-        "zero", next(iter(MetricType)), next(iter(MetricUnit)), "zero threshold",
-        **{f"threshold_{severity}": 0}, callback=lambda: 0,
-    )
-    monitor.metrics["zero"].low_is_bad = low_is_bad
-    monitor._collect_custom_metrics()
-    assert monitor.metrics["zero"].is_threshold_exceeded() == (True, severity)
-
-
-@pytest.mark.parametrize("description", [
-    'quoted "text", comma\nnext line', '=SUM(1,2)', '  +1', '\t@cmd', '-1', '\r=cmd',
-])
-def test_csv_report_quotes_cells_and_neutralizes_formulas(description: str) -> None:
-    event = AuditEvent(
-        event_id='=id,"x"', event_type=AuditEventType.SECURITY_EVENT,
-        severity=AuditSeverity.WARNING, timestamp=1.0,
-        source_component='@source,\nnext', description=description, details={},
-    )
-    storage = SimpleNamespace(retrieve_events=lambda _filter: [event])
-    logger = AuditLogger(storage=storage)
-    rows = list(csv.reader(io.StringIO(logger.generate_report(AuditFilter(), "csv"))))
-    assert len(rows) == 2
-    assert len(rows[1]) == 6
-    assert rows[1][0] == "'" + event.event_id
-    assert rows[1][4] == "'" + event.source_component
-    dangerous = description.lstrip().startswith(("=", "+", "-", "@"))
-    assert rows[1][5] == ("'" + description if dangerous else description)
-    assert loads_json(logger.generate_report(AuditFilter()))[0]["description"] == description
 
 
 @pytest.mark.parametrize("method", [

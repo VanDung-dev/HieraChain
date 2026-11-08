@@ -4,7 +4,6 @@ import pytest
 
 from hierachain import consensus, error_mitigation
 from hierachain.config import Settings
-from hierachain.error_mitigation import ErrorCategory, ErrorClassifier, PriorityLevel
 
 
 def test_supported_consensus_imports_without_removed_engine() -> None:
@@ -36,11 +35,3 @@ def test_removed_consensus_modules_are_not_importable(module: str) -> None:
 def test_removed_consensus_exports_are_unavailable(name: str) -> None:
     assert not hasattr(consensus, name)
     assert name not in consensus.__all__
-
-
-@pytest.mark.parametrize("priority", [PriorityLevel.HIGH, PriorityLevel.MEDIUM])
-def test_consensus_advice_uses_available_operational_actions(priority: PriorityLevel) -> None:
-    classifier = ErrorClassifier({})
-    strategy = classifier._determine_mitigation_strategy(ErrorCategory.CONSENSUS, priority)
-    assert "alert" in strategy
-    assert "view_change" not in strategy

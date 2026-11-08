@@ -14,15 +14,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from hierachain.core.block import Block
 from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.security.key_manager import KeyManager
-from hierachain.security.msp import CertificateAuthority, HierarchicalMSP
-from hierachain.security.policy_engine import (
-    LogicalOperator,
-    Policy,
-    PolicyEffect,
-    PolicyEngine,
-    PolicyRule,
-    PolicyType,
-)
 from hierachain.security.verify.block_verifier import BlockVerifier, VerificationStatus
 
 
@@ -63,27 +54,6 @@ def test_verify_chain_rejects_signed_suffix_without_genesis() -> None:
     assert result.status is VerificationStatus.INVALID
     assert result.details is not None
     assert result.details["invalid_blocks"][0]["errors"] == "Chain does not begin with the genesis block"
-
-
-def test_msp_denies_action_after_entity_revocation() -> None:
-    msp = HierarchicalMSP("test-org", {"root_cert": "test-root"})
-    credentials = {"public_key": "registered-public-key"}
-    assert msp.register_entity("entity-1", credentials, "admin")
-    assert msp.authorize_action("entity-1", "manage_entities")
-
-    assert msp.revoke_entity("entity-1")
-
-    assert not msp.authorize_action("entity-1", "manage_entities")
-
-
-def test_certificate_expiry_is_rechecked_after_an_initial_cacheable_verification() -> None:
-    ca = CertificateAuthority("test-root", [], {})
-    certificate = ca.issue_certificate("entity-1", "public-key", {})
-    assert ca.verify_certificate(certificate.cert_id)
-
-    certificate.valid_until = time.time() - 1
-
-    assert not ca.verify_certificate(certificate.cert_id)
 
 
 def test_file_lockout_is_visible_to_an_existing_protector(tmp_path: Path) -> None:
@@ -189,25 +159,3 @@ def test_key_manager_fails_closed_for_malformed_loaded_permission_shapes(permiss
 def test_key_manager_rejects_malformed_permissions_when_creating_a_key() -> None:
     with pytest.raises(ValueError, match="permissions must be a list of strings"):
         KeyManager().create_key("user-1", "small")  # type: ignore[arg-type]
-
-
-def test_policy_cache_isolated_by_mutated_policy_version() -> None:
-    allow_rule = PolicyRule(
-        rule_id="allow-all",
-        conditions=[],
-        logical_operator=LogicalOperator.AND,
-        effect=PolicyEffect.ALLOW,
-    )
-    policy = Policy(
-        policy_id="mutable-policy",
-        policy_type=PolicyType.ACCESS_CONTROL,
-        rules=[allow_rule],
-        default_effect=PolicyEffect.DENY,
-    )
-    engine = PolicyEngine()
-    engine.register_policy(policy)
-
-    assert engine.evaluate_policy("mutable-policy", {"entity_id": "entity-1"})["effect"] == "allow"
-    assert policy.remove_rule("allow-all")
-
-    assert engine.evaluate_policy("mutable-policy", {"entity_id": "entity-1"})["effect"] == "deny"

@@ -232,6 +232,21 @@ def test_business_provisioning_connects_to_authenticated_channel_events(
         channel = manager.get_channel(channel_id)
         assert channel is not None
 
+        collection_path = f"/api/business/channels/{channel_id}/private-collections"
+        created_collection = client.post(
+            collection_path,
+            headers=admin_headers,
+            json={"name": "sensitive", "members": [org_id], "config": {}},
+        )
+        assert created_collection.status_code == 200, created_collection.text
+        assert "sensitive" in channel.private_collections
+        duplicate_collection = client.post(
+            collection_path,
+            headers=admin_headers,
+            json={"name": "sensitive", "members": [org_id], "config": {}},
+        )
+        assert duplicate_collection.status_code == 409, duplicate_collection.text
+
         event_path = f"/channels/{channel_id}/organizations/{org_id}/events"
         event_body = {
             "entity_id": "entity-1",
@@ -241,7 +256,11 @@ def test_business_provisioning_connects_to_authenticated_channel_events(
         }
         accepted_event = client.post(event_path, headers=admin_headers, json=event_body)
         assert accepted_event.status_code == 200, accepted_event.text
-        assert channel.ledger.current_block_events[0]["submitted_by"] == admin_id
+        submitted = next(
+            event for event in channel.ledger.current_block_events
+            if event.get("entity_id") == "entity-1"
+        )
+        assert submitted["submitted_by"] == admin_id
 
         existing_events = list(channel.ledger.current_block_events)
         denied_event = client.post(event_path, headers=member_headers, json=event_body)

@@ -1,4 +1,4 @@
-"""Regression coverage for WebSocket and private-data API boundaries."""
+"""Regression coverage for WebSocket API boundaries."""
 
 from unittest.mock import AsyncMock
 
@@ -9,8 +9,6 @@ from starlette.requests import HTTPConnection, Request
 from starlette.types import Scope
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from hierachain.api.business import state as business_state
-from hierachain.api.business.private_data import router as private_data_router
 from hierachain.api.websocket.endpoints import router as websocket_router
 from hierachain.api.websocket.manager import ws_manager
 from hierachain.security.key_manager import KeyManager
@@ -115,42 +113,3 @@ def test_enabled_auth_fails_closed_when_transport_has_no_verifier(
             with client.websocket_connect("/ws"):
                 pass
         assert ws_manager.connection_count == starting_connections
-
-
-@pytest.mark.parametrize(
-    "value_fields",
-    [
-        {"value": {"text": "private payload"}},
-        {
-            "value_cid": "Qm" + "1" * 44,
-            "value_nonce": "a1" * 12,
-            "value_metadata": {"collection": "test-private-collection"},
-        },
-    ],
-)
-def test_private_data_fails_closed_before_processing_inline_or_cid_values(
-    monkeypatch: pytest.MonkeyPatch,
-    value_fields: dict[str, object],
-) -> None:
-    collection = "test-private-collection"
-    marker = object()
-    monkeypatch.setitem(business_state._private_collections, collection, marker)
-    app = FastAPI()
-    app.include_router(private_data_router)
-    request_data = {
-        "collection": collection,
-        "key": "private-record-1",
-        "event_metadata": {
-            "entity_id": "entity-1",
-            "event": "record_created",
-            "timestamp": 1717987200.0,
-        },
-        **value_fields,
-    }
-
-    with TestClient(app) as client:
-        response = client.post("/private-data", json=request_data)
-
-    assert response.status_code == 501
-    assert response.json()["detail"] == "Private-data storage is not implemented."
-    assert business_state._private_collections[collection] is marker

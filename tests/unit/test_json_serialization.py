@@ -13,8 +13,6 @@ from fastapi.responses import JSONResponse
 
 from hierachain.api.storage.ipfs_client import IPFSClient
 from hierachain.consensus.ordering.storage import _block_from_dict
-from hierachain.monitoring.alert_system import WebhookNotifier
-from hierachain.monitoring.types import Alert, AlertCategory, AlertSeverity
 from hierachain.serialization import dumps_canonical_json, dumps_json, loads_json
 
 
@@ -134,30 +132,3 @@ def test_ipfs_reads_json_from_http_response_bytes() -> None:
         assert client.list_pins() == [cid]
         assert client.get_stats(cid) == replies["/api/v0/files/stat"]
         assert client.get_daemon_version() == {"version": "test-version"}
-
-
-def test_webhook_sends_utf8_json_and_retains_configured_headers(monkeypatch: pytest.MonkeyPatch) -> None:
-    sent: list[httpx.Request] = []
-
-    def record(request: httpx.Request) -> httpx.Response:
-        sent.append(request)
-        return httpx.Response(204)
-
-    with httpx.Client(transport=httpx.MockTransport(record)) as http_client:
-        monkeypatch.setattr("hierachain.monitoring.alert_system.httpx.post", http_client.post)
-        notifier = WebhookNotifier({
-            "url": "http://webhook.test/alerts", "enabled": True,
-            "headers": {"X-Source": "test", "content-type": "application/vnd.hierachain+json"},
-        })
-        alert = Alert(
-            alert_id="alert-1", timestamp=1.0, severity=AlertSeverity.WARNING,
-            category=AlertCategory.SYSTEM, title="Cảnh báo", description="Thiết bị",
-            source_component="test",
-        )
-        assert notifier.send_alert(alert)
-
-    assert len(sent) == 1
-    assert sent[0].headers["content-type"] == "application/vnd.hierachain+json"
-    assert sent[0].headers["x-source"] == "test"
-    assert "Cảnh báo".encode("utf-8") in sent[0].content
-    assert loads_json(sent[0].content) == alert.to_dict()

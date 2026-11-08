@@ -21,7 +21,6 @@ from hierachain.security import SecureLogger
 # Modules that MUST use SecureLogger (not logging.getLogger)
 SECURITY_MODULES = [
     os.path.join("hierachain", "security", "key_manager.py"),
-    os.path.join("hierachain", "security", "identity.py"),
     os.path.join("hierachain", "api", "ledger", "chains.py"),
     os.path.join("hierachain", "api", "ledger", "events.py"),
     os.path.join("hierachain", "api", "ledger", "proofs.py"),

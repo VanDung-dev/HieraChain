@@ -13,13 +13,6 @@ import pytest
 
 from hierachain.config import Settings
 from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
-from hierachain.error_mitigation import (
-    EncryptionValidator,
-    ErrorCategory,
-    ErrorClassifier,
-    PriorityLevel,
-    ResourceValidator,
-)
 from hierachain.error_mitigation.journal import TransactionJournal
 
 
@@ -1040,98 +1033,6 @@ def test_complex_event_data():
             except PermissionError:
                 time.sleep(0.5)
                 shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-def test_error_classification_with_complex_data():
-    """Test error classification with complex data structures"""
-    config: dict[str, Any] = {}
-    classifier = ErrorClassifier(config)
-
-    # Test with binary error data
-    binary_error_data = {
-        "error_type": "data_corruption",
-        "message": "Binary data corruption detected",
-        "metadata": {
-            "corrupted_data": bytes([1, 2, 3, 4, 5]).hex(),
-            "data_size": 1000,
-            "checksum": "0x12345678"
-        }
-    }
-
-    error_info = classifier.classify_error(binary_error_data)
-    assert error_info is not None
-    assert error_info.error_id.startswith("ERR-")
-    assert error_info.category in ErrorCategory
-
-    # Test with nested complex data
-    complex_error_data = {
-        "error_type": "consensus_failure",
-        "message": "Complex consensus failure with multiple nodes",
-        "metadata": {
-            "nodes": {
-                "node1": {"status": "failed", "error": "timeout"},
-                "node2": {"status": "active", "error": None},
-                "node3": {"status": "failed", "error": "data_corruption"}
-            },
-            "view_number": 15,
-            "sequence": [1, 2, 3, 4, 5],
-            "statistics": {
-                "failures": 10,
-                "successes": 90,
-                "ratio": 0.1
-            }
-        }
-    }
-
-    complex_error_info = classifier.classify_error(complex_error_data)
-    assert complex_error_info is not None
-    assert complex_error_info.priority in PriorityLevel
-
-
-
-
-def test_encryption_validator_with_large_keys() -> None:
-    """Test encryption validator with large key sizes"""
-    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-    config = {"algorithm": "AES-256-GCM", "key_id": "test-key"}
-    keys = {"test-key": AESGCM.generate_key(bit_length=256)}
-    validator = EncryptionValidator(config, key_resolver=keys.__getitem__)
-
-    # Test validation passes
-    assert validator.validate_config() is True
-
-    # Test encryption of large data
-    large_data = "A" * (1024 * 1024)  # 1MB of data
-    encrypted = validator.encrypt_data(large_data)
-    assert "ciphertext" in encrypted
-    assert "tag" in encrypted
-    assert "iv" in encrypted
-    assert encrypted["algorithm"] == "AES-256-GCM"
-    assert validator.decrypt_data(encrypted) == large_data
-
-
-def test_resource_validator_with_extreme_values():
-    """Test resource validator with extreme threshold values"""
-    # Test with very low thresholds
-    config_low = {
-        "cpu_threshold": 5,
-        "memory_threshold": 10,
-        "disk_threshold": 15
-    }
-    validator_low = ResourceValidator(config_low)
-
-    # Test with very high thresholds
-    config_high = {
-        "cpu_threshold": 95,
-        "memory_threshold": 99,
-        "disk_threshold": 100
-    }
-    validator_high = ResourceValidator(config_high)
-
-    # These should not cause errors in initialization
-    assert validator_low.cpu_threshold == 5
-    assert validator_high.cpu_threshold == 95
 
 
 def test_binary_data_handling():

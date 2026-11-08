@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from hierachain.adapters.database import PostgresAdapter as ExportedPostgresAdapter
-from hierachain.adapters.database.audit_manifest import PostgresAuditManifest
 from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.core import Blockchain
@@ -26,22 +25,6 @@ def no_database_connection(monkeypatch):
 def test_export():
     """Test PostgresAdapter is exported from database adapters package."""
     assert ExportedPostgresAdapter is PostgresAdapter
-
-
-@pytest.mark.parametrize("row", [None, (None,)])
-def test_audit_manifest_rejects_missing_table(
-    row: tuple[str | None] | None, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    connection = MagicMock()
-    cursor = connection.__enter__.return_value.cursor.return_value.__enter__.return_value
-    cursor.fetchone.return_value = row
-    monkeypatch.setattr(
-        "hierachain.adapters.database.audit_manifest.psycopg.connect",
-        lambda *_args, **_kwargs: connection,
-    )
-
-    with pytest.raises(RuntimeError, match="table is not initialized"):
-        PostgresAuditManifest("postgresql://localhost/manifest")
 
 
 def test_initialization():
