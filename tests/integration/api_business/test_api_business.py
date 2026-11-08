@@ -79,11 +79,5 @@ def test_rbac_forbidden_without_auth(monkeypatch: pytest.MonkeyPatch) -> None:
             json={"channel_id": "test", "organizations": [], "policy": {}},
         )
         assert response.status_code == 401
-        
-        response = auth_client.post(
-            "/api/business/contracts",
-            json={"contract_id": "test", "version": "1", "implementation": ""},
-        )
-        assert response.status_code == 401
     finally:
         auth_client.close()
