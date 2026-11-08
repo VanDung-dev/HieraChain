@@ -208,27 +208,11 @@ module = "hierachain.security.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "hierachain.risk_management.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "hierachain.monitoring.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "hierachain.integration.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "hierachain.network.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "hierachain.core.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "hierachain.api.blockchain_explorer.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
