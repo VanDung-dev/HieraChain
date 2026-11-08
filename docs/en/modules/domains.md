@@ -25,11 +25,9 @@ Components are organized into three sub-packages under `hierachain/domains/`:
 * `BaseEvent`: Base class for structured business events with schema validation.
 * `event_creators.py`: Helper factories producing event objects for operations: `create_quality_check`, `create_approval`, `create_resource_allocation`, and `create_status_update`.
 
-### 2.3 Integrity utilities (`utils/cross_chain_validator.py`, `utils/entity_tracer.py`)
+### 2.3 Integrity utilities (`utils/entity_tracer.py`)
 
-* `CrossChainValidator`: Evaluates consistency across sub-chains and scans for forbidden cryptocurrency terminology.
 * `EntityTracer`: Reconstructs complete entity histories across the chain hierarchy.
-* `utils/compliance_checker.py`: Validates compliance parameters against regulatory rules.
 
 ## 3. Domain management and entity lifecycle
 
@@ -83,13 +81,7 @@ sequenceDiagram
 
 After the durable COMMIT decision, a missing participant ACK leaves the operation `IN_DOUBT` for forward recovery. The coordinator does not roll back a commit decision that has already been persisted.
 
-## 5. Compliance and cross-chain tracing
-
-### Cryptocurrency term filtration
-
-`CrossChainValidator` scans event payloads to enforce enterprise terminology rules. If terms such as `coin`, `token`, `mining`, or `wallet` appear in business payloads, the validator flags the event as non-compliant.
-
-### Cross-chain entity tracing
+## 5. Cross-chain entity tracing
 
 `EntityTracer` aggregates events for an entity across all Sub-Chains:
 
@@ -117,4 +109,3 @@ for chain_name, summary in trace_results.get("chain_details", {}).items():
 
 * [Hierarchical Module](./hierarchical.md)
 * [Writing Domain Logic](../how-to/write-domain-contracts.md)
-* [ERP Integration](../workflows/erp-integration.md)

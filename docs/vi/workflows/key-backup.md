@@ -36,9 +36,8 @@ Sao lưu và khôi phục tệp khóa CLI là thao tác thủ công. Sau khi kh�
 
 Provider này dùng mã hóa dẫn xuất từ mật khẩu cho tệp vault cục bộ. Phát triển và kiểm thử là phạm vi sử dụng được tài liệu nguồn nêu, nhưng mã không có điều kiện môi trường để chặn sử dụng trong production; mức độ phù hợp phụ thuộc vào biện pháp kiểm soát và yêu cầu của hệ thống triển khai. Tích hợp HSM hoặc KMS trong production cần `KeyProvider` riêng của ứng dụng. Kho khóa là một key provider, không thay thế JSON danh tính nút đầy đủ.
 
-`HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` cấu hình backend Vault riêng của `SecretManager`. Chúng không cung cấp mật khẩu cho `FileVaultProvider`. Việc cấp chứng chỉ MSP và thay đổi đồng thuận không kích hoạt sao lưu tự động.
+`HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` do tích hợp Vault của ứng dụng đọc; chúng không cung cấp mật khẩu cho `FileVaultProvider`. Thay đổi đồng thuận không kích hoạt sao lưu tự động.
 
 ## Liên quan
 
-- [Danh tính MSP](./msp-identity.md): vòng đời chứng chỉ nội bộ
 - [Mã hóa và khóa](../security/encryption-keys.md): provider và phạm vi sử dụng khóa

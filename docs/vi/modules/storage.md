@@ -112,8 +112,7 @@ File hồi quy opt-in `tests/integration/test_redis_ledger.py` dùng `HRC_REDIS_
 ## Liên quan
 
 *   [Core Module (Block & Blockchain)](./core.md)
-*   [ERP Integration](./integration.md)
-*   [Performance Monitoring](./monitoring.md)
+*   [Adapters](./adapters.md)
 
 Log Parquet công bố snapshot hoàn chỉnh của segment active, fsync tệp và thư mục rồi mới trả về. Mỗi segment tối đa 1.024 bản ghi; snapshot active được thay thế nguyên tử, segment đã đóng giữ bất biến. Mỗi append ghi lại tối đa một segment, làm tăng chi phí ghi. Bên đọc dùng `read_parquet_log()` cho log hiện tại và legacy.
 

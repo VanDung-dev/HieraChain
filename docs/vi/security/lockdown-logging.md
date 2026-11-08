@@ -10,7 +10,7 @@ icon: material/lock-alert
 
 Cấu trúc JSON không tự phát hiện việc sửa hay xóa bản ghi. `SecureLogger` không có chuỗi hash, chữ ký hay manifest đáng tin cậy. Log tập trung và chính sách lưu giữ thuộc hệ thống log của môi trường triển khai.
 
-Để xác minh kiểm toán, dùng `AuditLogger` riêng và workflow manifest đáng tin cậy được mô tả trong [Quản lý rủi ro](../modules/risk-management.md). Lưu manifest độc lập với log cần xác minh.
+Package không bao gồm audit archive hay manifest đáng tin cậy. Phát hiện sửa đổi, lưu giữ và xác minh thuộc về hệ thống log tập trung của môi trường triển khai.
 
 ## Liên quan
 

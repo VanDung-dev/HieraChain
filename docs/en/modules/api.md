@@ -63,10 +63,8 @@ These endpoints interact directly with ledger state:
 
 These endpoints support business workflows:
 
-* Channels create private communication paths between organizations (`POST /api/business/channels`).
-* Private collection metadata can be managed, but `POST /api/business/private-data` currently returns HTTP 501 because this API has no private-data store. It does not accept inline values or IPFS references as stored data.
-* Domain contracts register metadata; `POST /api/business/contracts/execute` returns HTTP 501 because the execution engine is not implemented.
-* Organizations register and manage identities through MSP.
+* Channels create private communication paths between organizations (`POST /api/business/channels`). Private collections are managed per channel (`POST /api/business/channels/{channel_id}/private-collections`) and delegated to `Channel.create_private_collection(...)`.
+* Organizations and members register through the hierarchical organization service (`POST /api/business/organizations`, `POST /api/business/organizations/{org_id}/members`).
 
 ### admin: system and admin
 
@@ -92,18 +90,10 @@ When authentication is enabled, send the `X-API-Key` header in the WebSocket han
     * `event` pushes event details to subscribers.
     * `subscribed` confirms the subscription.
 
-## Blockchain explorer
-
-Built in at `blockchain_explorer.py`, the explorer gives operators a dashboard:
-
-* Monitor shows block production rate and event flow in real time.
-* Visualizer renders the tree between Main Chain and Sub-Chains.
-* IPFS decoder lets authorized admins decode CIDs in the browser.
-
 ## Observability
 
 * `X-Request-ID` adds a UUID to each request for log tracing.
-* With `HRC_METRICS_ENABLED=true`, `/metrics` exposes the default `prometheus_client` registry. Default process/runtime collectors depend on the platform. The API does not register HTTP success/failure counters, latency histograms or ledger throughput collectors; add those through application instrumentation. `PerformanceMonitor` is a separate component and is not automatically exported here.
+* With `HRC_METRICS_ENABLED=true`, `/metrics` exposes the default `prometheus_client` registry. Default process/runtime collectors depend on the platform. The API does not register HTTP success/failure counters, latency histograms or ledger throughput collectors; add those through application instrumentation.
 
 ## Quick usage guide (curl)
 

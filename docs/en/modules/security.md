@@ -1,6 +1,6 @@
 ---
 title: "Security Module"
-description: "Overview of the multi-layer security system: MSP, Policy Engine, Key Management and ZK Proofs."
+description: "Overview of the multi-layer security system: API authentication, key management, sanitization and ZK proofs."
 icon: material/shield-lock
 ---
 
@@ -8,7 +8,7 @@ icon: material/shield-lock
 
 ## Overview
 
-The security module provides identity helpers, access-control policies, sanitization and signed ledger integrity. HTTP scope checks, organization policies and direct Python calls have different enforcement paths. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
+The security module provides API-key authentication, key management, sanitization and signed ledger integrity. HTTP scope checks and direct Python calls have different enforcement paths. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
 
 ## Six security areas
 
@@ -20,14 +20,14 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Identity management (MSP), API key authentication, and attribute-based access control (ABAC).
+    API key authentication and route-level permission checks.
     [:octicons-arrow-right-24: Details](../security/authorization-access-control.md)
 
 *   :material-lock-alert:{ .lg .middle } __Secure logging__
 
     ---
 
-    Structured JSON logs with sanitization and sensitive-field redaction. Audit verification uses the separate `AuditLogger` and a trusted manifest.
+    Structured JSON logs with sanitization and sensitive-field redaction.
     [:octicons-arrow-right-24: Details](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Integrity and guard__
@@ -48,7 +48,7 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Ed25519 key providers, IPFS AES-GCM encryption and internal MSP certificates. MSP does not implement X.509 or mTLS.
+    Ed25519 key providers, node identity loading and IPFS AES-GCM encryption.
     [:octicons-arrow-right-24: Details](../security/encryption-keys.md)
 
 *   :material-brain:{ .lg .middle } __Zero-knowledge proofs__
@@ -78,8 +78,7 @@ Main settings live in `hierachain/config/settings.py`:
 ## Related
 
 *   [Security Architecture](../architecture/security.md)
-*   [P2P Network Security](./network.md)
-*   [Monitoring and Alerts](./monitoring.md)
+*   [Network](./network.md)
 
 ## Structured log field redaction
 

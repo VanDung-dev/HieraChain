@@ -38,4 +38,3 @@ An unknown entity produces an empty dictionary. The manager ignores a chain lack
 ## Related
 
 * [Integrity validation](integrity-validation.md)
-* [ERP integration](erp-integration.md)

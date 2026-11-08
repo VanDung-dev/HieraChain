@@ -11,8 +11,8 @@ Resource limits and ledger integrity checks run in the API middleware, ordering 
 ## Resource protection
 
 * Rate and payload limits live in `hierachain/api/middleware.py` (`add_rate_limit`, `add_payload_limit` with `HRC_RATE_LIMIT`, `HRC_RATE_LIMIT_RPM`, `HRC_RATE_LIMIT_BACKEND`, `HRC_TRUSTED_PROXIES`). For POST, PUT, and PATCH requests, a parseable `Content-Length` is checked against 1 MiB; `request.stream()` byte counting runs only when the header is absent.
-* `HRC_EVENT_POOL_MAX_SIZE` defaults to 10,000 and bounds the ordering queue. `HRC_RAM_CRITICAL_THRESHOLD` is declared with a 95% default but has no runtime consumer under `hierachain/`. `ResourceValidator` reports its separately configured CPU, memory, and disk thresholds when called; it does not enforce this RAM setting in ordering or storage.
-* Use app middleware together with reverse proxy limits. `PerformanceMonitor` reports metrics; it does not install a per-request CPU/RAM guard.
+* `HRC_EVENT_POOL_MAX_SIZE` defaults to 10,000 and bounds the ordering queue.
+* Use app middleware together with reverse proxy limits. Resource monitoring belongs to the host application.
 
 ## Integrity checks
 
@@ -34,5 +34,4 @@ graph LR
 ## Related
 
 *   [Error Mitigation](../modules/error-mitigation.md)
-*   [Monitoring](../modules/monitoring.md)
 *   [Secure Logging](./lockdown-logging.md)

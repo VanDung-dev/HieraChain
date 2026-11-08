@@ -48,7 +48,7 @@ Khi tải lên, client truyền `pin` vào RPC add của Kubo theo `auto_pin` (m
 | Tính toàn vẹn | Xác minh thẻ GCM với cùng khóa, nonce và AAD |
 | Nonce | Nonce ngẫu nhiên 96 bit cho mỗi lần mã hóa; phát hiện phát lại cần trạng thái của ứng dụng |
 | Cấu hình khóa | Factory từ môi trường yêu cầu `HRC_IPFS_ENCRYPTION_KEY` ổn định |
-| Phân quyền | Bên gọi thực thi quyền; client không gọi `PolicyEngine` |
+| Phân quyền | Bên gọi thực thi quyền; client không tự kiểm tra quyền |
 
 Giữ khóa trong hệ thống quản lý bí mật. Lưu CID, nonce, cờ mã hóa và metadata AAD cần thiết cho việc truy xuất. Mã hóa không ngăn người có khả năng phát lại CID cũ yêu cầu lại cùng đối tượng.
 
@@ -71,6 +71,4 @@ Lỗi HTTP khi tải lên/tải xuống gây `IPFSError`; lỗi mã hóa đượ
 
 ## Liên quan
 
-- [Thực thi chính sách](./policy-enforcement.md): phân quyền do bên gọi quản lý
-- [Phân tích rủi ro và cảnh báo](./risk-alerts.md): báo cáo lỗi do ứng dụng quản lý
 - [Sao lưu khóa](./key-backup.md): lưu khóa do người vận hành quản lý

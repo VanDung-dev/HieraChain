@@ -168,9 +168,7 @@ finally:
 
 ## Method 3: ERP Adapter
 
-Use the mapping/scheduler library with an application-provided ERP adapter. Built-in vendor connectors are simulation-only.
-
-See details at: [Integration Module](../modules/integration.md).
+HieraChain does not ship ERP connectors. Build the mapping and scheduling layer in your application and submit business events through the REST ledger API or the Python SDK.
 
 ## Important Notes
 
@@ -181,4 +179,4 @@ See details at: [Integration Module](../modules/integration.md).
 ## Related
 
 * API Ledger Reference: [API Ledger](../reference/api-ledger.md)
-* Integration Module: [Integration](../modules/integration.md)
+* SDK: [SDK Module](../modules/sdk.md)

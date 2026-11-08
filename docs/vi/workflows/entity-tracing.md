@@ -38,4 +38,3 @@ Entity không tồn tại trả dictionary rỗng. Manager bỏ qua chain thiế
 ## Liên quan
 
 * [Xác minh toàn vẹn](integrity-validation.md)
-* [Tích hợp ERP](erp-integration.md)

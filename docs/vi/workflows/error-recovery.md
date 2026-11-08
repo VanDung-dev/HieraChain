@@ -7,22 +7,20 @@ icon: material/alert-decagram
 # Xử lý lỗi và phục hồi
 
 HieraChain giữ trách nhiệm phục hồi gần với component sở hữu trạng thái:
-`ErrorClassifier` ghi log và phân loại lỗi, `TransactionJournal` bảo vệ các sự
-kiện đang chờ, còn `OrderingRecovery` phát lại chúng sau restart. Snapshot và phục hồi hạ tầng thuộc về deployment, không phải các service
-tự động trong package này.
+`TransactionJournal` bảo vệ các sự kiện đang chờ, còn `OrderingRecovery` phát
+lại chúng sau restart. Snapshot và phục hồi hạ tầng thuộc về deployment, không
+phải các service tự động trong package này.
 
 ## Luồng runtime
 
 ```mermaid
 flowchart TD
-    ERR["Error or node failure"] --> CLASS["ErrorClassifier\nclassify and log"]
-    CLASS -->|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
     EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
 ```
 
-Đây là các luồng riêng do từng component phụ trách, không phải chuỗi điều phối từ `ErrorClassifier`. `classify_error()` ghi lại và trả về `ErrorInfo`; hàm chỉ có thể gọi callback lockdown tùy chọn đối với lỗi security/performance mức CRITICAL hoặc lỗi security mức HIGH, và chỉ khi đã cấu hình callback. `OrderingRecovery` phát lại các mục trong journal.
+Đây là các luồng riêng do từng component phụ trách. `OrderingRecovery` phát lại các mục trong journal.
 
 ## Độ bền sự kiện
 
@@ -53,4 +51,4 @@ class trong `error_mitigation`.
 ## Tài liệu liên quan
 
 - [Nạp lại trạng thái chuỗi](./chain-rehydration.md): Tải lại toàn bộ chuỗi từ DB
-- [Module Error Mitigation](../modules/error-mitigation.md): Xác thực và journaling
+- [Module Error Mitigation](../modules/error-mitigation.md): Ghi nhật ký bền vững

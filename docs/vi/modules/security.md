@@ -1,6 +1,6 @@
 ---
 title: "Module bảo mật"
-description: "Tổng quan về hệ thống bảo mật đa tầng: MSP, Policy Engine, Key Management và ZK Proofs."
+description: "Tổng quan về hệ thống bảo mật đa tầng: xác thực API, quản lý khóa, làm sạch input và ZK proofs."
 icon: material/shield-lock
 ---
 
@@ -8,7 +8,7 @@ icon: material/shield-lock
 
 ## Tổng quan
 
-Module bảo mật cung cấp helper identity, chính sách kiểm soát truy cập, sanitization và kiểm tra ledger có chữ ký. Kiểm tra scope HTTP, chính sách tổ chức và lời gọi Python trực tiếp có các luồng thực thi riêng. Giao diện ZK tùy chọn hiện cung cấp mock cho phát triển; ZK production chưa được triển khai.
+Module bảo mật cung cấp xác thực API key, quản lý khóa, sanitization và kiểm tra ledger có chữ ký. Kiểm tra scope HTTP và lời gọi Python trực tiếp có các luồng thực thi riêng. Giao diện ZK tùy chọn hiện cung cấp mock cho phát triển; ZK production chưa được triển khai.
 
 ## Sáu nhóm bảo mật
 
@@ -20,14 +20,14 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
     ---
 
-    Quản lý danh tính (MSP), xác thực API key và kiểm soát truy cập theo thuộc tính (ABAC).
+    Xác thực API key và kiểm tra quyền theo route.
     [:octicons-arrow-right-24: Chi tiết](../security/authorization-access-control.md)
 
 *   :material-lock-alert:{ .lg .middle } __Ghi nhật ký an toàn__
 
     ---
 
-    Log JSON có cấu trúc, sanitization và che trường nhạy cảm. Xác minh kiểm toán dùng `AuditLogger` riêng cùng manifest đáng tin cậy.
+    Log JSON có cấu trúc, sanitization và che trường nhạy cảm.
     [:octicons-arrow-right-24: Chi tiết](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Toàn vẹn và bảo vệ tài nguyên__
@@ -48,7 +48,7 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
     ---
 
-    Provider khóa Ed25519, mã hóa AES-GCM cho IPFS và chứng chỉ MSP nội bộ. MSP không triển khai X.509 hay mTLS.
+    Provider khóa Ed25519, nạp node identity và mã hóa AES-GCM cho IPFS.
     [:octicons-arrow-right-24: Chi tiết](../security/encryption-keys.md)
 
 *   :material-brain:{ .lg .middle } __Zero-knowledge proofs__
@@ -78,8 +78,7 @@ Các thiết lập chính nằm ở `hierachain/config/settings.py`:
 ## Liên quan
 
 *   [Kiến trúc bảo mật (Architecture)](../architecture/security.md)
-*   [Mạng lưới P2P (Network Security)](./network.md)
-*   [Giám sát và Cảnh báo (Monitoring)](./monitoring.md)
+*   [Network](./network.md)
 
 ## Che bí mật theo field trong structured log
 

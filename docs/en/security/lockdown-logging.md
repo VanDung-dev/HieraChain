@@ -10,7 +10,7 @@ icon: material/lock-alert
 
 JSON structure alone does not detect record modification or deletion. `SecureLogger` has no hash chain, signature or trusted manifest. Centralized logging and retention controls belong to the deployment's logging system.
 
-For audit verification, use the separate `AuditLogger` and its trusted manifest workflow described in [Risk management](../modules/risk-management.md). Keep that manifest independently of the log being verified.
+The package does not include an audit archive or trusted manifest. Tamper detection, retention and verification belong to the deployment's centralized logging system.
 
 ## Related
 

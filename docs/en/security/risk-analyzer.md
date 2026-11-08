@@ -30,5 +30,5 @@ graph LR
 
 ## Related
 
-*   [Audit logging](../modules/risk-management.md)
-*   [Alert system](../modules/monitoring.md)
+*   [Security module](../modules/security.md)
+*   [Secure logging](./lockdown-logging.md)

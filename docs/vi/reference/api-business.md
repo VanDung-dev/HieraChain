@@ -1,70 +1,52 @@
 ---
 title: "API Business"
-description: "Tóm tắt các endpoint API Business, lược đồ chính và ví dụ lệnh curl — đồng bộ với mã nguồn hierachain/api/business/*."
+description: "Tóm tắt endpoint API Business và ví dụ curl — đồng bộ với hierachain/api/business/*."
 icon: material/numeric-2-circle
 ---
 
 # API Business
 
-API Business mở rộng khả năng làm việc với các channel, bộ sưu tập dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations). Route ghi private data hiện chưa được hỗ trợ vì chưa có kho lưu dữ liệu riêng tư.
+API Business cung cấp endpoint cho channel, private collection và tổ chức, dựa trên dịch vụ tổ chức phân cấp.
 
 ## Các thành phần Mã nguồn
 
 * Định tuyến/Endpoint: `hierachain/api/business/router.py`
-* Lược đồ dữ liệu (Tùy chọn): `hierachain/api/business/schemas.py`
+* Lược đồ dữ liệu: `hierachain/api/business/schemas.py`
 * Tích hợp Server: `hierachain/api/server.py` (đăng ký Business router)
 
-## Các Endpoint chính (từ mã nguồn và test)
+## Các Endpoint chính
 
 ```mermaid
 sequenceDiagram
     participant User
     participant API as API business
-    participant Channel as Channel Manager
+    participant Channel as Channel
 
-    User->>API: POST /channels (Create)
-    API->>Channel: Initialize Channel
+    User->>API: POST /channels
+    API->>Channel: Tạo channel
     API-->>User: Channel ID
 
     User->>API: POST /channels/{id}/private-collections
-    API->>Channel: Create Collection
+    API->>Channel: create_private_collection(...)
     API-->>User: OK
 
-    User->>API: POST /private-data (Write)
-    API-->>User: 501 Not Implemented
-
-    User->>API: POST /contracts/execute
-    API-->>User: 501 Not Implemented
+    User->>API: POST /organizations
+    API-->>User: Organization ID
 ```
 
-* `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ (health check).
-* `POST /api/business/channels`: tạo một channel mới. API key cần quyền `chains` và `channels:manage`.
+* `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ.
+* `POST /api/business/channels`: tạo channel. API key cần quyền `chains` và `channels:manage`.
 * `GET  /api/business/channels/{channel_id}`: lấy thông tin channel.
-* `POST /api/business/channels/{channel_id}/private-collections`: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
-* `POST /api/business/private-data`: hiện trả HTTP 501 với collection đã tồn tại. Endpoint không lưu `value` inline hoặc dữ liệu `value_cid`.
-
-* `ContractCreateRequest`
-
-    * `contract_id: str` (Định danh duy nhất)
-    * `version: str` (Phiên bản ngữ nghĩa, ví dụ: "1.0.0")
-    * `implementation: str | None` (Mã nguồn Python thô)
-    * `implementation_cid: str | None` (Tham chiếu IPFS)
-    * `implementation_nonce: str | None`
-    * `metadata: dict[str, Any]` (Miền, Chủ sở hữu, Chính sách xác thực - Endorsement Policy)
-    * `implementation_metadata: dict[str, Any] | None`
-    
-* `POST /api/business/contracts`: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
-* `POST /api/business/contracts/execute`: trả HTTP 501 với contract đã đăng ký; contract không tồn tại trả HTTP 404.
-* `POST /api/business/organizations`: đăng ký một tổ chức mới. Cần quyền `chains` và `organizations:manage`; user ID từ API key đã xác thực trở thành quản trị viên đầu tiên.
+* `POST /api/business/channels/{channel_id}/private-collections`: tạo private collection trong channel. Request được ủy quyền cho `Channel.create_private_collection(...)`; thành viên collection phải thuộc channel.
+* `POST /api/business/organizations`: đăng ký tổ chức. Cần quyền `chains` và `organizations:manage`; user ID đã xác thực từ API key trở thành quản trị viên đầu tiên.
 * `POST /api/business/organizations/{org_id}/members`: quản trị viên tổ chức đăng ký member với role `admin` hoặc `member`. Member ID phải trùng user ID trong API key của member đó.
-
-*Lưu ý bổ sung: một số kịch bản test/giám sát trong `tests/integration/api_business/test_api_business.py` và `scripts/security/*` sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.*
+* `GET  /api/business/organizations/{org_id}`: lấy thông tin tổ chức.
 
 ## Cấp tài nguyên và quyền
 
 Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope `organizations:manage` và `channels:manage` khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope `chains`, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope `chains` và caller phải là quản trị viên hiện có của organization. Tạo channel cần `chains` và `channels:manage`. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.
 
-Registry organization, member và channel được lưu và khôi phục qua SQLite, PostgreSQL hoặc `RedisLedgerAdapter` đã cấu hình. Redis ledger yêu cầu [cấu hình AOF bền dữ liệu](../modules/storage.md#redis-ledger) khi khởi động. Backend in-memory chỉ tồn tại trong process hiện tại. Giá trị private data chưa được lưu: route ghi trả HTTP 501 trước khi xử lý giá trị inline hoặc tham chiếu IPFS. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
+Registry organization, member và channel được lưu và khôi phục qua SQLite, PostgreSQL hoặc `RedisLedgerAdapter` đã cấu hình. Redis ledger yêu cầu [cấu hình AOF bền dữ liệu](../modules/storage.md#redis-ledger) khi khởi động. Backend in-memory chỉ tồn tại trong process hiện tại. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
 
 ```bash
 ORG_PROVISIONER_KEY=replace-me
@@ -95,47 +77,40 @@ Gửi event cũng cần API key có quyền `events`.
 # Health
 curl -s http://localhost:2661/api/business/health
 
-# Create channel
+# Tạo channel
 curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \
   -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 
-# Create private collection for channel
+# Lấy channel
+curl -s http://localhost:2661/api/business/channels/test_channel \
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY"
+
+# Tạo private collection cho channel
 curl -s -X POST \
   http://localhost:2661/api/business/channels/test_channel/private-collections \
   -H 'Content-Type: application/json' \
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \
   -d '{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'
 
-# Private-data writes currently return HTTP 501 Not Implemented.
-
-# Register & execute domain contract
-curl -s -X POST http://localhost:2661/api/business/contracts \
+# Tổ chức
+curl -s -X POST http://localhost:2661/api/business/organizations \
   -H 'Content-Type: application/json' \
-  -d '{
-        "contract_id": "quality_control",
-        "version": "1.0.0",
-        "implementation": "def logic()...",
-        "metadata": {"domain": "mfg"}
-      }'
+  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \
+  -d '{"org_id": "orgA", "ca_config": {}}'
 
-curl -s -X POST http://localhost:2661/api/business/contracts/execute \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "contract_id": "quality_control",
-        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},
-        "context": {"chain": "sub_chain_1"}
-      }'
-
-# Organization
-curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "ca_config": {}}'
+# Lấy tổ chức
+curl -s http://localhost:2661/api/business/organizations/orgA \
+  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY"
 ```
 
-Nếu bật xác thực bằng API key (trong môi trường sản xuất - production), hãy thêm header tương ứng với `settings.API_KEY_NAME` (mặc định là `X-API-Key`).
+Nếu bật xác thực bằng API key (trong môi trường production), hãy thêm header tương ứng với `settings.API_KEY_NAME` (mặc định là `X-API-Key`).
 
 ## Bảo mật & Cấu hình
 
 * Xác thực API key qua `security/verify/api_key_verifier.py` (khi `AUTH_ENABLED=true`).
-* Chính sách/Định danh/Khóa/Chứng chỉ: xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.
+* Hành vi định danh/khóa/chứng chỉ: xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.
 * Cấu hình host/port và bảo mật trong `hierachain/config/settings.py`.
 
 ## Liên quan
@@ -143,5 +118,3 @@ Nếu bật xác thực bằng API key (trong môi trường sản xuất - prod
 * API Ledger: [API Ledger](api-ledger.md)
 * Kiến trúc Bảo mật: [Bảo mật (chuyên sâu)](../architecture/security.md)
 * Các mô-đun: [API](../modules/api.md)
-
-Contract đã đăng ký trả HTTP 501 từ `/api/business/contracts/execute` vì chưa có engine thực thi; contract không tồn tại trả HTTP 404. Đăng ký chỉ lưu metadata triển khai, không đồng nghĩa hỗ trợ thực thi.

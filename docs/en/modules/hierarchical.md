@@ -45,10 +45,8 @@ Startup loads block headers and ordered events with one SQL range query, while r
 | :--- | :--- |
 | Organization/member/channel registry | SQLite/PostgreSQL persistence and revision checks; explicit memory mode is ephemeral. |
 | Organization-to-chain assignment | Persistent SubChain grants for `read`, `write`, and `proofs`; enforced by REST and WebSocket APIs. Channel membership remains separate. |
-| Private collections | Library objects provide an in-memory data store; the manager does not persist collections in its registry. REST private-data writes return HTTP 501. |
+| Private collections | Library objects provide an in-memory data store; the manager does not persist collections in its registry. The API creates collections through `Channel.create_private_collection`. |
 | ZK proofs | Mock hashes are development fixtures. Production proving/verification are unimplemented; see [ZK scope](../security/decentralized-zkp.md). |
-| ERP vendor connectors | SAP/Oracle/Dynamics fixtures require explicit simulation opt-in. Real transport is application-provided; see [Integration](./integration.md). |
-| Contract execution | REST contract registration stores metadata; execution returns HTTP 501. |
 
 `get_cross_chain_statistics()["cross_chain_operations"]` is a reserved field that currently returns `0`, not a measured completed-operation count. A facade method or configuration option alone does not establish end-to-end feature support.
 
@@ -62,7 +60,7 @@ Restart replays channel records, restores pending events, verifies every finaliz
 
 ### 2.4 Multi-organization, channels, and private data
 
-* `multi_org.py`: Manages member organizations, certificates, and MSP identities.
+* `multi_org.py`: Manages member organizations and affiliations for multi-organization channels.
 * `channel/manager.py`: Partitions communication between specific groups of organizations.
 * `private_data.py`: Provides in-memory encrypted collections and hash helpers; durable storage and automatic ledger anchoring require caller integration.
 

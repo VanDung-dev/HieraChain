@@ -12,8 +12,8 @@ icon: material/alphabetical
 | Block | Data unit containing Events; defined in `hierachain/core/block.py`. |
 | Blockchain | Block chain management; `hierachain/core/blockchain.py`. |
 | Consensus | Block approval mechanism (PoA, PoF); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
-| Membership Service Provider | MSP; identity/organization management; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
-| Policy | Access/resource control; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. No `resource_guard.py` (fabricated). |
+| HieraChain | Hierarchical blockchain ledger for business use cases. |
+| Node ID | Identifier of a HieraChain node (`NODE_ID`/`HRC_NODE_ID`). |
 | World State | Current data state; `hierachain/state/world_state.py`. |
 | Journal | Transaction log; `hierachain/error_mitigation/journal.py`. |
 | Rollback | Transaction rollback owned by `hierachain/hierarchical/transaction_manager.py`; no global state rollback manager is provided. |
@@ -29,7 +29,7 @@ icon: material/alphabetical
 | Channel | Inter-organization private channel; `hierachain/hierarchical/channel/channel.py`. |
 | Multi-Organization | Multi-org network; `hierachain/hierarchical/multi_org.py`. |
 | Private Data | Private data collections; `hierachain/hierarchical/private_data.py`. |
-| Performance Monitor | Performance monitoring; `hierachain/monitoring/performance_monitor.py`. |
+| Ledger | Append-only chain of blocks storing business events. |
 | Rate Limiting | Request rate limiting; configured in `hierachain/config/settings.py`. |
 | HTTP Strict Transport Security | HSTS; `hierachain/config/settings.py`. |
 | Cross-Origin Resource Sharing | CORS; `hierachain/config/settings.py`. |
@@ -38,5 +38,5 @@ icon: material/alphabetical
 | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | REST API Admin; `hierachain/api/admin/*`. |
 | Cross-level State Sync | Cross-tier sync via `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
-| Identity Manager | Organization/user/role management; `hierachain/security/identity.py`. |
-| Certificate | Internal `Certificate` dataclass in `hierachain/security/msp.py` (not X.509, no `certificate.py`). |
+| World State | In-memory projection of the latest entity state derived from verified blocks. |
+| Node identity | Runtime identity loaded from `HRC_VALIDATOR_IDENTITY`; see `hierachain/security/identity_loader.py`. |

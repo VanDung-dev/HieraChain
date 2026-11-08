@@ -24,16 +24,6 @@ The Config module manages HieraChain's operational settings, secret keys, and lo
     * Explicit helpers for parameter validation and security warnings.
     * Configuration separated by group: Blockchain, Consensus, Storage, P2P, etc.
 
-*   :material-key-chain:{ .lg .middle } __Secret Manager__
-
-    ---
-
-    __File__: `secret_manager.py`
-
-    * Retrieves secrets independently of infrastructure.
-    * Supports backends: Environment, HashiCorp Vault, AWS Secrets Manager.
-    * Explicit default value handling for missing or unavailable secrets.
-
 *   :material-format-list-bulleted-type:{ .lg .middle } __Structured Logging__
 
     ---
@@ -53,38 +43,16 @@ HieraChain uses `HRC_ENV` to switch configurations and falls back to `ENV` when 
 | Environment | Accepted values | Key Characteristics |
 | :--- | :--- | :--- |
 | Development | `dev`, `development` (default) | DEBUG log level, PostgreSQL storage by default, CORS allowed from everywhere. |
-| Production | `production`, `prod`, `product` | Authentication required; P2P trust and signature settings fixed to strict and enabled. HSTS is declared as enabled; configure its HTTP header at the reverse proxy. |
+| Production | `production`, `prod`, `product` | Authentication required; PostgreSQL storage by default. |
 | Testing | `test`, `testing` | Fast configuration, small block size, Memory storage by default. |
 
 An unknown nonblank environment value raises an error instead of selecting development.
 
 The settings module loads `.env` before it defines environment-backed settings. Set `HRC_ENV_FILE` to load another dotenv file; values already present in the process environment take precedence.
 
-## Secret Manager
+## Secrets
 
-This is a critical component for protecting sensitive keys such as `HRC_CLUSTER_SECRET` or `IPFS_ENCRYPTION_KEY`.
-
-### Usage Example in Code:
-```python
-from hierachain.config.secret_manager import SecretManager
-
-sm = SecretManager()
-# Retrieve the configured field
-cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
-```
-
-### Supported Backends:
-1.  **Environment (`env`)**: Default, reads directly from environment variables.
-2.  **Vault (`vault`)**: Connects to HashiCorp Vault KV v2.
-3.  **AWS (`aws`)**: Reads a string field from a JSON object in AWS Secrets Manager.
-
-`get_secret(key, default=None)` takes an environment variable name for `env`, or a field name for Vault/AWS. For AWS, `key` is never a SecretId: set `HRC_AWS_SECRET_NAME` to the secret name or ARN and optionally `HRC_AWS_REGION` (default `us-east-1`). The `SecretString` must be a JSON object whose requested field is a string; each call returns only that field, including an empty string when stored.
-
-Missing configuration, missing fields, non-string fields, malformed JSON, `SecretBinary`, and backend errors return `default` (or `None`). AWS does not fall back to environment variables or return the whole JSON object. Logs omit secret contents and exception messages. Existing AWS secrets stored as plain strings must be migrated to JSON objects with named string fields.
-
-Vault returns `default` (or `None`) when its URL or credential is missing; it never reads the same key from environment variables in that case. An unsupported backend raises `ValueError`. Callers must invoke `SecretManager` explicitly: configuring its backend does not replace every `os.getenv()` call in the application.
-
-`SecretManager` is independent of master-key handling. `HRC_MASTER_KEY_SOURCE=env` remains accepted for compatibility with the existing environment-secret behavior. Other source values and any nonempty `HRC_MASTER_KEY_FILE` raise a configuration error because the runtime has no alternate master-key provider. Remove those unsupported settings before startup.
+Secrets are supplied by environment variables or by the platform's secret system (Kubernetes Secret, Vault, cloud secret manager). The package reads `HRC_MASTER_KEY_SOURCE`; only `env` is accepted. Any other source value, or a nonempty `HRC_MASTER_KEY_FILE`, raises a configuration error because the runtime has no alternate master-key provider. Remove those unsupported settings before startup.
 
 ## Standardized Logging (Observability)
 
@@ -102,15 +70,10 @@ You can change the log format via the `HRC_LOG_FORMAT` environment variable:
 
 ## Configuration Validation
 
-The settings module provides helpers that callers can invoke explicitly:
-
-* `settings.validate_config()` returns a list of errors for invalid values, including ports outside 1-65535 and nonpositive block sizes.
-* `check_security_config()` returns a list of security warnings for the selected configuration.
-
-The API and CLI startup paths do not call these helpers or act on their returned lists. Separate checks still reject unknown environments, unsupported master-key sources and invalid production authentication or storage configuration. The API's P2P client does not apply the strict trust/signature settings automatically; see [Network](network.md).
+The API and CLI startup paths perform their own validation. Startup rejects unknown environments, unsupported master-key sources and invalid production authentication or storage configuration.
 
 ## Related
 
 *   [Environment Variables (Reference)](../reference/config.md)
 *   [Security Architecture](../architecture/security.md)
-*   [Monitoring System](./monitoring.md)
+*   [Network](./network.md)

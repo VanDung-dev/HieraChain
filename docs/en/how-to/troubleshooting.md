@@ -66,7 +66,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 ## Poor performance / 503 Service Unavailable
 
-* Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
+* Inspect API payload/rate limits, Redis failures, ordering event-pool limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
 * Check API rate limits and CORS in `settings.py`; configure HSTS at the HTTPS proxy.
 * Reduce event batch sizes; tune existing cache instances only after profiling their usage.
 
@@ -90,10 +90,10 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 ## Signatures/keys
 
-* Check the public key is 64‑hex (Ed25519) when registering users (`security/identity.py`).
+* Check the public key is 64‑hex (Ed25519) when configuring node identity (`security/identity_loader.py`).
 * Use `security/security_utils.py` to generate test key pairs.
 
 ## Logging and auditing
 
 * Set the appropriate log level, see `settings.LOG_LEVEL`.
-* Use `risk_management/audit_logger.py` for audit trails.
+* Logging and auditing are provided by `security/secure_logging.py`; no separate audit archive exists.

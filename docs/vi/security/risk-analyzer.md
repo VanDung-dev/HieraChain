@@ -30,5 +30,5 @@ graph LR
 
 ## Liên quan
 
-*   [Ghi nhật ký kiểm toán](../modules/risk-management.md)
-*   [Hệ thống cảnh báo](../modules/monitoring.md)
+*   [Module Bảo mật](../modules/security.md)
+*   [Ghi log an toàn](./lockdown-logging.md)

@@ -72,7 +72,6 @@ print(settings.AUTH_ENABLED)
 ### Parallel processing and resources
 
 * `HRC_EVENT_POOL_MAX_SIZE` (default: `10000`) bounds the ordering event queue.
-* `HRC_RAM_CRITICAL_THRESHOLD` (default: `95.0` %) is declared in settings but has no runtime consumer in ordering or storage.
 
 ### Security and authentication
 
@@ -81,24 +80,20 @@ print(settings.AUTH_ENABLED)
 * `HRC_API_KEY_REVOCATIONS_DB` (default: `data/api_key_revocations.sqlite3`): durable local API key revocations and brute-force lockouts for the production API. All workers on one host must use the same persistent, writable file.
 * `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
-* Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`; another value raises `ValueError`.
-* AWS Secret Manager: `HRC_AWS_SECRET_NAME` (required secret name or ARN containing a JSON object), `HRC_AWS_REGION` (default: `us-east-1`). `SecretManager.get_secret(key)` selects a string field, never the whole `SecretString`; see [Secret Manager](../modules/config.md) for defaults and migration.
-* `HRC_MASTER_KEY_SOURCE=env` remains accepted as a compatibility alias for the existing environment-secret behavior. Other `HRC_MASTER_KEY_SOURCE` values and any nonempty `HRC_MASTER_KEY_FILE` now stop configuration loading with an error because no alternate master-key provider is implemented. This does not change the separate `FileVaultProvider` API.
+* `HRC_MASTER_KEY_SOURCE=env` remains accepted for compatibility with the existing environment-secret behavior. Other `HRC_MASTER_KEY_SOURCE` values and any nonempty `HRC_MASTER_KEY_FILE` stop configuration loading with an error because no alternate master-key provider is implemented. This does not change the separate `FileVaultProvider` API.
 * Brute-force protection:
     * `HRC_BF_MAX_FAILURES` (default: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (default: `900` = 15 minutes)
     * `HRC_BF_WINDOW_SECONDS` (default: `300` = 5 minutes)
     * Redis lockout TTL follows `HRC_BF_LOCKOUT_SECONDS`; lockout checks read the shared key on each request. SQLite and Redis count failures atomically across workers. Redis uses its server time and an atomic Lua update for the failure window and lockout threshold. Memory/file attempt counts remain local to one process.
-* Identity and organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
-### P2P network security
+### P2P network
 
 * Node identity and P2P transport: `HRC_NODE_ID` (default: `default-node`; `NODE_ID` is a fallback alias), `HRC_P2P_PORT` (default: `5555`; `NODE_PORT` is a fallback alias), and `HRC_PEERS` (default: empty list; comma-separated seed nodes; `PEERS` is a fallback alias). Use `peer-id@host:port` when the remote transport identity differs from its hostname; plain `host:port` treats the hostname as the peer ID. HRC-prefixed names take precedence.
-* `HRC_P2P_TRUST_POLICY` (default: `open` in dev, `strict` in production; values: `open|strict`)
-* `HRC_P2P_PEER_ALLOWLIST` (comma-separated peer IDs for strict mode)
-* `HRC_P2P_REQUIRE_SIGNATURES` (`false` in dev, `true` in production)
+* `HRC_P2P_ENABLED` (default: `true`)
+* `HRC_P2P_HOST` (default: `0.0.0.0`)
 
-Production fixes the trust policy to `strict` and the signature requirement to `True`; environment values do not override those production attributes. `SecureConnectionManager` uses these settings. The API startup path constructs `NetworkClient` with seed peers and transport keys, without wiring this manager, the trust policy or signature verification into that client. See [Network](../modules/network.md).
+The API startup path constructs `NetworkClient` with seed peers and transport keys. See [Network](../modules/network.md).
 
 ### CORS
 
@@ -107,12 +102,9 @@ Production fixes the trust policy to `strict` and the signature requirement to `
 * `CORS_ALLOW_METHODS` (list of allowed methods)
 * `CORS_ALLOW_HEADERS` (list of allowed headers)
 
-### HTTPS and HSTS
+### HTTPS
 
-* `HRC_HSTS_ENABLED` (`false` in dev/test; `true` in production)
-* `HRC_HSTS_MAX_AGE` (default: `31536000` = 1 year)
-
-These settings are declared and checked for configuration warnings, but the API middleware does not add `Strict-Transport-Security`. Configure the header at the HTTPS reverse proxy.
+HieraChain does not add `Strict-Transport-Security`. Configure HSTS at the HTTPS reverse proxy.
 
 ### Rate limiting
 
@@ -125,13 +117,6 @@ These settings are declared and checked for configuration warnings, but the API 
 
 * `HRC_METRICS_ENABLED` (default: `false`). Enables `/metrics` to export the default Prometheus registry. No HTTP latency/request counters or ledger collectors are registered by the API.
 * `HRC_TRUSTED_PROXIES` (default: `127.0.0.1`). Trusted reverse proxy IPs (for HTTP/2, HTTP/3).
-
-### Multi-organization
-
-* `MULTI_ORG_ENABLED` (`True`), `MSP_ENABLED` (`True`)
-* `ORGANIZATION_ADMIN_THRESHOLD` (default: `1`)
-* `CHANNEL_CREATION_POLICY` (default: `majority`; values: `majority|unanimous|admin_only`)
-* `AFFILIATION_HIERARCHY_ENABLED` (`True`)
 
 ### Zero-knowledge (ZK)
 

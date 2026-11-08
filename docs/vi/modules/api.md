@@ -63,10 +63,8 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 
 Các endpoint này hỗ trợ quy trình nghiệp vụ:
 
-* Channel tạo kênh giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`).
-* Có thể quản lý metadata của private collection, nhưng `POST /api/business/private-data` hiện trả HTTP 501 vì API chưa có kho lưu private data. Endpoint này không nhận giá trị inline hoặc tham chiếu IPFS như dữ liệu đã lưu.
-* Domain contract đăng ký metadata; `POST /api/business/contracts/execute` trả HTTP 501 vì engine thực thi chưa được triển khai.
-* Organization đăng ký và quản lý danh tính qua MSP.
+* Channel tạo đường giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`). Private collection được quản lý theo channel (`POST /api/business/channels/{channel_id}/private-collections`) và ủy quyền cho `Channel.create_private_collection(...)`.
+* Tổ chức và thành viên đăng ký qua dịch vụ tổ chức phân cấp (`POST /api/business/organizations`, `POST /api/business/organizations/{org_id}/members`).
 
 ### admin: hệ thống và quản trị
 
@@ -92,18 +90,10 @@ Khi bật xác thực, gửi header `X-API-Key` trong WebSocket handshake. Kết
     * `event` đẩy chi tiết event tới subscriber.
     * `subscribed` xác nhận đăng ký thành công.
 
-## Blockchain explorer
-
-Tích hợp sẵn tại `blockchain_explorer.py`, explorer cung cấp dashboard cho người vận hành:
-
-* Monitor hiển thị tốc độ tạo block và luồng event theo thời gian thực.
-* Visualizer vẽ cây quan hệ giữa Main Chain và Sub-Chain.
-* IPFS decoder cho phép admin có quyền giải mã CID trực tiếp trên trình duyệt.
-
 ## Quan sát (observability)
 
 * `X-Request-ID` gắn UUID cho mỗi request để truy vết log.
-* Khi `HRC_METRICS_ENABLED=true`, `/metrics` xuất registry mặc định của `prometheus_client`. Các collector process/runtime mặc định phụ thuộc nền tảng. API không đăng ký bộ đếm request thành công/thất bại, histogram latency hay collector throughput ledger; ứng dụng phải bổ sung instrumentation. `PerformanceMonitor` là thành phần riêng và không tự được xuất qua endpoint này.
+* Khi `HRC_METRICS_ENABLED=true`, `/metrics` xuất registry mặc định của `prometheus_client`. Các collector process/runtime mặc định phụ thuộc nền tảng. API không đăng ký bộ đếm request thành công/thất bại, histogram latency hay collector throughput ledger; ứng dụng phải bổ sung instrumentation.
 
 ## Hướng dẫn nhanh (curl)
 

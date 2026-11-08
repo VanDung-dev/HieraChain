@@ -1,6 +1,6 @@
 ---
 title: "Triển khai an toàn"
-description: "Bật xác thực, CORS/HSTS, Rate Limit, API Key và ordering limits; hướng dẫn cấu hình môi trường sản xuất cho HieraChain."
+description: "Bật xác thực, CORS, Rate Limit, API Key và ordering limits; hướng dẫn cấu hình môi trường sản xuất cho HieraChain."
 icon: material/shield-check
 ---
 
@@ -76,13 +76,7 @@ HRC_CORS_ORIGINS=https://admin.example.com,https://console.example.com
 
 ## Cấu hình HSTS tại proxy HTTPS
 
-Đặt `Strict-Transport-Security` trên response HTTPS tại reverse proxy hoặc API gateway. HieraChain khai báo các cấu hình sau, nhưng HTTP middleware không dùng chúng để thêm header này:
-
-```dotenv
-# .env
-HRC_HSTS_ENABLED=true
-HRC_HSTS_MAX_AGE=31536000
-```
+Đặt `Strict-Transport-Security` trên response HTTPS tại reverse proxy hoặc API gateway. HieraChain không thêm header này và không cung cấp cấu hình cho nó.
 
 ## Bật Rate Limiting
 
@@ -98,7 +92,7 @@ Lưu ý: triển khai thực tế nên kết hợp rate limit ở reverse proxy 
 
 ## Giới hạn ordering
 
-Không có `ResourceGuardMiddleware` hay `security/resource_guard.py` trong code. Bảo vệ DoS/limit thực tế là: `api/middleware.py:add_rate_limit` / `add_payload_limit`, và kiểm tra `HRC_RAM_CRITICAL_THRESHOLD` / `HRC_EVENT_POOL_MAX_SIZE` trong ordering/storage. Đừng import `ResourceGuardMiddleware` không tồn tại; hãy kết hợp rate limiting ở app với reverse-proxy.
+Không có `ResourceGuardMiddleware` hay `security/resource_guard.py` trong code. Bảo vệ DoS/limit thực tế là: `api/middleware.py:add_rate_limit` / `add_payload_limit`, và kiểm tra `HRC_EVENT_POOL_MAX_SIZE` trong ordering/storage. Đừng import `ResourceGuardMiddleware` không tồn tại; hãy kết hợp rate limiting ở app với reverse-proxy.
 
 ## Khởi động dịch vụ
 
@@ -122,7 +116,7 @@ Mặc định phục vụ tại `http://localhost:2661`. Đặt `HRC_API_HOST`/`
     curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/chains
     ```
 
-3. Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
+3. Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
 
 ## Bí mật và cấu hình
 
@@ -152,9 +146,6 @@ export HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
 # Provisioned signing identity and trusted block keys
 export HRC_VALIDATOR_IDENTITY=/absolute/path/to/identity.json
 export HRC_BLOCK_TRUSTED_KEYS_FILE=/absolute/path/to/trusted-block-keys.json
-
-# Strict P2P trust policy
-export HRC_P2P_TRUST_POLICY=strict
 ```
 
 ### Khuyến nghị
@@ -168,33 +159,15 @@ export HRC_RATE_LIMIT=true
 export HRC_RATE_LIMIT_RPM=100
 
 # HSTS header must be configured at the HTTPS reverse proxy.
-# This declared setting does not add the header in HieraChain.
-export HRC_HSTS_ENABLED=true
 ```
 
 ### Tích hợp doanh nghiệp tùy chọn
 
-```bash
-# Use external Vault (actual envs are HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, not HRC_VAULT_ADDR)
-export HRC_VAULT_TOKEN=your_token
-export HRC_VAULT_PATH=/path/to/vault
-
-# HSM is not a boolean HRC_HSM_ENABLED flag in code; use KeyProvider interface + HRC_VAULT_* / HSM integration externally
-```
+HSM, KMS và Vault được tích hợp bên ngoài qua interface `KeyProvider` của ứng dụng; package không đọc biến môi trường Vault.
 
 ### Kiểm tra cấu hình
 
-Sau khi cấu hình, bạn có thể kiểm tra cấu hình bảo mật bằng cách:
-
-```python
-from hierachain.config.settings import check_security_config
-
-warnings = check_security_config()
-for w in warnings:
-    print(f"WARNING: {w}")
-```
-
-`check_security_config()` trả cảnh báo cấu hình; nó không kiểm tra header proxy hay kết nối backend. Khi khởi động production, ứng dụng kiểm tra riêng và từ chối cấu hình tắt xác thực hoặc thiếu/sai API key. Cấu hình tích hợp LDAP, HSM và SIEM tại ứng dụng chủ hoặc môi trường triển khai.
+Khi khởi động production, ứng dụng từ chối cấu hình tắt xác thực hoặc thiếu/sai API key, môi trường không hợp lệ, nguồn master key chưa hỗ trợ và cấu hình storage không hợp lệ. Cấu hình tích hợp LDAP, HSM và SIEM tại ứng dụng chủ hoặc môi trường triển khai.
 
 ## Liên quan
 

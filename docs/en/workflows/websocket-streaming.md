@@ -140,4 +140,3 @@ sequenceDiagram
 ## Related
 
 - [Event Submission](./event-submission.md): ledger pipeline that an application can connect to broadcast helpers
-- [Risk Analysis & Alerts](./risk-alerts.md): separate email/webhook notification workflow

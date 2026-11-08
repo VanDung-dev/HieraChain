@@ -48,7 +48,7 @@ Uploads pass `pin` to Kubo's add RPC using `auto_pin` (default `True`). `IPFSCli
 | Integrity | GCM tag verification with the same key, nonce and AAD |
 | Nonce | Random 96-bit nonce per encryption; replay detection requires application state |
 | Key configuration | Stable `HRC_IPFS_ENCRYPTION_KEY` required by the environment factory |
-| Authorization | The caller enforces permissions; the client does not invoke `PolicyEngine` |
+| Authorization | The caller enforces permissions; the client does not check permissions |
 
 Keep the key in a secret manager. Store the CID, nonce, encryption flag and any AAD metadata needed for retrieval. Encryption does not prevent someone who can replay an old CID from requesting the same object again.
 
@@ -71,6 +71,4 @@ Upload/download HTTP failures raise `IPFSError`; encryption failures propagate a
 
 ## Related
 
-- [Policy Enforcement](./policy-enforcement.md): caller-managed authorization
-- [Risk Analysis & Alerts](./risk-alerts.md): application-managed failure reporting
 - [Key Backup](./key-backup.md): operator-managed key storage

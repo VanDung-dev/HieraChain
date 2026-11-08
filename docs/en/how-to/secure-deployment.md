@@ -1,6 +1,6 @@
 ---
 title: "Secure Deployment"
-description: "Enable authentication, CORS/HSTS, Rate Limit, API Key, and ordering limits; production environment configuration guide for HieraChain."
+description: "Enable authentication, CORS, Rate Limit, API Key, and ordering limits; production environment configuration guide for HieraChain."
 icon: material/shield-check
 ---
 
@@ -76,13 +76,7 @@ HRC_CORS_ORIGINS=https://admin.example.com,https://console.example.com
 
 ## Configure HSTS at the HTTPS proxy
 
-Set `Strict-Transport-Security` on HTTPS responses at the reverse proxy or API gateway. HieraChain declares the following settings, but its HTTP middleware does not use them to add that header:
-
-```dotenv
-# .env
-HRC_HSTS_ENABLED=true
-HRC_HSTS_MAX_AGE=31536000
-```
+Set `Strict-Transport-Security` on HTTPS responses at the reverse proxy or API gateway. HieraChain does not add this header or expose a setting for it.
 
 ## Enable rate limiting
 
@@ -98,7 +92,7 @@ Note: actual deployment should combine rate limiting at the reverse proxy (Nginx
 
 ## Ordering limits
 
-No `ResourceGuardMiddleware` or `security/resource_guard.py` exists in code. Actual DoS/limit protections are: `api/middleware.py:add_rate_limit` / `add_payload_limit`, and `HRC_RAM_CRITICAL_THRESHOLD` / `HRC_EVENT_POOL_MAX_SIZE` checks in ordering/storage. Do not import a non-existent `ResourceGuardMiddleware`; combine app-level rate limiting with reverse-proxy limits.
+No `ResourceGuardMiddleware` or `security/resource_guard.py` exists in code. Actual DoS/limit protections are: `api/middleware.py:add_rate_limit` / `add_payload_limit`, and `HRC_EVENT_POOL_MAX_SIZE` checks in ordering/storage. Do not import a non-existent `ResourceGuardMiddleware`; combine app-level rate limiting with reverse-proxy limits.
 
 ## Starting the service
 
@@ -122,7 +116,7 @@ Default serves at `http://localhost:2661`. Set `HRC_API_HOST`/`HRC_API_PORT` if 
     curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/chains
     ```
 
-3. Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
+3. Inspect API payload/rate limits, Redis failures, ordering event-pool limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
 
 ## Secrets and configuration
 
@@ -152,9 +146,6 @@ export HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
 # Provisioned signing identity and trusted block keys
 export HRC_VALIDATOR_IDENTITY=/absolute/path/to/identity.json
 export HRC_BLOCK_TRUSTED_KEYS_FILE=/absolute/path/to/trusted-block-keys.json
-
-# Strict P2P trust policy
-export HRC_P2P_TRUST_POLICY=strict
 ```
 
 ### Recommended
@@ -168,33 +159,15 @@ export HRC_RATE_LIMIT=true
 export HRC_RATE_LIMIT_RPM=100
 
 # HSTS header must be configured at the HTTPS reverse proxy.
-# This declared setting does not add the header in HieraChain.
-export HRC_HSTS_ENABLED=true
 ```
 
 ### Optional enterprise integration
 
-```bash
-# Use external Vault (actual envs are HRC_VAULT_TOKEN / HRC_VAULT_PATH / HRC_VAULT_URL, not HRC_VAULT_ADDR)
-export HRC_VAULT_TOKEN=your_token
-export HRC_VAULT_PATH=/path/to/vault
-
-# HSM is not a boolean HRC_HSM_ENABLED flag in code; use KeyProvider interface + HRC_VAULT_* / HSM integration externally
-```
+HSM, KMS and Vault are integrated externally through the application's `KeyProvider`; the package does not read Vault environment variables.
 
 ### Configuration check
 
-After configuration, you can verify security settings with:
-
-```python
-from hierachain.config.settings import check_security_config
-
-warnings = check_security_config()
-for w in warnings:
-    print(f"WARNING: {w}")
-```
-
-`check_security_config()` returns configuration warnings; it does not verify proxy headers or backend connectivity. Production app startup separately rejects disabled authentication or missing/invalid API-key configuration. Configure LDAP, HSM and SIEM integration in the host application or deployment.
+Production startup rejects disabled authentication or missing/invalid API-key configuration, unknown environments, unsupported master-key sources and invalid storage configuration. Configure LDAP, HSM and SIEM integration in the host application or deployment.
 
 ## Related
 

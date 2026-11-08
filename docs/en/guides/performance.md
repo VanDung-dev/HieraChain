@@ -43,5 +43,5 @@ Configure the node signing identity and trusted keys, and use an isolated databa
 
 ## System Observation
 
-* Use `monitoring/performance_monitor.py` to get CPU/RAM metrics.
-* Inspect API payload/rate limits, Redis failures, ordering event-pool/RAM limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.
+* Use host/application monitoring to collect CPU and RAM metrics.
+* Inspect API payload/rate limits, Redis failures, ordering event-pool limits and storage error logs. The API has no CPU/RAM `ResourceGuardMiddleware`.

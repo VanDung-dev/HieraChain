@@ -21,7 +21,7 @@ Một process API khởi tạo `HierarchyManager` gồm MainChain và các Sub-C
 
 Dùng `python -m hierachain` hoặc `hrc node start`. Cấp identity riêng, trusted block key, API key production và credential SQL trước khi khởi động. Phản hồi health là liveness; readiness dùng `/api/ledger/ready`. Lưu bền database và journal `data/` từng node. Registry SQL dùng chung không loại bỏ yêu cầu quyền sở hữu writer của journal ordering.
 
-Terminate HTTPS và cấu hình giới hạn truy cập công khai ở gateway. Giới hạn P2P trong mạng dự kiến. `ProductionSettings` đặt `P2P_TRUST_POLICY = "strict"` và `P2P_REQUIRE_SIGNATURES = True`, nhưng luồng khởi động P2P hiện tại của API chỉ truyền seed node và transport key vào `NetworkClient`, không nối hai cấu hình này vào runtime đó. Chỉ đặt các giá trị này không kích hoạt strict peer trust hoặc xác minh chữ ký message trong runtime API. IPFS tùy chọn cần daemon và encryption key thật dài 32 byte. Xem [Triển khai an toàn](../how-to/secure-deployment.md) và [Cấu hình](../reference/config.md).
+Terminate HTTPS và cấu hình giới hạn truy cập công khai ở gateway. Giới hạn P2P trong mạng dự kiến. Luồng khởi động P2P của API truyền seed node và transport key vào `NetworkClient`; nó không cung cấp danh tính peer bằng mật mã hay xác minh chữ ký message. IPFS tùy chọn cần daemon và encryption key thật dài 32 byte. Xem [Triển khai an toàn](../how-to/secure-deployment.md) và [Cấu hình](../reference/config.md).
 
 ## Tài nguyên Kubernetes
 

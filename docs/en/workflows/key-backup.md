@@ -36,9 +36,8 @@ Backup and restore of CLI key files are manual. After restoring a file, run `hrc
 
 The provider uses password-derived encryption for a local vault file. Development and tests are its documented target, but the code has no environment gate that blocks production use; suitability depends on deployment controls and requirements. Production HSM or KMS integration requires an application-specific `KeyProvider`. The vault is a key provider, not a replacement for the complete node identity JSON.
 
-`HRC_VAULT_TOKEN` and `HRC_VAULT_PATH` configure the separate `SecretManager` Vault backend. They do not supply the `FileVaultProvider` password. MSP certificate issuance and consensus changes do not trigger automatic backups.
+`HRC_VAULT_TOKEN` and `HRC_VAULT_PATH` are read by the application's Vault integration; they do not supply the `FileVaultProvider` password. Consensus changes do not trigger automatic backups.
 
 ## Related
 
-- [MSP Identity](./msp-identity.md): internal certificate lifecycle
 - [Encryption & Keys](../security/encryption-keys.md): providers and key scope

@@ -10,7 +10,7 @@ icon: material/check-decagram
 
 `HierarchyManager` exposes two Python methods with different results. `get_system_integrity_report()` summarizes chain validity and system statistics. `validate_cross_chain_consistency()` verifies blocks with trusted signing keys and compares each Sub-Chain tip with its latest MainChain proof.
 
-Both methods inspect registered chains sequentially. The caller decides when to run them and how to handle failures. Neither method invokes `CrossChainValidator`, schedules recovery or sends Risk Alerts. The API has no `/api/ledger/system/integrity` endpoint.
+Both methods inspect registered chains sequentially. The caller decides when to run them and how to handle failures. Neither method schedules recovery or sends alerts. The API has no `/api/ledger/system/integrity` endpoint.
 
 ## Flow diagram
 
@@ -63,7 +63,7 @@ for chain_name, proof in consistency["proof_consistency"].items():
 
 ## Caller responsibilities
 
-Run domain terminology checks separately through `CrossChainValidator` if the application needs them. Connect report handling to `AlertManager` or operational recovery explicitly. There is no built-in report-to-alert or report-to-rehydration hook.
+Connect report handling to the application's monitoring or operational recovery explicitly. There is no built-in report-to-alert or report-to-rehydration hook.
 
 ## Key classes and methods
 
@@ -73,10 +73,8 @@ Run domain terminology checks separately through `CrossChainValidator` if the ap
 | Report implementation | `_compute_system_integrity_report()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Consistency implementation | `_validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Signature/hash verification | `BlockVerifier.verify_chain()` | `hierachain/security/verify/block_verifier.py` |
-| Separate domain checks | `CrossChainValidator.validate_system_integrity()` | `hierachain/domains/utils/cross_chain_validator.py` |
 
 ## Related
 
 - [Proof Anchoring](./proof-anchoring.md): creates the stored anchors
 - [Chain Rehydration](./chain-rehydration.md): explicit chain synchronization
-- [Risk Analysis & Alerts](./risk-alerts.md): caller-managed alert dispatch

@@ -10,7 +10,7 @@ icon: material/check-decagram
 
 `HierarchyManager` cung cấp hai phương thức Python với kết quả khác nhau. `get_system_integrity_report()` tổng hợp tính hợp lệ của chuỗi và thống kê hệ thống. `validate_cross_chain_consistency()` xác minh khối bằng khóa ký tin cậy và so sánh khối cuối của từng Sub-Chain với bằng chứng MainChain mới nhất của nó.
 
-Cả hai phương thức kiểm tra tuần tự các chuỗi đã đăng ký. Bên gọi quyết định thời điểm chạy và cách xử lý thất bại. Không phương thức nào gọi `CrossChainValidator`, lên lịch khôi phục hay gửi cảnh báo rủi ro. API không có endpoint `/api/ledger/system/integrity`.
+Cả hai phương thức kiểm tra tuần tự các chuỗi đã đăng ký. Bên gọi quyết định thời điểm chạy và cách xử lý thất bại. Không phương thức nào lên lịch khôi phục hay gửi cảnh báo. API không có endpoint `/api/ledger/system/integrity`.
 
 ## Biểu đồ luồng
 
@@ -63,7 +63,7 @@ for chain_name, proof in consistency["proof_consistency"].items():
 
 ## Trách nhiệm của bên gọi
 
-Chạy kiểm tra thuật ngữ miền riêng qua `CrossChainValidator` nếu ứng dụng cần. Chủ động kết nối việc xử lý báo cáo với `AlertManager` hoặc quy trình khôi phục vận hành. Không có hook tích hợp sẵn từ báo cáo sang cảnh báo hoặc dựng lại chuỗi.
+Chủ động kết nối việc xử lý báo cáo với hệ thống giám sát hoặc quy trình khôi phục vận hành của ứng dụng. Không có hook tích hợp sẵn từ báo cáo sang cảnh báo hoặc dựng lại chuỗi.
 
 ## Lớp và phương thức chính
 
@@ -73,10 +73,8 @@ Chạy kiểm tra thuật ngữ miền riêng qua `CrossChainValidator` nếu �
 | Triển khai báo cáo | `_compute_system_integrity_report()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Triển khai kiểm tra nhất quán | `_validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Xác minh chữ ký/hash | `BlockVerifier.verify_chain()` | `hierachain/security/verify/block_verifier.py` |
-| Kiểm tra miền riêng | `CrossChainValidator.validate_system_integrity()` | `hierachain/domains/utils/cross_chain_validator.py` |
 
 ## Liên quan
 
 - [Neo bằng chứng](./proof-anchoring.md): tạo các neo đã lưu
 - [Khôi phục chuỗi](./chain-rehydration.md): đồng bộ chuỗi theo lời gọi rõ ràng
-- [Phân tích rủi ro và cảnh báo](./risk-alerts.md): gửi cảnh báo do bên gọi quản lý

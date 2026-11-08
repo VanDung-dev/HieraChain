@@ -1,6 +1,6 @@
 ---
 title: "Thực hành bảo mật"
-description: "Khuyến nghị bảo mật: MSP/Identity, quản lý khóa, API key, sanitization, logging an toàn, CORS/HSTS, rate limit."
+description: "Khuyến nghị bảo mật: quản lý khóa, API key, sanitization, logging an toàn, CORS và rate limit."
 icon: material/shield-star
 ---
 
@@ -8,15 +8,15 @@ icon: material/shield-star
 
 ## Triển khai
 
-Production yêu cầu xác thực API key và bản đồ khóa đã được cấp sẵn. Chỉ cấp cho client các scope mà route của nó cần. Kết thúc HTTPS tại reverse proxy doanh nghiệp, cấu hình `Strict-Transport-Security` ở đó và giới hạn CORS cho các frontend được phép. Cấu hình HSTS của HieraChain không thêm header này.
+Production yêu cầu xác thực API key và bản đồ khóa đã được cấp sẵn. Chỉ cấp cho client các scope mà route của nó cần. Kết thúc HTTPS tại reverse proxy doanh nghiệp, cấu hình `Strict-Transport-Security` ở đó và giới hạn CORS cho các frontend được phép. HieraChain không thêm header HSTS.
 
-Dùng giới hạn payload/tốc độ của API và giới hạn event pool/RAM của ordering để bảo vệ tài nguyên ứng dụng. Cấu hình thêm giới hạn tại proxy. Package không có `ResourceGuardMiddleware` hay `security/resource_guard.py`.
+Dùng giới hạn payload/tốc độ của API và giới hạn event pool của ordering để bảo vệ tài nguyên ứng dụng. Cấu hình thêm giới hạn tại proxy. Package không có `ResourceGuardMiddleware` hay `security/resource_guard.py`.
 
 ## Khóa và log
 
 Lưu đầy đủ node identity, bản đồ khóa block đáng tin cậy và khóa mã hóa IPFS trong kho có kiểm soát truy cập và khả năng khôi phục. Khi xoay khóa, cập nhật các bản đồ khóa công khai được verifier phê duyệt. Xem [Sao lưu khóa](../workflows/key-backup.md) để phân biệt node identity với file cặp khóa của CLI.
 
-Dùng trường có tên trong dữ liệu có cấu trúc để `SecureLogger` che bí mật. Nó không phát hiện việc xóa hay sửa log. Xác minh kiểm toán dùng `AuditLogger` với manifest đáng tin cậy được lưu riêng. Áp dụng chính sách lưu giữ và kiểm soát truy cập tại hệ thống log của môi trường triển khai.
+Dùng trường có tên trong dữ liệu có cấu trúc để `SecureLogger` che bí mật. Nó không phát hiện việc xóa hay sửa log. Áp dụng chính sách lưu giữ và kiểm soát truy cập tại hệ thống log của môi trường triển khai.
 
 ## Lưu trạng thái khóa xác thực
 
@@ -28,8 +28,7 @@ Dùng trường có tên trong dữ liệu có cấu trúc để `SecureLogger` 
 
 | Phạm vi | Mã nguồn |
 |:-----|:-------|
-| Identity và khóa | `hierachain/security/identity.py`, `msp.py`, `key_manager.py`, `key_provider.py`, `identity_loader.py` |
-| ABAC do caller quản lý | `hierachain/security/policy_engine.py` |
+| Khóa và identity | `hierachain/security/key_manager.py`, `key_provider.py`, `identity_loader.py` |
 | Xác thực API | `hierachain/security/verify/api_key_verifier.py` |
 | Log có cấu trúc | `hierachain/security/secure_logging.py`, `sanitization.py` |
 | Giới hạn API | `hierachain/api/middleware.py` |

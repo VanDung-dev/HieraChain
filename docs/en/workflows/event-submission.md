@@ -122,5 +122,4 @@ event = {
 
 - [Consensus Mechanisms](./consensus_mechanisms.md): PoA and PoF sub-diagrams
 - [Proof Anchoring](./proof-anchoring.md): triggered after block finalized
-- [Policy Enforcement](./policy-enforcement.md): policy checks for operations explicitly routed through `PolicyEngine`
-- [MSP Identity](./msp-identity.md): membership checks for callers using `HierarchicalMSP`
+- [Authorization & Access Control](../security/authorization-access-control.md): API key checks applied before a route handler runs

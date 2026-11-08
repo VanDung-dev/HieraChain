@@ -52,10 +52,9 @@ The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redi
     * [Cross-Chain 2PC](workflows/cross-chain-2pc.md)
     * [Error Recovery](workflows/error-recovery.md)
     * [Entity Tracing](workflows/entity-tracing.md) · [Chain Rehydration](workflows/chain-rehydration.md)
-    * [Integrity Validation](workflows/integrity-validation.md) · [Policy Enforcement](workflows/policy-enforcement.md)
+    * [Integrity Validation](workflows/integrity-validation.md)
     * [WebSocket Streaming](workflows/websocket-streaming.md) · [IPFS Storage](workflows/ipfs-storage.md)
-    * [Risk Alerts](workflows/risk-alerts.md) · [ERP Integration](workflows/erp-integration.md)
-    * [MSP Identity](workflows/msp-identity.md) · [Key Backup](workflows/key-backup.md)
+    * [Key Backup](workflows/key-backup.md)
 
 * :material-cube-outline:{ .lg .middle } __Modules__
 
@@ -66,8 +65,7 @@ The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redi
     * [Adapters](modules/adapters.md) · [Network](modules/network.md) · [API](modules/api.md)
     * [Config](modules/config.md) · [CLI](modules/cli.md) · [SDK](modules/sdk.md)
     * [Cluster](modules/cluster.md) · [Domains](modules/domains.md)
-    * [Monitoring](modules/monitoring.md) · [Risk Management](modules/risk-management.md)
-    * [Integration](modules/integration.md) · [Units](modules/units.md)
+    * [Units](modules/units.md)
 
 * :material-security:{ .lg .middle } __Security System__
 
@@ -107,7 +105,6 @@ The hierarchical ledger uses Ed25519-signed blocks and SQLite/PostgreSQL or Redi
     * [Add/Customize Consensus](how-to/add-consensus.md)
     * [Cross-Chain Events (2PC)](how-to/cross-chain-transactions.md)
     * [Write Domain Contracts](how-to/write-domain-contracts.md)
-    * [Use Blockchain Explorer](how-to/use-explorer.md)
     * [Use WebSocket](how-to/add-websocket.md) · [Web2 Integration](how-to/integrate-web2.md)
     * [Secure Deployment](how-to/secure-deployment.md) · [Troubleshooting](how-to/troubleshooting.md)
     * [Disaster Recovery](how-to/disaster-recovery.md)

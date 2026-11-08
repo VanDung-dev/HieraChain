@@ -14,8 +14,8 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Block | Khối | Đơn vị dữ liệu chứa Event; định nghĩa trong `hierachain/core/block.py`. |
 | Blockchain | Chuỗi khối | Quản trị chuỗi Block; `hierachain/core/blockchain.py`. |
 | Consensus | Đồng thuận | Cơ chế chấp thuận Block (PoA, PoF); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
-| Membership Service Provider | MSP | Quản lý danh tính/tổ chức; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
-| Policy | Chính sách | Kiểm soát truy cập/tài nguyên; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. Không có `resource_guard.py`. |
+| HieraChain | Sổ cái blockchain phân cấp cho nghiệp vụ doanh nghiệp. |
+| Node ID | Node ID | Định danh của node HieraChain (`NODE_ID`/`HRC_NODE_ID`). |
 | World State | World State | Trạng thái hiện tại của dữ liệu; `hierachain/state/world_state.py`. |
 | Journal | Nhật ký | Ghi log giao dịch; `hierachain/error_mitigation/journal.py`. |
 | Rollback | Hoàn tác | Hoàn tác transaction do `hierachain/hierarchical/transaction_manager.py` sở hữu; không có manager rollback trạng thái toàn cục. |
@@ -31,7 +31,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Channel | Kênh | Kênh riêng tư giữa các tổ chức; `hierachain/hierarchical/channel/channel.py`. |
 | Multi‑Organization | Đa tổ chức | Mạng nhiều tổ chức; `hierachain/hierarchical/multi_org.py`. |
 | Private Data | Dữ liệu riêng tư | Bộ sưu tập dữ liệu riêng tư; `hierachain/hierarchical/private_data.py`. |
-| Performance Monitor | Performance Monitor | Giám sát hiệu năng; `hierachain/monitoring/performance_monitor.py`. |
+| Ledger | Chuỗi block chỉ thêm, lưu event nghiệp vụ. |
 | Rate Limiting | Rate limit | Giới hạn tần suất yêu cầu; cấu hình trong `hierachain/config/settings.py`. |
 | HTTP Strict Transport Security | HSTS | HSTS; `hierachain/config/settings.py`. |
 | Cross‑Origin Resource Sharing | CORS | CORS; `hierachain/config/settings.py`. |
@@ -40,7 +40,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | API business | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | API Admin | REST API Admin; `hierachain/api/admin/*`. |
 | Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ qua `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*`. |
-| Identity Manager | Quản lý danh tính | Quản lý tổ chức/người dùng/role; `hierachain/security/identity.py`. |
-| Certificate | Chứng chỉ | Dataclass `Certificate` nội bộ trong `hierachain/security/msp.py` (không phải X.509, không có `certificate.py`). |
+| World State | Trạng thái thế giới | Projection trong bộ nhớ của trạng thái entity mới nhất suy ra từ block đã xác minh. |
+| Node identity | Định danh runtime nạp từ `HRC_VALIDATOR_IDENTITY`; xem `hierachain/security/identity_loader.py`. |
 
 Mục này sẽ tiếp tục cập nhật và là nguồn tham chiếu cho việc dịch sang tiếng Anh.

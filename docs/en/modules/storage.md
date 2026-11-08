@@ -112,8 +112,7 @@ The opt-in regression file `tests/integration/test_redis_ledger.py` uses `HRC_RE
 ## Related
 
 *   [Core Module (Block & Blockchain)](./core.md)
-*   [ERP Integration](./integration.md)
-*   [Performance Monitoring](./monitoring.md)
+*   [Adapters](./adapters.md)
 
 Parquet logging publishes a complete active segment snapshot, fsyncs its file and directory, and only then returns. Segments contain at most 1,024 records; active snapshots are atomically replaced, while sealed segments remain immutable. This rewrites at most one segment per append and increases write cost. Readers use `read_parquet_log()` for current and legacy logs.
 

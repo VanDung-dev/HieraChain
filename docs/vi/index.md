@@ -52,10 +52,9 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
     * [Sự kiện Liên chuỗi (2PC)](workflows/cross-chain-2pc.md)
     * [Giảm thiểu Lỗi & Phục hồi](workflows/error-recovery.md)
     * [Truy vết Thực thể](workflows/entity-tracing.md) · [Khôi phục trạng thái chuỗi](workflows/chain-rehydration.md)
-    * [Xác thực Tính toàn vẹn](workflows/integrity-validation.md) · [Thực thi Chính sách](workflows/policy-enforcement.md)
+    * [Xác thực Tính toàn vẹn](workflows/integrity-validation.md)
     * [Luồng dữ liệu WebSocket](workflows/websocket-streaming.md) · [Lưu trữ Mã hóa IPFS](workflows/ipfs-storage.md)
-    * [Cảnh báo Rủi ro](workflows/risk-alerts.md) · [Đồng bộ Tích hợp ERP](workflows/erp-integration.md)
-    * [Định danh & Ủy quyền MSP](workflows/msp-identity.md) · [Sao lưu & Khôi phục Khóa](workflows/key-backup.md)
+    * [Sao lưu & Khôi phục Khóa](workflows/key-backup.md)
 
 * :material-cube-outline:{ .lg .middle } __Modules__
 
@@ -66,8 +65,7 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
     * [Adapters](modules/adapters.md) · [Network](modules/network.md) · [API](modules/api.md)
     * [Config](modules/config.md) · [CLI](modules/cli.md) · [SDK](modules/sdk.md)
     * [Cluster](modules/cluster.md) · [Domains](modules/domains.md)
-    * [Monitoring](modules/monitoring.md) · [Risk Management](modules/risk-management.md)
-    * [Integration](modules/integration.md) · [Units](modules/units.md)
+    * [Units](modules/units.md)
 
 * :material-security:{ .lg .middle } __Hệ thống Bảo mật__
 
@@ -107,7 +105,6 @@ Ledger hierarchy dùng block ký Ed25519 và SQLite/PostgreSQL hoặc Redis có 
     * [Thêm/Tùy biến Consensus](how-to/add-consensus.md)
     * [Sự kiện Liên chuỗi (2PC)](how-to/cross-chain-transactions.md)
     * [Viết Hợp đồng Miền (Domain Contracts)](how-to/write-domain-contracts.md)
-    * [Sử dụng Blockchain Explorer](how-to/use-explorer.md)
     * [Sử dụng WebSocket](how-to/add-websocket.md) · [Tích hợp Web2](how-to/integrate-web2.md)
     * [Triển khai an toàn](how-to/secure-deployment.md) · [Xử lý sự cố](how-to/troubleshooting.md)
     * [Khôi phục sau thảm họa (Disaster Recovery)](how-to/disaster-recovery.md)

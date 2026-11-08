@@ -25,11 +25,9 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 * `BaseEvent`: Lớp cơ sở cho các sự kiện nghiệp vụ có cấu trúc kèm kiểm tra lược đồ.
 * `event_creators.py`: Các hàm tiện ích tạo đối tượng sự kiện cho các thao tác: `create_quality_check`, `create_approval`, `create_resource_allocation` và `create_status_update`.
 
-### 2.3 Tiện ích toàn vẹn (`utils/cross_chain_validator.py`, `utils/entity_tracer.py`)
+### 2.3 Tiện ích toàn vẹn (`utils/entity_tracer.py`)
 
-* `CrossChainValidator`: Đánh giá tính nhất quán giữa các chuỗi con và kiểm tra thuật ngữ tiền mã hóa bị cấm.
 * `EntityTracer`: Tái hiện đầy đủ lịch sử của thực thể xuyên suốt các chuỗi trong hệ thống.
-* `utils/compliance_checker.py`: Kiểm tra tham số tuân thủ đối chiếu với quy định.
 
 ## 3. Quản lý nghiệp vụ và vòng đời thực thể
 
@@ -83,13 +81,7 @@ sequenceDiagram
 
 Sau khi ghi bền quyết định COMMIT, nếu thiếu ACK từ participant thì thao tác ở trạng thái `IN_DOUBT` để forward recovery tiếp tục. Coordinator không rollback quyết định commit đã được lưu bền vững.
 
-## 5. Tuân thủ và truy vết liên chuỗi
-
-### Lọc thuật ngữ tiền mã hóa
-
-`CrossChainValidator` quét dữ liệu sự kiện để đảm bảo quy định về thuật ngữ doanh nghiệp. Nếu phát hiện các từ như `coin`, `token`, `mining` hoặc `wallet` trong dữ liệu nghiệp vụ, validator sẽ đánh dấu sự kiện vi phạm quy định.
-
-### Truy vết thực thể liên chuỗi
+## 5. Truy vết thực thể liên chuỗi
 
 `EntityTracer` tổng hợp các sự kiện của một thực thể trên toàn bộ Sub-Chain:
 
@@ -117,4 +109,3 @@ for chain_name, summary in trace_results.get("chain_details", {}).items():
 
 * [Hierarchical Module](./hierarchical.md)
 * [Xây dựng Logic Miền Nghiệp vụ](../how-to/write-domain-contracts.md)
-* [Tích hợp ERP](../workflows/erp-integration.md)

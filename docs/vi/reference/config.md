@@ -72,7 +72,6 @@ print(settings.AUTH_ENABLED)
 ### Xử lý song song và tài nguyên
 
 * `HRC_EVENT_POOL_MAX_SIZE` (mặc định: `10000`) giới hạn hàng đợi event của ordering.
-* `HRC_RAM_CRITICAL_THRESHOLD` (mặc định: `95.0` %) được khai báo trong settings nhưng chưa có consumer runtime trong ordering hoặc storage.
 
 ### Bảo mật và authentication
 
@@ -81,24 +80,20 @@ print(settings.AUTH_ENABLED)
 * `HRC_API_KEY_REVOCATIONS_DB` (mặc định: `data/api_key_revocations.sqlite3`): lưu bền vững API key đã thu hồi và brute-force lockout cục bộ cho API production. Mọi worker trên một host phải dùng chung file ghi được và bền vững này.
 * `HRC_AUTH_STATE_REDIS_URL` (tùy chọn): khi đặt, API key revocation và brute-force lockout dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu revocation phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối xác thực thay vì dùng trạng thái cục bộ.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
-* Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`; giá trị khác gây `ValueError`.
-* AWS Secret Manager: `HRC_AWS_SECRET_NAME` (bắt buộc, tên secret hoặc ARN chứa JSON object), `HRC_AWS_REGION` (mặc định: `us-east-1`). `SecretManager.get_secret(key)` chọn trường chuỗi, không trả toàn bộ `SecretString`; xem [Secret Manager](../modules/config.md) về giá trị mặc định và chuyển đổi dữ liệu.
 * `HRC_MASTER_KEY_SOURCE=env` vẫn được chấp nhận như alias tương thích cho hành vi secret qua biến môi trường hiện có. Giá trị khác của `HRC_MASTER_KEY_SOURCE` và mọi `HRC_MASTER_KEY_FILE` không rỗng sẽ khiến cấu hình dừng với lỗi vì chưa có master-key provider thay thế. Điều này không thay đổi API `FileVaultProvider` riêng biệt.
 * Bảo vệ brute-force:
     * `HRC_BF_MAX_FAILURES` (mặc định: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (mặc định: `900` = 15 phút)
     * `HRC_BF_WINDOW_SECONDS` (mặc định: `300` = 5 phút)
     * TTL khóa của Redis tuân theo `HRC_BF_LOCKOUT_SECONDS`; mỗi yêu cầu kiểm tra khóa đều đọc khóa dùng chung. SQLite và Redis đếm số lần thất bại một cách nguyên tử giữa các worker. Redis dùng thời gian máy chủ và cập nhật Lua nguyên tử cho cửa sổ thất bại và ngưỡng khóa. Bộ đếm lần thử của memory/file vẫn thuộc riêng từng tiến trình.
-* Identity và organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
-### Bảo mật mạng P2P
+### Mạng P2P
 
 * Định danh node và P2P transport: `HRC_NODE_ID` (mặc định: `default-node`; `NODE_ID` là alias dự phòng), `HRC_P2P_PORT` (mặc định: `5555`; `NODE_PORT` là alias dự phòng), và `HRC_PEERS` (mặc định: danh sách rỗng; danh sách seed node phân tách bằng dấu phẩy; `PEERS` là alias dự phòng). Dùng `peer-id@host:port` khi định danh transport từ xa khác hostname; dạng `host:port` lấy hostname làm peer ID. Tên có tiền tố HRC được ưu tiên.
-* `HRC_P2P_TRUST_POLICY` (mặc định: `open` ở dev, `strict` ở production; giá trị: `open|strict`)
-* `HRC_P2P_PEER_ALLOWLIST` (danh sách peer ID phân tách bằng dấu phẩy cho chế độ strict)
-* `HRC_P2P_REQUIRE_SIGNATURES` (`false` ở dev, `true` ở production)
+* `HRC_P2P_ENABLED` (mặc định: `true`)
+* `HRC_P2P_HOST` (mặc định: `0.0.0.0`)
 
-Production cố định chính sách tin cậy ở `strict` và yêu cầu chữ ký ở `True`; giá trị môi trường không ghi đè các thuộc tính production này. `SecureConnectionManager` dùng các thiết lập đó. Luồng khởi động API tạo `NetworkClient` với seed peer và transport key, chưa nối manager này, chính sách tin cậy hoặc kiểm tra chữ ký vào client. Xem [Network](../modules/network.md).
+Luồng khởi động API tạo `NetworkClient` với seed peer và transport key. Xem [Network](../modules/network.md).
 
 ### CORS
 
@@ -107,12 +102,9 @@ Production cố định chính sách tin cậy ở `strict` và yêu cầu chữ
 * `CORS_ALLOW_METHODS` (danh sách method cho phép)
 * `CORS_ALLOW_HEADERS` (danh sách header cho phép)
 
-### HTTPS và HSTS
+### HTTPS
 
-* `HRC_HSTS_ENABLED` (`false` ở dev/test; `true` ở production)
-* `HRC_HSTS_MAX_AGE` (mặc định: `31536000` = 1 năm)
-
-Các thiết lập này được khai báo và kiểm tra để cảnh báo cấu hình, nhưng middleware API không thêm `Strict-Transport-Security`. Hãy cấu hình header tại reverse proxy HTTPS.
+HieraChain không thêm `Strict-Transport-Security`. Hãy cấu hình HSTS tại reverse proxy HTTPS.
 
 ### Rate limiting
 
@@ -125,13 +117,6 @@ Các thiết lập này được khai báo và kiểm tra để cảnh báo cấ
 
 * `HRC_METRICS_ENABLED` (mặc định: `false`). Bật `/metrics` để xuất registry Prometheus mặc định. API không đăng ký bộ đếm yêu cầu/độ trễ HTTP hay collector cho ledger.
 * `HRC_TRUSTED_PROXIES` (mặc định: `127.0.0.1`). IP của reverse proxy tin cậy (cho HTTP/2, HTTP/3).
-
-### Đa tổ chức
-
-* `MULTI_ORG_ENABLED` (`True`), `MSP_ENABLED` (`True`)
-* `ORGANIZATION_ADMIN_THRESHOLD` (mặc định: `1`)
-* `CHANNEL_CREATION_POLICY` (mặc định: `majority`; giá trị: `majority|unanimous|admin_only`)
-* `AFFILIATION_HIERARCHY_ENABLED` (`True`)
 
 ### Zero-knowledge (ZK)
 

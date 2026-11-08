@@ -168,9 +168,7 @@ finally:
 
 ## Cách 3: ERP Adapter
 
-Dùng thư viện mapping/scheduler với adapter ERP do ứng dụng cấp. Connector vendor có sẵn chỉ mô phỏng.
-
-Xem chi tiết tại: [Mô-đun Tích hợp](../modules/integration.md).
+HieraChain không cung cấp connector ERP. Xây dựng lớp mapping và lập lịch trong ứng dụng của bạn, rồi gửi event nghiệp vụ qua REST ledger API hoặc Python SDK.
 
 ## Lưu ý Quan trọng
 
@@ -181,4 +179,4 @@ Xem chi tiết tại: [Mô-đun Tích hợp](../modules/integration.md).
 ## Liên quan
 
 * Tài liệu API Ledger: [API Ledger](../reference/api-ledger.md)
-* Mô-đun Tích hợp: [Integration](../modules/integration.md)
+* SDK: [Module SDK](../modules/sdk.md)

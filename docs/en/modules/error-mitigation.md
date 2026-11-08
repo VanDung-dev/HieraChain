@@ -1,6 +1,6 @@
 ---
 title: "Error Mitigation Module"
-description: "Runtime validation, durable journaling, and error classification."
+description: "Durable transaction journaling for the hierarchical ledger."
 icon: material/bug
 ---
 
@@ -8,69 +8,11 @@ icon: material/bug
 
 ## 1. Overview
 
-The `error_mitigation` module provides the runtime primitives for state validation, durable journaling, and error classification. Operational restoration remains owned by the deployment layer.
+The `error_mitigation` module provides durable transaction journaling. Operational restoration remains owned by the deployment layer.
 
-## 2. Core components
+## 2. Transaction journaling (`journal.py`)
 
-Components reside in `hierachain/error_mitigation/`.
-
-### 2.1 Validation layer (`validator.py`, `data_validator.py`)
-
-* `validate_certificate()`: Rejects expired certificates.
-* `DataValidator`: Checks event payload consistency, Arrow schema alignment, and input constraints.
-
-Custom field validators return `(is_valid, message)`. If a callback raises an exception or returns an invalid result, `DataValidator` records an error and returns `ValidationResult.is_valid=False`, including in batch validation. Validation level and automatic fixes do not override this failure.
-
-### 2.2 Durable journaling (`journal.py`)
-
-* Implements `TransactionJournal` using Apache Parquet and Arrow for disk-backed event logging.
-* Enforces append-only storage before events commit to blockchain state.
-* Provides replay generators to reconstruct uncommitted events after ungraceful shutdowns.
-
-`read_since(cursor=None)` flushes the active writer and fsyncs it only when its file state is unknown or has changed. Successful appends are already fsynced before `log_event()` returns. It reads durable frames and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or required fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
-
-Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.
-
-### 2.3 Recoverable encryption (`encryption_validator.py`)
-
-`EncryptionValidator(config, key_resolver)` uses AES-256-GCM. Encryption requires `config["key_id"]` and a caller-supplied `key_resolver(key_id)` that returns exactly 32 bytes for an approved, retained key. Missing IDs, unavailable keys, or invalid key material raise `SecurityError`; the validator does not generate disposable encryption keys.
-
-`encrypt_data(text)` returns `ciphertext`, `tag`, and `iv` as bytes, plus `algorithm`, `key_id`, and `timestamp`. The GCM tag authenticates the ciphertext, algorithm, key ID, and timestamp. `decrypt_data(envelope)` resolves the key ID in the envelope, so older data remains readable after the configured encryption key ID changes, provided its original key is retained. Missing or tampered envelope fields raise `SecurityError`.
-
-```python
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from hierachain.error_mitigation import EncryptionValidator
-
-keys = {"data-v1": AESGCM.generate_key(bit_length=256)}
-validator = EncryptionValidator(
-    {"algorithm": "AES-256-GCM", "key_id": "data-v1"},
-    key_resolver=keys.__getitem__,
-)
-envelope = validator.encrypt_data("business event")
-reader = EncryptionValidator({"algorithm": "AES-256-GCM"}, key_resolver=keys.__getitem__)
-assert reader.decrypt_data(envelope) == "business event"
-```
-
-This example retains keys in memory. Production callers must preserve keys in their existing secure key store and restore the resolver after restart; keys are never embedded in the envelope. Encode the byte fields as Base64 for JSON storage and decode them back to bytes before decryption. The module's rotation notification does not provision or retain keys automatically. Older ciphertext whose random key was discarded by the previous implementation cannot be recovered by this change.
-
-### 2.4 Capacity and key rotation advice
-
-
-`ResourceValidator.validate_resources()` reports CPU, memory, and disk threshold violations. The legacy `auto_scale=True` flag additionally writes CPU/memory capacity recommendations; disk violations only produce warnings. Callers must invoke these checks themselves and handle provisioning through their host infrastructure.
-
-Thresholds default to CPU 70%, memory 80%, and disk 85%, configurable through `cpu_threshold`, `memory_threshold`, and `disk_threshold`. Checks run in CPU, memory, disk order; only usage strictly above a threshold is a violation, so equality passes.
-
-`EncryptionValidator.validate_config()` warns when `key_rotation_interval` is below the existing `min_key_rotation_interval` (2,592,000 seconds). This is an advisory configuration comparison, not an evaluation of key age or an expiry policy. It creates no schedule, deadline, or replacement key. The host application manages rotation and retention of old keys.
-
-Log consumers must update their event filters: `resource_scaling_triggered` becomes `resource_capacity_recommendation`. The legacy Parquet path `log/error_mitigation/resource_scaling.parquet`, payload fields (including `auto_scale_enabled`), and existing records remain compatible. The misleading `key_rotation_scheduled` log and `next_rotation` field are removed; the interval warning remains.
-
-## 3. Error classification strategy
-
-`classify_error()` returns an `ErrorInfo` with a category, a `PriorityLevel`, and a mitigation strategy. The priority is calculated from impact and likelihood. `PriorityLevel` contains `CRITICAL`, `HIGH`, `MEDIUM`, and `LOW`.
-
-## 4. Transaction journaling
-
-The `TransactionJournal` provides write-ahead persistence:
+`TransactionJournal` provides write-ahead persistence:
 
 1. Durable writes: Appends framed Arrow records and fsyncs them on disk before blocks finalize; legacy Parquet remains readable.
 2. Schema enforcement: Guarantees every journal record matches the required event schema.
@@ -83,12 +25,16 @@ journal = TransactionJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 
+`read_since(cursor=None)` flushes the active writer and fsyncs it only when its file state is unknown or has changed. Successful appends are already fsynced before `log_event()` returns. It reads durable frames and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or required fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
+
+Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.
+
+The journal fsyncs directory entries after creation and rotation. New journal frames preserve typed `details` and original field presence in the binary envelope, so domain registration and stable-ID retries survive replay. The updated reader accepts older envelopes and legacy Parquet archives; older readers do not understand the extended envelope, so upgrade the reader before writing the new format. Metadata omitted from historical registration events cannot be reconstructed. Each journal path requires one owning process; see [local journal ownership](../consensus/ordering.md#local-journal-ownership).
+
+Journal directory walks and file opens reject symlinks using directory descriptors and no-follow flags.
+
 ## Related
 
 * [Adapters Module](./adapters.md)
 * [Core Module](./core.md)
-* [Cluster Lockdown](./cluster.md)
-
-`ErrorClassifier` invokes a supplied lockdown callback for HIGH or CRITICAL security classifications and CRITICAL performance classifications. `DataValidator.validate_table()` checks required Arrow types at all levels; strict validation additionally rejects nulls. Consistency checks compare rows in order, including decoded JSON details. Journal directory walks and file opens reject symlinks using directory descriptors and no-follow flags.
-
-The journal fsyncs directory entries after creation and rotation. New journal frames preserve typed `details` and original field presence in the binary envelope, so domain registration and stable-ID retries survive replay. The updated reader accepts older envelopes and legacy Parquet archives; older readers do not understand the extended envelope, so upgrade the reader before writing the new format. Metadata omitted from historical registration events cannot be reconstructed. Each journal path requires one owning process; see [local journal ownership](../consensus/ordering.md#local-journal-ownership).
+* [Ordering](../consensus/ordering.md)

@@ -1,6 +1,6 @@
 ---
 title: "Security Best Practices"
-description: "Security recommendations: MSP/Identity, key management, API key, sanitization, secure logging, CORS/HSTS, rate limit."
+description: "Security recommendations: key management, API key, sanitization, secure logging, CORS and rate limits."
 icon: material/shield-star
 ---
 
@@ -8,15 +8,15 @@ icon: material/shield-star
 
 ## Deployment
 
-Production requires API-key authentication and a provisioned key map. Give each client the scopes needed by its routes. Terminate HTTPS at the enterprise reverse proxy, configure `Strict-Transport-Security` there, and restrict CORS to the intended frontends. HieraChain's HSTS settings do not add the header.
+Production requires API-key authentication and a provisioned key map. Give each client the scopes needed by its routes. Terminate HTTPS at the enterprise reverse proxy, configure `Strict-Transport-Security` there, and restrict CORS to the intended frontends. HieraChain does not add the HSTS header.
 
-Use API payload/rate limits and ordering event-pool/RAM limits for application resource protection. Configure proxy limits as well. There is no `ResourceGuardMiddleware` or `security/resource_guard.py` in the package.
+Use API payload/rate limits and ordering event-pool limits for application resource protection. Configure proxy limits as well. There is no `ResourceGuardMiddleware` or `security/resource_guard.py` in the package.
 
 ## Keys and logs
 
 Keep the complete node identity, trusted block key map and IPFS encryption key in recoverable, access-controlled storage. Rotation requires updating the approved public key maps used by verifiers. See [Key Backup](../workflows/key-backup.md) for the distinction between node identity and CLI key pair files.
 
-Use structured named fields so `SecureLogger` can redact secrets. It does not detect log deletion or modification. Audit verification uses `AuditLogger` with a separately trusted manifest. Apply retention and access controls in the deployment's logging system.
+Use structured named fields so `SecureLogger` can redact secrets. It does not detect log deletion or modification. Apply retention and access controls in the deployment's logging system.
 
 ## Authentication lockout storage
 
@@ -28,8 +28,7 @@ Use structured named fields so `SecureLogger` can redact secrets. It does not de
 
 | Area | Source |
 |:-----|:-------|
-| Identity and keys | `hierachain/security/identity.py`, `msp.py`, `key_manager.py`, `key_provider.py`, `identity_loader.py` |
-| Caller-managed ABAC | `hierachain/security/policy_engine.py` |
+| Keys and identity | `hierachain/security/key_manager.py`, `key_provider.py`, `identity_loader.py` |
 | API authentication | `hierachain/security/verify/api_key_verifier.py` |
 | Structured logging | `hierachain/security/secure_logging.py`, `sanitization.py` |
 | API limits | `hierachain/api/middleware.py` |

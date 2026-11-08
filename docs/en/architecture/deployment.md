@@ -21,7 +21,7 @@ An API process initializes a `HierarchyManager` with MainChain and registered Su
 
 Use `python -m hierachain` or `hrc node start`. Provision distinct identities, trusted block keys, production API keys and SQL credentials before startup. A health response is liveness; readiness uses `/api/ledger/ready`. Keep the database and each node's `data/` journals persistent. Shared SQL registry storage does not remove the ordering journal's writer ownership requirements.
 
-Terminate HTTPS and configure public access limits at the gateway. Restrict P2P access to the intended network. `ProductionSettings` sets `P2P_TRUST_POLICY = "strict"` and `P2P_REQUIRE_SIGNATURES = True`, but the current API P2P startup path passes seed nodes and transport keys to `NetworkClient` without wiring either setting into that runtime. These values alone do not enforce strict peer trust or message-signature verification there. Optional IPFS requires its daemon and a real 32-byte encryption key. See [Secure deployment](../how-to/secure-deployment.md) and [Configuration](../reference/config.md).
+Terminate HTTPS and configure public access limits at the gateway. Restrict P2P access to the intended network. The API P2P startup path passes seed nodes and transport keys to `NetworkClient`; it provides no cryptographic peer identity or message-signature verification. Optional IPFS requires its daemon and a real 32-byte encryption key. See [Secure deployment](../how-to/secure-deployment.md) and [Configuration](../reference/config.md).
 
 ## Kubernetes assets
 

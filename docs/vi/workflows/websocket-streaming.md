@@ -140,4 +140,3 @@ sequenceDiagram
 ## Liên quan
 
 - [Gửi sự kiện](./event-submission.md): pipeline ledger mà ứng dụng có thể nối với các hàm hỗ trợ broadcast
-- [Phân tích rủi ro và cảnh báo](./risk-alerts.md): quy trình thông báo email/webhook riêng

@@ -11,8 +11,8 @@ Giới hạn tài nguyên và kiểm tra toàn vẹn ledger chạy tại API mid
 ## Bảo vệ tài nguyên
 
 * Giới hạn rate và payload nằm trong `hierachain/api/middleware.py` (`add_rate_limit`, `add_payload_limit` với `HRC_RATE_LIMIT`, `HRC_RATE_LIMIT_RPM`, `HRC_RATE_LIMIT_BACKEND`, `HRC_TRUSTED_PROXIES`). Với request POST, PUT và PATCH, middleware kiểm tra `Content-Length` hợp lệ với giới hạn 1 MiB; chỉ đếm byte qua `request.stream()` khi thiếu header này.
-* `HRC_EVENT_POOL_MAX_SIZE` mặc định là 10.000 và giới hạn hàng đợi ordering. `HRC_RAM_CRITICAL_THRESHOLD` được khai báo với mặc định 95% nhưng không có runtime consumer trong `hierachain/`. Khi được gọi, `ResourceValidator` báo các ngưỡng CPU, memory và disk được cấu hình riêng; nó không thực thi ngưỡng RAM này trong ordering hay storage.
-* Dùng middleware ứng dụng kết hợp giới hạn tại reverse proxy. `PerformanceMonitor` báo cáo metric; nó không cài guard CPU/RAM cho từng request.
+* `HRC_EVENT_POOL_MAX_SIZE` mặc định là 10.000 và giới hạn hàng đợi ordering.
+* Dùng middleware ứng dụng kết hợp giới hạn tại reverse proxy. Giám sát tài nguyên thuộc về ứng dụng host.
 
 ## Kiểm tra toàn vẹn
 
@@ -34,5 +34,4 @@ graph LR
 ## Liên quan
 
 *   [Xử lý lỗi](../modules/error-mitigation.md)
-*   [Giám sát](../modules/monitoring.md)
 *   [Ghi nhật ký an toàn](./lockdown-logging.md)

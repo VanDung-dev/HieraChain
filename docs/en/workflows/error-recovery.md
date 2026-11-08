@@ -7,22 +7,20 @@ icon: material/alert-decagram
 # Error handling and recovery
 
 HieraChain keeps recovery responsibilities close to the component that owns the
-state: `ErrorClassifier` records and classifies failures, `TransactionJournal`
-protects pending events, and `OrderingRecovery` replays them after restart. Snapshot and infrastructure recovery
-are deployment responsibilities, not automatic services in this package.
+state: `TransactionJournal` protects pending events and `OrderingRecovery`
+replays them after restart. Snapshot and infrastructure recovery are deployment
+responsibilities, not automatic services in this package.
 
 ## Runtime flow
 
 ```mermaid
 flowchart TD
-    ERR["Error or node failure"] --> CLASS["ErrorClassifier\nclassify and log"]
-    CLASS -->|Eligible priority/category and configured callback| LOCK["Optional lockdown callback"]
     EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
 ```
 
-These are separate component-owned paths, not a dispatch chain from `ErrorClassifier`. Its `classify_error()` records and returns an `ErrorInfo`; it may invoke the optional lockdown callback only for CRITICAL security/performance errors or HIGH security errors, and only when a callback is configured. `OrderingRecovery` replays journal entries.
+These are separate component-owned paths. `OrderingRecovery` replays journal entries.
 
 ## Event durability
 
@@ -53,4 +51,4 @@ node autoscaling through `error_mitigation` classes.
 ## Related
 
 - [Chain Rehydration](./chain-rehydration.md): full chain reload from DB
-- [Error Mitigation Module](../modules/error-mitigation.md): validation and journaling
+- [Error Mitigation Module](../modules/error-mitigation.md): durable journaling

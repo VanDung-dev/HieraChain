@@ -66,7 +66,7 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 ## Hiệu năng kém/503 Service Unavailable
 
-* Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool/RAM trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
+* Kiểm tra payload/rate limit của API, lỗi Redis, giới hạn event pool trong ordering và log lỗi storage. Không có `ResourceGuardMiddleware` CPU/RAM ở API.
 * Kiểm tra giới hạn tốc độ API và CORS trong `settings.py`; cấu hình HSTS tại proxy HTTPS.
 * Giảm kích thước lô sự kiện; chỉ điều chỉnh instance cache hiện có sau khi đo việc sử dụng chúng.
 
@@ -90,10 +90,10 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 ## Chữ ký/khóa
 
-* Kiểm tra public key 64‑hex (Ed25519) khi đăng ký người dùng (`security/identity.py`).
+* Kiểm tra public key 64‑hex (Ed25519) khi cấu hình node identity (`security/identity_loader.py`).
 * Dùng `security/security_utils.py` để sinh cặp khóa test.
 
 ## Nhật ký và kiểm toán
 
 * Bật mức log phù hợp, xem `settings.LOG_LEVEL`.
-* Dùng `risk_management/audit_logger.py` cho vết kiểm toán.
+* Logging và kiểm toán do `security/secure_logging.py` cung cấp; không có audit archive riêng.

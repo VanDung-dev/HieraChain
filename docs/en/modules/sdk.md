@@ -128,4 +128,3 @@ The SDK defines specific exception classes for applications to handle with disti
 
 *   [API ledger/admin Documentation](../reference/api-ledger.md)
 *   [Security System](./security.md)
-*   [Risk Management](./risk-management.md)

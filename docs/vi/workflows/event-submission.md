@@ -122,5 +122,4 @@ event = {
 
 - [Cơ chế Đồng thuận](./consensus_mechanisms.md): sơ đồ phụ PoA và PoF
 - [Neo giữ Bằng chứng](./proof-anchoring.md): kích hoạt sau khi khối hoàn tất
-- [Thực thi chính sách](./policy-enforcement.md): kiểm tra chính sách cho các thao tác được chuyển rõ ràng qua `PolicyEngine`
-- [Danh tính MSP](./msp-identity.md): kiểm tra thành viên cho bên gọi sử dụng `HierarchicalMSP`
+- [Phân quyền & Kiểm soát truy cập](../security/authorization-access-control.md): kiểm tra API key trước khi route handler chạy

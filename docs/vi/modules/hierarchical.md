@@ -45,10 +45,8 @@ Khởi động đọc header block và event theo thứ tự bằng một truy v
 | :--- | :--- |
 | Registry tổ chức/thành viên/channel | SQLite/PostgreSQL lưu bền vững và kiểm tra revision; chế độ memory tường minh chỉ giữ dữ liệu tạm. |
 | Gán tổ chức vào chain | Lưu bền vững quyền SubChain gồm `read`, `write`, `proofs`; áp dụng tại REST và WebSocket API. Thành viên channel vẫn được quản lý riêng. |
-| Private collection | Object thư viện có data store trong bộ nhớ; manager không persist collection vào registry. Ghi private data qua REST trả HTTP 501. |
+| Private collection | Object thư viện có data store trong bộ nhớ; manager không persist collection vào registry. API tạo collection qua `Channel.create_private_collection`. |
 | ZK proof | Hash mock là fixture phát triển. Tạo/xác minh production chưa triển khai; xem [phạm vi ZK](../security/decentralized-zkp.md). |
-| Connector ERP theo hãng | Fixture SAP/Oracle/Dynamics yêu cầu opt-in mô phỏng tường minh. Ứng dụng cung cấp transport thật; xem [Integration](./integration.md). |
-| Thực thi contract | Đăng ký contract qua REST lưu metadata; thực thi trả HTTP 501. |
 
 `get_cross_chain_statistics()["cross_chain_operations"]` là trường dự phòng hiện trả `0`, không phải số operation hoàn tất đã đo. Có method facade hay tùy chọn cấu hình chưa đủ để xác nhận tính năng hoạt động xuyên suốt.
 
@@ -62,7 +60,7 @@ Restart replay record của channel, khôi phục pending events, kiểm tra t�
 
 ### 2.4 Đa tổ chức, kênh và dữ liệu riêng tư
 
-* `multi_org.py`: Quản lý các tổ chức thành viên, chứng chỉ và định danh MSP.
+* `multi_org.py`: Quản lý tổ chức thành viên và affiliation cho channel đa tổ chức.
 * `channel/manager.py`: Phân vùng giao tiếp giữa các nhóm tổ chức cụ thể.
 * `private_data.py`: Cung cấp collection mã hóa trong bộ nhớ và helper hash; lưu bền vững và tự động neo vào ledger cần tích hợp từ ứng dụng gọi.
 
