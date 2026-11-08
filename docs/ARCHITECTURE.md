@@ -10,9 +10,9 @@ The implementation under `hierachain/` is the source of truth. The maintained ar
 * [Authorization](en/security/authorization-access-control.md) · [Phân quyền](vi/security/authorization-access-control.md)
 * [Network integration](en/modules/network.md) · [Tích hợp mạng](vi/modules/network.md)
 
-Sub-Chains order business events into trusted signed blocks; the MainChain stores proof anchors. Durable hierarchical storage uses SQLite or PostgreSQL. PoA and PoF are the hierarchical consensus paths. ZK production proving/verifying, contract execution and private-data writes are not implemented. Built-in vendor ERP connectors are simulation fixtures.
+Sub-Chains order business events into trusted signed blocks; the MainChain stores proof anchors. Durable hierarchical storage uses SQLite or PostgreSQL. PoA and PoF are the hierarchical consensus paths. ZK production proving/verifying and contract execution are not implemented.
 
-Event acceptance is distinct from block finality and durable proof visibility. Applications must integrate WebSocket broadcasts with ledger commits and upload off-chain IPFS payloads explicitly. The API P2P client does not automatically apply the optional secure connection manager's MSP handshake or message-signature checks. See the linked pages for those entry-point and deployment limits.
+Event acceptance is distinct from block finality and durable proof visibility. Applications must integrate WebSocket broadcasts with ledger commits and upload off-chain IPFS payloads explicitly. The API runtime uses `ZmqNode`/`NetworkClient` for P2P transport; HTTP TLS termination belongs to the deployment gateway. See the linked pages for those entry-point and deployment limits.
 
 Use the [developer guide](DEV_GUIDE.md) for local setup and the [codebase reference](CODEBASE_REFERENCE.md) for current source paths. These repository-level guides sit outside the English/Vietnamese Zensical source directories, so locale builds do not validate them.
 

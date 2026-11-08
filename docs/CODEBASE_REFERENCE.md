@@ -54,7 +54,7 @@ A block's structural check does not establish signature trust. Durable readers a
 | `hierachain/domains/chains/metrics.py` | Operation counts and success/quality/approval rates |
 | `hierachain/domains/events/` | Base/domain event models and event factories |
 | `hierachain/domains/utils/entity_tracer.py` | Cross-chain entity traces and lifecycle summaries |
-| `hierachain/domains/utils/cross_chain_validator.py` | Proof, entity and ledger terminology checks |
+| `hierachain/domains/utils/entity_tracer.py` | Cross-chain entity tracing |
 
 `HierarchyManager.create_sub_chain()` creates a `DomainChain`; the REST chain-creation route creates a base `SubChain`. These entry points do not expose the same domain participant behavior. `EntityTracer.trace_entity()` returns per-chain summaries under `chain_details`. Operation metrics do not include latency percentiles.
 
@@ -106,7 +106,7 @@ See [Consensus](en/architecture/consensus.md) · [Đồng thuận](vi/architectu
 | `hierachain/adapters/database/redis_adapter.py` | Auxiliary Redis state operations |
 | `hierachain/adapters/database/redis_rate_limiter.py` | Redis rate-limiter backend |
 | `hierachain/adapters/database/auth_state.py` | Persistent API authentication state |
-| `hierachain/adapters/database/audit_manifest.py` | Trusted audit digest manifest storage |
+| `hierachain/adapters/database/cache_adapter.py` | Redis-backed domain chain and event index |
 | `hierachain/error_mitigation/journal.py` | Length-framed Arrow journal batches and event replay |
 | `hierachain/error_mitigation/error_classifier.py` | Error classification and configured recovery callbacks |
 | `hierachain/error_mitigation/validator.py` | Business validation coordinator |
@@ -115,7 +115,7 @@ See [Consensus](en/architecture/consensus.md) · [Đồng thuận](vi/architectu
 
 The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedgerAdapter`, or process-local memory storage. Redis requires healthy AOF, fsync on every write, no eviction, no fsync bypass during rewrites, and no truncated AOF loading. CLI chain/event commands require SQLite or PostgreSQL. Preserve both the database and the per-chain ordering journals for recovery.
 
-`ErrorClassifier` does not automatically dispatch every error to journal recovery. Recovery depends on configured callbacks and the owning component's actual error-handling path.
+`TransactionJournal` provides durable write-ahead event logging. Recovery depends on `OrderingRecovery` replay and the owning component's actual error-handling path.
 
 ## API, clients and CLI
 
@@ -128,7 +128,7 @@ The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedg
 | `hierachain/api/business/` | Business endpoint implementations |
 | `hierachain/api/admin/endpoints.py` | Admin identity/status endpoints |
 | `hierachain/api/websocket/` | Connections, subscriptions, message builders and broadcast helpers |
-| `hierachain/api/blockchain_explorer.py`, `hierachain/api/explorer_components.py` | Explorer dashboard and component handlers |
+| `hierachain/api/websocket/manager.py` | WebSocket connections and broadcasts |
 | `hierachain/api/storage/ipfs_client.py`, `hierachain/api/storage/encryption.py` | Explicit IPFS upload/download with AES-256-GCM |
 | `hierachain/api/storage/endpoint_helpers.py` | Inline/CID selection and optional CID resolution |
 | `hierachain/sdk/client.py`, `hierachain/sdk/async_client.py` | Sync/async HTTP clients with retry and circuit-breaker handling |
@@ -150,9 +150,7 @@ See [Ledger API](en/reference/api-ledger.md) · [API ledger tiếng Việt](vi/r
 | Source | Responsibility |
 | --- | --- |
 | `hierachain/security/identity_loader.py` | Load the persistent signing/transport identity and trusted block keys |
-| `hierachain/security/identity.py` | User identity records and explicit signature helpers |
-| `hierachain/security/msp.py` | Custom certificates, organization roles and authorization helpers |
-| `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py` | Conditional policies, policy sets, cache and evaluation audit |
+| `hierachain/security/identity_loader.py` | Load node identity and trusted block keys |
 | `hierachain/security/key_manager.py` | API key lifecycle and cached lookups |
 | `hierachain/security/key_provider.py` | Signing-provider interface, local key provider and password-encrypted file vault |
 | `hierachain/security/brute_force_protector.py` | Failed authentication tracking |
@@ -174,26 +172,14 @@ See [Authorization](en/security/authorization-access-control.md) · [Phân quy�
 
 | Source | Responsibility |
 | --- | --- |
-| `hierachain/network/zmq_transport.py` | ZeroMQ ROUTER/DEALER transport, optional CurveZMQ and replay checks |
-| `hierachain/network/network_client.py` | P2P peer registry and message dispatch |
-| `hierachain/network/secure_connection.py` | Optional CurveZMQ/MSP handshake and signature checks |
-| `hierachain/network/peer_trust_manager.py` | Explicit allowlist/blocklist with open/strict policy |
-| `hierachain/network/message_cryptographic.py` | Message signing/verification |
-| `hierachain/integration/enterprise.py` | SAP/Oracle/Dynamics simulation fixtures |
-| `hierachain/integration/erp_ledger.py`, `hierachain/integration/erp/` | ERP mapping, change detection, scheduling and ledger coordination |
-| `hierachain/monitoring/alert_system.py` | Rule evaluation, alert lifecycle and configured email/webhook delivery |
-| `hierachain/monitoring/performance_monitor.py` | Background metrics collection and threshold checks |
-| `hierachain/risk_management/audit_logger.py` | Audit storage/query/reporting with optional trusted digest verification |
+| `hierachain/network/zmq_transport.py` | ZeroMQ ROUTER/DEALER transport with optional CurveZMQ and replay checks |
+| `hierachain/network/network_client.py` | P2P peer registry, message dispatch, and status reporting |
 
-`NetworkClient` is a ZeroMQ P2P client, not an HTTP client. The API runtime constructs `ZmqNode` directly and does not automatically apply `SecureConnectionManager`'s MSP handshake, peer trust policy or message-signature settings. TLS termination for HTTP belongs to the deployment gateway.
+`NetworkClient` is a ZeroMQ P2P client, not an HTTP client. The API runtime constructs `ZmqNode` directly. TLS termination for HTTP belongs to the deployment gateway.
 
-Vendor ERP fixtures require `simulation_mode=True`. Applications must supply real ERP connectors. There is no Arrow Flight client, ERP adapter directory or Kubernetes namespace manager under `hierachain/`.
+There is no Arrow Flight client, ERP adapter directory, or Kubernetes namespace manager under `hierachain/`.
 
-`AlertManager.check_metric()` first adds the sample, then evaluates matching enabled rules and cooldowns. Z-score detection runs for an explicit `anomaly` rule; it is not a prerequisite for threshold rules. Email/webhook delivery requires notifier configuration.
-
-Audit archives are not inherently immutable. Integrity reads require a separately trusted digest manifest; `query_events_with_integrity()` returns `UNVERIFIED` without a digest reader and fails closed on manifest errors or mismatches.
-
-See [Network](en/modules/network.md) · [Mạng](vi/modules/network.md), [Risk alerts](en/workflows/risk-alerts.md) · [Cảnh báo rủi ro](vi/workflows/risk-alerts.md), and [Deployment](en/architecture/deployment.md) · [Triển khai](vi/architecture/deployment.md).
+See [Network](en/modules/network.md) · [Mạng](vi/modules/network.md) and [Deployment](en/architecture/deployment.md) · [Triển khai](vi/architecture/deployment.md).
 
 ## Configuration
 
