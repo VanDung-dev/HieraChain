@@ -3,7 +3,6 @@
 Register and query organisations with their CA configuration.
 """
 
-import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,14 +13,13 @@ from hierachain.api.business.schemas import (
     OrganizationRequest,
     OrganizationResponse,
 )
-from hierachain.api.business.state import _organizations
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.hierarchical.hierarchy_manager.organization import (
     _is_organization_admin,
 )
 from hierachain.hierarchical.types import OrganizationError
-from hierachain.security.sanitization import sanitize_dict, sanitize_string
+from hierachain.security.sanitization import sanitize_string
 from hierachain.security.secure_logging import SecureLogger
 from hierachain.security.verify.api_key_verifier import (
     ResourcePermissionChecker,
@@ -63,10 +61,6 @@ async def register_organization(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Organization ID cannot be empty.",
             )
-        safe_ca_config = (
-            sanitize_dict(org_request.ca_config) if org_request.ca_config else {}
-        )
-
         if manager.get_organization(org_id) is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -74,11 +68,6 @@ async def register_organization(
             )
 
         manager.create_organization(org_id, org_id, admin_users=[user_id])
-        _organizations[org_id] = {
-            "id": org_id,
-            "ca_config": safe_ca_config,
-            "registered_at": time.time()
-        }
 
         api_logger.audit(
             action="register",

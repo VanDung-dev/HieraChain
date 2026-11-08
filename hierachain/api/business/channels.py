@@ -3,7 +3,6 @@
 Create channels and manage private data collections within channels.
 """
 
-import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,7 +12,6 @@ from hierachain.api.business.schemas import (
     ChannelResponse,
     PrivateCollectionCreateRequest,
 )
-from hierachain.api.business.state import _private_collections
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.sanitization import sanitize_dict, sanitize_string
@@ -150,14 +148,18 @@ async def create_private_collection(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Collection name cannot be empty.",
             )
-
-        _private_collections[collection_name] = {
-            "name": collection_name,
-            "channel_id": channel_id,
-            "members": safe_members,
-            "config": safe_config,
-            "created_at": time.time()
-        }
+        if collection_name in channel.private_collections:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Private collection '{collection_name}' already exists.",
+            )
+        if not channel.create_private_collection(
+            collection_name, safe_members, safe_config
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Private collection members must belong to the channel.",
+            )
 
         api_logger.audit(
             action="create",

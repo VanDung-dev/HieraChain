@@ -5,7 +5,6 @@ API module for HieraChain Ledger
 from typing import Any
 
 from hierachain.api import admin, business, ledger
-from hierachain.api.blockchain_explorer import BlockchainExplorer
 from hierachain.api.websocket.manager import (
     WebSocketConnection,
     WebSocketManager,
@@ -23,7 +22,6 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
-    'BlockchainExplorer',
     'WebSocketConnection',
     'WebSocketManager',
     'WebSocketMessageType',

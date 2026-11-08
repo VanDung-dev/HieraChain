@@ -186,68 +186,6 @@ def process_event_details(
     return None, None
 
 
-def process_private_data_value(
-    private_data_request: Any,
-    background_tasks: BackgroundTasks | None = None
-) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    """
-    Process private data value - either use inline data or IPFS CID.
-
-    Args:
-        private_data_request: PrivateDataRequest schema instance
-        background_tasks: FastAPI BackgroundTasks instance
-
-    Returns:
-        Tuple of (inline_value, cid_info)
-    """
-    _ = background_tasks  # reserved for future background task support
-    # Check if CID is already provided
-    if hasattr(private_data_request, 'value_cid') and private_data_request.value_cid:
-        return None, {
-            "cid": private_data_request.value_cid,
-            "nonce": private_data_request.value_nonce,
-            "metadata": private_data_request.value_metadata
-        }
-
-    # Return inline value if provided
-    if hasattr(private_data_request, 'value') and private_data_request.value:
-        return private_data_request.value, None
-
-    # No value provided
-    return None, None
-
-
-def process_contract_implementation(
-    contract_request: Any,
-    background_tasks: BackgroundTasks | None = None
-) -> tuple[str | None, dict[str, Any] | None]:
-    """
-    Process contract implementation - either use inline code or IPFS CID.
-
-    Args:
-        contract_request: ContractCreateRequest schema instance
-        background_tasks: FastAPI BackgroundTasks instance
-
-    Returns:
-        Tuple of (inline_implementation, cid_info)
-    """
-    _ = background_tasks  # reserved for future background task support
-    # Check if CID is already provided
-    if hasattr(contract_request, 'implementation_cid') and contract_request.implementation_cid:
-        return None, {
-            "cid": contract_request.implementation_cid,
-            "nonce": contract_request.implementation_nonce,
-            "metadata": contract_request.implementation_metadata
-        }
-
-    # Return inline implementation if provided
-    if hasattr(contract_request, 'implementation') and contract_request.implementation:
-        return contract_request.implementation, None
-
-    # No implementation provided
-    return None, None
-
-
 async def resolve_cid_field(
     data: dict[str, Any],
     field_prefix: str
