@@ -24,7 +24,6 @@ from hierachain.config.settings import (
     ProductionSettings,
     Settings,
     TestingSettings,
-    check_security_config,
     get_settings,
     settings,
 )
@@ -48,5 +47,4 @@ __all__ = [
     "TestingSettings",
     "get_settings",
     "settings",
-    "check_security_config",
 ]

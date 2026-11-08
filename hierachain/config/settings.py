@@ -89,10 +89,6 @@ class Settings:
         "HRC_NODE_ID", "NODE_ID", default="default-node"
     )
 
-    # Blockchain settings
-    BLOCK_SIZE_LIMIT = 1000  # Maximum events per block
-    PROOF_SUBMISSION_INTERVAL = 300  # 5 minutes in seconds
-    
     # Consensus settings
     # MainChain Inter-Organization Consensus Type
     # Options: "proof_of_federation" (Consortium Alliance default), "proof_of_authority" (Single MainChain)
@@ -104,24 +100,6 @@ class Settings:
     CONSENSUS_TYPE = MAINCHAIN_CONSENSUS
     # PoA has no additional spacing delay unless explicitly configured.
     BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "0.0"))
-    CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
-        "min_validators": 3,
-        "block_interval": 5.0
-    }
-    VALIDATOR_TIMEOUT = 30  # seconds
-    
-    # Block Creation Mode: "event_driven" (creates block only when event arrives) or "batch_or_timer"
-    BLOCK_CREATION_MODE = os.getenv("HRC_BLOCK_CREATION_MODE", "event_driven")
-    BLOCK_MAX_WAIT_SEC = float(os.getenv("HRC_BLOCK_MAX_WAIT_SEC", "5.0"))
-
-    # Parquet Partitioning & Rolling: "monthly", "daily", or "by_size_mb"
-    PARQUET_ROLL_INTERVAL = os.getenv("HRC_PARQUET_ROLL_INTERVAL", "monthly")
-
-    # PostgreSQL Sync Pipeline Mode: "realtime", "batch_worker", or "disabled"
-    POSTGRES_SYNC_MODE = os.getenv("HRC_POSTGRES_SYNC_MODE", "realtime")
-
-    # SQL hot data retention days (0 = infinite)
-    SQL_RETENTION_DAYS = int(os.getenv("HRC_SQL_RETENTION_DAYS", "90"))
 
     # Storage settings - memory, redis, sqlite, postgres (postgresql alias)
     @property
@@ -143,17 +121,10 @@ class Settings:
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
 
-    # % RAM usage for emergency flush (e.g., 95.0 for 95%)
-    RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))
-    
     # Security settings
-    IDENTITY_MANAGER_ENABLED = True
-    REQUIRE_ORGANIZATION_VALIDATION = True
     AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "false").lower() == "true"
     API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
     API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
-    # Secret backend: "env" (default), "vault" (HashiCorp), "aws" (AWS Secrets Manager)
-    SECRET_BACKEND = os.getenv("HRC_SECRET_BACKEND", "env")
     
     # Brute-force protection for API key verification
     AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
@@ -176,18 +147,6 @@ class Settings:
     )
     # Comma-separated list of seed nodes: node_id@ip:port
     P2P_PEERS: list[str] = _environment_csv("HRC_PEERS", "PEERS")
-    # Trust policy: "open" (any peer unless blocked), "strict" (allowlist only)
-    P2P_TRUST_POLICY = os.getenv("HRC_P2P_TRUST_POLICY", "open")
-    # Comma-separated list of trusted peer IDs for strict mode
-    P2P_PEER_ALLOWLIST: list[str] = (
-        os.getenv("HRC_P2P_PEER_ALLOWLIST", "").split(",")
-        if os.getenv("HRC_P2P_PEER_ALLOWLIST")
-        else []
-    )
-    # Require cryptographic signature verification on P2P messages
-    P2P_REQUIRE_SIGNATURES = (
-        os.getenv("HRC_P2P_REQUIRE_SIGNATURES", "false").lower() == "true"
-    )
 
     # CORS settings (defaults allow all for development)
     CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
@@ -198,26 +157,11 @@ class Settings:
     CORS_ALLOW_METHODS: list[str] = ["*"]
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
-    # HTTPS/HSTS settings (disabled by default, enabled in production)
-    HSTS_ENABLED = os.getenv("HRC_HSTS_ENABLED", "false").lower() == "true"
-    HSTS_MAX_AGE = int(os.getenv("HRC_HSTS_MAX_AGE", "31536000"))
-
     # Rate Limiting (disabled by default)
     RATE_LIMIT_ENABLED = os.getenv("HRC_RATE_LIMIT", "false").lower() == "true"
     RATE_LIMIT_REQUESTS_PER_MINUTE = int(os.getenv("HRC_RATE_LIMIT_RPM", "100"))
     # Rate limit backend: "memory" (default, single-node) or "redis" (cluster-wide)
     RATE_LIMIT_BACKEND = os.getenv("HRC_RATE_LIMIT_BACKEND", "memory")
-    
-    # Multi-Organization settings
-    MULTI_ORG_ENABLED = True
-    MSP_ENABLED = True  # Membership Service Provider
-    ORGANIZATION_ADMIN_THRESHOLD = 1  # Minimum admins required per org
-    CHANNEL_CREATION_POLICY = "majority"  # majority, unanimous, admin_only
-    AFFILIATION_HIERARCHY_ENABLED = True
-    
-    # Integration settings
-    ERP_INTEGRATION_ENABLED = True
-    SUPPORTED_ERP_SYSTEMS = ["sap", "oracle", "microsoft_dynamics"]
     
     # API settings
     API_VERSION = "ledger"
@@ -229,7 +173,6 @@ class Settings:
     
     # CLI settings
     CLI_CONFIG_FILE = "data/config.yaml"
-    CLI_LOG_LEVEL = "INFO"
     
     # Database settings (if using database storage)
     DATABASE_URL = _configured_database_url() or "postgresql://hiera:hiera@localhost:5432/hierachain"
@@ -245,19 +188,12 @@ class Settings:
     
     # Logging settings
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-    LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    # Log output format: "text" (default) or "json" (structured, production-ready)
-    LOG_OUTPUT_FORMAT = os.getenv("HRC_LOG_FORMAT", "text")
     # Enable detailed SQL logging (query echo, verbose DB errors)
     # Should be False in production to avoid leaking DB schema details
     LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "false").lower() == "true"
     
     # IPFS Storage settings (for off-chain data storage)
     IPFS_ENABLED = os.getenv("HRC_IPFS_ENABLED", "false").lower() == "true"
-    IPFS_HOST = os.getenv("HRC_IPFS_HOST", "/ip4/127.0.0.1/tcp/5001")
-    IPFS_AUTO_PIN = os.getenv("HRC_IPFS_AUTO_PIN", "true").lower() == "true"
-    IPFS_TIMEOUT = int(os.getenv("HRC_IPFS_TIMEOUT", "120"))
-    IPFS_ENCRYPTION_KEY = os.getenv("HRC_IPFS_ENCRYPTION_KEY", "")  # Hex-encoded 32-byte key
 
     # Prometheus metrics (disabled by default, enable in production for observability)
     METRICS_ENABLED = os.getenv("HRC_METRICS_ENABLED", "false").lower() == "true"
@@ -281,14 +217,6 @@ class Settings:
     CROSS_LEVEL_SYNC_TIMEOUT = float(os.getenv("HRC_CROSS_LEVEL_TIMEOUT", "30.0"))
 
     @classmethod
-    def get_consensus_config(cls) -> dict[str, Any]:
-        """Get consensus configuration"""
-        return {
-            "type": cls.CONSENSUS_TYPE,
-            "validator_timeout": cls.VALIDATOR_TIMEOUT
-        }
-
-    @classmethod
     def get_api_config(cls) -> dict[str, Any]:
         """Get API configuration"""
         return {
@@ -296,14 +224,6 @@ class Settings:
             "host": cls.API_HOST,
             "port": cls.API_PORT,
             "trusted_proxies": cls.TRUSTED_PROXIES
-        }
-
-    @classmethod
-    def get_integration_config(cls) -> dict[str, Any]:
-        """Get integration configuration"""
-        return {
-            "erp_enabled": cls.ERP_INTEGRATION_ENABLED,
-            "supported_systems": cls.SUPPORTED_ERP_SYSTEMS
         }
 
     @classmethod
@@ -337,9 +257,6 @@ class Settings:
             "host": cls.P2P_HOST,
             "port": cls.P2P_PORT,
             "seed_nodes": cls.P2P_PEERS,
-            "trust_policy": cls.P2P_TRUST_POLICY,
-            "peer_allowlist": cls.P2P_PEER_ALLOWLIST,
-            "require_signatures": cls.P2P_REQUIRE_SIGNATURES,
         }
 
     @classmethod
@@ -365,42 +282,6 @@ class Settings:
             "allow_headers": cls.CORS_ALLOW_HEADERS,
         }
 
-    @classmethod
-    def get_ipfs_config(cls) -> dict[str, Any]:
-        """Get IPFS storage configuration"""
-        return {
-            "enabled": cls.IPFS_ENABLED,
-            "host": cls.IPFS_HOST,
-            "auto_pin": cls.IPFS_AUTO_PIN,
-            "timeout": cls.IPFS_TIMEOUT,
-            "encryption_key": cls.IPFS_ENCRYPTION_KEY,
-        }
-
-    @classmethod
-    def validate_config(cls) -> list[str]:
-        """Validate configuration and return list of errors"""
-        errors = []
-
-        if cls.BLOCK_SIZE_LIMIT <= 0:
-            errors.append("BLOCK_SIZE_LIMIT must be positive")
-
-        if cls.PROOF_SUBMISSION_INTERVAL <= 0:
-            errors.append("PROOF_SUBMISSION_INTERVAL must be positive")
-
-        if cls.VALIDATOR_TIMEOUT <= 0:
-            errors.append("VALIDATOR_TIMEOUT must be positive")
-
-        if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite", "postgres"]:
-            errors.append(
-                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite, postgres"
-            )
-
-        if cls.API_PORT <= 0 or cls.API_PORT > 65535:
-            errors.append("API_PORT must be between 1 and 65535")
-
-        return errors
-
-
 # Environment-specific settings
 class DevelopmentSettings(Settings):
     """Development environment settings"""
@@ -423,15 +304,6 @@ class ProductionSettings(Settings):
     # === SECURITY: Authentication is mandatory in production ===
     AUTH_ENABLED = True
     
-    # Organization validation is required
-    REQUIRE_ORGANIZATION_VALIDATION = True
-    
-    # Identity management must be on
-    IDENTITY_MANAGER_ENABLED = True
-    
-    # MSP (Membership Service Provider) enabled
-    MSP_ENABLED = True
-    
     # === CORS: Restricted in production ===
     # Override with env var HRC_CORS_ORIGINS for specific domains
     CORS_ALLOW_ALL = False
@@ -444,17 +316,9 @@ class ProductionSettings(Settings):
         "Authorization", "Content-Type", "X-API-Key", "X-Request-ID"
     ]
     
-    # === HTTPS: Headers enabled ===
-    HSTS_ENABLED = True
-    HSTS_MAX_AGE = 31536000  # 1 year
-    
     # === Rate Limiting: Recommended ===
     RATE_LIMIT_ENABLED = os.getenv("HRC_RATE_LIMIT", "true").lower() == "true"
     RATE_LIMIT_REQUESTS_PER_MINUTE = int(os.getenv("HRC_RATE_LIMIT_RPM", "100"))
-
-    # === P2P: Strict trust by default in production ===
-    P2P_TRUST_POLICY = "strict"
-    P2P_REQUIRE_SIGNATURES = True
 
     # === Logging: Restrict SQL detail in production ===
     LOG_SQL_DETAIL = False
@@ -464,8 +328,6 @@ class TestingSettings(Settings):
     """Testing environment settings"""
     LOG_LEVEL = "DEBUG"
     DEFAULT_STORAGE_BACKEND = "memory"
-    BLOCK_SIZE_LIMIT = 10  # Smaller blocks for testing
-    PROOF_SUBMISSION_INTERVAL = 10  # Faster submissions for testing
 
 
 # Get settings based on environment
@@ -485,65 +347,3 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
-
-
-def _check_auth_enabled(s) -> str | None:
-    """Check AUTH_ENABLED setting."""
-    if not getattr(s, 'AUTH_ENABLED', True):
-        return "AUTH_ENABLED should be True in production"
-    return None
-
-
-def _check_cors_all(s) -> str | None:
-    """Check CORS_ALLOW_ALL setting."""
-    if getattr(s, 'CORS_ALLOW_ALL', False):
-        return "CORS_ALLOW_ALL should be False in production"
-    return None
-
-
-def _check_p2p_trust(s) -> str | None:
-    """Check P2P_TRUST_POLICY setting."""
-    if not getattr(s, 'P2P_TRUST_POLICY', None):
-        return "P2P_TRUST_POLICY not set"
-    return None
-
-
-def _check_hsts_enabled(s) -> str | None:
-    """Check HSTS_ENABLED setting."""
-    if not getattr(s, 'HSTS_ENABLED', False):
-        return "HSTS_ENABLED should be True in production"
-    return None
-
-
-def _run_production_checks(s: Any) -> list[str]:
-    """Helper to run security config checks specifically for production."""
-    checks = [
-        _check_auth_enabled,
-        _check_cors_all,
-        _check_p2p_trust,
-        _check_hsts_enabled,
-    ]
-    results = (check(s) for check in checks)
-    return [res for res in results if isinstance(res, str)]
-
-
-def check_security_config() -> list[str]:
-    """
-    Returns the warnings list for the current config.
-
-    This function checks the security profiles and issues an alert
-    If a configuration is detected that is not safe for production.
-    
-    Returns:
-        List of warning strings.
-    """
-    s = settings
-    warnings = []
-    
-    if s.__class__.__name__ == "DevelopmentSettings" and os.getenv("HRC_ENV") is None:
-        warnings.append("Configuration Risk: HRC_ENV is unset, defaulting to DevelopmentSettings with disabled authentication!")
-    
-    if s.env == "production":
-        warnings.extend(_run_production_checks(s))
-    
-    return warnings
