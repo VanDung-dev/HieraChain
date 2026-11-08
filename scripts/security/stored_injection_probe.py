@@ -99,7 +99,7 @@ STORE_ENDPOINTS = [
             "endpoint": "/api/business/channels/test-{idx}",
         }
     },
-    # business organization endpoints  
+    # business organization endpoints
     {
         "store": {
             "method": "POST",
@@ -113,28 +113,6 @@ STORE_ENDPOINTS = [
         "retrieve": {
             "method": "GET",
             "endpoint": "/api/business/organizations/test-org-{idx}",
-        }
-    },
-    # business contract endpoints
-    {
-        "store": {
-            "method": "POST",
-            "endpoint": "/api/business/contracts",
-            "body_template": {
-                "contract_id": "contract-{idx}",
-                "version": "1.0",
-                "implementation": "{payload}",
-                "metadata": {"description": "{payload}"}
-            }
-        },
-        "retrieve": {
-            "method": "POST",
-            "endpoint": "/api/business/contracts/execute",
-            "body_template": {
-                "contract_id": "contract-{idx}",
-                "event": {"event": "test", "entity_id": "e1"},
-                "context": {}
-            }
         }
     },
 ]
