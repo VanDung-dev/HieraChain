@@ -22,6 +22,7 @@ def test_secure_event_preserves_signed_fields_and_rejects_tampering() -> None:
         "event_type": "transfer",
         "details": {"value": 100},
         "sender": f"0x{keypair.public_key}",
+        "nonce": "nonce-0001",
     }
     event["signature"] = f"0x{keypair.sign(SignatureVerifier.get_canonical_bytes(event))}"
 

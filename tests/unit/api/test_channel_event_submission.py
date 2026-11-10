@@ -543,3 +543,75 @@ def test_channel_http_rejects_failed_storage_without_accepting_event(
     restored = HierarchyManager()
     assert restored.get_channel("durable").ledger.current_block_events == []
     restored.storage.close()
+
+
+def test_channel_event_submission_broadcasts_to_websocket_subscribers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    from hierachain.api.ledger import events as events_module
+
+    monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: None))
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    manager.create_channel("broadcast", ["org"])
+    keys = KeyManager()
+    key = keys.create_key("admin", permissions=["events"])
+    verifier = APIKeyVerifier(
+        {"enabled": True, "key_location": "header", "key_name": "x-api-key"}
+    )
+    verifier.key_manager = keys
+    broadcasts: list[tuple[str, dict[str, Any]]] = []
+
+    async def broadcast_event(chain_name: str, event_data: dict[str, Any]) -> None:
+        broadcasts.append((chain_name, event_data))
+
+    monkeypatch.setattr(
+        events_module, "ws_manager", SimpleNamespace(broadcast_event=broadcast_event)
+    )
+    app = FastAPI()
+    app.state.auth_verifier = verifier
+    app.include_router(router)
+    app.dependency_overrides[get_hierarchy_manager] = lambda: manager
+    with TestClient(app) as client:
+        response = client.post(
+            "/channels/broadcast/organizations/org/events",
+            headers={"x-api-key": key},
+            json={"entity_id": "live", "event_type": "created"},
+        )
+        assert response.status_code == 200, response.text
+
+    assert len(broadcasts) == 1
+    chain_name, payload = broadcasts[0]
+    assert chain_name == "broadcast"
+    assert payload["entity_id"] == "live"
+    assert payload["event"] == "created"
+    assert payload["submitted_by"] == "admin"
+
+
+def test_private_collection_data_survives_restart(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "private.sqlite"))),
+    )
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    channel = manager.create_channel("private", ["org"])
+    assert channel.create_private_collection(
+        "records", ["org"], {"endorsement_policy": "ANY", "block_to_purge": 0}
+    )
+    assert channel.private_collections["records"].add_data(
+        "record-1", {"value": 42}, {"endorsements": ["org"]}, "org"
+    )
+    manager.storage.close()
+
+    restored = HierarchyManager()
+    restored_channel = restored.get_channel("private")
+    assert restored_channel is not None
+    assert restored_channel.private_collections["records"].get_data(
+        "record-1", "org"
+    ) == {"value": 42}
+    restored.storage.close()

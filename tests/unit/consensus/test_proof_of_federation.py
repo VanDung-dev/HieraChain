@@ -163,3 +163,15 @@ def test_pof_event_validation():
         "timestamp": time.time()
     }
     assert pof.validate_event_for_consensus(invalid_event) is False
+
+
+def test_pof_leader_uses_membership_snapshot_for_past_height() -> None:
+    pof = _pof_with_key("SnapshotPoF")
+    for validator in ("validator_a", "validator_b"):
+        pof.add_validator(validator)
+    assert pof.get_current_leader(3) == "validator_b"
+
+    pof.add_validator("validator_c")
+
+    assert pof.get_current_leader(2) == "validator_a"
+    assert pof.get_current_leader(3) in {"validator_a", "validator_b", "validator_c"}

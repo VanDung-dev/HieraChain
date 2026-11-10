@@ -38,6 +38,7 @@ async def test_add_event_returns_authoritative_event_id() -> None:
             "test-chain",
             request,
             BackgroundTasks(),
+            {"user_id": "tester"},
             _Manager(sub_chain),
         )
 

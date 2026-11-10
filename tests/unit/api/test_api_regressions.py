@@ -21,7 +21,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     manager = HierarchyManager()
     monkeypatch.setattr(depds, "_hierarchy_manager", manager)
     keys = KeyManager()
-    key = keys.create_key("p2-reader", ["chains"])
+    key = keys.create_key("p2-reader", ["chains", "chains:manage"])
     app = FastAPI()
     app.state.auth_verifier = APIKeyVerifier(
         {"enabled": True, "key_location": "header", "key_name": "X-API-Key", "cache_ttl": 0},

@@ -577,3 +577,40 @@ def test_performance_with_large_data(benchmark):
         return poa, block, block_creation_time, finalization_time, validation_time
 
     benchmark(execute)
+
+
+def test_poa_leader_uses_membership_snapshot_for_past_height() -> None:
+    poa = ProofOfAuthority(name="SnapshotPoA", block_interval=0.0)
+    for authority in ("a", "b"):
+        poa.add_authority(authority)
+    assert poa.get_next_authority(5) == "a"
+
+    poa.add_authority("c")
+
+    assert poa.get_next_authority(4) == "b"
+
+
+def test_poa_rejects_tampered_block_header_signature() -> None:
+    from hierachain.security.security_utils import KeyPair
+    from hierachain.security.verify.block_verifier import sign_block
+
+    pair = KeyPair.generate()
+    poa = ProofOfAuthority(name="HeaderPoA", block_interval=0.0)
+    poa.add_authority("auth", {"public_key": pair.public_key})
+    now = time.time()
+    previous = Block(
+        0, [{"entity_id": "genesis", "event": "created", "timestamp": now - 1}],
+        previous_hash="0" * 64, timestamp=now - 1,
+    )
+    block = Block(
+        1, [{"entity_id": "e1", "event": "created", "timestamp": now}],
+        previous_hash=previous.hash, timestamp=now, creator_id="auth",
+    )
+    finalized = poa.finalize_block(block, "auth", private_key=pair.private_key)
+    finalized.creator_id = block.creator_id
+    finalized.hash = finalized.calculate_hash()
+    sign_block(finalized, "auth", pair)
+    assert poa.validate_block(finalized, previous) is True
+
+    finalized.signature = pair.sign(b"tampered header")
+    assert poa.validate_block(finalized, previous) is False

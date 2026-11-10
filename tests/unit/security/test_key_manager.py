@@ -15,6 +15,7 @@ import pytest
 
 from hierachain.adapters.database.auth_state import SQLiteRevocationStore, _key_digest
 from hierachain.security import KeyManager, initialize_default_keys
+from hierachain.security.key_manager import HashedKeyStorage
 
 
 def test_key_manager_initialization():
@@ -26,7 +27,7 @@ def test_key_manager_initialization():
     km = init_key_manager()
 
     assert km is not None
-    assert isinstance(km.storage, dict)
+    assert isinstance(km.storage, (HashedKeyStorage, MutableMapping))
     assert isinstance(km.revoked_keys, set)
     assert isinstance(km.key_cache, MutableMapping)
     assert dict(km.key_cache) == {}
@@ -45,7 +46,7 @@ def test_is_valid_with_valid_key():
     assert result is True
     # Because benchmark runs the function many times, we can't assert specific call count
     # But we can check if it was called at least once with the expected argument
-    mock_storage.get.assert_any_call(f"api_key:{valid_key}")
+    mock_storage.get.assert_any_call(f"api_key:{_key_digest(valid_key)}")
 
 
 def test_is_valid_with_invalid_key():
@@ -233,9 +234,9 @@ def test_cache_key():
     km.cache_key(test_key, ttl=60)
 
     # Check if it's in cache
-    assert test_key in km.key_cache
+    assert _key_digest(test_key) in km.key_cache
     # Note: we can't directly compare the data since it's parsed from JSON
-    assert km.key_cache[test_key]['ttl'] == 60
+    assert km.key_cache[_key_digest(test_key)]['ttl'] == 60
 
 
 def test_expired_key_cache_reloads_updated_storage_data() -> None:
@@ -246,7 +247,7 @@ def test_expired_key_cache_reloads_updated_storage_data() -> None:
     manager.storage[api_key] = {**manager.storage[api_key], "user_id": "updated-user"}
     assert manager.get_user(api_key) == "original-user"
 
-    manager.key_cache[api_key]["cached_at"] -= 2
+    manager.key_cache[_key_digest(api_key)]["cached_at"] -= 2
 
     assert manager.get_user(api_key) == "updated-user"
 
@@ -293,9 +294,9 @@ def test_revoke_key():
     assert km.is_revoked(test_key) is True
     
     # Check that key is removed from cache if it was there
-    km.key_cache = {test_key: {'data': {}, 'cached_at': time.time(), 'ttl': 300}}
+    km.key_cache = {_key_digest(test_key): {'data': {}, 'cached_at': time.time(), 'ttl': 300}}
     km.revoke_key(test_key)
-    assert test_key not in km.key_cache
+    assert _key_digest(test_key) not in km.key_cache
 
 
 def test_initialize_default_keys():
