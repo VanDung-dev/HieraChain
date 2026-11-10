@@ -80,6 +80,8 @@ class ZKProver:
     def __init__(self, mode: str | None = None):
         import warnings
         self.mode = mode or getattr(settings, 'ZK_MODE', 'mock')
+        if self.mode == "mock" and getattr(settings, "env", "") == "production":
+            raise ZKProvingError("ZK mock mode is not permitted in production")
         if self.mode == "mock":
             warnings.warn("ZKProver running in MOCK mode - NOT for production!", UserWarning)
         self.proving_key: bytes | None = None

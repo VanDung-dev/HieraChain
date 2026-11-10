@@ -11,11 +11,13 @@ import os
 import secrets
 import time
 import warnings
+from collections.abc import Iterator, MutableMapping
 from typing import Any
 
 from hierachain.adapters.database.auth_state import (
     RedisRevocationStore,
     SQLiteRevocationStore,
+    _key_digest,
 )
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
@@ -27,6 +29,34 @@ logger = SecureLogger("hierachain.security.key_manager")
 def _has_valid_permissions(key_data: dict[str, Any]) -> bool:
     permissions = key_data.get("permissions", [])
     return isinstance(permissions, list) and all(isinstance(permission, str) for permission in permissions)
+
+
+class HashedKeyStorage(MutableMapping[str, Any]):
+    """Mapping view that only ever persists SHA-256 digests of API keys."""
+
+    def __init__(self, backend: MutableMapping[str, Any] | None = None) -> None:
+        self._backend: MutableMapping[str, Any] = backend if backend is not None else {}
+
+    def __getitem__(self, key: str) -> Any:
+        return self._backend[_key_digest(key)]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._backend[_key_digest(key)] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self._backend[_key_digest(key)]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._backend)
+
+    def __len__(self) -> int:
+        return len(self._backend)
+
+    def __contains__(self, key: object) -> bool:
+        return isinstance(key, str) and _key_digest(key) in self._backend
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._backend.get(_key_digest(key), default)
 
 
 class KeyStorage:
@@ -54,7 +84,7 @@ class KeyStorage:
         
         # Redis-like storage
         try:
-            data = self.km.storage.get(f"api_key:{api_key}")
+            data = self.km.storage.get(f"api_key:{_key_digest(api_key)}")
             if isinstance(data, (str, bytes, bytearray)):
                 return loads_json(data)
             return None
@@ -77,7 +107,7 @@ class KeyStorage:
         if hasattr(self.km.storage, 'set') and hasattr(self.km.storage, 'get'):
             # Redis-like storage
             try:
-                self.km.storage.set(f"api_key:{api_key}", dumps_json(data))
+                self.km.storage.set(f"api_key:{_key_digest(api_key)}", dumps_json(data))
             # Keep the in-memory fallback for backend-specific storage errors.
             except Exception as e:  # noqa: BLE001
                 logger.error("Error storing key to storage", error=str(e))
@@ -106,7 +136,7 @@ class KeyCacheManager:
         Returns:
             dict | None: Cached key data or None if not found/expired
         """
-        cached = self.km.key_cache.get(api_key)
+        cached = self.km.key_cache.get(_key_digest(api_key))
         if not cached:
             return None
         # Handle dict wrapper supporting manual expiration for tests
@@ -135,7 +165,7 @@ class KeyCacheManager:
             ttl: TTL in seconds (optional)
         """
         ttl = ttl or self.km.cache_ttl
-        self.km.key_cache.set(api_key, {
+        self.km.key_cache.set(_key_digest(api_key), {
             'data': key_data,
             'cached_at': time.time(),
             'ttl': ttl
@@ -149,10 +179,10 @@ class KeyCacheManager:
             api_key: The API key to evict
         """
         if hasattr(self.km.key_cache, 'delete'):
-            if self.km.key_cache.contains(api_key):
-                self.km.key_cache.delete(api_key)
-        elif api_key in self.km.key_cache:
-            del self.km.key_cache[api_key]
+            if self.km.key_cache.contains(_key_digest(api_key)):
+                self.km.key_cache.delete(_key_digest(api_key))
+        elif _key_digest(api_key) in self.km.key_cache:
+            del self.km.key_cache[_key_digest(api_key)]
 
     def get_permission(self, api_key: str, resource: str) -> bool | None:
         """
@@ -165,7 +195,7 @@ class KeyCacheManager:
         Returns:
             bool | None: The permission result or None
         """
-        cache_key = f"{api_key}:{resource}"
+        cache_key = f"{_key_digest(api_key)}:{resource}"
         return self.km.permission_cache.get(cache_key)
 
     def set_permission(self, api_key: str, resource: str, result: bool):
@@ -177,7 +207,7 @@ class KeyCacheManager:
             resource: The resource checked
             result: The boolean permission result
         """
-        cache_key = f"{api_key}:{resource}"
+        cache_key = f"{_key_digest(api_key)}:{resource}"
         self.km.permission_cache.set(cache_key, result, ttl=self.km.cache_ttl)
 
     def clear_permissions(self, api_key: str):
@@ -187,8 +217,9 @@ class KeyCacheManager:
         Args:
             api_key: The API key to clear permissions for
         """
+        digest_prefix = f"{_key_digest(api_key)}:"
         keys_to_remove = [
-            k for k in self.km.permission_cache.get_keys() if k.startswith(f"{api_key}:")
+            k for k in self.km.permission_cache.get_keys() if k.startswith(digest_prefix)
         ]
         for key in keys_to_remove:
             self.km.permission_cache.delete(key)
@@ -227,8 +258,24 @@ class KeyManager:
                 category=UserWarning
             )
         
-        self.storage: Any = storage_backend or {}  # In-memory fallback
+        self.storage: Any
+        if storage_backend is None:
+            self.storage = HashedKeyStorage()
+        elif isinstance(storage_backend, HashedKeyStorage):
+            self.storage = storage_backend
+        elif isinstance(storage_backend, MutableMapping):
+            self.storage = HashedKeyStorage({
+                _key_digest(api_key): key_data
+                for api_key, key_data in storage_backend.items()
+            })
+        else:
+            self.storage = storage_backend
         self.revoked_keys: set[str] = set()
+        if revocation_store is None:
+            from hierachain.config.settings import get_settings
+            revocation_store = SQLiteRevocationStore(
+                get_settings().API_KEY_REVOCATIONS_DB
+            )
         self.revocation_store = revocation_store
         self.key_cache = AdvancedCache(max_size=5000, eviction_policy="ttl")
         self.permission_cache = AdvancedCache(max_size=10000, eviction_policy="lru")
