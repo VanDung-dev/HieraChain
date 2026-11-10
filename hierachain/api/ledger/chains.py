@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from hierachain.api.ledger.access import authenticated_user_id, require_chain_read
+from hierachain.api.ledger.chain_access import require_chain_management
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.ledger.schemas import ChainInfoResponse, ChainStatsResponse
 from hierachain.core.blockchain import Blockchain
@@ -187,7 +188,7 @@ def _register_new_sub_chain(
 
 
 @router.post(
-    "/chains/{chain_name}/create", dependencies=[Depends(require_chain_read)]
+    "/chains/{chain_name}/create", dependencies=[Depends(require_chain_management)]
 )
 async def create_sub_chain(
     chain_name: str,

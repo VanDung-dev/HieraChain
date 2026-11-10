@@ -124,8 +124,14 @@ async def get_channel(
 async def create_private_collection(
     channel_id: str,
     collection_request: PrivateCollectionCreateRequest,
+    auth_context: dict[str, Any] = Depends(require_chain_access),
     manager: HierarchyManager = Depends(get_hierarchy_manager),
 ) -> ChannelResponse:
+    if not ResourcePermissionChecker.has_permission(auth_context, "channels:manage"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Private collection provisioning requires 'channels:manage' permission.",
+        )
     channel = manager.get_channel(channel_id)
     if channel is None:
         raise HTTPException(

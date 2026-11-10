@@ -19,7 +19,13 @@ class VerifyIdentityRequest(BaseModel):
         }
     )
 
-    challenge: str = Field(..., description="Challenge string to sign (hex encoded)")
+    challenge: str = Field(
+        ...,
+        min_length=1,
+        max_length=256,
+        pattern=r"^[0-9a-fA-F]+$",
+        description="Challenge string to sign (hex encoded)",
+    )
 
 
 class VerifyIdentityResponse(BaseModel):
@@ -113,7 +119,12 @@ class SecureEventRequest(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
     sender: str = Field(..., description="Hex-encoded sender identity")
     signature: str = Field(..., description="Hex-encoded digital signature")
-    nonce: str | None = Field(default=None, description="Optional unique nonce for replay prevention")
+    nonce: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Unique nonce for replay prevention",
+    )
     timestamp: float | None = Field(default=None, description="Optional event timestamp")
     chain_id: str | None = Field(default=None, description="Optional destination chain identifier")
 

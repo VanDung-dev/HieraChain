@@ -3,9 +3,10 @@ API admin endpoints for System Management
 """
 
 import os
+import threading
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from hierachain.api.admin.schemas import (
     NodeStatusResponse,
@@ -24,11 +25,88 @@ from hierachain.security.key_provider import CryptoError, LocalKeyProvider
 from hierachain.security.secure_logging import SecureLogger
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.verify.signature_verifier import SignatureVerifier
+from hierachain.serialization import loads_json
 
 logger = SecureLogger("hierachain.api.admin")
 router = APIRouter(prefix="/api/admin", tags=["HieraChain-admin (System & Admin)"])
 
 verifier = SignatureVerifier()
+
+_VERIFY_IDENTITY_RPM = 10
+_VERIFY_WINDOW_SECONDS = 60.0
+_NONCE_TTL_SECONDS = 600.0
+_verify_attempts: dict[str, list[float]] = {}
+_verify_attempts_lock = threading.Lock()
+_seen_nonces: dict[str, float] = {}
+_nonce_lock = threading.Lock()
+_trusted_senders: tuple[str, float, frozenset[str]] | None = None
+_trusted_senders_lock = threading.Lock()
+
+
+def _consume_nonce(nonce: str) -> None:
+    now = time.monotonic()
+    with _nonce_lock:
+        expired = [key for key, seen_at in _seen_nonces.items() if now - seen_at > _NONCE_TTL_SECONDS]
+        for key in expired:
+            del _seen_nonces[key]
+        if nonce in _seen_nonces:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Event nonce has already been used.",
+            )
+        _seen_nonces[nonce] = now
+
+
+def _load_trusted_sender_keys() -> frozenset[str] | None:
+    global _trusted_senders
+    path = get_settings().BLOCK_TRUSTED_KEYS_FILE
+    if not path:
+        return None
+    try:
+        modified_at = os.path.getmtime(path)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Trusted key store is unavailable.",
+        ) from exc
+
+    with _trusted_senders_lock:
+        if _trusted_senders is not None and _trusted_senders[0] == path and _trusted_senders[1] == modified_at:
+            return _trusted_senders[2]
+        try:
+            with open(path, "rb") as trusted_file:
+                raw_keys = loads_json(trusted_file.read())
+        except (OSError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Trusted key store is unavailable.",
+            ) from exc
+        if not isinstance(raw_keys, dict) or not raw_keys:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Trusted key store is unavailable.",
+            )
+        keys = frozenset(
+            value.removeprefix("0x").lower()
+            for value in raw_keys.values()
+            if isinstance(value, str) and value
+        )
+        _trusted_senders = (path, modified_at, keys)
+        return keys
+
+
+def _enforce_verify_identity_rate_limit(request: Request) -> None:
+    client = request.client.host if request.client is not None else "unknown"
+    now = time.monotonic()
+    with _verify_attempts_lock:
+        recent = [seen_at for seen_at in _verify_attempts.get(client, []) if now - seen_at < _VERIFY_WINDOW_SECONDS]
+        if len(recent) >= _VERIFY_IDENTITY_RPM:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many identity verification attempts. Please try again later.",
+            )
+        recent.append(now)
+        _verify_attempts[client] = recent
 
 
 def get_current_key_provider() -> LocalKeyProvider:
@@ -65,7 +143,7 @@ def get_current_key_provider() -> LocalKeyProvider:
 @router.post(
     "/verify-identity",
     response_model=VerifyIdentityResponse,
-    dependencies=[Depends(require_chain_access)],
+    dependencies=[Depends(require_chain_access), Depends(_enforce_verify_identity_rate_limit)],
 )
 async def verify_identity(
     request: VerifyIdentityRequest,
@@ -176,6 +254,15 @@ async def add_secure_event(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Cryptographic signature verification failed. Event integrity cannot be guaranteed."
             )
+
+        trusted_senders = _load_trusted_sender_keys()
+        if trusted_senders is not None and request.sender.removeprefix("0x").lower() not in trusted_senders:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Event signer is not a trusted member of this network.",
+            )
+
+        _consume_nonce(request.nonce)
 
         # Retain the signed content so ordering and journal replay can verify it again.
         event_data["signature_content"] = {
