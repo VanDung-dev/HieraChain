@@ -85,7 +85,7 @@ def _verify_canonical_event(data: dict[str, Any]) -> bool:
         return False
     if data.get("event") != content["event_type"]:
         return False
-    runtime_fields = {"event", "event_id", "channel_id", "timestamp", "signature_content", "sender", "signature"}
+    runtime_fields = {"event", "event_id", "channel_id", "timestamp", "signature_content", "sender", "signature", "submitted_by"}
     if data.keys() - content.keys() - runtime_fields:
         return False
     for key, value in content.items():

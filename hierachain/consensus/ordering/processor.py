@@ -267,7 +267,11 @@ class OrderingProcessor:
                 results = await asyncio.to_thread(
                     verify_batch_signatures, verification_items
                 )
-            for event, is_valid in zip(events_to_verify, results):
+            if len(results) != len(events_to_verify):
+                raise ValueError(
+                    f"Batch verification returned {len(results)} results for {len(events_to_verify)} events"
+                )
+            for event, is_valid in zip(events_to_verify, results, strict=True):
                 if not is_valid:
                     event.status = EventStatus.REJECTED
                     self.service.metrics.record_rejected()
@@ -278,6 +282,13 @@ class OrderingProcessor:
                     event.signature_verified = True
         except Exception as e:
             logger.error("Batch verification failed: %s", e)
+            for event in events_to_verify:
+                if event.status != EventStatus.REJECTED:
+                    event.status = EventStatus.REJECTED
+                    self.service.metrics.record_rejected()
+                logger.warning(
+                    "Event %s rejected (batch verification unavailable)", event.event_id
+                )
 
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
         """

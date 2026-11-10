@@ -50,7 +50,7 @@ class OrderingBlockManager:
         )
         while not self.service.should_stop.is_set():
             try:
-                self.commit_block(block)
+                await asyncio.to_thread(self.commit_block, block)
             except OrderingPausedError:
                 # Keep the cut batch intact while maintenance freezes commits.
                 await asyncio.sleep(0.05)

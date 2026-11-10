@@ -6,11 +6,8 @@ for the HieraChain Ledger where specific authorities (Main Chain,
 Sub-Chains) have designated roles and permissions for block creation.
 """
 
-import hashlib
 import logging
 import math
-import os
-import sys
 import time
 from typing import Any
 
@@ -39,7 +36,10 @@ class ProofOfAuthority(BaseConsensus):
     - Block creation is controlled by authorized entities
     - No energy-intensive mining (suitable for business applications)
     """
-    __slots__ = ('authorities', 'authority_metadata', 'block_interval')
+    __slots__ = (
+        'authorities', 'authority_metadata', '_authority_private_keys',
+        '_membership_epochs', '_last_seen_height', 'block_interval',
+    )
 
     def __init__(self, name: str = "ProofOfAuthority", block_interval: float | None = None) -> None:
         """
@@ -52,6 +52,9 @@ class ProofOfAuthority(BaseConsensus):
         super().__init__(name)
         self.authorities: set[str] = set()
         self.authority_metadata: dict[str, dict[str, Any]] = {}
+        self._authority_private_keys: dict[str, str] = {}
+        self._membership_epochs: list[tuple[int, tuple[str, ...]]] = []
+        self._last_seen_height: int = -1
         self.block_interval: float = block_interval if block_interval is not None else 0.0
         if not math.isfinite(self.block_interval) or self.block_interval < 0:
             raise ValueError("PoA block_interval must be finite and nonnegative")
@@ -83,14 +86,18 @@ class ProofOfAuthority(BaseConsensus):
 
         self.authorities.add(authority_id)
         meta = dict(metadata) if metadata is not None else {}
+        supplied_private_key = meta.pop("private_key", None)
         if "public_key" not in meta:
             try:
                 kp = KeyPair()
                 meta["public_key"] = kp.public_key
-                meta["private_key"] = kp.private_key
+                supplied_private_key = kp.private_key
             except Exception as e:
                 logger.error("Failed to auto-generate key pair in add_authority: %s", e)
+        if isinstance(supplied_private_key, str) and supplied_private_key:
+            self._authority_private_keys[authority_id] = supplied_private_key
         self.authority_metadata[authority_id] = meta
+        self._record_membership()
         return True
 
     def remove_authority(self, authority_id: str) -> bool:
@@ -106,8 +113,29 @@ class ProofOfAuthority(BaseConsensus):
         if authority_id in self.authorities:
             self.authorities.remove(authority_id)
             self.authority_metadata.pop(authority_id, None)
+            self._authority_private_keys.pop(authority_id, None)
+            self._record_membership()
             return True
         return False
+
+    def _note_height(self, block_index: int) -> None:
+        if isinstance(block_index, int) and block_index > self._last_seen_height:
+            self._last_seen_height = block_index
+
+    def _record_membership(self) -> None:
+        effective_height = self._last_seen_height + 1
+        snapshot = tuple(sorted(self.authorities))
+        if self._membership_epochs and self._membership_epochs[-1] == (effective_height, snapshot):
+            return
+        self._membership_epochs.append((effective_height, snapshot))
+
+    def _membership_for_height(self, block_index: int) -> tuple[str, ...]:
+        members = tuple(sorted(self.authorities))
+        for effective_height, snapshot in self._membership_epochs:
+            if effective_height > block_index:
+                break
+            members = snapshot
+        return members
 
     def is_authority(self, authority_id: str) -> bool:
         """
@@ -149,6 +177,7 @@ class ProofOfAuthority(BaseConsensus):
         if not block.validate_structure():
             logger.debug("Block %d failed structure validation", block.index)
             return False
+        self._note_height(block.index)
 
         timing_ok = self._check_block_timing(block, previous_block)
         if not timing_ok:
@@ -192,7 +221,7 @@ class ProofOfAuthority(BaseConsensus):
         """
         if authority_id and self.is_authority(authority_id):
             if not private_key:
-                private_key = self.authority_metadata.get(authority_id, {}).get("private_key")
+                private_key = self._authority_private_keys.get(authority_id)
             timestamp = time.time()
             authority_signature = _create_authority_signature(
                 block, authority_id, private_key, timestamp
@@ -258,11 +287,6 @@ class ProofOfAuthority(BaseConsensus):
 
         authority_id, signature, public_key, details = metadata
 
-        # Allow placeholder mock signatures in tests
-        is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
-        if is_testing and signature.startswith("valid_"):
-            return True
-
         public_key = self.authority_metadata.get(authority_id, {}).get("public_key")
         if not isinstance(public_key, str):
             logger.warning(
@@ -285,23 +309,43 @@ class ProofOfAuthority(BaseConsensus):
 
         from hierachain.security.security_utils import verify_signature
         sig_str = f"{unfinalized_hash}{authority_id}{details.get('timestamp')}"
-        return verify_signature(public_key, sig_str.encode(), signature)
+        if not verify_signature(public_key, sig_str.encode(), signature):
+            return False
+
+        block_signature = getattr(block, "signature", None)
+        if isinstance(block_signature, str) and block_signature:
+            from hierachain.security.verify.block_verifier import BlockVerifier
+            signable = BlockVerifier._get_signable_content(block)
+            if not verify_signature(public_key, signable, block_signature):
+                logger.warning(
+                    "Block %d header signature does not match authority key", block.index
+                )
+                return False
+        return True
 
     def get_next_authority(self, current_block_index: int) -> str | None:
         """Get the next authority that should create a block (round-robin)."""
         if not self.authorities:
             return None
-
-        authorities_list = sorted(list(self.authorities))
-        next_index = (current_block_index + 1) % len(authorities_list)
-        return authorities_list[next_index]
+        self._note_height(current_block_index)
+        next_height = current_block_index + 1
+        members = self._membership_for_height(next_height)
+        if not members:
+            return None
+        return members[next_height % len(members)]
 
     def get_authority_stats(self) -> dict[str, Any]:
         """Get statistics about authorities."""
         return {
             "total_authorities": len(self.authorities),
             "authorities": list(self.authorities),
-            "authority_metadata": self.authority_metadata,
+            "authority_metadata": {
+                authority_id: {
+                    key: value for key, value in metadata.items()
+                    if key not in {"private_key", "secret_key", "seed"}
+                }
+                for authority_id, metadata in self.authority_metadata.items()
+            },
             "max_authorities": self.config["max_authorities"]
         }
 
@@ -357,13 +401,6 @@ def _create_authority_signature(
         except Exception as e:
             logger.error("Failed to sign block with private key: %s", e)
 
-    # Fallback to random signature for tests running without proper keys setup
-    # In test mode, prefix with 'valid_' so verification recognizes mock signatures
-    is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
-    if is_testing:
-        return "valid_" + hashlib.sha256(sig_str.encode()).hexdigest()
-
-    # No private key and not in test mode — cannot sign
     logger.error(
         "Cannot sign block %d for authority %s: no private key",
         block.index, authority_id

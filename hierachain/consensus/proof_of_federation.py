@@ -33,7 +33,7 @@ class ProofOfFederation(BaseConsensus):
     - Rotating Leader: Authorities take turns creating blocks based on block height.
     - Deterministic Schedule: Leader = (BlockHeight) % (TotalAuthorities).
     """
-    __slots__ = ('_signing_key', 'validator_metadata', 'validators')
+    __slots__ = ('_signing_key', 'validator_metadata', 'validators', '_membership_epochs', '_last_seen_height')
 
     def __init__(self, name: str = "ProofOfFederation",
                  signing_key_hex: str | None = None):
@@ -51,6 +51,8 @@ class ProofOfFederation(BaseConsensus):
         # Internal state
         self.validators: list[str] = []  # Ordered list of validator IDs
         self.validator_metadata: dict[str, dict[str, Any]] = {}
+        self._membership_epochs: list[tuple[int, tuple[str, ...]]] = []
+        self._last_seen_height: int = -1
         self._signing_key: SigningKey | None = None
         if signing_key_hex:
             try:
@@ -77,6 +79,25 @@ class ProofOfFederation(BaseConsensus):
         """Get the number of active validators."""
         return len(self.validators)
 
+    def _note_height(self, block_index: int) -> None:
+        if isinstance(block_index, int) and block_index > self._last_seen_height:
+            self._last_seen_height = block_index
+
+    def _record_membership(self) -> None:
+        effective_height = self._last_seen_height + 1
+        snapshot = tuple(self.validators)
+        if self._membership_epochs and self._membership_epochs[-1] == (effective_height, snapshot):
+            return
+        self._membership_epochs.append((effective_height, snapshot))
+
+    def _membership_for_height(self, block_index: int) -> tuple[str, ...]:
+        members = tuple(self.validators)
+        for effective_height, snapshot in self._membership_epochs:
+            if effective_height > block_index:
+                break
+            members = snapshot
+        return members
+
     def add_validator(
         self, validator_id: str, metadata: dict[str, Any] | None = None
     ) -> bool:
@@ -96,6 +117,7 @@ class ProofOfFederation(BaseConsensus):
         self.validators.append(validator_id)
         # Keep list sorted to ensure deterministic order across all nodes
         self.validators.sort()
+        self._record_membership()
     
         meta = dict(metadata) if metadata is not None else {}
         if "public_key" not in meta:
@@ -121,6 +143,7 @@ class ProofOfFederation(BaseConsensus):
         if validator_id in self.validators:
             self.validators.remove(validator_id)
             self.validator_metadata.pop(validator_id, None)
+            self._record_membership()
             return True
         return False
 
@@ -148,9 +171,12 @@ class ProofOfFederation(BaseConsensus):
         """
         if not self.validators:
             return None
-        
-        leader_idx = block_index % len(self.validators)
-        return self.validators[leader_idx]
+        self._note_height(block_index)
+        members = self._membership_for_height(block_index)
+        if not members:
+            return None
+        leader_idx = block_index % len(members)
+        return members[leader_idx]
 
     def can_create_block(self, authority_id: str | None = None) -> bool:
         """
@@ -201,6 +227,7 @@ class ProofOfFederation(BaseConsensus):
         # 1. Basic structure
         if not block.validate_structure():
             return False
+        self._note_height(block.index)
         
         # 2. Timing check
         time_diff = block.timestamp - previous_block.timestamp

@@ -186,13 +186,38 @@ class OrderingService:
             self._status = value
 
     def _init_processing_thread(self):
-        """Entry point for the background processing thread"""
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        try:
-            self.loop.run_until_complete(self.processor.run_async())
-        finally:
-            self.loop.close()
+        """Entry point for the background processing thread with watchdog restart."""
+        max_restarts = int(self.config.get("processor_max_restarts", 5))
+        failures = 0
+        while not self.should_stop.is_set():
+            was_active = self.status == OrderingStatus.ACTIVE
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+            try:
+                self.loop.run_until_complete(self.processor.run_async())
+                return
+            except Exception as exc:
+                if self.should_stop.is_set():
+                    return
+                failures = 1 if was_active else failures + 1
+                logger.error(
+                    "Ordering processor stopped unexpectedly; restart %d/%d: %s",
+                    failures, max_restarts, exc,
+                )
+                self.status = OrderingStatus.MAINTENANCE
+                if failures > max_restarts:
+                    self.status = OrderingStatus.ERROR
+                    logger.critical(
+                        "Ordering processor exceeded %d restarts; manual intervention required",
+                        max_restarts,
+                    )
+                    return
+                self.processor = OrderingProcessor(self)
+                delay = min(2 ** (failures - 1), 30)
+                if self.should_stop.wait(delay):
+                    return
+            finally:
+                self.loop.close()
 
     def receive_event(
         self, event_data: dict[str, Any], channel_id: str, submitter_org: str
