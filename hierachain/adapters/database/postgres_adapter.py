@@ -12,6 +12,7 @@ import time
 from contextlib import contextmanager
 from importlib import import_module
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
 from hierachain.adapters.database.postgres_schema import init_database_schema
@@ -44,13 +45,37 @@ class PostgresAdapter(SQLBase):
     _ledger_registry_lock_suffix = " FOR SHARE"
     _ledger_begin = ""
 
-    def __init__(self, database_url: str = "postgresql://hiera:hiera@localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
+    def __init__(self, database_url: str = "postgresql://localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
         self.database_url = database_url
         self.pool_min = pool_min
         self.pool_max = pool_max
         self._pool = None
         self._init_pool()
         self._init_schema()
+
+    @staticmethod
+    def _execute_get_proof_history(
+        cursor: Any, sub_chain_name: str,
+    ) -> list[dict[str, Any]]:
+        cursor.execute(
+            """
+            SELECT main_chain_name, sub_chain_name, proof_hash, block_index, metadata, submitted_at
+            FROM proofs WHERE sub_chain_name = %s
+            ORDER BY submitted_at DESC
+            """,
+            (sub_chain_name,),
+        )
+        proofs = []
+        for row in cursor.fetchall():
+            proofs.append({
+                "main_chain_name": row['main_chain_name'],
+                "sub_chain_name": row['sub_chain_name'],
+                "proof_hash": row['proof_hash'],
+                "block_index": row['block_index'],
+                "metadata": loads_json(row['metadata'] or '{}'),
+                "submitted_at": row['submitted_at'],
+            })
+        return proofs
 
     def _init_pool(self) -> None:
         """Initialize connection pool depending on available drivers."""
@@ -439,7 +464,22 @@ class PostgresAdapter(SQLBase):
             self._pool = None
 
     def __str__(self) -> str:
-        return f"PostgresAdapter(database_url={self.database_url})"
+        return f"PostgresAdapter(database_url={_mask_database_url(self.database_url)})"
 
     def __repr__(self) -> str:
-        return f"PostgresAdapter(database_url={self.database_url})"
+        return f"PostgresAdapter(database_url={_mask_database_url(self.database_url)})"
+
+
+def _mask_database_url(database_url: str) -> str:
+    try:
+        parts = urlsplit(database_url)
+    except ValueError:
+        return "<invalid database url>"
+    if not parts.password:
+        return database_url
+    userinfo, separator, host = parts.netloc.partition("@")
+    if not separator:
+        return database_url
+    username = userinfo.split(":", 1)[0]
+    netloc = f"{username}:***@{host}"
+    return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
