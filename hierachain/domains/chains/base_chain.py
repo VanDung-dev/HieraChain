@@ -33,7 +33,9 @@ class BaseChain(SubChain, ABC):
     - Maintains entity lifecycle management
     - Supports domain-specific business rules
     """
-    
+
+    chain_kind = "domain"
+
     def __init__(self, name: str, domain_type: str) -> None:
         """
         Initialize a base domain chain.
@@ -242,7 +244,8 @@ class BaseChain(SubChain, ABC):
         Returns:
             Entity information or None if not found
         """
-        return self.entity_registry.get(entity_id)
+        entity = self.entity_registry.get(entity_id)
+        return copy.deepcopy(entity) if entity is not None else None
     
     def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
@@ -260,8 +263,8 @@ class BaseChain(SubChain, ABC):
             # Filter events for this entity
             entity_events = [e for e in events if e.get("entity_id") == entity_id]
             history.extend(entity_events)
-            
-        return history
+
+        return copy.deepcopy(history)
 
     def add_domain_event(
         self,
@@ -301,6 +304,9 @@ class BaseChain(SubChain, ABC):
             except Exception:
                 logger.exception("Could not add domain event %s", event.event_type)
                 return False
+
+            if event.event_type == "operation_complete":
+                self.completed_operations += 1
 
             handler = self.event_handlers.get(event.event_type)
             if handler is not None:
@@ -369,14 +375,11 @@ class BaseChain(SubChain, ABC):
                     "completed_at": time.time(),
                 },
             )
-            accepted = self.add_domain_event(
+            return self.add_domain_event(
                 event,
                 transaction_id=transaction_id,
                 transaction_step="complete" if transaction_id is not None else None,
             )
-            if accepted:
-                self.completed_operations += 1
-            return accepted
     
     def _handle_operation_start(self, event: BaseEvent) -> None:
         """Handle operation start events."""

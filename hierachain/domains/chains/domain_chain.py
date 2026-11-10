@@ -301,7 +301,10 @@ class DomainChain(BaseChain):
                 old_status=old_status,
                 new_status=status,
                 reason=reason,
-                details=details
+                domain_type=self.domain_type,
+                details=self._status_update_details(
+                    old_status, status, reason, details
+                ),
             )
             return self.add_domain_event(event)
 
