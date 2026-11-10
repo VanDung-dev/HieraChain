@@ -78,7 +78,8 @@ print(settings.AUTH_ENABLED)
 * Authentication: `HRC_AUTH_ENABLED` (mặc định `false` ở dev/test và bắt buộc `true` ở production; đặt tường minh thành `false` sẽ chặn production khởi động)
 * `HRC_API_KEYS_FILE`: bắt buộc trong production. Đường dẫn tới file JSON chứa key không rỗng, đọc được; mỗi key dài ít nhất 32 ký tự và có `user_id` cùng danh sách `permissions` không rỗng. File được đọc khi tạo API app; thay đổi map key vẫn cần tạo lại từng node hoặc khởi động lại từng tiến trình chạy trực tiếp.
 * `HRC_API_KEY_REVOCATIONS_DB` (mặc định: `data/api_key_revocations.sqlite3`): lưu bền vững API key đã thu hồi và brute-force lockout cục bộ cho API production. Mọi worker trên một host phải dùng chung file ghi được và bền vững này.
-* `HRC_AUTH_STATE_REDIS_URL` (tùy chọn): khi đặt, API key revocation và brute-force lockout dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu revocation phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối xác thực thay vì dùng trạng thái cục bộ.
+* `HRC_AUTH_STATE_REDIS_URL` (tùy chọn): khi đặt, API key revocation, brute-force lockout, chống replay nonce của secure-event và rate limit verify-identity dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu trạng thái này phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối request thay vì dùng trạng thái cục bộ.
+* `HRC_API_STATE_DB` (tùy chọn, mặc định: rỗng): khi đặt và `HRC_AUTH_STATE_REDIS_URL` rỗng, chống replay nonce của secure-event và rate limit verify-identity dùng file SQLite dùng chung này. Đây là lựa chọn nhiều worker trên một host; để rỗng sẽ dùng fallback bộ nhớ trong tiến trình.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * `HRC_MASTER_KEY_SOURCE=env` vẫn được chấp nhận như alias tương thích cho hành vi secret qua biến môi trường hiện có. Giá trị khác của `HRC_MASTER_KEY_SOURCE` và mọi `HRC_MASTER_KEY_FILE` không rỗng sẽ khiến cấu hình dừng với lỗi vì chưa có master-key provider thay thế. Điều này không thay đổi API `FileVaultProvider` riêng biệt.
 * Bảo vệ brute-force:
@@ -112,6 +113,7 @@ HieraChain không thêm `Strict-Transport-Security`. Hãy cấu hình HSTS tại
 * `HRC_RATE_LIMIT_RPM` (mặc định: `100` requests/phút)
 * `HRC_RATE_LIMIT_BACKEND`: `memory` (đơn node) hoặc `redis` (đa node hoặc cluster).
 * Với backend `redis`, lỗi và timeout Redis từ chối request không thuộc diện miễn trừ bằng HTTP 503 (fail-closed). Kiểm tra Redis chạy ngoài event loop của API.
+* Store replay/rate-limit của admin tách khỏi `HRC_RATE_LIMIT_BACKEND`: cấu hình `HRC_API_STATE_DB` hoặc `HRC_AUTH_STATE_REDIS_URL`. Nếu store đã cấu hình không khả dụng, secure-event và verify-identity trả HTTP 503 thay vì fallback về trạng thái cục bộ trong tiến trình.
 
 ### Monitoring và metrics
 
@@ -132,6 +134,7 @@ Mock chỉ phục vụ phát triển. Khi `HRC_ENV=production`, khởi tạo `ZK
 * `HRC_CROSS_LEVEL_SYNC` (mặc định: `true`)
 * `HRC_CROSS_LEVEL_BATCH` (mặc định: `100`)
 * `HRC_CROSS_LEVEL_TIMEOUT` (mặc định: `30.0` giây)
+* `HRC_2PC_TTL_SECONDS` (mặc định: `86400`): thời gian giữ giao dịch cross-chain đã kết thúc trong bộ nhớ coordinator. Giao dịch chưa kết thúc hoặc đang được claim không bao giờ bị xóa; `0` tắt pruning.
 
 ### Integration
 

@@ -26,7 +26,7 @@ Protect public status access at the reverse proxy if the deployment requires it.
 payload = b"HRC_IDENTITY_CHALLENGE:" + challenge.encode("utf-8")
 ```
 
-It does not decode the challenge as hexadecimal bytes. `challenge` must be 1–256 hexadecimal characters. The route is rate-limited to 10 attempts per minute per client IP; the counter is in-memory and local to one API process. The response contains `status`, `node_id`, `signature` and the original `challenge`. Verify the signature over the same prefixed UTF-8 payload using the node's approved public key. Choose a fresh challenge and track it in the client if replay protection is required.
+It does not decode the challenge as hexadecimal bytes. `challenge` must be 1–256 hexadecimal characters. The route is rate-limited to 10 attempts per minute per client IP. With `HRC_API_STATE_DB` or `HRC_AUTH_STATE_REDIS_URL`, the counter is shared across workers or hosts; otherwise it is in-memory and local to one API process. The response contains `status`, `node_id`, `signature` and the original `challenge`. Verify the signature over the same prefixed UTF-8 payload using the node's approved public key. Choose a fresh challenge and track it in the client if replay protection is required.
 
 ```bash
 curl -X POST http://localhost:2661/api/admin/verify-identity \
@@ -49,7 +49,7 @@ curl -s http://localhost:2661/api/admin/status
 
 `SecureEventRequest` requires `entity_id`, `event_type`, `sender`, `signature` and a unique `nonce` (8–128 characters); `details` defaults to an empty object. `sender` and `signature` must contain hexadecimal data with a `0x` prefix. Optional fields are `timestamp` and `chain_id`; unknown fields are rejected. Details are limited to 1 MiB of serialized JSON and depth 10.
 
-The handler rejects a supplied `chain_id` that differs from the path, and a supplied timestamp more than 300 seconds from server time. It calls `SignatureVerifier.verify_event_signature()` before `chain.add_event()`. When `HRC_BLOCK_TRUSTED_KEYS_FILE` is configured, the signer must appear in that key map (HTTP 403 otherwise); when the store is unreadable, the request fails with HTTP 503. A nonce seen within the last 600 seconds returns HTTP 409.
+The handler rejects a supplied `chain_id` that differs from the path, and a supplied timestamp more than 300 seconds from server time. It calls `SignatureVerifier.verify_event_signature()` before `chain.add_event()`. When `HRC_BLOCK_TRUSTED_KEYS_FILE` is configured, the signer must appear in that key map (HTTP 403 otherwise); when the store is unreadable, the request fails with HTTP 503. A nonce seen within the last 600 seconds returns HTTP 409. Nonce state uses the same optional shared store (`HRC_API_STATE_DB`/`HRC_AUTH_STATE_REDIS_URL`), so a replay is rejected across workers and hosts; an unavailable configured store returns HTTP 503.
 
 `SecureEventResponse` contains `status`, `event_hash` and server `timestamp`. The literal status is `queued`, because the handler calls the asynchronous Sub-Chain ingestion path. `event_hash` is the returned submission identifier; read finalized blocks to establish durable commitment. A signature accepted at this route does not make block creation synchronous.
 
@@ -64,7 +64,7 @@ The handler rejects a supplied `chain_id` that differs from the path, and a supp
 | 409 | The secure-event nonce has already been used |
 | 422 | Invalid request model, chain mismatch, timestamp window or event signature |
 | 429 | The verify-identity rate limit was exceeded |
-| 503 | The trusted key store is unavailable |
+| 503 | The trusted key store or the configured replay/rate-limit store is unavailable |
 | 500 | Signing, status computation or event submission raises an internal error |
 
 ## Related

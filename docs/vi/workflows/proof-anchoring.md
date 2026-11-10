@@ -52,7 +52,7 @@ sequenceDiagram
 
 | Bước | Mô tả |
 |:-----|:------|
-| **1. Kiểm tra kích hoạt** | `auto_submit_proof_if_needed()` kiểm tra thời gian đã trôi qua và có block mới đã hoàn tất. |
+| **1. Kiểm tra kích hoạt** | `auto_submit_proof_if_needed()` trả về ngay nếu chưa bật gửi tự động, sau đó kiểm tra thời gian đã trôi qua và có block mới đã hoàn tất. |
 | **2. Tạo proof ZK** | Nếu `HRC_ENABLE_ZK_PROOFS=true`: ZKProver tính trên `(old_state_root, new_state_root, events)`. Thử lại tối đa 3 lần nếu lỗi. |
 | **3. Metadata proof** | `_generate_default_proof_metadata()` tạo metadata tóm tắt; MainChain từ chối trường chi tiết bị cấm trong dict hoặc list lồng nhau và lọc đệ quy các container được chấp nhận trước khi ghi. |
 | **4. Ghi lên Main Chain** | `MainChain.add_proof()` xác thực rồi đưa proof vào hàng chờ; đường submit hoàn tất và đọc lại block đã ký từ storage bền vững. |
@@ -76,6 +76,8 @@ sequenceDiagram
 | `HRC_ENABLE_ZK_PROOFS` | `false` | Bật/tắt xác thực ZK |
 | `HRC_ZK_MODE` | `mock` | `mock` hoặc `production` |
 | `HRC_ZK_REQUIRED_MAINCHAIN` | `false` | Chặn gửi proof lên Main Chain nếu ZK lỗi |
+
+Gửi tự động là tùy chọn. `SubChain.auto_proof_submission` mặc định `false`; gọi `HierarchyManager.configure_auto_proof_submission(True, interval)` hoặc đặt cờ trên chain. Chain mới thêm vào manager kế thừa cấu hình của manager. Proof vẫn có thể gửi tường minh qua endpoint proof.
 
 ---
 

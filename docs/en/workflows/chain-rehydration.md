@@ -51,6 +51,12 @@ sequenceDiagram
 
 Startup reconciliation drops queued blocks whose index and hash already match the rebuilt chain. Blocks absent from the chain remain queued. A queued block with a conflicting hash is retained and causes `ValueError`, preventing startup from accepting conflicting history.
 
+## Chain kind and projection state
+
+Persisted sub-chains carry a chain kind (`sub` or `domain`). Startup restores a persisted domain chain as `DomainChain`; a legacy `sub` row is upgraded only when an unresolved 2PC record names that chain.
+
+`WorldState.apply_block()` deduplicates by `(index, hash)`, and `clear()` resets that set. Reapplying an already ingested block during recovery therefore does not double-count entity events. Committed event IDs are also removed from the SubChain shadow `pending_events` list, which is capped at 1000 entries; the ordering service remains the source of queued work.
+
 ## Errors and operational limits
 
 Storage read errors propagate to the caller. Invalid rebuilt history and queue conflicts also raise errors. This path has no scheduled retry, lock-timeout alert or automatic read-only fallback. Restore storage access and the approved identity/trust configuration before restarting; inspect the failure before submitting more events.

@@ -52,7 +52,7 @@ sequenceDiagram
 
 | Step | Description |
 |:-----|:------------|
-| **1. Trigger check** | `auto_submit_proof_if_needed()` checks the elapsed interval and whether a newer finalized block exists. |
+| **1. Trigger check** | `auto_submit_proof_if_needed()` returns immediately unless automatic submission is enabled, then checks the elapsed interval and whether a newer finalized block exists. |
 | **2. ZK generation** | If `HRC_ENABLE_ZK_PROOFS=true`: ZKProver computes over `(old_state_root, new_state_root, events)`. Retries 3× with backoff |
 | **3. Proof metadata** | `_generate_default_proof_metadata()` builds summary metadata; MainChain rejects forbidden detail fields inside nested dictionaries or lists and sanitizes accepted containers recursively before recording them |
 | **4. Main Chain write** | `MainChain.add_proof()` verifies and queues the proof; the submission path finalizes and reads back the signed block from durable storage. |
@@ -76,6 +76,8 @@ sequenceDiagram
 | `HRC_ENABLE_ZK_PROOFS` | `false` | Toggle ZK verification |
 | `HRC_ZK_MODE` | `mock` | `mock` or `production` |
 | `HRC_ZK_REQUIRED_MAINCHAIN` | `false` | Block proof submission if ZK fails |
+
+Automatic submission is opt-in. `SubChain.auto_proof_submission` defaults to `false`; call `HierarchyManager.configure_auto_proof_submission(True, interval)` or set the flag on the chain. New chains added to the manager inherit the manager setting. Proofs can always be submitted explicitly through the proof endpoint.
 
 ---
 

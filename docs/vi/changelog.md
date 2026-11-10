@@ -136,7 +136,13 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (63)"
+??? note "Improvements (66)"
+
+    * 2026-11-11
+
+        * **Cấu hình (State API & TTL Giao dịch Liên chain)**: thêm `Settings.API_STATE_DB` (`HRC_API_STATE_DB`, mặc định rỗng) và `Settings.CROSS_CHAIN_TRANSACTION_TTL_SECONDS` (`HRC_2PC_TTL_SECONDS`, mặc định `86400`) trong `hierachain/config/settings.py` để cấu hình backend state API dùng chung và thời hạn lưu giao dịch 2PC đã phân giải.
+        * **Database (Kho State API Dùng chung & Kiểu Chain Domain)**: thêm `SQLiteApiStateStore` (SQLite dùng chung qua file, quyền `0600`, bảng `replay_nonces`/`rate_limits`, giao dịch `BEGIN IMMEDIATE` nguyên tử) và `RedisApiStateStore` (nonce `SET NX EX` theo digest cộng bộ đếm cửa sổ cố định bằng Lua) trong `hierachain/adapters/database/auth_state.py`; `SQLBase._determine_chain_type()`/`list_chains()` cùng `RedisChainManager.store_chain()`/`list_chains()` và `RedisLedgerAdapter.list_block_chain_names()` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/redis_adapter.py`, `hierachain/adapters/database/redis_ledger.py`) nay persist và trả về chain `domain` bên cạnh chain `sub` thay vì gộp thành `sub`.
+        * **API (Chống Replay & Rate Limit Dùng chung)**: cơ chế chặn replay nonce của secure event và rate limiter `/api/admin/verify-identity` (`hierachain/api/admin/endpoints.py`) dùng kho state dùng chung khi có `AUTH_STATE_REDIS_URL` hoặc `API_STATE_DB`, trả HTTP 409 khi nonce đã dùng, 429 khi hết hạn mức, và 503 khi backend dùng chung không khả dụng, đồng thời fallback về map in-process như trước khi chưa cấu hình store.
 
     * 2026-11-10
 
@@ -261,7 +267,15 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (39)"
+??? warning "Fix (44)"
+
+    * 2026-11-11
+
+        * **Ordering (Batch Builder & Metrics An toàn Luồng)**: `BlockBuilder` (`hierachain/consensus/ordering/block_builder.py`) bọc `add_event()`/`force_create_block()`/`is_batch_ready()`/`_finalize_batch()` bằng `RLock`, và `OrderingMetrics` (`hierachain/consensus/ordering/metrics.py`) bọc bộ đếm cùng snapshot `get_stats()` bằng `Lock`, nên nhiều producer đồng thời không còn tranh chấp thành viên batch hay số liệu thống kê.
+        * **Domains (Đọc Entity Bất biến & Status Event)**: `BaseChain` (`hierachain/domains/chains/base_chain.py`) khai báo `chain_kind = "domain"`, trả `deepcopy` từ `get_entity()`/`get_entity_history()`, và tăng `completed_operations` ngay trong `add_domain_event()` khi event `operation_complete` được chấp nhận (kể cả handler custom); `DomainChain.update_entity_status()` (`hierachain/domains/chains/domain_chain.py`) ghi `domain_type` cùng `_status_update_details()` có cấu trúc (status cũ/mới, lý do, timestamp, nơi cập nhật, details lồng nhau) — trước đây event `operation_complete` chỉ tăng bộ đếm trên nhánh mặc định, đọc entity trả dict dùng chung và status event thiếu metadata domain.
+        * **Hierarchical (Vòng đời Chain & Pending State Giới hạn)**: `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) thêm `chain_kind = "sub"`, giới hạn `pending_events` ở `_PENDING_EVENTS_LIMIT = 1000`, thêm `start_domain_operation()`/`complete_domain_operation()`, nhận `reason` trong `update_entity_status()`, và chỉ tự nộp proof khi bật `auto_proof_submission`; `_process_and_finalize_single_block()` (`hierachain/hierarchical/sub_chain/block.py`) dọn pending event có `event_id` đã commit, `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) trả bản sao từ `get_all_sub_chains()` và lan truyền `auto_proof_submission`/`proof_submission_interval` cho sub-chain hiện có lẫn mới thêm, còn `_restore_sub_chains()` (`hierachain/hierarchical/hierarchy_manager/recovery.py`) khôi phục đúng kiểu `domain` đã persist và raise `RuntimeError` với kiểu lạ thay vì suy đoán từ tư cách tham gia 2PC.
+        * **State (Áp dụng Block Idempotent)**: `WorldState.apply_block()` (`hierachain/state/world_state.py`) theo dõi cặp `(index, hash)` đã áp trong `_applied_blocks` và bỏ qua block đã replay, đồng thời `clear()` reset cả guard lẫn state entity — trước đây replay một block áp event của nó hai lần.
+        * **Hierarchical (Dọn Giao dịch 2PC Đã Phân giải)**: `CrossChainTransactionManager._prune_resolved()` (`hierachain/hierarchical/transaction_manager.py`) loại giao dịch ở trạng thái kết thúc cũ hơn `settings.CROSS_CHAIN_TRANSACTION_TTL_SECONDS` (tắt khi `<= 0`) khỏi `transactions`/`_phases`/`_durable_records`, giữ lại phase chưa phân giải và giao dịch còn owner hoạt động, và chạy trước `start_transaction()` cùng `retry_pending()` — trước đây giao dịch đã phân giải tích tụ suốt vòng đời tiến trình.
 
     * 2026-11-10
 

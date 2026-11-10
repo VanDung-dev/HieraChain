@@ -136,7 +136,13 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (63)"
+??? note "Improvements (66)"
+
+    * 2026-11-11
+
+        * **Config (API State & Cross-chain Transaction TTL)**: New `Settings.API_STATE_DB` (`HRC_API_STATE_DB`, empty by default) and `Settings.CROSS_CHAIN_TRANSACTION_TTL_SECONDS` (`HRC_2PC_TTL_SECONDS`, default `86400`) in `hierachain/config/settings.py` configure the shared API state backend and resolved 2PC transaction retention.
+        * **Database (Shared API State Stores & Domain Chain Type)**: new `SQLiteApiStateStore` (file-shared `0600` SQLite with `replay_nonces`/`rate_limits` tables and atomic `BEGIN IMMEDIATE`) and `RedisApiStateStore` (digest-keyed `SET NX EX` nonces plus a Lua fixed-window counter) in `hierachain/adapters/database/auth_state.py`; `SQLBase._determine_chain_type()`/`list_chains()` plus `RedisChainManager.store_chain()`/`list_chains()` and `RedisLedgerAdapter.list_block_chain_names()` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/redis_adapter.py`, `hierachain/adapters/database/redis_ledger.py`) now persist and return `domain` chains alongside `sub` chains instead of collapsing them to `sub`.
+        * **API (Shared Replay Protection & Rate Limiting)**: secure-event nonce replay guards and the `/api/admin/verify-identity` rate limiter (`hierachain/api/admin/endpoints.py`) use the configured shared store when `AUTH_STATE_REDIS_URL` or `API_STATE_DB` is set, returning HTTP 409 for reused nonces, 429 for exhausted windows, and 503 when the shared backend is unavailable, while falling back to the previous in-process maps when no store is configured.
 
     * 2026-11-10
 
@@ -261,7 +267,15 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (39)"
+??? warning "Fix (44)"
+
+    * 2026-11-11
+
+        * **Ordering (Thread-safe Batch Builder & Metrics)**: `BlockBuilder` (`hierachain/consensus/ordering/block_builder.py`) guards `add_event()`/`force_create_block()`/`is_batch_ready()`/`_finalize_batch()` with an `RLock`, and `OrderingMetrics` (`hierachain/consensus/ordering/metrics.py`) guards counters and `get_stats()` snapshots with a `Lock`, so concurrent producers no longer race batch membership or statistics.
+        * **Domains (Immutable Entity Reads & Status Events)**: `BaseChain` (`hierachain/domains/chains/base_chain.py`) declares `chain_kind = "domain"`, returns `deepcopy` from `get_entity()`/`get_entity_history()`, and increments `completed_operations` inside `add_domain_event()` when an `operation_complete` event is accepted (including custom handlers); `DomainChain.update_entity_status()` (`hierachain/domains/chains/domain_chain.py`) records `domain_type` and structured `_status_update_details()` (old/new status, reason, timestamp, updater, nested details) — previously accepted `operation_complete` events raised the counter only on the default path, entity reads exposed shared dicts, and status events omitted domain metadata.
+        * **Hierarchical (Chain Lifecycle & Bounded Pending State)**: `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) adds `chain_kind = "sub"`, bounds `pending_events` at `_PENDING_EVENTS_LIMIT = 1000`, adds `start_domain_operation()`/`complete_domain_operation()`, accepts a `reason` in `update_entity_status()`, and only auto-submits proofs when `auto_proof_submission` is enabled; `_process_and_finalize_single_block()` (`hierachain/hierarchical/sub_chain/block.py`) prunes pending events whose `event_id` is committed, `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) returns a copy from `get_all_sub_chains()` and propagates `auto_proof_submission`/`proof_submission_interval` to existing and newly added sub-chains, and `_restore_sub_chains()` (`hierachain/hierarchical/hierarchy_manager/recovery.py`) restores persisted `domain` chain types and raises `RuntimeError` for unknown types instead of inferring from 2PC participation.
+        * **State (Idempotent Block Application)**: `WorldState.apply_block()` (`hierachain/state/world_state.py`) tracks applied `(index, hash)` pairs in `_applied_blocks` and skips blocks already replayed, while `clear()` resets the guard alongside entity state — previously replaying a block applied its events twice.
+        * **Hierarchical (Resolved 2PC Transaction Pruning)**: `CrossChainTransactionManager._prune_resolved()` (`hierachain/hierarchical/transaction_manager.py`) drops terminal transactions older than `settings.CROSS_CHAIN_TRANSACTION_TTL_SECONDS` (disabled when `<= 0`) from `transactions`/`_phases`/`_durable_records`, preserving unresolved phases and transactions with active owners, and runs before `start_transaction()` and `retry_pending()` — previously resolved transactions accumulated for the process lifetime.
 
     * 2026-11-10
 

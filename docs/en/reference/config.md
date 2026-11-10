@@ -78,7 +78,8 @@ print(settings.AUTH_ENABLED)
 * Authentication: `HRC_AUTH_ENABLED` (default `false` in dev/test and required `true` in production; an explicit `false` prevents production startup)
 * `HRC_API_KEYS_FILE`: required in production. Path to a readable, nonempty JSON key map; keys must be at least 32 characters and each entry needs a `user_id` and nonempty `permissions` list. The file is loaded when the API app starts; changing the key map still requires recreating each node or restarting each direct process.
 * `HRC_API_KEY_REVOCATIONS_DB` (default: `data/api_key_revocations.sqlite3`): durable local API key revocations and brute-force lockouts for the production API. All workers on one host must use the same persistent, writable file.
-* `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.
+* `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations, brute-force lockouts, secure-event nonce replay guards and the verify-identity rate limit use the same Redis instance across hosts. Configure Redis persistence if this state must survive a Redis restart. Backend errors reject the request rather than using local state.
+* `HRC_API_STATE_DB` (optional, default: empty): when set and `HRC_AUTH_STATE_REDIS_URL` is empty, secure-event nonce replay guards and the verify-identity rate limit use this shared SQLite file. This is the multi-worker option for one host; leave empty to use the process-local memory fallback.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * `HRC_MASTER_KEY_SOURCE=env` remains accepted for compatibility with the existing environment-secret behavior. Other `HRC_MASTER_KEY_SOURCE` values and any nonempty `HRC_MASTER_KEY_FILE` stop configuration loading with an error because no alternate master-key provider is implemented. This does not change the separate `FileVaultProvider` API.
 * Brute-force protection:
@@ -112,6 +113,7 @@ HieraChain does not add `Strict-Transport-Security`. Configure HSTS at the HTTPS
 * `HRC_RATE_LIMIT_RPM` (default: `100` requests/minute)
 * `HRC_RATE_LIMIT_BACKEND`: `memory` (single node) or `redis` (multi-node or cluster).
 * With the `redis` backend, Redis errors and timeouts reject non-exempt requests with HTTP 503 (fail-closed). Redis checks run off the API event loop.
+* The admin replay/rate-limit store is separate from `HRC_RATE_LIMIT_BACKEND`: configure `HRC_API_STATE_DB` or `HRC_AUTH_STATE_REDIS_URL`. If the configured store is unavailable, secure-event and verify-identity requests return HTTP 503 instead of falling back to process-local state.
 
 ### Monitoring and metrics
 
@@ -132,6 +134,7 @@ Mock is for development only. When `HRC_ENV=production`, constructing `ZKProver`
 * `HRC_CROSS_LEVEL_SYNC` (default: `true`)
 * `HRC_CROSS_LEVEL_BATCH` (default: `100`)
 * `HRC_CROSS_LEVEL_TIMEOUT` (default: `30.0` seconds)
+* `HRC_2PC_TTL_SECONDS` (default: `86400`): retention for resolved cross-chain transactions in coordinator memory. Unresolved or actively claimed transactions are never pruned; `0` disables pruning.
 
 ### Integration
 

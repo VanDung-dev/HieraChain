@@ -71,6 +71,9 @@ flowchart TD
 - The coordinator journal is stored separately from OrderingService event journals, so its records are not replayed as ledger events.
 - A `COMMITTED` transaction means both participant event pairs and the coordinator's terminal record were read back from durable journals. It does not mean the blocks have already been finalized.
 - Participant event markers include the transaction ID and operation step. A retry skips a start or completion event already accepted by that participant, including after restart.
+- `prepare_transaction()` is idempotent for an identical payload and `is_source`; a different payload or role for the same transaction ID is rejected. Repeated `commit_transaction()` calls after success return `True` without submitting the start/completion pair again.
+- Chain kind is persisted (`chains.chain_type = 'domain'`). After restart, a persisted domain chain is restored as `DomainChain`; a legacy `sub` row is only rebound when an unresolved 2PC decision still names it. This prevents a domain chain from silently downgrading to a plain `SubChain`.
+- Resolved transactions older than `HRC_2PC_TTL_SECONDS` (default 86400) are pruned from coordinator memory during `initiate_transaction()` and `retry_pending()`. Unresolved or actively claimed transactions are retained.
 - After durable COMMIT, participant recovery uses the previously validated coordinator payload and accepted event markers; it does not rerun business validation against volatile entity registries.
 - `IN_DOUBT` is recoverable state, not a terminal failure. Call `transaction_manager.retry_pending()` to retry after a runtime participant failure; startup and participant registration also trigger retries.
 - Recovery claims each transaction while its coordinator path is active. A concurrent `retry_pending()` skips that transaction and can retry it after the active path releases it. The coordinator also refuses abort after a durable or ambiguous COMMIT decision.

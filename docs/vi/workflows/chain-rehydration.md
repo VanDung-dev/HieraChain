@@ -51,6 +51,12 @@ sequenceDiagram
 
 Bước đối soát lúc khởi động loại bỏ các khối trong hàng đợi có chỉ số và hash đã trùng với chuỗi vừa dựng lại. Các khối chưa có trong chuỗi vẫn ở hàng đợi. Khối có hash xung đột được giữ lại và gây `ValueError`, ngăn quá trình khởi động chấp nhận lịch sử xung đột.
 
+## Loại chain và trạng thái projection
+
+Sub-chain đã lưu mang loại chain (`sub` hoặc `domain`). Khi khởi động, domain chain đã lưu được khôi phục thành `DomainChain`; dòng `sub` legacy chỉ được nâng cấp khi có bản ghi 2PC chưa hoàn tất nhắc tới chain đó.
+
+`WorldState.apply_block()` khử trùng lặp theo `(index, hash)`, và `clear()` đặt lại tập này. Vì vậy áp dụng lại một block đã ingest trong lúc phục hồi không đếm trùng event của entity. Event ID đã commit cũng bị xoá khỏi danh sách shadow `pending_events` của SubChain, vốn bị giới hạn 1000 phần tử; ordering service vẫn là nguồn dữ liệu cho công việc đang chờ.
+
 ## Lỗi và giới hạn vận hành
 
 Lỗi đọc storage được truyền đến bên gọi. Lịch sử dựng lại không hợp lệ và xung đột hàng đợi cũng gây lỗi. Luồng này không có lịch thử lại, cảnh báo hết thời gian chờ khóa hay tự động chuyển sang chế độ chỉ đọc. Khôi phục quyền truy cập storage và cấu hình danh tính/tin cậy đã được phê duyệt trước khi khởi động lại; kiểm tra lỗi trước khi gửi thêm sự kiện.

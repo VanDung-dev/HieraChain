@@ -71,6 +71,9 @@ flowchart TD
 - Coordinator journal được lưu riêng với OrderingService event journal, vì vậy các bản ghi của nó không bị replay như ledger event.
 - Giao dịch `COMMITTED` nghĩa là đã đọc lại được hai cặp event của participant và bản ghi cuối cùng của coordinator từ các journal bền vững. Điều đó không có nghĩa block đã được hoàn thiện.
 - Marker event của participant chứa transaction ID và bước thao tác. Khi retry, participant bỏ qua start hoặc completion event đã được chấp nhận, kể cả sau khi khởi động lại.
+- `prepare_transaction()` idempotent với payload và `is_source` giống hệt; payload hoặc vai trò khác cho cùng transaction ID bị từ chối. Gọi `commit_transaction()` lặp lại sau khi thành công trả `True` mà không gửi lại cặp start/completion.
+- Loại chain được lưu bền vững (`chains.chain_type = 'domain'`). Sau restart, domain chain đã lưu được khôi phục thành `DomainChain`; dòng `sub` legacy chỉ được rebind khi còn quyết định 2PC chưa hoàn tất nhắc tới nó. Điều này ngăn domain chain âm thầm hạ cấp thành `SubChain` thuần.
+- Giao dịch đã kết thúc cũ hơn `HRC_2PC_TTL_SECONDS` (mặc định 86400) bị xóa khỏi bộ nhớ coordinator trong `initiate_transaction()` và `retry_pending()`. Giao dịch chưa kết thúc hoặc đang được claim được giữ lại.
 - Sau COMMIT bền vững, phục hồi participant dùng payload đã được coordinator xác thực trước đó và marker event đã nhận; không chạy lại xác thực nghiệp vụ dựa trên entity registry chỉ tồn tại trong bộ nhớ.
 - `IN_DOUBT` là trạng thái có thể phục hồi, không phải thất bại cuối cùng. Gọi `transaction_manager.retry_pending()` để retry sau lỗi participant trong lúc chạy; khởi động lại và đăng ký participant cũng kích hoạt retry.
 - Recovery chiếm quyền xử lý từng giao dịch trong khi luồng coordinator đang hoạt động. Lần gọi `retry_pending()` đồng thời sẽ bỏ qua giao dịch đó và có thể retry sau khi luồng đang chạy nhả quyền. Coordinator cũng từ chối abort sau quyết định COMMIT bền vững hoặc chưa xác định.
