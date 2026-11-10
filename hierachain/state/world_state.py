@@ -28,17 +28,28 @@ class WorldState:
 
     def __init__(self) -> None:
         self._states: dict[str, dict[str, Any]] = {}
+        self._applied_blocks: set[tuple[int, str]] = set()
         self._lock = threading.Lock()
 
     def apply_block(self, block: Block) -> None:
         events = block.to_event_list()
+        block_hash = getattr(block, "hash", None)
+        block_key = (
+            (getattr(block, "index", -1), block_hash)
+            if isinstance(block_hash, str) and block_hash
+            else None
+        )
         with self._lock:
+            if block_key is not None and block_key in self._applied_blocks:
+                return
             for event in events:
                 entity_id = event.get("entity_id")
                 if not isinstance(entity_id, str):
                     continue
                 current = self._states.get(entity_id)
                 self._states[entity_id] = self._compute_new_state(current, event)
+            if block_key is not None:
+                self._applied_blocks.add(block_key)
 
     def get_entity_state(self, entity_id: str) -> dict[str, Any] | None:
         """Return an independent snapshot for one entity."""
@@ -71,6 +82,7 @@ class WorldState:
     def clear(self) -> None:
         with self._lock:
             self._states.clear()
+            self._applied_blocks.clear()
 
     @staticmethod
     def _compute_new_state(
