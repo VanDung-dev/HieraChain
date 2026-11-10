@@ -245,7 +245,7 @@ class HierarchyManager:
         return self.sub_chains.get(name)
 
     def get_all_sub_chains(self) -> dict[str, DomainChain]:
-        return self.sub_chains
+        return dict(self.sub_chains)
 
     def get_main_chain(self) -> MainChain:
         return self.main_chain
@@ -405,6 +405,7 @@ class HierarchyManager:
         self.proof_submission_interval = int(interval)
 
         for sub_chain in self.sub_chains.values():
+            sub_chain.auto_proof_submission = enabled
             sub_chain.proof_submission_interval = interval
 
     def execute_system_maintenance(self) -> dict[str, Any]:
@@ -649,6 +650,10 @@ class HierarchyManager:
         with self._registry_lock:
             if chain_name in self.sub_chains:
                 raise ValueError(f"Sub-chain {chain_name} already exists")
+
+            if hasattr(sub_chain, "auto_proof_submission"):
+                sub_chain.auto_proof_submission = self.auto_proof_submission
+                sub_chain.proof_submission_interval = self.proof_submission_interval
 
             main_chain = self.main_chain
             registered_before = chain_name in main_chain.registered_sub_chains

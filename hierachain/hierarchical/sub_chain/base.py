@@ -50,10 +50,14 @@ class SubChain(Blockchain):
     - Submit cryptographic proofs to Main Chain
     - Use entity_id as metadata field within events (not as block identifier)
     """
+    chain_kind = "sub"
+    _PENDING_EVENTS_LIMIT = 1000
+
     __slots__ = (
         '_async_sync_lock',
         '_block_processing_lock',
         '_shutdown_event',
+        'auto_proof_submission',
         'completed_operations',
         'consensus',
         'consumer_thread',
@@ -102,6 +106,7 @@ class SubChain(Blockchain):
         self.consensus: Any = new_consensus
 
         self.main_chain_connection: Any | None = None
+        self.auto_proof_submission: bool = False
         self.proof_submission_interval: float = 60.0
         self.last_proof_submission: float = time.time()
         self.last_proof_block_index: int = 0
@@ -290,6 +295,9 @@ class SubChain(Blockchain):
                 if isinstance(pending, dict)
             ):
                 self.pending_events.append(event_snapshot)
+                overflow = len(self.pending_events) - self._PENDING_EVENTS_LIMIT
+                if overflow > 0:
+                    del self.pending_events[:overflow]
 
         return event_id
 
@@ -347,19 +355,58 @@ class SubChain(Blockchain):
         self.completed_operations += 1
         return True
 
+    def start_domain_operation(
+        self,
+        entity_id: str,
+        operation_type: str,
+        details: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
+    ) -> bool:
+        return self.start_operation(
+            entity_id, operation_type, details, transaction_id=transaction_id
+        )
+
+    def complete_domain_operation(
+        self,
+        entity_id: str,
+        operation_type: str,
+        result: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
+    ) -> bool:
+        return self.complete_operation(
+            entity_id, operation_type, result, transaction_id=transaction_id
+        )
+
+    def _status_update_details(
+        self,
+        old_status: str,
+        new_status: str,
+        reason: str | None,
+        details: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        return {
+            "old_status": old_status,
+            "new_status": new_status,
+            "reason": reason,
+            "status_changed_at": time.time(),
+            "domain_type": self.domain_type,
+            "updated_by": self.name,
+            "status_details": details or {},
+        }
+
     def update_entity_status(
-        self, entity_id: str, status: str, details: dict[str, Any] | None = None
+        self,
+        entity_id: str,
+        status: str,
+        details: dict[str, Any] | None = None,
+        reason: str | None = None,
     ) -> bool:
         event = create_event(
             entity_id=entity_id,
             event_type="status_update",
-            details={
-                "new_status": status,
-                "domain_type": self.domain_type,
-                "updated_by": self.name,
-                "status_details": details or {},
-                "updated_at": time.time()
-            }
+            details=self._status_update_details(
+                "unknown", status, reason, details
+            ),
         )
 
         self.add_event(event)
@@ -392,6 +439,8 @@ class SubChain(Blockchain):
         return time_since_last >= self.proof_submission_interval and has_unsubmitted_block
 
     def auto_submit_proof_if_needed(self) -> bool:
+        if not self.auto_proof_submission:
+            return False
         if self.should_submit_proof() and self.main_chain_connection:
             return self.submit_proof_to_main(self.main_chain_connection)
         return False

@@ -144,7 +144,15 @@ def _restore_sub_chains(self: HierarchyManager) -> None:
         for metadata in self.storage.list_chains():
             name = metadata["name"]
             domain_type = metadata.get("domain_type") or "generic"
-            if self.transaction_manager.requires_2pc_participant(name):
+            chain_type = metadata.get("chain_type", "sub")
+            if chain_type not in {"sub", "domain"}:
+                raise RuntimeError(
+                    f"Invalid persisted chain type for sub-chain {name}"
+                )
+            is_domain = chain_type == "domain" or (
+                self.transaction_manager.requires_2pc_participant(name)
+            )
+            if is_domain:
                 from hierachain.domains.chains.domain_chain import DomainChain
 
                 chain = DomainChain(name, domain_type)

@@ -11,6 +11,7 @@ import time
 import uuid
 from typing import Any
 
+from hierachain.config.settings import settings
 from hierachain.error_mitigation.journal import TransactionJournal
 from hierachain.hierarchical.types import CrossChainTransaction, TransactionState
 
@@ -344,8 +345,28 @@ class CrossChainTransactionManager:
             if isinstance(durable_phase, str):
                 self._phases[tx_id] = durable_phase
 
+    def _prune_resolved(self, now: float | None = None) -> None:
+        """Drop terminal transactions older than the configured retention."""
+        ttl = settings.CROSS_CHAIN_TRANSACTION_TTL_SECONDS
+        if ttl <= 0:
+            return
+        cutoff = (now if now is not None else time.time()) - ttl
+        with self._activity_lock:
+            with self._journal_lock:
+                for tx_id, transaction in list(self.transactions.items()):
+                    if self._phases.get(tx_id) in _UNRESOLVED_PHASES:
+                        continue
+                    if tx_id in self._active_owners:
+                        continue
+                    if transaction.updated_at >= cutoff:
+                        continue
+                    del self.transactions[tx_id]
+                    self._phases.pop(tx_id, None)
+                    self._durable_records.pop(tx_id, None)
+
     def retry_pending(self) -> None:
         """Retry unresolved aborts or durable COMMIT decisions when chains are live."""
+        self._prune_resolved()
         self._refresh_unknown_decisions()
         for tx_id, transaction in list(self.transactions.items()):
             if not self._claim_transaction(tx_id):
@@ -379,6 +400,7 @@ class CrossChainTransactionManager:
         payload: dict[str, Any],
     ) -> str:
         """Start a transaction and return its identifier."""
+        self._prune_resolved()
         tx_id = uuid.uuid4().hex
         transaction = CrossChainTransaction(
             transaction_id=tx_id,

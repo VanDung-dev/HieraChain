@@ -16,6 +16,18 @@ def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
     with sub_chain.block_processing_lock:
         if sub_chain.add_block(block):
             sub_chain.world_state.apply_block(block)
+            committed_ids = {
+                event.get("event_id")
+                for event in block.to_event_list()
+                if isinstance(event.get("event_id"), str)
+            }
+            if committed_ids:
+                with sub_chain.lock:
+                    sub_chain.pending_events[:] = [
+                        pending
+                        for pending in sub_chain.pending_events
+                        if pending.get("event_id") not in committed_ids
+                    ]
             sub_chain.auto_submit_proof_if_needed()
             return True
         sub_chain.ordering_service.status = OrderingStatus.MAINTENANCE
