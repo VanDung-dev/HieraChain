@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+from hierachain.adapters.database.auth_state import _key_digest
 from hierachain.security import KeyManager
 
 
@@ -67,18 +68,18 @@ def test_api_cache_recovery():
     key_data = key_manager._get_key_data(test_key)
     #Fix: Check if key_data exists before trying to cache it
     if key_data is not None:
-        key_manager.key_cache[test_key] = {
+        key_manager.key_cache[_key_digest(test_key)] = {
             'data': key_data,
             'cached_at': time.time(),
             'ttl': 300
         }
     
     # Verify key is cached
-    assert test_key in key_manager.key_cache
+    assert _key_digest(test_key) in key_manager.key_cache
     
     # Simulate cache failure/clear
     key_manager.key_cache.clear()
-    assert test_key not in key_manager.key_cache
+    assert _key_digest(test_key) not in key_manager.key_cache
     
     # Test cache rebuild on next access
     key_data = key_manager._get_key_data(test_key)
@@ -86,4 +87,4 @@ def test_api_cache_recovery():
     
     # Test re-caching
     key_manager.cache_key(test_key, ttl=300)
-    assert test_key in key_manager.key_cache
+    assert _key_digest(test_key) in key_manager.key_cache
