@@ -61,8 +61,10 @@ class SQLBase(ChannelLedgerSQLStorage, ABC):
 
     @staticmethod
     def _determine_chain_type(chain: Blockchain) -> str:
-        """Determine if chain is main or sub chain."""
-        return "main" if "MainChain" in str(type(chain)) else "sub"
+        """Determine if chain is main, domain or plain sub chain."""
+        if "MainChain" in str(type(chain)):
+            return "main"
+        return "domain" if getattr(chain, "chain_kind", "sub") == "domain" else "sub"
 
     @staticmethod
     def _create_block_data(block_row: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -174,7 +176,7 @@ class SQLBase(ChannelLedgerSQLStorage, ABC):
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT name, chain_type, domain_type FROM chains "
-                "WHERE chain_type = 'sub' ORDER BY name"
+                "WHERE chain_type IN ('sub', 'domain') ORDER BY name"
             )
             return [
                 {

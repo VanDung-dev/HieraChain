@@ -141,6 +141,117 @@ class SQLiteLockoutStore:
         return int(row[0])
 
 
+class SQLiteApiStateStore:
+    """Share nonce replay guards and rate limits between local workers."""
+
+    def __init__(self, path: str) -> None:
+        db_path = Path(path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.path = str(db_path)
+        with closing(sqlite3.connect(self.path, timeout=5)) as connection:
+            with connection:
+                connection.execute(
+                    "CREATE TABLE IF NOT EXISTS replay_nonces "
+                    "(nonce TEXT PRIMARY KEY, expires_at REAL NOT NULL)"
+                )
+                connection.execute(
+                    "CREATE INDEX IF NOT EXISTS replay_nonces_expiry ON replay_nonces (expires_at)"
+                )
+                connection.execute(
+                    "CREATE TABLE IF NOT EXISTS rate_limits "
+                    "(bucket TEXT PRIMARY KEY, window_start REAL NOT NULL, count INTEGER NOT NULL)"
+                )
+        os.chmod(self.path, 0o600)
+
+    def consume_nonce(self, nonce: str, now: float, ttl: float) -> bool:
+        """Return True only when this nonce has not been seen within its TTL."""
+        with closing(sqlite3.connect(self.path, timeout=5)) as connection:
+            with connection:
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute("DELETE FROM replay_nonces WHERE expires_at <= ?", (now,))
+                cursor = connection.execute(
+                    "INSERT OR IGNORE INTO replay_nonces (nonce, expires_at) VALUES (?, ?)",
+                    (nonce, now + ttl),
+                )
+                return cursor.rowcount == 1
+
+    def allow_request(self, bucket: str, now: float, window: float, limit: int) -> bool:
+        """Atomically count a request in a fixed window shared by all workers."""
+        with closing(sqlite3.connect(self.path, timeout=5)) as connection:
+            with connection:
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    "UPDATE rate_limits SET count = 0, window_start = ? WHERE window_start <= ?",
+                    (now, now - window),
+                )
+                row = connection.execute(
+                    "SELECT window_start, count FROM rate_limits WHERE bucket = ?",
+                    (bucket,),
+                ).fetchone()
+                if row is None or now - float(row[0]) >= window:
+                    window_start = now
+                    count = 1
+                elif int(row[1]) >= limit:
+                    return False
+                else:
+                    window_start = float(row[0])
+                    count = int(row[1]) + 1
+                connection.execute(
+                    "INSERT OR REPLACE INTO rate_limits (bucket, window_start, count) VALUES (?, ?, ?)",
+                    (bucket, window_start, count),
+                )
+                return True
+
+
+class RedisApiStateStore:
+    """Share nonce replay guards and rate limits across hosts through Redis."""
+
+    def __init__(self, url: str) -> None:
+        import redis
+
+        self.client = redis.from_url(
+            url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2
+        )
+
+    @staticmethod
+    def _nonce_key(nonce: str) -> str:
+        return f"hrc:replay:nonce:{_key_digest(nonce)}"
+
+    @staticmethod
+    def _rate_key(bucket: str) -> str:
+        return f"hrc:rate:{_key_digest(bucket)}"
+
+    def consume_nonce(self, nonce: str, now: float, ttl: float) -> bool:
+        """Return True only when this nonce has not been seen within its TTL."""
+        return bool(
+            self.client.set(
+                self._nonce_key(nonce),
+                "1",
+                nx=True,
+                ex=max(1, math.ceil(ttl)),
+            )
+        )
+
+    def allow_request(self, bucket: str, now: float, window: float, limit: int) -> bool:
+        """Atomically count a request in a fixed window shared by all workers."""
+        script = """
+        local count = redis.call('INCR', KEYS[1])
+        if count == 1 then
+            redis.call('PEXPIRE', KEYS[1], ARGV[2])
+        end
+        return count <= tonumber(ARGV[1])
+        """
+        return bool(
+            self.client.eval(
+                script,
+                1,
+                self._rate_key(bucket),
+                limit,
+                max(1, math.ceil(window * 1000)),
+            )
+        )
+
+
 class RedisRevocationStore:
     """Keep revocations across hosts sharing one Redis instance."""
 

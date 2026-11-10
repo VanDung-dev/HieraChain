@@ -48,7 +48,10 @@ class RedisChainManager:
 
     def store_chain(self, chain: Blockchain) -> bool:
         try:
-            chain_type = "main" if hasattr(chain, "resolve_sub_proof") or "MainChain" in chain.__class__.__name__ else "sub"
+            if hasattr(chain, "resolve_sub_proof") or "MainChain" in chain.__class__.__name__:
+                chain_type = "main"
+            else:
+                chain_type = "domain" if getattr(chain, "chain_kind", "sub") == "domain" else "sub"
             domain_type = getattr(chain, "domain_type", None)
             data = {
                 "name": chain.name,
@@ -72,7 +75,7 @@ class RedisChainManager:
             if ":" in suffix:
                 continue
             data = self.client.hgetall(key)
-            if data and data.get("chain_type") == "sub":
+            if data and data.get("chain_type") in {"sub", "domain"}:
                 chains.append({
                     "name": data.get("name", suffix),
                     "chain_type": data["chain_type"],

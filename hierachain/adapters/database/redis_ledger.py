@@ -68,9 +68,10 @@ class RedisLedgerAdapter(RedisStorageAdapter):
             if self.client.type(key) != "hash":
                 continue
             data = self.client.hgetall(key)
-            if data.get("chain_type") == "sub":
+            if data.get("chain_type") in {"sub", "domain"}:
                 chains.append({
-                    "name": data["name"], "chain_type": "sub", "domain_type": data.get("domain_type"),
+                    "name": data["name"], "chain_type": data["chain_type"],
+                    "domain_type": data.get("domain_type"),
                 })
         return sorted(chains, key=lambda chain: chain["name"])
 
