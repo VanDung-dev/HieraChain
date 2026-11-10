@@ -12,9 +12,9 @@ The router is defined in `hierachain/api/admin/endpoints.py` with request/respon
 
 | Endpoint | Access and behavior |
 |:---------|:--------------------|
-| `POST /api/admin/verify-identity` | Requires `chains` scope when API-key authentication is enabled; signs a domain-prefixed challenge |
+| `POST /api/admin/verify-identity` | Requires `chains` scope when API-key authentication is enabled; signs a domain-prefixed 1–256 character hex challenge and is limited to 10 attempts per minute per client IP |
 | `GET /api/admin/status` | Exempt from global API-key authentication; reports node status when the hierarchy manager is available |
-| `POST /api/admin/chains/{chain_name}/secure-events` | Requires `chains` scope when authenticated; verifies the event signature before submitting it to the chain |
+| `POST /api/admin/chains/{chain_name}/secure-events` | Requires `chains` scope when authenticated; verifies the event signature, trusted signer (when `HRC_BLOCK_TRUSTED_KEYS_FILE` is configured) and single-use nonce before submitting it to the chain |
 
 Protect public status access at the reverse proxy if the deployment requires it. The status route has no `require_chain_access` dependency.
 
@@ -26,7 +26,7 @@ Protect public status access at the reverse proxy if the deployment requires it.
 payload = b"HRC_IDENTITY_CHALLENGE:" + challenge.encode("utf-8")
 ```
 
-It does not decode the challenge as hexadecimal bytes. The response contains `status`, `node_id`, `signature` and the original `challenge`. Verify the signature over the same prefixed UTF-8 payload using the node's approved public key. Choose a fresh challenge and track it in the client if replay protection is required.
+It does not decode the challenge as hexadecimal bytes. `challenge` must be 1–256 hexadecimal characters. The route is rate-limited to 10 attempts per minute per client IP; the counter is in-memory and local to one API process. The response contains `status`, `node_id`, `signature` and the original `challenge`. Verify the signature over the same prefixed UTF-8 payload using the node's approved public key. Choose a fresh challenge and track it in the client if replay protection is required.
 
 ```bash
 curl -X POST http://localhost:2661/api/admin/verify-identity \
@@ -47,11 +47,11 @@ curl -s http://localhost:2661/api/admin/status
 
 ## Secure event submission
 
-`SecureEventRequest` requires `entity_id`, `event_type`, `sender` and `signature`; `details` defaults to an empty object. `sender` and `signature` must contain hexadecimal data with a `0x` prefix. Optional fields are `nonce`, `timestamp` and `chain_id`; unknown fields are rejected. Details are limited to 1 MiB of serialized JSON and depth 10.
+`SecureEventRequest` requires `entity_id`, `event_type`, `sender`, `signature` and a unique `nonce` (8–128 characters); `details` defaults to an empty object. `sender` and `signature` must contain hexadecimal data with a `0x` prefix. Optional fields are `timestamp` and `chain_id`; unknown fields are rejected. Details are limited to 1 MiB of serialized JSON and depth 10.
 
-The handler rejects a supplied `chain_id` that differs from the path, and a supplied timestamp more than 300 seconds from server time. It calls `SignatureVerifier.verify_event_signature()` before `chain.add_event()`.
+The handler rejects a supplied `chain_id` that differs from the path, and a supplied timestamp more than 300 seconds from server time. It calls `SignatureVerifier.verify_event_signature()` before `chain.add_event()`. When `HRC_BLOCK_TRUSTED_KEYS_FILE` is configured, the signer must appear in that key map (HTTP 403 otherwise); when the store is unreadable, the request fails with HTTP 503. A nonce seen within the last 600 seconds returns HTTP 409.
 
-`SecureEventResponse` contains `status`, `event_hash` and server `timestamp`. Although the literal status is `committed`, the handler calls the asynchronous Sub-Chain ingestion path. `event_hash` is the returned submission identifier; read finalized blocks to establish durable commitment. A signature accepted at this route does not make block creation synchronous.
+`SecureEventResponse` contains `status`, `event_hash` and server `timestamp`. The literal status is `queued`, because the handler calls the asynchronous Sub-Chain ingestion path. `event_hash` is the returned submission identifier; read finalized blocks to establish durable commitment. A signature accepted at this route does not make block creation synchronous.
 
 ## Status codes
 
@@ -61,7 +61,10 @@ The handler rejects a supplied `chain_id` that differs from the path, and a supp
 | 401 | API-key authentication fails or the identity provider cannot load its key |
 | 403 | Authenticated key lacks the required scope |
 | 404 | Secure-event target chain does not exist |
+| 409 | The secure-event nonce has already been used |
 | 422 | Invalid request model, chain mismatch, timestamp window or event signature |
+| 429 | The verify-identity rate limit was exceeded |
+| 503 | The trusted key store is unavailable |
 | 500 | Signing, status computation or event submission raises an internal error |
 
 ## Related

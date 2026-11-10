@@ -60,8 +60,8 @@ sequenceDiagram
 * GET `/api/ledger/health`: Liveness.
 * GET `/api/ledger/ready`: Readiness khởi tạo/phục hồi hierarchy; HTTP 503 khi chưa khả dụng.
 * GET `/api/ledger/chains`: Liệt kê Main Chain và tất cả Sub-Chain.
-* POST `/api/ledger/chains/{chain_name}/create`: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
-* POST `/api/ledger/chains/{chain_name}/events`: Thêm sự kiện vào Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/create`: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo). Yêu cầu user đã xác thực có quyền `chains:manage`.
+* POST `/api/ledger/chains/{chain_name}/events`: Thêm sự kiện vào Sub-Chain. Yêu cầu quyền `events`; `user_id` từ API key đã xác thực trở thành `submitted_by`, cặp `sender`/`signature` nếu có được xác minh trên payload canonical của request. Production từ chối event không ký bằng HTTP 422.
 * POST `/api/ledger/channels/{channel_id}/organizations/{org_id}/events`: Thêm sự kiện vào channel bằng user của API key đã xác thực và role ghi đã đăng ký trong organization.
 * POST `/api/ledger/chains/{chain_name}/submit-proof`: Gửi proof từ Sub-Chain lên Main Chain.
 * GET `/api/ledger/chains/{chain_name}/stats`: Lấy thống kê chuỗi.

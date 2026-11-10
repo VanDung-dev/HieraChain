@@ -51,9 +51,9 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 * `GET /api/ledger/health` kiểm tra sức khỏe node.
 * `GET /api/ledger/network/ping/{target_id}` gửi ping trực tiếp đến nút mạng mục tiêu.
 * `GET /api/ledger/chains` liệt kê Main Chain và Sub-Chain.
-* `POST /api/ledger/chains/{chain_name}/create` khởi tạo một sub-chain mới.
+* `POST /api/ledger/chains/{chain_name}/create` khởi tạo một sub-chain mới và yêu cầu user đã xác thực có quyền `chains:manage`.
 * `GET /api/ledger/chains/{chain_name}/stats` lấy số lượng block, event và proof.
-* `POST /api/ledger/chains/{chain_name}/events` gửi event, chuyển tải dữ liệu quá cỡ sang IPFS. Khi cung cấp `details_cid`, bắt buộc có `details_nonce` khác rỗng gồm 24 ký tự hex; bỏ qua hoặc null trả HTTP 422. API giữ danh tính ký ở `sender` để ordering xác minh và giữ `submitted_by` cho thông tin người gửi. Chữ ký kiểu cũ bao phủ `details.payload` khi giá trị này là chuỗi; phản hồi tiếp nhận đến trước certification.
+* `POST /api/ledger/chains/{chain_name}/events` gửi event, chuyển tải dữ liệu quá cỡ sang IPFS. Khi cung cấp `details_cid`, bắt buộc có `details_nonce` khác rỗng gồm 24 ký tự hex; bỏ qua hoặc null trả HTTP 422. Khi có chữ ký, API xác minh trên payload canonical của request, giữ `signature_content` và bảo toàn danh tính ký ở `sender`; `submitted_by` là user của API key đã xác thực. Production từ chối event không ký bằng HTTP 422. Chữ ký kiểu cũ bao phủ `details.payload` khi giá trị này là chuỗi; phản hồi tiếp nhận đến trước certification.
 * `POST /api/ledger/chains/{chain_name}/submit-proof` gửi bằng chứng mật mã từ sub-chain lên main chain.
 * `GET /api/ledger/chains/{chain_name}/blocks` liệt kê block có phân trang và tùy chọn giải mã CID.
 * `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}` lấy thông tin chi tiết một block theo chỉ số hoặc mã băm.
@@ -63,14 +63,14 @@ Các endpoint này tương tác trực tiếp với trạng thái sổ cái:
 
 Các endpoint này hỗ trợ quy trình nghiệp vụ:
 
-* Channel tạo đường giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`). Private collection được quản lý theo channel (`POST /api/business/channels/{channel_id}/private-collections`) và ủy quyền cho `Channel.create_private_collection(...)`.
+* Channel tạo đường giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`). Private collection được quản lý theo channel (`POST /api/business/channels/{channel_id}/private-collections`), yêu cầu `channels:manage` và ủy quyền cho `Channel.create_private_collection(...)`.
 * Tổ chức và thành viên đăng ký qua dịch vụ tổ chức phân cấp (`POST /api/business/organizations`, `POST /api/business/organizations/{org_id}/members`).
 
 ### admin: hệ thống và quản trị
 
 Các endpoint này dành cho vận hành node và hệ thống:
 
-* `POST /api/admin/verify-identity` cho phép node ký challenge để chứng minh danh tính.
+* `POST /api/admin/verify-identity` cho phép node ký challenge hex 1–256 ký tự để chứng minh danh tính; mỗi tiến trình API giới hạn 10 lần thử mỗi phút cho mỗi IP client.
 * `GET /api/admin/status` được miễn xác thực API key và trả uptime, số chain, version cùng cờ license được gán cố định.
 * `POST /api/admin/chains/{chain_name}/secure-events` kiểm tra chữ ký canonical đồng bộ rồi ghi journal và đưa event vào hàng đợi. HTTP 200 trả `status="queued"`, ID event từ ordering trong `event_hash` và thời gian phản hồi trong `timestamp`; client đang chờ `committed` cần cập nhật. Response này không xác nhận block đã commit. Ordering và replay journal xác minh lại `signature_content` gốc cùng ràng buộc với các trường được đưa vào block. Khi hàng đợi quá tải, API trả HTTP 503 với `event_id` và `journaled` trong `detail`.
 
@@ -78,7 +78,7 @@ Các endpoint này dành cho vận hành node và hệ thống:
 
 Kết nối tới `/ws`. Để chọn chuỗi ngay khi kết nối, truyền `chain_name`, ví dụ `/ws?chain_name=supply_chain`.
 
-Khi bật xác thực, gửi header `X-API-Key` trong WebSocket handshake. Kết nối và từng subscription cần cả quyền `chains` lẫn `events` vì stream hiện gửi cả hai loại thông điệp cho subscriber của chain. Luồng ledger không tự gọi helper broadcast. Subscription chỉ nhận thông điệp ledger khi ứng dụng đã tích hợp việc phát thông điệp.
+Khi bật xác thực, gửi header `X-API-Key` trong WebSocket handshake. Kết nối và từng subscription cần cả quyền `chains` lẫn `events` vì stream hiện gửi cả hai loại thông điệp cho subscriber của chain. Luồng gửi event Sub-Chain và channel tự gọi `broadcast_event()`. Luồng commit block không gọi `broadcast_new_block()`; ứng dụng phải tự cung cấp tích hợp thông báo block.
 
 ### Các loại message chính
 

@@ -14,7 +14,7 @@ This security layer determines "Who are you?" (authentication) and "What are you
 
 *   **API Key Lifecycle**: `KeyManager` in `hierachain/security/key_manager.py` creates and revokes keys. `APIKeyVerifier` validates them at request time.
 *   **Global HTTP Authentication**: The server installs the API-key dependency only when `AUTH_ENABLED` is true. Paths in `EXEMPT_PATHS`, including health, status, and docs routes, bypass this global key check; route-specific authentication or permission checks can still apply. Production startup refuses to run with authentication disabled.
-*   **Permission Mapping**: Maps API keys to specific permissions within the system. Channel provisioning requires `channels:manage`; organization administration requires the corresponding management scope.
+*   **Permission Mapping**: Maps API keys to specific permissions within the system. Chain creation requires `chains:manage`; private-collection and channel provisioning require `channels:manage`; organization administration requires the corresponding management scope.
 
 ## Authorization checks
 

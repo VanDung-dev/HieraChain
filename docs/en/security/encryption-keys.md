@@ -20,7 +20,7 @@ This code creates and uses key pairs:
     * `LocalKeyProvider` keeps keys in local memory.
     * `FileVaultProvider` keeps encrypted data on disk with Fernet, using AES-128-CBC with HMAC.
 
-* The API server's `KeyManager.revoke_key()` persists API key revocation through SQLite or a configured shared Redis backend. Revocation checks bypass cached key permissions.
+* API keys are hashed with SHA-256 before they reach storage or caches (`HashedKeyStorage`, cache and permission keys). The API server's `KeyManager.revoke_key()` persists API key revocation through SQLite or a configured shared Redis backend. When no revocation store is passed, `KeyManager` uses `SQLiteRevocationStore` at `HRC_API_KEY_REVOCATIONS_DB`. Revocation checks bypass cached key permissions.
 
 ## Node identity
 

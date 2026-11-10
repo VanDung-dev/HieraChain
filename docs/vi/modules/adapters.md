@@ -35,6 +35,8 @@ Adapter cơ sở dữ liệu quan hệ cho các triển khai đa node và doanh 
 
 * Công nghệ: PostgreSQL với cơ chế connection pooling.
 * Lược đồ dữ liệu: Khởi tạo qua `postgres_schema.py` với cấu trúc tương thích hoàn toàn với SQLite.
+* `_execute_get_proof_history` được override với placeholder `%s` của PostgreSQL; dạng `?` kiểu SQLite kế thừa sẽ lỗi trên driver này.
+* `__str__`/`__repr__` che password nhúng trong `database_url`.
 * Điểm mạnh: Khả năng ghi đồng thời lớn, quản lý kết nối hiệu quả, hỗ trợ công cụ sao lưu doanh nghiệp.
 * Truy vấn dùng index event SQL; adapter không tự cấu hình partitioning.
 

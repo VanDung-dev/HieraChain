@@ -8,7 +8,7 @@ icon: material/tray-arrow-down
 
 ## Tổng quan
 
-Ledger API xác thực từng yêu cầu sự kiện. Sau đó, `SubChain.add_event()` gửi sự kiện đến `OrderingService`, dịch vụ ghi nhật ký và xếp hàng trước khi trả về `event_id`. ID xác nhận đã tiếp nhận để sắp thứ tự; việc ghi khối diễn ra sau đó. Bộ xử lý nền chứng nhận và gom sự kiện thành lô. Orderer dựng từng khối, gán chỉ số và hash khối trước, chạy bước hoàn tất đồng thuận đã cấu hình, ký header và lưu khối bền vững trước khi đưa vào hàng đợi commit. Consumer của Sub-Chain áp dụng nguyên trạng khối đó vào chuỗi cục bộ và WorldState. Mặc định, Sub-Chain gom lô 50 sự kiện và chờ 1.0 giây trước khi tạo khối. Cấu hình đồng thuận Main-Chain riêng bằng `HRC_MAINCHAIN_CONSENSUS`.
+Ledger API xác thực từng yêu cầu sự kiện, xác minh cặp `sender`/`signature` trên payload canonical nếu có, và lấy `submitted_by` từ API key đã xác thực. Trong production, event không ký bị từ chối. Sau đó, `SubChain.add_event()` gửi sự kiện đến `OrderingService`, dịch vụ ghi nhật ký và xếp hàng trước khi trả về `event_id`. Event Sub-Chain và channel được chấp nhận cũng được broadcast qua WebSocket. ID xác nhận đã tiếp nhận để sắp thứ tự; việc ghi khối diễn ra sau đó. Bộ xử lý nền chứng nhận và gom sự kiện thành lô. Orderer dựng từng khối, gán chỉ số và hash khối trước, chạy bước hoàn tất đồng thuận đã cấu hình, ký header và lưu khối bền vững trước khi đưa vào hàng đợi commit. Consumer của Sub-Chain áp dụng nguyên trạng khối đó vào chuỗi cục bộ và WorldState. Mặc định, Sub-Chain gom lô 50 sự kiện và chờ 1.0 giây trước khi tạo khối. Cấu hình đồng thuận Main-Chain riêng bằng `HRC_MAINCHAIN_CONSENSUS`.
 
 Với sơ đồ PoA và PoF, xem [Cơ chế Đồng thuận](./consensus_mechanisms.md).
 

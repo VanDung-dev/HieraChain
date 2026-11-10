@@ -17,7 +17,8 @@ Proof of Authority (PoA) là giao thức đồng thuận dựa trên định dan
 Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của các nút tham gia:
 1. Đăng ký ID authority và khóa công khai được phê duyệt bằng `add_authority()`.
 2. `can_create_block(authority_id)` kiểm tra tư cách thành viên. Nó không yêu cầu authority phải đến lượt trong vòng luân phiên.
-3. `validate_block()` kiểm tra cấu trúc, thời gian, sự kiện và chữ ký của authority đã đăng ký. `get_next_authority()` cung cấp helper lập lịch round-robin, nhưng các phương thức tạo và xác minh block này không bắt buộc tuân theo kết quả đó.
+3. `validate_block()` kiểm tra cấu trúc, thời gian, sự kiện và chữ ký của authority đã đăng ký. Khi block có chữ ký header, bước xác minh cũng kiểm tra chữ ký đó bằng public key của authority. `get_next_authority()` cung cấp helper lập lịch round-robin, nhưng các phương thức tạo và xác minh block này không bắt buộc tuân theo kết quả đó.
+4. Thành viên được snapshot theo chiều cao block. Thêm hoặc bớt authority có hiệu lực từ chiều cao kế tiếp; chọn leader dùng snapshot của chiều cao được yêu cầu, nên thay đổi thành viên không viết lại lịch hiện tại.
 
 ## Chức năng
 

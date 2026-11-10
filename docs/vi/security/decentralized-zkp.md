@@ -26,7 +26,7 @@ HieraChain cung cấp interface prover và verifier cho luồng proof liên chu�
 
 ## 3. Cấu hình và ranh giới runtime
 
-`HRC_ENABLE_ZK_PROOFS` mặc định là `false`; `HRC_ZK_MODE` mặc định là `mock`. Bật xác minh không cài backend production. Chỉ dùng mock cho luồng proof phát triển và kiểm thử. Chỉ đặt `HRC_ZK_MODE=production` không tạo được triển khai ZK hoạt động.
+`HRC_ENABLE_ZK_PROOFS` mặc định là `false`; `HRC_ZK_MODE` mặc định là `mock`. Trong production (`HRC_ENV=production`), khởi tạo `ZKProver` với `mode="mock"` gây `ZKProvingError`, nên triển khai production không thể âm thầm quay về mock proof. Bật xác minh không cài backend production. Chỉ dùng mock cho luồng proof phát triển và kiểm thử. Chỉ đặt `HRC_ZK_MODE=production` không tạo được triển khai ZK hoạt động.
 
 Xác minh chữ ký block, Merkle root và điểm neo MainChain bền vững là các cơ chế toàn vẹn riêng đã triển khai. Không được mô tả chúng là zero-knowledge proof về tính đúng đắn nghiệp vụ. Ứng dụng cần xác thực ZK thật phải có backend tạo/xác minh và hợp đồng circuit được triển khai, kiểm chứng riêng.
 

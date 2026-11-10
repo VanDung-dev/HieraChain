@@ -35,7 +35,7 @@ This table lists all workflows for quick lookup:
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Integrity Validation](./integrity-validation.md) | D | Explicit application call | Health summary or block/proof consistency report | `hierarchical/hierarchy_manager/validation.py` |
-| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws`, optionally passing `chain_name` as a query parameter | Subscriptions; notifications require application broadcast calls | `api/websocket/manager.py` |
+| [WebSocket Streaming](./websocket-streaming.md) | E | Client connects to `/ws`, optionally passing `chain_name` as a query parameter | Subscriptions; event submissions broadcast automatically, block broadcasts remain application-driven | `api/websocket/manager.py` |
 | [IPFS Encrypted Storage](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | CID returned; ciphertext on IPFS | `api/storage/ipfs_client.py` |
 | [Key Backup & Restoration](./key-backup.md) | F | Operator-managed file/vault backup | Restored identity/provider files | `cli/key.py` + `security/key_provider.py` (no `key_backup_manager.py`) |
 

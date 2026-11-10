@@ -58,7 +58,7 @@ print(settings.AUTH_ENABLED)
 * If PostgreSQL is unavailable, chain storage initialization fails. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
 * Cache instances: `AdvancedCache(max_size=10000, eviction_policy="lru")` accepts per-instance settings; `set(key, value, ttl=...)` sets entry TTL. `KeyManager` uses its own key/permission caches and `cache_ttl` (default: `300` seconds). Ordering's `block_cache_size` remains a service configuration key (default: `100`), not a `Settings` attribute.
 * Removed unused configuration: `ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL`, and `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. These names never controlled runtime caches; remove direct imports/accesses and configure the cache instance or service that actually uses them.
-* DB: `DATABASE_URL` (development fallback: `postgresql://hiera:hiera@localhost:5432/hierachain`; do not rely on this fallback in production)
+* DB: `DATABASE_URL` (development fallback: `postgresql://localhost:5432/hierachain`, with no embedded credentials; do not rely on this fallback in production)
 * Redis: `HRC_REDIS_HOST` or `REDIS_HOST` (`localhost`), `HRC_REDIS_PORT` or `REDIS_PORT` (`6379`), `REDIS_DB` (`0`). HRC-prefixed names take precedence.
 
 ### IPFS (off-chain storage)
@@ -125,7 +125,7 @@ HieraChain does not add `Strict-Transport-Security`. Configure HSTS at the HTTPS
 * `HRC_ZK_VERIFICATION_KEY`, `HRC_ZK_PROVING_KEY`, `HRC_ZK_CIRCUIT` (file paths)
 * `HRC_ZK_REQUIRED_MAINCHAIN` (default: `false`)
 
-Mock is for development only; `production` proving/verifying is unimplemented. Enabling flags or configuring keys/circuits does not supply a production backend.
+Mock is for development only. When `HRC_ENV=production`, constructing `ZKProver` with `mode="mock"` raises `ZKProvingError`; production proving/verifying is still unimplemented. Enabling flags or configuring keys/circuits does not supply a production backend.
 
 ### Cross-level state sync
 
@@ -169,7 +169,7 @@ HRC_API_PORT=2661
 HRC_CONSENSUS_TYPE=proof_of_authority
 HRC_AUTH_ENABLED=false
 HRC_CORS_ALLOW_ALL=true
-DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
+DATABASE_URL=postgresql://localhost:5432/hierachain
 ```
 
 ## Recommended production configuration (minimum)

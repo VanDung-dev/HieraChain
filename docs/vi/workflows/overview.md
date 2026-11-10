@@ -35,7 +35,7 @@ Bảng này liệt kê tất cả luồng để tra cứu nhanh:
 | [Truy vết Thực thể](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Dấu vết kiểm toán liên chuỗi đầy đủ | `domains/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại node hoặc lệch mã băm | Chuỗi trong bộ nhớ đồng bộ với DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Kiểm tra tính toàn vẹn](./integrity-validation.md) | D | Lời gọi chủ động từ ứng dụng | Tổng hợp sức khỏe hoặc báo cáo nhất quán khối/bằng chứng | `hierarchical/hierarchy_manager/validation.py` |
-| [Truyền WebSocket](./websocket-streaming.md) | E | Client kết nối đến `/ws`, có thể truyền tham số truy vấn `chain_name` | Đăng ký theo dõi; thông báo cần lời gọi broadcast từ ứng dụng | `api/websocket/manager.py` |
+| [Truyền WebSocket](./websocket-streaming.md) | E | Client kết nối đến `/ws`, có thể truyền tham số truy vấn `chain_name` | Đăng ký theo dõi; gửi event tự broadcast, thông báo block vẫn do ứng dụng chủ động | `api/websocket/manager.py` |
 | [Lưu trữ Mã hóa IPFS](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | Trả về CID; bản mã trên IPFS | `api/storage/ipfs_client.py` |
 | [Sao lưu và khôi phục khóa](./key-backup.md) | F | Sao lưu tệp/kho khóa do người vận hành quản lý | Các tệp danh tính/provider được khôi phục | `cli/key.py` + `security/key_provider.py` (không có `key_backup_manager.py`) |
 

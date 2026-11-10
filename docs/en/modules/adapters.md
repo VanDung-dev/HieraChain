@@ -36,6 +36,8 @@ The relational database adapter for multi-node and enterprise deployments.
 * Technology: PostgreSQL with connection pooling.
 * Schema: Initialized through `postgres_schema.py` using identical schema semantics to SQLite.
 * Strengths: High concurrent write capacity, connection pooling, enterprise backup tooling.
+* `_execute_get_proof_history` is overridden with PostgreSQL `%s` placeholders; the inherited SQLite-style `?` form would fail on this driver.
+* `__str__`/`__repr__` mask the password embedded in `database_url`.
 * Query support uses SQL event indexes; partitioning is not automatically configured by this adapter.
 
 ### 2.3 Redis Database Adapter (`redis_adapter.py`)

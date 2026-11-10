@@ -14,7 +14,7 @@ Lớp bảo mật này xác định "Bạn là ai?" (Xác thực) và "Bạn có
 
 *   **API Key Lifecycle**: `KeyManager` trong `hierachain/security/key_manager.py` tạo và thu hồi key. `APIKeyVerifier` xác minh key khi xử lý request.
 *   **Global HTTP Authentication**: Server chỉ cài dependency API key khi `AUTH_ENABLED` là true. Các đường dẫn trong `EXEMPT_PATHS`, gồm health, status và docs, bỏ qua bước kiểm tra key toàn cục này; các kiểm tra xác thực hoặc quyền riêng theo route vẫn có thể được áp dụng. Khi chạy production, server từ chối khởi động nếu tắt xác thực.
-*   **Permission Mapping**: Ánh xạ API key với các quyền hạn cụ thể trong hệ thống. Tạo channel yêu cầu `channels:manage`; quản trị organization yêu cầu scope quản lý tương ứng.
+*   **Permission Mapping**: Ánh xạ API key với các quyền hạn cụ thể trong hệ thống. Tạo chain yêu cầu `chains:manage`; tạo private collection và channel yêu cầu `channels:manage`; quản trị organization yêu cầu scope quản lý tương ứng.
 
 ## Kiểm tra ủy quyền
 

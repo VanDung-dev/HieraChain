@@ -20,6 +20,7 @@ Provides practices to ensure stable system operation and easy recovery from fail
 * Durable Journal: write before applying changes.
 * Operational Recovery: backups, snapshots, and node replacement are owned by deployment.
 * Idempotency + Retry with backoff: repeat actions without duplicating effects.
+* Ordering watchdog: the service restarts an unexpectedly stopped processor with backoff and reports `MAINTENANCE`/`ERROR`; see [Ordering](../consensus/ordering.md).
 
 ## Implementation Recommendations
 

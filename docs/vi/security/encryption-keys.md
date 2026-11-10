@@ -20,7 +20,7 @@ File: `hierachain/security/key_manager.py`, `key_provider.py`
     * `LocalKeyProvider` giữ khóa trong bộ nhớ cục bộ.
     * `FileVaultProvider` giữ dữ liệu mã hóa trên đĩa bằng Fernet, dùng AES-128-CBC với HMAC.
 
-* `KeyManager.revoke_key()` của API server lưu bền vững API key đã thu hồi qua SQLite hoặc Redis dùng chung đã cấu hình. Kiểm tra thu hồi không dùng kết quả permission trong cache.
+* API key được băm SHA-256 trước khi vào storage hoặc cache (`HashedKeyStorage`, cache và cache permission). `KeyManager.revoke_key()` của API server lưu bền vững API key đã thu hồi qua SQLite hoặc Redis dùng chung đã cấu hình. Khi không truyền revocation store, `KeyManager` dùng `SQLiteRevocationStore` tại `HRC_API_KEY_REVOCATIONS_DB`. Kiểm tra thu hồi không dùng kết quả permission trong cache.
 
 ## Node identity
 

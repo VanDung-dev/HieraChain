@@ -26,7 +26,7 @@ HieraChain exposes prover and verifier interfaces for cross-chain proof flows. T
 
 ## 3. Configuration and runtime boundary
 
-`HRC_ENABLE_ZK_PROOFS` defaults to `false`; `HRC_ZK_MODE` defaults to `mock`. Enabling verification does not install a production backend. Keep mock mode confined to development and test proof flows. Setting `HRC_ZK_MODE=production` alone cannot provide a functioning ZK deployment.
+`HRC_ENABLE_ZK_PROOFS` defaults to `false`; `HRC_ZK_MODE` defaults to `mock`. In production (`HRC_ENV=production`), constructing `ZKProver` with `mode="mock"` raises `ZKProvingError`, so a production deployment cannot silently fall back to mock proofs. Enabling verification does not install a production backend. Keep mock mode confined to development and test proof flows. Setting `HRC_ZK_MODE=production` alone cannot provide a functioning ZK deployment.
 
 Signed block verification, Merkle roots and durable MainChain anchors are separate implemented integrity mechanisms. They must not be described as zero-knowledge proofs of business correctness. Applications needing real ZK validation require a separately implemented and validated proving/verifying backend and circuit contract.
 

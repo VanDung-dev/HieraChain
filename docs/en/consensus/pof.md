@@ -18,7 +18,7 @@ icon: "material/account-group-outline"
 
 These keys belong to the consensus instance's configuration. The current MainChain/SubChain constructors do not apply `CONSENSUS_FEDERATION_CONFIG` automatically.
 
-Supply each validator's real public key when calling `add_validator(validator_id, metadata={"public_key": ...})`. Membership and keys must agree across nodes. Setting the selector alone does not provision a federation.
+Supply each validator's real public key when calling `add_validator(validator_id, metadata={"public_key": ...})`. Membership and keys must agree across nodes. Setting the selector alone does not provision a federation. Validator membership is snapshotted per block height, so `add_validator()`/`remove_validator()` changes apply from the next height instead of changing the leader for an in-flight height.
 
 ## Validation flow
 

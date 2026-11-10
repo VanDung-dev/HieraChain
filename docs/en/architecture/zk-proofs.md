@@ -30,6 +30,8 @@ Zero-Knowledge Proofs in HieraChain support two running modes depending on the a
 
 #### a. Mock Mode (Default)
 
+Mock mode is rejected when `HRC_ENV=production`: constructing `ZKProver` with `mode="mock"` raises `ZKProvingError`.
+
 * This is the Development (Dev) or Testing environment mode.
 * Mock mode uses the `mock_zkp_v2\x00` format with a SHA-256 commitment to public inputs; it does not execute a SNARK circuit.
 * Supports Main/Sub integrated development without requiring significant hardware resources.

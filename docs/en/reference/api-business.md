@@ -37,14 +37,14 @@ sequenceDiagram
 * `GET  /api/business/health`: service health check.
 * `POST /api/business/channels`: create a channel. Requires `chains` and `channels:manage` API key permissions.
 * `GET  /api/business/channels/{channel_id}`: get channel info.
-* `POST /api/business/channels/{channel_id}/private-collections`: create a private collection in the channel. The request is delegated to `Channel.create_private_collection(...)`; collection members must belong to the channel.
+* `POST /api/business/channels/{channel_id}/private-collections`: create a private collection in the channel. Requires `channels:manage`; the request is delegated to `Channel.create_private_collection(...)` and collection members must belong to the channel.
 * `POST /api/business/organizations`: register an organization. Requires `chains` and `organizations:manage`; the verified API key user becomes its first administrator.
 * `POST /api/business/organizations/{org_id}/members`: an organization administrator registers a member with role `admin` or `member`. The member ID must match that member's API key user ID.
 * `GET  /api/business/organizations/{org_id}`: get organization info.
 
 ## Provisioning and permissions
 
-Provisioning requires API key authentication to be enabled. A trusted operator assigns `organizations:manage` and `channels:manage` scopes when provisioning API keys; these routes do not issue keys. Organization creation also requires `chains`, and the key's verified user ID becomes the first organization administrator. Member registration requires `chains` and an existing organization administrator. Channel creation requires `chains` and `channels:manage`. Event submission uses the authenticated API key user ID and channel role policy.
+Provisioning requires API key authentication to be enabled. A trusted operator assigns `organizations:manage` and `channels:manage` scopes when provisioning API keys; these routes do not issue keys. Organization creation also requires `chains`, and the key's verified user ID becomes the first organization administrator. Member registration requires `chains` and an existing organization administrator. Channel creation and private-collection creation require `chains` and `channels:manage`. Event submission uses the authenticated API key user ID and channel role policy.
 
 The organization, member, and channel registry is saved and restored through configured SQLite, PostgreSQL or `RedisLedgerAdapter` storage. Redis ledger startup requires [durable AOF configuration](../modules/storage.md#redis-ledger). The in-memory backend is process-local. `ca_config` is retained as API-process metadata and is not used to verify member certificates. Direct Python channel and private-collection methods accept organization IDs as endorsements and require a trusted caller; they do not verify endorsement signatures.
 

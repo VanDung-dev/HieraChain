@@ -8,7 +8,7 @@ icon: material/connection
 
 ## Overview
 
-The WebSocket API accepts chain/event subscriptions and provides broadcast helpers. The current ledger commit and event paths do not call `broadcast_new_block()` or `broadcast_event()`. Applications must connect their event source to those helpers before subscribers receive ledger notifications. An asyncio ping task removes connections when a send fails or exceeds its timeout; it does not wait for a client pong.
+The WebSocket API accepts chain/event subscriptions and provides broadcast helpers. Sub-Chain and channel event submission now call `broadcast_event()` automatically. Block-commit paths still do not call `broadcast_new_block()`; applications must connect a block source to that helper before subscribers receive block notifications. An asyncio ping task removes connections when a send fails or exceeds its timeout; it does not wait for a client pong.
 
 `WebSocketManager` is a singleton (`ws_manager`) shared by the routes within one API process. Multiple workers have separate connection registries.
 
@@ -111,7 +111,7 @@ sequenceDiagram
 | 3. Register | `ConnectionRegistry.add()` stores connection by `connection_id` |
 | 4. Subscribe | `SubscriptionManager.subscribe_to_chain()` links connection to chain |
 | 5. Optional filter | Only `broadcast_event_type()` applies the event-type subscription; `broadcast_event()` sends to all subscribers of the chain. |
-| 6. Broadcast | An application call to `broadcast_new_block()` fans out to subscribers |
+| 6. Broadcast | Event submission calls `broadcast_event()` automatically; an application call to `broadcast_new_block()` fans out block notifications to subscribers |
 | 7. Ping loop | An asyncio task sends JSON pings every 30s; send failures or a 10s send timeout cause disconnection |
 
 ## Error handling

@@ -51,9 +51,9 @@ These endpoints interact directly with ledger state:
 * `GET /api/ledger/health` checks node health.
 * `GET /api/ledger/network/ping/{target_id}` sends a direct ping to a target peer.
 * `GET /api/ledger/chains` lists Main Chains and Sub-Chains.
-* `POST /api/ledger/chains/{chain_name}/create` provisions a new sub-chain.
+* `POST /api/ledger/chains/{chain_name}/create` provisions a new sub-chain and requires an authenticated user with `chains:manage`.
 * `GET /api/ledger/chains/{chain_name}/stats` retrieves block, event, and proof counts.
-* `POST /api/ledger/chains/{chain_name}/events` submits an event, offloading oversized payloads to IPFS. A supplied `details_cid` requires a nonempty, 24-character hexadecimal `details_nonce`; omission or null returns HTTP 422. The API preserves the signing identity as `sender` for ordering verification and keeps `submitted_by` for attribution. Legacy signatures cover `details.payload` when it is a string; the submission acknowledgement precedes certification.
+* `POST /api/ledger/chains/{chain_name}/events` submits an event, offloading oversized payloads to IPFS. A supplied `details_cid` requires a nonempty, 24-character hexadecimal `details_nonce`; omission or null returns HTTP 422. When a signature is supplied, the API verifies it over the canonical request payload, retains `signature_content`, and preserves the signing identity as `sender`; `submitted_by` is the authenticated API-key user. Production rejects unsigned events with HTTP 422. Legacy signatures cover `details.payload` when it is a string; the submission acknowledgement precedes certification.
 * `POST /api/ledger/chains/{chain_name}/submit-proof` submits cryptographic proofs from a sub-chain to the main chain.
 * `GET /api/ledger/chains/{chain_name}/blocks` lists blocks with pagination and optional CID decoding.
 * `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}` fetches a single block by index or hash.
@@ -63,14 +63,14 @@ These endpoints interact directly with ledger state:
 
 These endpoints support business workflows:
 
-* Channels create private communication paths between organizations (`POST /api/business/channels`). Private collections are managed per channel (`POST /api/business/channels/{channel_id}/private-collections`) and delegated to `Channel.create_private_collection(...)`.
+* Channels create private communication paths between organizations (`POST /api/business/channels`). Private collections are managed per channel (`POST /api/business/channels/{channel_id}/private-collections`), require `channels:manage`, and are delegated to `Channel.create_private_collection(...)`.
 * Organizations and members register through the hierarchical organization service (`POST /api/business/organizations`, `POST /api/business/organizations/{org_id}/members`).
 
 ### admin: system and admin
 
 These endpoints are for node and system operations:
 
-* `POST /api/admin/verify-identity` lets a node sign a challenge to prove its identity.
+* `POST /api/admin/verify-identity` lets a node sign a 1–256 character hex challenge to prove its identity; attempts are limited to 10 per minute per client IP in each API process.
 * `GET /api/admin/status` is exempt from API-key authentication and returns uptime, chain counts, version, and a hardcoded license flag.
 * `POST /api/admin/chains/{chain_name}/secure-events` checks the canonical signature synchronously, then journals and queues the event. HTTP 200 returns `status="queued"`, an ordering event ID in `event_hash`, and the acknowledgement time in `timestamp`; clients expecting `committed` must update. This response does not establish block commitment. Ordering and journal replay reverify the original `signature_content` and its binding to the ordered fields. Queue backpressure returns HTTP 503 with `event_id` and `journaled` in `detail`.
 
@@ -78,7 +78,7 @@ These endpoints are for node and system operations:
 
 Connect to `/ws`. To select a chain when connecting, pass `chain_name`, for example `/ws?chain_name=supply_chain`.
 
-When authentication is enabled, send the `X-API-Key` header in the WebSocket handshake. The connection and each subscription require both `chains` and `events` permissions because the current stream sends both kinds of messages to chain subscribers. The ledger pipeline does not call the broadcast helpers automatically. Subscriptions receive ledger messages only when the application supplies that integration.
+When authentication is enabled, send the `X-API-Key` header in the WebSocket handshake. The connection and each subscription require both `chains` and `events` permissions because the current stream sends both kinds of messages to chain subscribers. Sub-Chain and channel event submission call `broadcast_event()` automatically. Block-commit paths do not call `broadcast_new_block()`; an application must supply that block notification integration.
 
 ### Main message types
 

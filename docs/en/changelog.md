@@ -136,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (61)"
+??? note "Improvements (63)"
+
+    * 2026-11-10
+
+        * **Hierarchical (Private Collections & Auto-Finalization)**: Persist private collection snapshots through `PrivateCollection.snapshot()`/`restore()`, channel create/restore/persist paths, and hierarchy registry snapshots, and auto-finalize channel ledger blocks in `submit_event()` when the configured `block_size` is reached.
+        * **Docs (Security & Reliability Hardening)**: Document production rejection of mock ZK proofs, fail-closed ordering batch verification and processor watchdog recovery, PoA/PoF per-height membership snapshots and authority header signature verification, PostgreSQL proof-history override and password masking, API auth/signature/unsigned-event rejection, and the ordering service watchdog across security, consensus, reliability, adapter, API, workflow, and reference pages (EN/VI).
 
     * 2026-11-09
 
@@ -256,7 +261,15 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (34)"
+??? warning "Fix (39)"
+
+    * 2026-11-10
+
+        * **API & Security (Replay Protection & Access Enforcement)**: Rate-limit `POST /api/admin/verify-identity` to 10 attempts/minute/IP with 1–256 character hex challenge validation, require 8–128 character single-use nonces for secure events with trusted-sender validation and replay rejection, enforce `channels:manage` for private-collection creation, require chain-management permission for sub-chain creation, and reject unsigned ledger events in production while resolving the authenticated submitter.
+        * **Consensus & Ordering (Validation & Processor Resilience)**: Run ordering block commits in worker threads with verification result-count checks and fail-closed handling, allow `submitted_by` as a runtime field in canonical events, and restart a failed ordering processor with bounded backoff; harden Proof of Authority/Proof of Federation with isolated keys, membership epochs and per-height snapshots, authority/header signature verification, and removal of the PoA test-only mock signature bypass.
+        * **Security (API Key Hashing & ZK Production Guard)**: Persist and look up API keys by SHA-256 digest across key storage, key/permission caches, and dict-like storage backends, default revoked-key tracking to `SQLiteRevocationStore` when no store is provided, and reject ZK mock mode when `HRC_ENV=production`.
+        * **Journal (Poison Reset & Deterministic Replay Order)**: Clear `_write_poisoned` when reopening the active `TransactionJournal` log and sort rotated/legacy journal files so legacy files precede timestamped files during replay.
+        * **Config & Adapters (Default Credential Removal)**: Remove hardcoded default database credentials from settings and `PostgresAdapter`, mask database URL passwords in `PostgresAdapter.__str__`/`__repr__`, and extract proof-history querying into `_execute_get_proof_history`.
 
     * 2026-11-09
 

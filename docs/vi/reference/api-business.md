@@ -37,14 +37,14 @@ sequenceDiagram
 * `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ.
 * `POST /api/business/channels`: tạo channel. API key cần quyền `chains` và `channels:manage`.
 * `GET  /api/business/channels/{channel_id}`: lấy thông tin channel.
-* `POST /api/business/channels/{channel_id}/private-collections`: tạo private collection trong channel. Request được ủy quyền cho `Channel.create_private_collection(...)`; thành viên collection phải thuộc channel.
+* `POST /api/business/channels/{channel_id}/private-collections`: tạo private collection trong channel. Yêu cầu quyền `channels:manage`; request được ủy quyền cho `Channel.create_private_collection(...)` và thành viên collection phải thuộc channel.
 * `POST /api/business/organizations`: đăng ký tổ chức. Cần quyền `chains` và `organizations:manage`; user ID đã xác thực từ API key trở thành quản trị viên đầu tiên.
 * `POST /api/business/organizations/{org_id}/members`: quản trị viên tổ chức đăng ký member với role `admin` hoặc `member`. Member ID phải trùng user ID trong API key của member đó.
 * `GET  /api/business/organizations/{org_id}`: lấy thông tin tổ chức.
 
 ## Cấp tài nguyên và quyền
 
-Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope `organizations:manage` và `channels:manage` khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope `chains`, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope `chains` và caller phải là quản trị viên hiện có của organization. Tạo channel cần `chains` và `channels:manage`. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.
+Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope `organizations:manage` và `channels:manage` khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope `chains`, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope `chains` và caller phải là quản trị viên hiện có của organization. Tạo channel và tạo private collection cần `chains` và `channels:manage`. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.
 
 Registry organization, member và channel được lưu và khôi phục qua SQLite, PostgreSQL hoặc `RedisLedgerAdapter` đã cấu hình. Redis ledger yêu cầu [cấu hình AOF bền dữ liệu](../modules/storage.md#redis-ledger) khi khởi động. Backend in-memory chỉ tồn tại trong process hiện tại. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
 

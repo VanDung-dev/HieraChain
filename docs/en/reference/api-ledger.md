@@ -60,8 +60,8 @@ sequenceDiagram
 * GET `/api/ledger/health`: Liveness.
 * GET `/api/ledger/ready`: Hierarchy initialization/recovery readiness; HTTP 503 while unavailable.
 * GET `/api/ledger/chains`: List Main Chain and all Sub-Chains.
-* POST `/api/ledger/chains/{chain_name}/create`: Create a new Sub-Chain (auto-creates Main Chain if not exists).
-* POST `/api/ledger/chains/{chain_name}/events`: Add an event to a Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/create`: Create a new Sub-Chain (auto-creates Main Chain if not exists). Requires an authenticated user with `chains:manage`.
+* POST `/api/ledger/chains/{chain_name}/events`: Add an event to a Sub-Chain. Requires `events` access; the authenticated API-key `user_id` becomes `submitted_by`, and a supplied `sender`/`signature` pair is verified against the canonical request payload. Production rejects unsigned events with HTTP 422.
 * POST `/api/ledger/channels/{channel_id}/organizations/{org_id}/events`: Add an event to a channel using the authenticated API-key user and the organization's registered write role.
 * POST `/api/ledger/chains/{chain_name}/submit-proof`: Submit proof from Sub-Chain to Main Chain.
 * GET `/api/ledger/chains/{chain_name}/stats`: Get chain statistics.

@@ -18,7 +18,7 @@ icon: material/account-group-outline
 
 Các khóa cấu hình này thuộc instance đồng thuận. Hàm khởi tạo MainChain/SubChain hiện không tự áp dụng `CONSENSUS_FEDERATION_CONFIG`.
 
-Cấp public key thật của từng validator khi gọi `add_validator(validator_id, metadata={"public_key": ...})`. Các node phải thống nhất thành viên và khóa. Chỉ đặt selector không cấp đủ cấu hình federation.
+Cấp public key thật của từng validator khi gọi `add_validator(validator_id, metadata={"public_key": ...})`. Các node phải thống nhất thành viên và khóa. Chỉ đặt selector không cấp đủ cấu hình federation. Thành viên validator được snapshot theo chiều cao block, nên thay đổi từ `add_validator()`/`remove_validator()` có hiệu lực từ chiều cao kế tiếp thay vì đổi leader của chiều cao đang xử lý.
 
 ## Luồng xác thực
 

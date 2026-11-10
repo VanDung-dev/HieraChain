@@ -136,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (61)"
+??? note "Improvements (63)"
+
+    * 2026-11-10
+
+        * **Hierarchical (Private Collection & Tự Finalize Block)**: Lưu/khôi phục snapshot private collection qua `PrivateCollection.snapshot()`/`restore()`, các đường tạo/khôi phục/persist của `Channel` và snapshot registry của `HierarchyManager`, đồng thời tự finalize block ledger của channel trong `submit_event()` khi đạt `block_size` cấu hình.
+        * **Tài liệu (Củng cố Bảo mật & Độ tin cậy)**: Bổ sung tài liệu từ chối ZK mock trong production, xác minh batch ordering fail-closed và watchdog tự khởi động lại processor, snapshot membership theo height và xác minh chữ ký header authority của PoA/PoF, override truy vấn proof-history và che password trong PostgreSQL adapter, xác thực/chữ ký/từ chối event không ký ở API, cùng watchdog của ordering service trên các trang bảo mật, đồng thuận, độ tin cậy, adapter, API, workflow và tham chiếu (EN/VI).
 
     * 2026-11-09
 
@@ -256,7 +261,15 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (34)"
+??? warning "Fix (39)"
+
+    * 2026-11-10
+
+        * **API & Bảo mật (Chống Replay & Siết Phân quyền)**: Giới hạn `POST /api/admin/verify-identity` ở 10 lần/phút/IP với challenge hex 1–256 ký tự, yêu cầu nonce dùng một lần 8–128 ký tự cho secure event kèm kiểm tra trusted sender và từ chối replay, bắt buộc `channels:manage` khi tạo private collection, yêu cầu quyền quản lý chain khi tạo sub-chain, đồng thời từ chối event ledger không ký trong production và lấy submitter từ định danh đã xác thực.
+        * **Đồng thuận & Ordering (Validate & Tự phục hồi Processor)**: Chạy commit block của ordering trên worker thread với kiểm tra số lượng kết quả xác minh và xử lý fail-closed, cho phép `submitted_by` như field runtime trong canonical event, và tự khởi động lại processor ordering lỗi với backoff có giới hạn; củng cố Proof of Authority/Proof of Federation bằng tách khóa, epoch membership và snapshot theo height, xác minh chữ ký authority/header, và bỏ bypass mock signature chỉ dùng cho test trong PoA.
+        * **Bảo mật (Băm API Key & Chặn ZK Mock ở Production)**: Lưu và tra cứu API key theo digest SHA-256 trong key storage, cache key/quyền và backend lưu trữ dạng dict, mặc định dùng `SQLiteRevocationStore` khi chưa cấu hình store thu hồi, và từ chối ZK mock mode khi `HRC_ENV=production`.
+        * **Journal (Xóa Trạng thái Poison & Thứ tự Replay Xác định)**: Xóa `_write_poisoned` khi mở lại log `TransactionJournal` đang hoạt động và sắp xếp file journal legacy/xoay vòng để file legacy đứng trước file có timestamp khi replay.
+        * **Config & Adapter (Bỏ Credential Mặc định)**: Bỏ credential database mặc định trong settings và `PostgresAdapter`, che password trong URL database ở `PostgresAdapter.__str__`/`__repr__`, và tách truy vấn proof-history vào `_execute_get_proof_history`.
 
     * 2026-11-09
 

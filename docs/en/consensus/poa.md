@@ -17,7 +17,8 @@ For cross-organizational inter-MainChain consensus between independent enterpris
 The protocol operates based on trust in the identity of participating nodes:
 1. Register an authority ID and its approved signing public key with `add_authority()`.
 2. `can_create_block(authority_id)` checks membership. It does not require that the authority be next in a rotation.
-3. `validate_block()` checks the block structure, timing, events and signature from a registered authority. `get_next_authority()` supplies a round-robin scheduling helper, but these creation and validation methods do not enforce its result.
+3. `validate_block()` checks the block structure, timing, events and signature from a registered authority. When the block carries a header signature, validation also verifies it against that authority's public key. `get_next_authority()` supplies a round-robin scheduling helper, but these creation and validation methods do not enforce its result.
+4. Membership is snapshotted per block height. Adding or removing an authority takes effect from the next height; leader selection uses the snapshot for the requested height, so a membership change does not retroactively rewrite the current schedule.
 
 ## Features
 

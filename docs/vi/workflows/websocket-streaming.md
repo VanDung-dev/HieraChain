@@ -8,7 +8,7 @@ icon: material/connection
 
 ## Tổng quan
 
-WebSocket API tiếp nhận đăng ký theo dõi chuỗi/sự kiện và cung cấp các hàm hỗ trợ broadcast. Các luồng commit và sự kiện ledger hiện tại không gọi `broadcast_new_block()` hay `broadcast_event()`. Ứng dụng phải nối nguồn sự kiện với các hàm này để bên đăng ký nhận được thông báo ledger. Tác vụ ping asyncio loại bỏ kết nối khi gửi thất bại hoặc vượt thời gian chờ; nó không chờ pong từ client.
+WebSocket API tiếp nhận đăng ký theo dõi chuỗi/sự kiện và cung cấp các hàm hỗ trợ broadcast. Luồng gửi event Sub-Chain và channel nay tự gọi `broadcast_event()`. Luồng commit block vẫn không gọi `broadcast_new_block()`; ứng dụng phải nối nguồn block với hàm này để bên đăng ký nhận thông báo block. Tác vụ ping asyncio loại bỏ kết nối khi gửi thất bại hoặc vượt thời gian chờ; nó không chờ pong từ client.
 
 `WebSocketManager` là singleton (`ws_manager`) được các route dùng chung trong một tiến trình API. Mỗi worker có sổ đăng ký kết nối riêng.
 
@@ -111,7 +111,7 @@ sequenceDiagram
 | 3. Đăng ký | `ConnectionRegistry.add()` lưu kết nối theo `connection_id`. |
 | 4. Đăng ký chuỗi | `SubscriptionManager.subscribe_to_chain()` liên kết kết nối với chuỗi. |
 | 5. Bộ lọc tùy chọn | Chỉ `broadcast_event_type()` áp dụng subscription theo loại event; `broadcast_event()` gửi tới mọi subscriber của chain. |
-| 6. Broadcast | Lời gọi `broadcast_new_block()` từ ứng dụng gửi đến các bên đăng ký |
+| 6. Broadcast | Gửi event tự gọi `broadcast_event()`; lời gọi `broadcast_new_block()` từ ứng dụng gửi thông báo block đến các bên đăng ký |
 | 7. Vòng lặp ping | Tác vụ asyncio gửi ping JSON mỗi 30 giây; gửi thất bại hoặc hết thời gian chờ gửi 10 giây sẽ ngắt kết nối |
 
 ## Xử lý lỗi

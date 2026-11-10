@@ -20,6 +20,7 @@ icon: material/check-decagram
 * Nhật ký bền vững (Journal): ghi trước khi áp dụng thay đổi.
 * Phục hồi vận hành: backup, snapshot và thay thế node do deployment sở hữu.
 * Idempotency + Retry with backoff: lặp lại hành động mà không gây nhân đôi hiệu ứng.
+* Watchdog ordering: service tự restart processor dừng bất thường với backoff và báo `MAINTENANCE`/`ERROR`; xem [Ordering](../consensus/ordering.md).
 
 ## Khuyến nghị triển khai
 
