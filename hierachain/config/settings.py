@@ -175,7 +175,7 @@ class Settings:
     CLI_CONFIG_FILE = "data/config.yaml"
     
     # Database settings (if using database storage)
-    DATABASE_URL = _configured_database_url() or "postgresql://hiera:hiera@localhost:5432/hierachain"
+    DATABASE_URL = _configured_database_url() or "postgresql://localhost:5432/hierachain"
     
     # Redis settings (if using Redis storage)
     REDIS_HOST = _first_nonblank_environment_value(
