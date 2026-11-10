@@ -35,3 +35,24 @@ def test_getters_and_input_events_cannot_mutate_world_state() -> None:
     assert state.get_entity_state("entity-1")["last_details"] == {"nested": {"tags": ["original"]}}
     assert state.get_all_states()["entity-1"]["event_count"] == 1
     assert state.get_state_root() == root
+
+
+def test_apply_block_is_idempotent_and_clear_resets_dedup() -> None:
+    class _HashedBlock(_Block):
+        index = 3
+        hash = "block-hash-3"
+
+    block = _HashedBlock([{
+        "entity_id": "entity-1",
+        "event": "updated",
+        "timestamp": 1.0,
+        "details": {},
+    }])
+    state = WorldState()
+    state.apply_block(block)
+    state.apply_block(block)
+    assert state.get_entity_state("entity-1")["event_count"] == 1
+
+    state.clear()
+    state.apply_block(block)
+    assert state.get_entity_state("entity-1")["event_count"] == 1

@@ -133,3 +133,34 @@ def test_key_manager_does_not_start_cache_cleanup_workers(monkeypatch) -> None:
     KeyManager(storage_backend={}, config={"verify_signatures": True})
 
     assert not started
+
+
+def test_auto_proof_submission_requires_explicit_opt_in() -> None:
+    sub_chain = SimpleNamespace(
+        auto_proof_submission=False,
+        should_submit_proof=Mock(return_value=True),
+    )
+    sub_chain.main_chain_connection = object()
+    sub_chain.submit_proof_to_main = Mock(return_value=True)
+
+    assert not SubChain.auto_submit_proof_if_needed(sub_chain)
+    sub_chain.submit_proof_to_main.assert_not_called()
+
+    sub_chain.auto_proof_submission = True
+    assert SubChain.auto_submit_proof_if_needed(sub_chain)
+    sub_chain.submit_proof_to_main.assert_called_once_with(
+        sub_chain.main_chain_connection
+    )
+
+
+def test_configure_auto_proof_propagates_to_every_subchain() -> None:
+    manager = object.__new__(HierarchyManager)
+    first = SimpleNamespace(auto_proof_submission=False, proof_submission_interval=60.0)
+    manager.sub_chains = {"first": first}
+
+    HierarchyManager.configure_auto_proof_submission(manager, True, 15.0)
+
+    assert manager.auto_proof_submission is True
+    assert manager.proof_submission_interval == 15
+    assert first.auto_proof_submission is True
+    assert first.proof_submission_interval == 15.0

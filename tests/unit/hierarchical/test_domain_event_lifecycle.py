@@ -4,6 +4,7 @@ import copy
 import json
 import threading
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -362,3 +363,193 @@ def test_prepared_payload_is_detached_and_different_prepare_is_rejected() -> Non
     stored = chain.pending_transactions["tx-payload-snapshot"]["payload"]
     assert stored["details"]["measurements"]["count"] == 1
     assert not chain.prepare_transaction("tx-payload-snapshot", payload, True)
+
+
+def test_entity_reads_return_detached_copies() -> None:
+    chain = _chain()
+    chain.entity_registry["asset-1"] = {
+        "status": "registered",
+        "nested": {"measurements": [1, 2]},
+    }
+
+    info = chain.get_entity_info("asset-1")
+    assert info is not None
+    info["status"] = "tampered"
+    info["nested"]["measurements"].append(3)
+
+    assert chain.entity_registry["asset-1"] == {
+        "status": "registered",
+        "nested": {"measurements": [1, 2]},
+    }
+
+
+def test_plain_subchain_exposes_domain_operation_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    from hierachain.hierarchical.sub_chain.base import SubChain
+
+    calls: list[tuple[str, str]] = []
+
+    def start(_self, entity_id, operation_type, details=None, transaction_id=None):
+        calls.append(("start", operation_type, transaction_id))
+        return True
+
+    def complete(_self, entity_id, operation_type, result=None, transaction_id=None):
+        calls.append(("complete", operation_type, transaction_id))
+        return True
+
+    monkeypatch.setattr(SubChain, "start_operation", start)
+    monkeypatch.setattr(SubChain, "complete_operation", complete)
+    chain = object.__new__(SubChain)
+
+    assert SubChain.start_domain_operation(chain, "asset-1", "inspect", transaction_id="tx-1")
+    assert SubChain.complete_domain_operation(chain, "asset-1", "inspect", transaction_id="tx-1")
+    assert calls == [("start", "inspect", "tx-1"), ("complete", "inspect", "tx-1")]
+
+
+def test_status_update_schema_matches_between_plain_and_domain_chains() -> None:
+    from hierachain.hierarchical.sub_chain.base import SubChain
+
+    class _PlainSubChain(SubChain):
+        def __init__(self) -> None:
+            self.name = "plain"
+            self.domain_type = "generic"
+            self.recorded: list[dict[str, Any]] = []
+
+        def add_event(self, event: dict[str, Any]) -> str:
+            self.recorded.append(event)
+            return "recorded"
+
+    plain = _PlainSubChain()
+    assert plain.update_entity_status(
+        "asset-1", "approved", {"note": "ok"}, reason="review"
+    )
+    plain_details = plain.recorded[0]["details"]
+
+    chain = _chain()
+    chain.entity_registry["asset-1"] = {"status": "registered"}
+    assert chain.update_entity_status(
+        "asset-1", "approved", {"note": "ok"}, reason="review"
+    )
+    domain_details = chain.add_event.call_args.args[0]["details"]
+
+    assert set(plain_details) == set(domain_details)
+    assert plain_details["old_status"] == "unknown"
+    assert domain_details["old_status"] == "registered"
+    assert plain_details["new_status"] == domain_details["new_status"] == "approved"
+    assert plain_details["reason"] == domain_details["reason"] == "review"
+
+
+def test_completed_operations_has_a_single_live_and_rebuild_source() -> None:
+    chain = _chain()
+    chain.register_entity("asset-1", {})
+    assert chain.complete_operation("asset-1", "inspect")
+    assert chain.completed_operations == 1
+
+    recorded = chain.add_event.call_args.args[0]
+    assert recorded["event"] == "operation_complete"
+    chain.pending_events = [recorded]
+    assert chain.rebuild_domain_state()
+    assert chain.completed_operations == 1
+
+
+class _ReplayJournal:
+    def __init__(self) -> None:
+        self.records: list[dict[str, Any]] = []
+
+    def replay(self):
+        yield from self.records
+
+
+def _participant(tx_id: str, journal: _ReplayJournal) -> tuple[DomainChain, list[str]]:
+    chain = DomainChain.__new__(DomainChain)
+    chain.name = "participant"
+    chain._tx_manager = TransactionManager()
+    chain._tx_commit_lock = threading.RLock()
+    chain._transaction_event_markers = None
+    chain.ordering_service = SimpleNamespace(
+        journal=journal,
+        reconcile_journal_event=lambda event: event["event_id"],
+    )
+    calls: list[str] = []
+
+    def start(_entity_id, _operation_type, _details, transaction_id):
+        calls.append(f"start:{transaction_id}")
+        journal.records.append({
+            "event_id": f"evt-start-{len(journal.records)}",
+            "transaction_id": transaction_id,
+            "transaction_step": "start",
+        })
+        return True
+
+    def complete(_entity_id, _operation_type, _result, transaction_id):
+        calls.append(f"complete:{transaction_id}")
+        journal.records.append({
+            "event_id": f"evt-complete-{len(journal.records)}",
+            "transaction_id": transaction_id,
+            "transaction_step": "complete",
+        })
+        return True
+
+    chain.start_domain_operation = start
+    chain.complete_domain_operation = complete
+    chain.start_operation = start
+    chain.complete_operation = complete
+    return chain, calls
+
+
+def test_duplicate_prepare_is_idempotent_only_for_identical_input() -> None:
+    chain = DomainChain.__new__(DomainChain)
+    chain._tx_manager = TransactionManager()
+    chain._tx_commit_lock = threading.RLock()
+    chain._transaction_event_markers = None
+    chain.entity_registry = {"asset-1": {"status": "registered"}}
+    chain.domain_rules = {}
+    payload = {
+        "entity_id": "asset-1",
+        "operation_type": "inspect",
+        "details": {"measurements": {"count": 1}},
+    }
+
+    assert chain.prepare_transaction("tx-duplicate", payload, True)
+    assert chain.prepare_transaction("tx-duplicate", copy.deepcopy(payload), True)
+    assert not chain.prepare_transaction("tx-duplicate", copy.deepcopy(payload), False)
+
+    changed = copy.deepcopy(payload)
+    changed["details"]["measurements"]["count"] = 2
+    assert not chain.prepare_transaction("tx-duplicate", changed, True)
+
+
+def test_repeated_commit_submits_start_and_complete_exactly_once() -> None:
+    tx_id = "tx-idempotent"
+    journal = _ReplayJournal()
+    chain, calls = _participant(tx_id, journal)
+    chain._tx_manager.store_pending(
+        tx_id,
+        {"entity_id": "asset-1", "operation_type": "inspect", "details": {}},
+        is_source=True,
+    )
+
+    assert chain.commit_transaction(tx_id)
+    assert chain.commit_transaction(tx_id)
+
+    assert calls == [f"start:{tx_id}", f"complete:{tx_id}"]
+    assert [
+        record["transaction_step"]
+        for record in journal.records
+        if record.get("transaction_id") == tx_id
+    ] == ["start", "complete"]
+
+
+def test_recovery_commit_is_idempotent_and_rejects_mismatched_payload() -> None:
+    tx_id = "tx-recovery-idempotent"
+    journal = _ReplayJournal()
+    chain, calls = _participant(tx_id, journal)
+    payload = {"entity_id": "asset-1", "operation_type": "inspect", "details": {}}
+    chain._tx_manager.store_pending(tx_id, payload, is_source=True)
+
+    assert chain.recover_committed_transaction(tx_id, copy.deepcopy(payload), True)
+    assert chain.recover_committed_transaction(tx_id, copy.deepcopy(payload), True)
+    assert not chain.recover_committed_transaction(tx_id, copy.deepcopy(payload), False)
+    assert calls == []
+
+    assert chain.commit_transaction(tx_id)
+    assert calls == [f"start:{tx_id}", f"complete:{tx_id}"]

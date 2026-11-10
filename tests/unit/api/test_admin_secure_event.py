@@ -31,6 +31,7 @@ def test_secure_event_preserves_signed_fields_and_rejects_tampering() -> None:
     class Chain:
         # Exercise the real SubChain validation/queue path, without starting a backend.
         name = "test-chain"
+        _PENDING_EVENTS_LIMIT = 1000
         lock = threading.RLock()
         pending_events = committed
         ordering_service = Mock()
@@ -61,6 +62,52 @@ def test_secure_event_preserves_signed_fields_and_rejects_tampering() -> None:
     assert response.status_code == 422, response.text
     assert len(committed) == 1
     Chain.ordering_service.receive_event.assert_called_once()
+
+
+def test_secure_event_replay_is_rejected_across_workers(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.setenv("HRC_API_STATE_DB", str(tmp_path / "api-state.sqlite3"))
+    keypair = KeyPair.generate()
+    event = {
+        "entity_id": "asset-001",
+        "event_type": "transfer",
+        "details": {"value": 100},
+        "sender": f"0x{keypair.public_key}",
+        "nonce": "nonce-0002",
+    }
+    event["signature"] = f"0x{keypair.sign(SignatureVerifier.get_canonical_bytes(event))}"
+
+    committed: list[dict[str, object]] = []
+
+    class Chain:
+        name = "test-chain"
+        _PENDING_EVENTS_LIMIT = 1000
+        lock = threading.RLock()
+        pending_events = committed
+        ordering_service = Mock()
+        ordering_service.receive_event.return_value = "event-hash"
+        add_event = SubChain.add_event
+
+    class Manager:
+        def get_sub_chain(self, name: str) -> Chain | None:
+            return Chain() if name == "test-chain" else None
+
+        def can_access_chain(self, name: str, _user_id: str | None, _permission: str) -> bool:
+            return name == "test-chain"
+
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[get_hierarchy_manager] = Manager
+    app.dependency_overrides[require_chain_access] = lambda: None
+    client = TestClient(app)
+
+    assert client.post(
+        "/api/admin/chains/test-chain/secure-events", json=event
+    ).status_code == 200
+    replay = client.post("/api/admin/chains/test-chain/secure-events", json=event)
+    assert replay.status_code == 409, replay.text
+    assert len(committed) == 1
 
 
 def test_signed_envelope_does_not_exempt_nested_business_terms() -> None:

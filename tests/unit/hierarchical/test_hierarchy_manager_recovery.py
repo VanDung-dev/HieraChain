@@ -557,6 +557,36 @@ def test_late_registration_failure_cleans_manager_and_sync_maps(
     assert sync_calls == ["connect:payments"]
 
 
+def test_manager_restores_persisted_domain_chains_without_downgrade(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    storage = _MetadataStorage([
+        {"name": "payments", "chain_type": "domain", "domain_type": "finance"}
+    ])
+    monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
+
+    class RestoredDomainChain:
+        def __init__(self, name: str, domain_type: str) -> None:
+            self.name = name
+            self.domain_type = domain_type
+
+        def connect_to_main_chain(self, _main_chain: object) -> bool:
+            return True
+
+        def shutdown(self) -> None:
+            pass
+
+    monkeypatch.setattr(
+        "hierachain.domains.chains.domain_chain.DomainChain", RestoredDomainChain
+    )
+
+    manager = HierarchyManager(node_identity=load_node_identity())
+
+    restored = manager.get_sub_chain("payments")
+    assert isinstance(restored, RestoredDomainChain)
+    assert restored.domain_type == "finance"
+
+
 def test_configured_postgres_failure_does_not_fall_back_to_sqlite(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -579,7 +609,7 @@ def test_postgres_adapter_lists_subchain_inventory_with_dict_rows(
 
     class CursorStub:
         def execute(self, query: str) -> None:
-            assert "WHERE chain_type = 'sub' ORDER BY name" in query
+            assert "WHERE chain_type IN ('sub', 'domain') ORDER BY name" in query
 
         def fetchall(self) -> list[dict[str, str]]:
             return [

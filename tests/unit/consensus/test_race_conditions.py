@@ -170,3 +170,54 @@ def test_block_index_lock_protection():
     
     assert len(errors) == 0
     assert len(indices) == len(set(indices))
+
+
+def test_block_builder_shared_batch_is_thread_safe():
+    from hierachain.consensus.ordering.block_builder import BlockBuilder
+    from hierachain.consensus.ordering.types import EventStatus, PendingEvent
+
+    builder = BlockBuilder({"block_size": 10_000, "batch_timeout": 60.0})
+
+    def add(start: int) -> None:
+        for index in range(start, start + 200):
+            builder.add_event(
+                PendingEvent(
+                    event_id=f"event-{index}",
+                    event_data={"event": "probe", "entity_id": f"entity-{index}"},
+                    channel_id="test-channel",
+                    submitter_org="test-org",
+                    received_at=time.time(),
+                    status=EventStatus.PENDING,
+                )
+            )
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(add, (index * 200 for index in range(8))))
+
+    events = builder.force_create_block()
+    assert events is not None
+    assert len(events) == 1600
+    assert builder.force_create_block() is None
+
+
+def test_ordering_metrics_updates_are_thread_safe():
+    from hierachain.consensus.ordering.metrics import OrderingMetrics
+
+    metrics = OrderingMetrics()
+
+    def record(_index: int) -> None:
+        for _ in range(100):
+            metrics.record_received()
+            metrics.record_certified()
+            metrics.record_rejected()
+            metrics.record_block_created(1, 0.5)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(record, range(8)))
+
+    stats = metrics.get_stats()
+    assert stats["events_received"] == 800
+    assert stats["events_certified"] == 800
+    assert stats["events_rejected"] == 800
+    assert stats["blocks_created"] == 800
+    assert stats["events_committed"] == 800
