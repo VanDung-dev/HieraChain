@@ -132,6 +132,8 @@ class Settings:
     AUTH_BRUTE_FORCE_WINDOW_SECONDS = int(os.getenv("HRC_BF_WINDOW_SECONDS", "300"))
     AUTH_STATE_REDIS_URL = os.getenv("HRC_AUTH_STATE_REDIS_URL", "").strip()
     API_KEY_REVOCATIONS_DB = os.getenv("HRC_API_KEY_REVOCATIONS_DB", "data/api_key_revocations.sqlite3")
+    API_STATE_DB = os.getenv("HRC_API_STATE_DB", "").strip()
+    CROSS_CHAIN_TRANSACTION_TTL_SECONDS = int(os.getenv("HRC_2PC_TTL_SECONDS", "86400"))
     
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
