@@ -8,6 +8,7 @@ This significantly enhances data privacy in enterprise collaborations.
 
 import hashlib
 import json
+import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -16,6 +17,8 @@ from typing import Any, cast
 from cryptography.fernet import Fernet, InvalidToken
 
 from hierachain.serialization import dumps_canonical_json, loads_json
+
+logger = logging.getLogger(__name__)
 
 
 def _check_submitter(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
@@ -163,6 +166,7 @@ class PrivateCollection:
         # Generate encryption key for this collection
         self.encryption_key = Fernet.generate_key()
         self.cipher_suite = Fernet(self.encryption_key)
+        self._persist: Any = None
 
         # Statistics
         self.statistics: dict[str, Any] = {
@@ -232,11 +236,17 @@ class PrivateCollection:
             cast(dict[str, int], self.statistics["entries_by_org"])[submitter_org_id] += 1
             self.last_activity = time.time()
 
+            if callable(self._persist) and not self._persist():
+                self.data_store.pop(key, None)
+                self.statistics["total_entries"] -= 1
+                cast(dict[str, int], self.statistics["entries_by_org"])[submitter_org_id] -= 1
+                return False
+
             return True
 
         except Exception as e:
             # Log error but don't expose details
-            print(f"Failed to add private data: {e!s}")
+            logger.error("Failed to add private data: %s", e)
             return False
 
     def get_data(self, key: str, requester_org_id: str) -> Any | None:
@@ -509,6 +519,44 @@ class PrivateCollection:
             self._purge_entry(key)
 
         return len(keys_to_purge)
+
+    def snapshot(self) -> dict[str, Any]:
+        """Serialize the collection for durable registry storage."""
+        return {
+            "config": dict(self.config),
+            "status": self.status.value,
+            "created_at": self.created_at,
+            "last_activity": self.last_activity,
+            "current_block_height": self.current_block_height,
+            "encryption_key": self.encryption_key.decode("ascii"),
+            "data_store": {
+                key: entry.to_dict() for key, entry in self.data_store.items()
+            },
+            "statistics": dict(self.statistics),
+            "organizations": list(self.organizations),
+        }
+
+    @classmethod
+    def restore(
+        cls, name: str, organizations: dict[str, Any], state: dict[str, Any]
+    ) -> "PrivateCollection":
+        collection = cls(name, organizations, state.get("config", {}))
+        collection.status = CollectionStatus(state.get("status", CollectionStatus.ACTIVE.value))
+        collection.created_at = state.get("created_at", collection.created_at)
+        collection.last_activity = state.get("last_activity", collection.last_activity)
+        collection.current_block_height = state.get("current_block_height", 0)
+        encryption_key = state.get("encryption_key")
+        if isinstance(encryption_key, str) and encryption_key:
+            collection.encryption_key = encryption_key.encode("ascii")
+            collection.cipher_suite = Fernet(collection.encryption_key)
+        collection.data_store = {
+            key: PrivateDataEntry.from_dict(entry)
+            for key, entry in state.get("data_store", {}).items()
+        }
+        statistics = state.get("statistics")
+        if isinstance(statistics, dict):
+            collection.statistics = statistics
+        return collection
 
     def __str__(self) -> str:
         """String representation of private collection"""

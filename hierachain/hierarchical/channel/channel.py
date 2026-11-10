@@ -160,7 +160,15 @@ class Channel:
 
         from hierachain.hierarchical.private_data import PrivateCollection
 
-        self.private_collections[name] = PrivateCollection(name, members, config)
+        collection = PrivateCollection(name, members, config)
+        collection._persist = self._persist_private_collections
+        self.private_collections[name] = collection
+
+        def rollback() -> None:
+            self.private_collections.pop(name, None)
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         self._log_channel_event(
             "private_collection_created",
@@ -168,6 +176,29 @@ class Channel:
         )
 
         return True
+
+    def restore_private_collections(self, state: dict[str, Any]) -> None:
+        from hierachain.hierarchical.private_data import PrivateCollection
+
+        restored: dict[str, PrivateCollection] = {}
+        for name, payload in state.items():
+            if not isinstance(payload, dict):
+                continue
+            member_ids = payload.get("organizations", [])
+            members = {
+                org_id: self.organizations[org_id]
+                for org_id in member_ids
+                if org_id in self.organizations
+            }
+            restored[name] = PrivateCollection.restore(name, members, payload)
+        for collection in restored.values():
+            collection._persist = self._persist_private_collections
+        self.private_collections = restored
+
+    def _persist_private_collections(self) -> bool:
+        if self._persist_registry is None:
+            return True
+        return bool(self._persist_registry())
 
     @_registry_operation
     def submit_event(
@@ -220,7 +251,15 @@ class Channel:
 
         self._record_event_statistics(enriched_event)
         self.last_activity = time.time()
+        self._finalize_if_full()
         return True
+
+    def _finalize_if_full(self) -> None:
+        block_size = self.configuration.get("block_size", 500)
+        if not isinstance(block_size, int) or block_size <= 0:
+            return
+        if len(self.ledger.current_block_events) >= block_size:
+            self.ledger.finalize_block()
 
     def _refresh_ledger(self) -> None:
         for event in self.ledger.refresh():

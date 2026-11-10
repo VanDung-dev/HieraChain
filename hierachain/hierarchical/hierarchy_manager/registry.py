@@ -59,6 +59,10 @@ def _hierarchy_registry_snapshot(self: HierarchyManager) -> dict[str, Any]:
                     "custom_policies": channel.policy.custom_policies,
                 },
                 "status": channel.status.value,
+                "private_collections": {
+                    name: collection.snapshot()
+                    for name, collection in channel.private_collections.items()
+                },
             }
             for channel_id, channel in self.channels.items()
         },
@@ -224,6 +228,9 @@ def _apply_hierarchy_registry(self: HierarchyManager, state: dict[str, Any]) -> 
                 org.org_id: counts.get(org.org_id, 0) for org in channel_orgs
             }
         channel.status = channel_status
+        channel.restore_private_collections(
+            state["channels"][channel_id].get("private_collections", {})
+        )
         if ledger is not None:
             channel.ledger = ledger
             channel.restore_statistics()
