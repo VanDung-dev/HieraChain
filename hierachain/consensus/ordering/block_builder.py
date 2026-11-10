@@ -2,6 +2,7 @@
 Block builder for the HieraChain ordering service.
 """
 
+import threading
 import time
 from typing import Any
 
@@ -18,43 +19,48 @@ class BlockBuilder:
         self.current_batch: list[PendingEvent] = []
         self.current_batch_ids: set[str] = set()
         self.batch_start_time = time.time()
+        self._lock = threading.RLock()
 
     def add_event(self, event: PendingEvent) -> list[dict[str, Any]] | None:
         """Add event to current batch."""
-        if event.event_id in self.current_batch_ids:
+        with self._lock:
+            if event.event_id in self.current_batch_ids:
+                return None
+
+            if not self.current_batch:
+                self.batch_start_time = time.time()
+
+            self.current_batch.append(event)
+            self.current_batch_ids.add(event.event_id)
+
+            if self.is_batch_ready():
+                return self._finalize_batch()
+
             return None
-
-        if not self.current_batch:
-            self.batch_start_time = time.time()
-
-        self.current_batch.append(event)
-        self.current_batch_ids.add(event.event_id)
-
-        if self.is_batch_ready():
-            return self._finalize_batch()
-        
-        return None
 
     def force_create_block(self) -> list[dict[str, Any]] | None:
         """Force creation of block from current batch"""
-        return self._finalize_batch()
+        with self._lock:
+            return self._finalize_batch()
     
     def is_batch_ready(self) -> bool:
         """Check if current batch is ready for block creation"""
-        if not self.current_batch:
+        with self._lock:
+            if not self.current_batch:
+                return False
+            if len(self.current_batch) >= self.block_size:
+                return True
+            if (time.time() - self.batch_start_time) >= self.batch_timeout:
+                return True
             return False
-        if len(self.current_batch) >= self.block_size:
-            return True
-        if (time.time() - self.batch_start_time) >= self.batch_timeout:
-            return True
-        return False
 
     def _finalize_batch(self) -> list[dict[str, Any]] | None:
         """Return current batch event data and reset"""
-        if not self.current_batch:
-            return None
-        events_list = [pending.event_data for pending in self.current_batch]
-        self.current_batch.clear()
-        self.current_batch_ids.clear()
-        self.batch_start_time = time.time()
-        return events_list
+        with self._lock:
+            if not self.current_batch:
+                return None
+            events_list = [pending.event_data for pending in self.current_batch]
+            self.current_batch.clear()
+            self.current_batch_ids.clear()
+            self.batch_start_time = time.time()
+            return events_list

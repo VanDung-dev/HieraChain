@@ -2,6 +2,7 @@
 Ordering metrics and statistics for the HieraChain ordering service.
 """
 
+import threading
 from typing import Any
 
 
@@ -18,30 +19,36 @@ class OrderingMetrics:
             "total_latency": 0.0,
             "events_committed": 0
         }
+        self._lock = threading.Lock()
 
     def record_received(self) -> None:
-        self.statistics["events_received"] += 1
+        with self._lock:
+            self.statistics["events_received"] += 1
 
     def record_certified(self) -> None:
-        self.statistics["events_certified"] += 1
+        with self._lock:
+            self.statistics["events_certified"] += 1
 
     def record_rejected(self) -> None:
-        self.statistics["events_rejected"] += 1
+        with self._lock:
+            self.statistics["events_rejected"] += 1
 
     def record_block_created(self, event_count: int, block_latency: float) -> None:
-        self.statistics["blocks_created"] += 1
-        self.statistics["total_latency"] += block_latency
-        self.statistics["events_committed"] += event_count
-        
-        if self.statistics["events_committed"] > 0:
-            self.statistics["average_processing_time"] = (
-                self.statistics["total_latency"] / self.statistics["events_committed"]
-            )
-            
-        blocks = self.statistics["blocks_created"]
-        prev_avg = self.statistics["average_batch_size"]
-        total_events = prev_avg * (blocks - 1) + event_count
-        self.statistics["average_batch_size"] = total_events / blocks
+        with self._lock:
+            self.statistics["blocks_created"] += 1
+            self.statistics["total_latency"] += block_latency
+            self.statistics["events_committed"] += event_count
+
+            if self.statistics["events_committed"] > 0:
+                self.statistics["average_processing_time"] = (
+                    self.statistics["total_latency"] / self.statistics["events_committed"]
+                )
+
+            blocks = self.statistics["blocks_created"]
+            prev_avg = self.statistics["average_batch_size"]
+            total_events = prev_avg * (blocks - 1) + event_count
+            self.statistics["average_batch_size"] = total_events / blocks
 
     def get_stats(self) -> dict[str, Any]:
-        return self.statistics.copy()
+        with self._lock:
+            return self.statistics.copy()
