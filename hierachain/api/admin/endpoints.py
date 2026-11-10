@@ -5,6 +5,7 @@ API admin endpoints for System Management
 import os
 import threading
 import time
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -41,9 +42,52 @@ _seen_nonces: dict[str, float] = {}
 _nonce_lock = threading.Lock()
 _trusted_senders: tuple[str, float, frozenset[str]] | None = None
 _trusted_senders_lock = threading.Lock()
+_api_state_store: Any = None
+_api_state_config: tuple[str, str] | None = None
+_api_state_lock = threading.Lock()
+
+
+def _get_api_state_store() -> Any:
+    """Return the configured shared replay/rate-limit store, if any."""
+    global _api_state_store, _api_state_config
+    settings = get_settings()
+    config = (settings.AUTH_STATE_REDIS_URL, settings.API_STATE_DB)
+    with _api_state_lock:
+        if config != _api_state_config:
+            from hierachain.adapters.database.auth_state import (
+                RedisApiStateStore,
+                SQLiteApiStateStore,
+            )
+
+            if config[0]:
+                store: Any = RedisApiStateStore(config[0])
+            elif config[1]:
+                store = SQLiteApiStateStore(config[1])
+            else:
+                store = None
+            _api_state_store = store
+            _api_state_config = config
+        return _api_state_store
 
 
 def _consume_nonce(nonce: str) -> None:
+    store = _get_api_state_store()
+    if store is not None:
+        try:
+            accepted = store.consume_nonce(nonce, time.time(), _NONCE_TTL_SECONDS)
+        except Exception as exc:
+            logger.error("Replay protection store is unavailable", error=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Replay protection store is unavailable.",
+            ) from exc
+        if not accepted:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Event nonce has already been used.",
+            )
+        return
+
     now = time.monotonic()
     with _nonce_lock:
         expired = [key for key, seen_at in _seen_nonces.items() if now - seen_at > _NONCE_TTL_SECONDS]
@@ -97,6 +141,28 @@ def _load_trusted_sender_keys() -> frozenset[str] | None:
 
 def _enforce_verify_identity_rate_limit(request: Request) -> None:
     client = request.client.host if request.client is not None else "unknown"
+    store = _get_api_state_store()
+    if store is not None:
+        try:
+            allowed = store.allow_request(
+                f"verify-identity:{client}",
+                time.time(),
+                _VERIFY_WINDOW_SECONDS,
+                _VERIFY_IDENTITY_RPM,
+            )
+        except Exception as exc:
+            logger.error("Rate limit store is unavailable", error=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Rate limit store is unavailable.",
+            ) from exc
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many identity verification attempts. Please try again later.",
+            )
+        return
+
     now = time.monotonic()
     with _verify_attempts_lock:
         recent = [seen_at for seen_at in _verify_attempts.get(client, []) if now - seen_at < _VERIFY_WINDOW_SECONDS]
