@@ -494,6 +494,7 @@ class TransactionJournal:
             if self.active_log_file.exists():
                 _repair_truncated_active_file(self.active_log_file)
             self._journal_file = _open_safe_file(self.active_log_file, "ab", buffering=0)
+            self._write_poisoned = False
         except Exception as e:
             self._release_writer_lease()
             logger.critical("Failed to open transaction journal: %s", e)
@@ -660,10 +661,28 @@ class TransactionJournal:
         files += list(self.storage_path.glob(f"{self.active_log_file.stem}_*.log"))
         if self._legacy_active_file and self._legacy_active_file.exists():
             files.append(self._legacy_active_file)
-        ordered_files = sorted(set(files) - {self.active_log_file})
+        ordered_files = sorted(
+            set(files) - {self.active_log_file},
+            key=self._journal_file_order,
+        )
         if self.active_log_file.exists():
             ordered_files.append(self.active_log_file)
         return ordered_files
+
+    def _journal_file_order(self, path: Path) -> tuple[int, int]:
+        prefix = f"{self.active_log_file.stem}_"
+        suffix = path.stem.removeprefix(prefix) if path.stem.startswith(prefix) else path.stem
+        if suffix.startswith("legacy_"):
+            suffix = suffix.removeprefix("legacy_")
+            rank = 0
+        else:
+            rank = 1
+        marker = suffix.split("_", 1)[0]
+        try:
+            timestamp = int(marker)
+        except ValueError:
+            timestamp = 0
+        return rank, timestamp
 
     def _iter_parquet_file(self, path: Path) -> Generator[dict[str, Any], None, None]:
         if path.suffix == ".parquet":
