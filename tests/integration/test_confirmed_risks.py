@@ -3,6 +3,7 @@
 import copy
 import threading
 import time
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -32,7 +33,7 @@ from hierachain.consensus.ordering.types import (
 from hierachain.hierarchical.sub_chain.base import SubChain
 from hierachain.security.identity_loader import NodeIdentity
 from hierachain.security.key_manager import KeyManager
-from hierachain.security.security_utils import KeyPair, verify_signature
+from hierachain.security.security_utils import KeyPair
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 from hierachain.security.verify.block_verifier import get_block_verifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
@@ -166,33 +167,33 @@ def test_regular_api_checks_signature_before_persistence(
     harness: Harness, valid_signature: bool, prefix: str, payload: str
 ) -> None:
     pair = KeyPair.generate()
-    signature = pair.sign(payload.encode()) if valid_signature else "00" * 64
-    assert (
-        verify_signature(pair.public_key, payload.encode(), signature)
-        == valid_signature
-    )
-    signature = prefix + signature
     body = dict(
         entity_id="ordinary",
         event_type="created",
         details={"payload": payload},
         sender=prefix + pair.public_key,
-        signature=signature,
     )
+    if valid_signature:
+        body["signature"] = prefix + pair.sign(
+            SignatureVerifier.get_canonical_bytes(body)
+        )
+    else:
+        body["signature"] = prefix + "00" * 64
     response = harness.client.post(
         "/chains/confirmation/events", json=body, headers=harness.headers
     )
+    if not valid_signature:
+        assert response.status_code == 422, response.text
+        assert not harness.finished.wait(0.2)
+        return
     assert response.status_code == 200, response.text
     assert harness.finished.wait(3), "ordering did not finish"
-    assert harness.processed[0].status == (
-        EventStatus.CERTIFIED if valid_signature else EventStatus.REJECTED
-    )
+    assert harness.processed[0].status is EventStatus.CERTIFIED
     rows = harness.persisted()
-    assert len(rows) == int(valid_signature)
-    if valid_signature:
-        assert rows[0]["signature"] == signature
-        assert rows[0]["sender"] == body["sender"]
-        assert rows[0]["submitted_by"] == body["sender"]
+    assert len(rows) == 1
+    assert rows[0]["signature"] == body["signature"]
+    assert rows[0]["sender"] == body["sender"]
+    assert rows[0]["submitted_by"] == "review-authorized"
 
 
 @pytest.mark.parametrize("valid_signature", [False, True])
@@ -242,6 +243,7 @@ def secure_body(payload: bool = True, **fields: Any) -> dict[str, Any]:
         event_type="created",
         details={"payload": "hello"} if payload else {"label": "hello"},
         sender="0x" + pair.public_key,
+        nonce=uuid.uuid4().hex,
     )
     body.update(fields)
     body["signature"] = "0x" + pair.sign(SignatureVerifier.get_canonical_bytes(body))
@@ -260,7 +262,6 @@ def test_secure_acknowledgement_against_durable_outcome(
         else {
             "timestamp": None if timestamp_mode == "null" else time.time(),
             "chain_id": "confirmation",
-            "nonce": "unique-request",
         }
     )
     body = secure_body(with_payload, **fields)
