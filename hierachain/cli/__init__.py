@@ -27,6 +27,7 @@ from hierachain.cli.key import verify as verify_key_cmd
 from hierachain.cli.node import init_node, node_group, start_node
 from hierachain.cli.store import load_node_config
 from hierachain.cli.verify import verify_group
+from hierachain.config.env_manager import init_env_config
 from hierachain.config.settings import settings
 
 
@@ -43,6 +44,7 @@ def hrc(ctx: click.Context, config: str) -> None:
     """HieraChain CLI - Simple management tool"""
     ctx.ensure_object(dict)
     ctx.obj['config_file'] = config
+    init_env_config(warn_only=True)
     load_node_config(ctx, config)
 
 

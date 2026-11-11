@@ -148,7 +148,10 @@ class OrderingProcessor:
     async def _initialize_service(self) -> None:
         """Perform service initialization and state recovery"""
         with self.service._commit_lock:
-            if self.service.should_stop.is_set() or self.service.status in (OrderingStatus.SHUTDOWN, OrderingStatus.ERROR):
+            if self.service.should_stop.is_set() or self.service.status in (
+                OrderingStatus.SHUTDOWN,
+                OrderingStatus.ERROR,
+            ):
                 return
             if self.service.status != OrderingStatus.LOCKDOWN:
                 self.service.status = OrderingStatus.MAINTENANCE

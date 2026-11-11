@@ -13,7 +13,7 @@ IPFS Integration:
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChannelCreateRequest(BaseModel):

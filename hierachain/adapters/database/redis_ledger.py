@@ -65,7 +65,8 @@ class RedisLedgerAdapter(RedisStorageAdapter):
     def list_chains(self) -> list[dict[str, Any]]:
         chains = []
         for key in self.client.scan_iter(match=_k("chain", "*")):
-            if self.client.type(key) != "hash":
+            key_type = self.client.type(key)
+            if key_type != "hash":
                 continue
             data = self.client.hgetall(key)
             if data.get("chain_type") in {"sub", "domain"}:

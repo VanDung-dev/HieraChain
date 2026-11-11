@@ -55,8 +55,18 @@ __all__ = [
 ]
 
 
-def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int, sub_chain_name: str = "") -> bytes:
-    public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": sub_chain_name}
+def _generate_mock_proof(
+    old_state_root: str,
+    new_state_root: str,
+    block_index: int,
+    sub_chain_name: str = "",
+) -> bytes:
+    public_inputs = {
+        "old_state_root": old_state_root,
+        "new_state_root": new_state_root,
+        "block_index": block_index,
+        "sub_chain_name": sub_chain_name,
+    }
     payload_bytes = dumps_canonical_json(public_inputs)
     commitment = hashlib.sha256(payload_bytes).digest()
     proof_size = secrets.randbelow(2049) + 2048
@@ -83,19 +93,39 @@ class ZKProver:
         if self.mode == "mock" and getattr(settings, "env", "") == "production":
             raise ZKProvingError("ZK mock mode is not permitted in production")
         if self.mode == "mock":
-            warnings.warn("ZKProver running in MOCK mode - NOT for production!", UserWarning)
+            warnings.warn(
+                "ZKProver running in MOCK mode - NOT for production!",
+                UserWarning,
+            )
         self.proving_key: bytes | None = None
         self.circuit_path: str | None = None
-        self.stats = {"total_proofs_generated": 0, "successful_generations": 0, "failed_generations": 0, "total_generation_time_ms": 0.0}
+        self.stats = {
+            "total_proofs_generated": 0,
+            "successful_generations": 0,
+            "failed_generations": 0,
+            "total_generation_time_ms": 0.0,
+        }
         if self.mode == "production":
             self._load_proving_key()
             self._load_circuit()
         logger.info("ZKProver initialized in '%s' mode", self.mode)
 
-    def generate_proof(self, old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]] | None = None, sub_chain_name: str = "") -> ZKProofResult:
+    def generate_proof(
+        self,
+        old_state_root: str,
+        new_state_root: str,
+        block_index: int,
+        events: list[dict[str, Any]] | None = None,
+        sub_chain_name: str = "",
+    ) -> ZKProofResult:
         self.stats["total_proofs_generated"] += 1
         start_time = time.time()
-        public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": sub_chain_name}
+        public_inputs = {
+            "old_state_root": old_state_root,
+            "new_state_root": new_state_root,
+            "block_index": block_index,
+            "sub_chain_name": sub_chain_name,
+        }
         try:
             if self.mode == "mock":
                 proof = _generate_mock_proof(old_state_root, new_state_root, block_index, sub_chain_name)
@@ -107,23 +137,57 @@ class ZKProver:
             self.stats["successful_generations"] += 1
             self.stats["total_generation_time_ms"] += generation_time
             logger.debug("Generated ZK proof for block %d in %.2fms", block_index, generation_time)
-            return ZKProofResult(proof=proof, public_inputs=public_inputs, generation_time_ms=generation_time, mode=self.mode, success=True)
+            return ZKProofResult(
+                proof=proof,
+                public_inputs=public_inputs,
+                generation_time_ms=generation_time,
+                mode=self.mode,
+                success=True,
+            )
         except Exception as e:
             generation_time = (time.time() - start_time) * 1000
             self.stats["failed_generations"] += 1
             logger.error("ZK Proof generation failed: %s", e)
-            return ZKProofResult(proof=b"", public_inputs=public_inputs, generation_time_ms=generation_time, mode=self.mode, success=False, error=str(e))
+            return ZKProofResult(
+                proof=b"",
+                public_inputs=public_inputs,
+                generation_time_ms=generation_time,
+                mode=self.mode,
+                success=False,
+                error=str(e),
+            )
 
-    def generate_proof_bytes(self, old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]] | None = None) -> bytes:
+    def generate_proof_bytes(
+        self,
+        old_state_root: str,
+        new_state_root: str,
+        block_index: int,
+        events: list[dict[str, Any]] | None = None,
+    ) -> bytes:
         result = self.generate_proof(old_state_root, new_state_root, block_index, events)
         if not result.success:
-            raise ZKProvingError(f"Proof generation failed: {result.error}")
+            raise ZKProvingError(
+                f"Proof generation failed: {result.error}"
+            )
         return result.proof
 
-    async def generate_proof_async(self, old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]] | None = None, sub_chain_name: str = "") -> ZKProofResult:
+    async def generate_proof_async(
+        self,
+        old_state_root: str,
+        new_state_root: str,
+        block_index: int,
+        events: list[dict[str, Any]] | None = None,
+        sub_chain_name: str = "",
+    ) -> ZKProofResult:
         if self.mode == "mock":
             await asyncio.sleep(secrets.randbelow(400) / 1000 + 0.1)
-        return self.generate_proof(old_state_root, new_state_root, block_index, events, sub_chain_name)
+        return self.generate_proof(
+            old_state_root,
+            new_state_root,
+            block_index,
+            events,
+            sub_chain_name,
+        )
 
     async def verify_proof_async(self, proof: bytes, public_inputs: dict[str, Any]) -> bool:
         if self.mode == "mock":
@@ -131,8 +195,17 @@ class ZKProver:
             return _verify_mock_proof(proof, public_inputs)
         raise NotImplementedError("Production verification not yet implemented")
 
-    def _generate_production_proof(self, old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]]) -> bytes:
-        raise NotImplementedError("Production ZK proving not yet implemented. See ZK_PROOF_ARCHITECTURE.md Section 4.3 for implementation details.")
+    def _generate_production_proof(
+        self,
+        old_state_root: str,
+        new_state_root: str,
+        block_index: int,
+        events: list[dict[str, Any]],
+    ) -> bytes:
+        raise NotImplementedError(
+            "Production ZK proving not yet implemented. "
+            "See ZK_PROOF_ARCHITECTURE.md Section 4.3 for implementation details."
+        )
 
     def _load_proving_key(self) -> None:
         key_path = getattr(settings, 'ZK_PROVING_KEY_PATH', '')
@@ -158,11 +231,21 @@ class ZKProver:
 
     def get_stats(self) -> dict[str, Any]:
         stats = self.stats.copy()
-        stats["avg_generation_time_ms"] = stats["total_generation_time_ms"] / stats["successful_generations"] if stats["successful_generations"] > 0 else 0.0
+        successful = stats["successful_generations"]
+        stats["avg_generation_time_ms"] = (
+            stats["total_generation_time_ms"] / successful
+            if successful > 0
+            else 0.0
+        )
         return stats
 
     def reset_stats(self) -> None:
-        self.stats = {"total_proofs_generated": 0, "successful_generations": 0, "failed_generations": 0, "total_generation_time_ms": 0.0}
+        self.stats = {
+            "total_proofs_generated": 0,
+            "successful_generations": 0,
+            "failed_generations": 0,
+            "total_generation_time_ms": 0.0,
+        }
 
 
 _default_prover: ZKProver | None = None
@@ -185,6 +268,11 @@ def reset_zk_prover() -> None:
     _default_prover = None
 
 
-def generate_zk_proof(old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]] | None = None) -> bytes:
+def generate_zk_proof(
+    old_state_root: str,
+    new_state_root: str,
+    block_index: int,
+    events: list[dict[str, Any]] | None = None,
+) -> bytes:
     prover = get_zk_prover()
     return prover.generate_proof_bytes(old_state_root, new_state_root, block_index, events)

@@ -45,7 +45,12 @@ class PostgresAdapter(SQLBase):
     _ledger_registry_lock_suffix = " FOR SHARE"
     _ledger_begin = ""
 
-    def __init__(self, database_url: str = "postgresql://localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
+    def __init__(
+        self,
+        database_url: str = "postgresql://localhost:5432/hierachain",
+        pool_min: int = 1,
+        pool_max: int = 10,
+    ):
         self.database_url = database_url
         self.pool_min = pool_min
         self.pool_max = pool_max

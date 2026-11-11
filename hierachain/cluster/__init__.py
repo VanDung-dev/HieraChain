@@ -9,6 +9,7 @@ from hierachain.cluster.cross_level_sync_types import (
     SyncDirection,
     SyncResult,
 )
+
 __all__ = [
     "ConflictResolutionStrategy",
     "CrossLevelSyncManager",

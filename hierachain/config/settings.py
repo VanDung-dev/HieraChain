@@ -347,5 +347,27 @@ def get_settings() -> Settings:
         return DevelopmentSettings()
 
 
-# Global settings instance
-settings = get_settings()
+class _LazySettings:
+    _instance: Settings | None = None
+
+    def _resolve(self) -> Settings:
+        instance = object.__getattribute__(self, "_instance")
+        if instance is None:
+            instance = get_settings()
+            object.__setattr__(self, "_instance", instance)
+        return instance
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._resolve(), name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "_instance":
+            object.__setattr__(self, name, value)
+            return
+        setattr(self._resolve(), name, value)
+
+    def __repr__(self) -> str:
+        return repr(self._resolve())
+
+
+settings: Any = _LazySettings()

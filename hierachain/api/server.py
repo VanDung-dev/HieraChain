@@ -323,6 +323,9 @@ def _add_cors_middleware(fast_app: Any, cors_config: dict[str, Any]) -> None:
 
 
 def create_app() -> FastAPI:
+    from hierachain.config.env_manager import init_env_config
+
+    init_env_config(warn_only=True)
     settings = get_settings()
     if settings.env == "production" and not settings.AUTH_ENABLED:
         raise RuntimeError("Production API authentication cannot be disabled")
@@ -380,7 +383,20 @@ def create_app() -> FastAPI:
 
 warnings.filterwarnings("ignore", category=UserWarning, module="requests")
 
-app = create_app()
+_app: FastAPI | None = None
+
+
+def get_app() -> FastAPI:
+    global _app
+    if _app is None:
+        _app = create_app()
+    return _app
+
+
+def __getattr__(name: str) -> Any:
+    if name == "app":
+        return get_app()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def run_server():
