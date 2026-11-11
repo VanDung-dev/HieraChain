@@ -136,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (66)"
+??? note "Improvements (68)"
+
+    * 2026-11-12
+
+        * **Config, API & CLI (Trì hoãn Khởi tạo Env, Settings & App)**: Bỏ lời gọi `init_env_config()` eager khỏi `hierachain/__init__.py` và chuyển sang gọi trong `create_app()` (`hierachain/api/server.py`) và điểm vào CLI (`hierachain/cli/__init__.py`). `settings` (`hierachain/config/settings.py`) trở thành lazy proxy, chỉ resolve `get_settings()` ở lần truy cập thuộc tính đầu tiên. `hierachain.api.server` tạo FastAPI app theo kiểu lazy qua `get_app()`/`__getattr__` ở cấp module thay vì tại thời điểm import. Dọn dẹp nhỏ: bỏ import `field_validator` không dùng trong `hierachain/api/business/schemas.py`, tách biến kiểu Redis key trong `hierachain/adapters/database/redis_ledger.py`, và định dạng lại các dòng dài trong `hierachain/adapters/database/postgres_adapter.py`, `hierachain/consensus/ordering/processor.py`, `hierachain/consensus/ordering/utils.py`, `hierachain/security/zk_prover.py`.
+        * **CI & Tooling (Ngưỡng Coverage Unit 70% & Ruff Linting)**: `.github/workflows/test.yml` thu thập coverage unit theo từng file với `pytest-cov`, áp ngưỡng tối thiểu 70% qua `coverage report --fail-under=70`, đồng thời cài/chạy `ruff` song song với `flake8` và lưu artifact lint riêng. `pyproject.toml` thêm dev dependency `pytest-cov` và căn chỉnh `line-length` của `ruff`/`black` về `120`; `.flake8` bỏ các ignore không còn dùng và per-file ignore cho test; `uv.lock` ghi nhận `coverage 7.17.2`.
 
     * 2026-11-11
 

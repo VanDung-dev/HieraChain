@@ -136,7 +136,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (66)"
+??? note "Improvements (68)"
+
+    * 2026-11-12
+
+        * **Config, API & CLI (Deferred Env, Settings & App Initialization)**: Remove the eager `init_env_config()` call from `hierachain/__init__.py` and invoke it in `create_app()` (`hierachain/api/server.py`) and the CLI entry point (`hierachain/cli/__init__.py`) instead. `settings` (`hierachain/config/settings.py`) becomes a lazy proxy that resolves `get_settings()` on first attribute access. `hierachain.api.server` creates the FastAPI app lazily via `get_app()`/module `__getattr__` instead of at import time. Minor cleanup drops an unused `field_validator` import in `hierachain/api/business/schemas.py`, extracts a Redis key type variable in `hierachain/adapters/database/redis_ledger.py`, and reformats long lines in `hierachain/adapters/database/postgres_adapter.py`, `hierachain/consensus/ordering/processor.py`, `hierachain/consensus/ordering/utils.py`, and `hierachain/security/zk_prover.py`.
+        * **CI & Tooling (70% Unit Coverage Floor & Ruff Linting)**: `.github/workflows/test.yml` collects per-file unit coverage with `pytest-cov`, enforces a 70% floor via `coverage report --fail-under=70`, and installs/runs `ruff` alongside `flake8` with separate lint artifacts. `pyproject.toml` adds the `pytest-cov` dev dependency and aligns `ruff`/`black` `line-length` to `120`; `.flake8` drops unused ignores and test per-file ignores; `uv.lock` records `coverage 7.17.2`.
 
     * 2026-11-11
 
