@@ -52,9 +52,17 @@ jobs:
 
       - name: Run unit tests
         run: |
+          uv run --frozen --extra dev python -m coverage erase
           for test_file in $(find tests/unit -name 'test_*.py' | sort); do
-            uv run --frozen --extra dev python -m pytest "$test_file" -v --junitxml="test-results-unit/${test_file//\//_}.xml"
+            uv run --frozen --extra dev python -m pytest "$test_file" -v \
+              --junitxml="test-results-unit/${test_file//\//_}.xml" \
+              --cov=hierachain --cov-append --cov-report=
           done
+
+      - name: Enforce unit coverage floor
+        if: success() || failure()
+        run: |
+          uv run --frozen --extra dev python -m coverage report --fail-under=70
 
       - name: Run integration tests
         if: success() || failure()
@@ -199,20 +207,25 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install flake8
+      - name: Install lint dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8
+          pip install flake8 ruff
 
-      - name: Run linting
+      - name: Run flake8
         run: flake8 --config=.flake8 hierachain tests --output-file=lint-results.txt
+
+      - name: Run ruff
+        run: ruff check hierachain tests --output-format concise > ruff-results.txt
 
       - name: Upload lint results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lint-results
-          path: lint-results.txt
+          path: |
+            lint-results.txt
+            ruff-results.txt
 
   type-check:
     name: Type Check

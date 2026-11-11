@@ -76,6 +76,7 @@ dev = [
     "pip-audit>=2.10.1",
     "ruff>=0.16.8",
     "ty>=0.0.83",
+    "pytest-cov>=6.0",
 ]
 
 [project.scripts]
@@ -101,7 +102,7 @@ constraint-dependencies = [
 packages = { find = { include = ["hierachain*"] } }
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -133,7 +134,7 @@ markers = [
 filterwarnings = ["ignore::pytest.PytestAssertRewriteWarning"]
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ['py311', 'py312', 'py313', 'py314']
 include = '\.pyi?$'
 extend-exclude = '''
