@@ -92,6 +92,7 @@ def test_manager_recovery_does_not_queue_requests_behind_bootstrap(
 ) -> None:
     import threading
     from unittest.mock import Mock
+
     import hierachain.api.ledger.depds as dependencies
 
     lock = threading.Lock()
@@ -119,8 +120,10 @@ def test_manager_recovery_does_not_queue_requests_behind_bootstrap(
 def test_failed_manager_bootstrap_has_a_retry_cooldown(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from fastapi import HTTPException
     from unittest.mock import Mock
+
+    from fastapi import HTTPException
+
     import hierachain.api.ledger.depds as dependencies
 
     now = [100.0]

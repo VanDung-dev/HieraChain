@@ -538,7 +538,7 @@ def test_performance_with_large_data(benchmark):
 
         # Measure block finalization time
         start_time = time.time()
-        _block = poa.finalize_block(block, authority_id)
+        poa.finalize_block(block, authority_id)
         finalization_time = time.time() - start_time
 
         # Measure block validation time

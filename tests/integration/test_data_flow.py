@@ -6,9 +6,10 @@ This test suite verifies the data flow from the API to the journal, and then to 
 
 import os
 import shutil
-import time
-import pyarrow as pa
 import struct
+import time
+
+import pyarrow as pa
 import pytest
 
 from hierachain.core.block import EVENT_SCHEMA

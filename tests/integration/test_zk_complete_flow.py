@@ -4,18 +4,20 @@ Integration tests for ZK Proofs with Proof of Authority (PoA) and Proof of Feder
 Tests cover normal operations, security scenarios, and system resilience.
 """
 
-import pytest
 import time
 from types import SimpleNamespace
 
-from hierachain.core import Block
-from hierachain.consensus import ProofOfFederation
-from hierachain.consensus import ProofOfAuthority
-from hierachain.security import get_zk_prover, ZKProvingError, reset_zk_prover
-from hierachain.security.verify import (
-    get_zk_verifier, ZKVerificationError, reset_zk_verifier
-)
+import pytest
+
 from hierachain.config.settings import settings
+from hierachain.consensus import ProofOfAuthority, ProofOfFederation
+from hierachain.core import Block
+from hierachain.security import ZKProvingError, get_zk_prover, reset_zk_prover
+from hierachain.security.verify import (
+    ZKVerificationError,
+    get_zk_verifier,
+    reset_zk_verifier,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -87,8 +89,8 @@ def test_pof_zk_happy_path(zk_context):
     Verify the complete lifecycle of ZK proof with Proof of Federation (PoF).
     Similar to PoA but checks that PoF's distinct validation logic works with ZK.
     """
-    from nacl.signing import SigningKey
     from nacl.encoding import HexEncoder
+    from nacl.signing import SigningKey
 
     # 1. Setup PoF instance with signing key
     sk = SigningKey.generate()

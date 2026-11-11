@@ -5,10 +5,11 @@ This test suite is designed to ensure that the Block class handles data
 correctly and consistently.
 """
 
-import time
 import json
-import sys
 import os
+import sys
+import time
+
 import pyarrow as pa
 
 from hierachain.core import Block

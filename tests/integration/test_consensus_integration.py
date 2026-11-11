@@ -12,9 +12,8 @@ from collections.abc import Iterator
 
 import pytest
 
-from hierachain.hierarchical import MainChain
-from hierachain.hierarchical import SubChain
 from hierachain.core import Block
+from hierachain.hierarchical import MainChain, SubChain
 
 pytestmark = pytest.mark.usefixtures("isolated_chain_storage")
 

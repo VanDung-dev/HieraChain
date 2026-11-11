@@ -2,14 +2,17 @@
 Integration Test: Proof of Federation (PoF) Multi-MainChain Alliance Verification.
 
 Demonstrates that:
-1. Without PoF (Pure PoA): Independent MainChains (Hospital A, Hospital B, Insurance Z) REJECT block/event proofs from external chains due to lack of central authority trust.
-2. With PoF (Federation): Independent MainChains validate cross-organizational events via Federated Consortium consensus without any central RootChain.
+1. Without PoF (Pure PoA): Independent MainChains (Hospital A, Hospital B,
+   Insurance Z) REJECT block/event proofs from external chains due to lack of
+   central authority trust.
+2. With PoF (Federation): Independent MainChains validate cross-organizational
+   events via Federated Consortium consensus without any central RootChain.
 """
 
-import pytest
 import time
-from nacl.signing import SigningKey
+
 from nacl.encoding import HexEncoder
+from nacl.signing import SigningKey
 
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation

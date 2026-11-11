@@ -70,7 +70,7 @@ def test_encryption():
 
     ciphertext, nonce = enc.encrypt(plaintext, associated_data=metadata_bytes)
     print(f"  Metadata: {metadata}")
-    print(f"  Encrypted with AAD")
+    print("  Encrypted with AAD")
 
     # Decrypt with correct AAD
     decrypted = enc.decrypt(ciphertext, nonce, associated_data=metadata_bytes)

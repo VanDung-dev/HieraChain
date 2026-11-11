@@ -3,7 +3,6 @@
 import json
 import subprocess
 import sys
-import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 

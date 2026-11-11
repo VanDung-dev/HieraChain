@@ -5,12 +5,18 @@ Tests both LocalKeyProvider and FileVaultProvider functionality
 including key generation, signing, verification, and vault management.
 """
 
-import pytest
 import os
+
+import pytest
+
 from hierachain.security import (
-    LocalKeyProvider, FileVaultProvider, CryptoError,
-    KeyPair, verify_signature
+    CryptoError,
+    FileVaultProvider,
+    KeyPair,
+    LocalKeyProvider,
+    verify_signature,
 )
+
 
 def test_local_key_provider():
     # Setup

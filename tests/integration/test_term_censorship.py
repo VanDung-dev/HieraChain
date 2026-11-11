@@ -34,7 +34,12 @@ def test_no_crypto_terms_in_codebase():
                         if any(x in line for x in ("FORBIDDEN_TERMS", "FORBIDDEN_EVENT_TYPES", "blacklist")):
                             continue
                         # Skip validator rules configuration in utils/validator
-                        if ("utils.py" in file or "validator.py" in file) and any(x in line for x in ("coin", "wallet", "fee", "receiver")):
+                        is_validator = "utils.py" in file or "validator.py" in file
+                        has_rule = any(
+                            x in line
+                            for x in ("coin", "wallet", "fee", "receiver")
+                        )
+                        if is_validator and has_rule:
                             continue
                         
                         # Skip docstrings explaining system design
@@ -47,9 +52,11 @@ def test_no_crypto_terms_in_codebase():
                         for term in FORBIDDEN_TERMS:
                             if re.search(term, line, re.IGNORECASE):
                                 offending_lines.append(
-                                    f"{os.path.relpath(filepath, base_dir)}:{line_num}: found forbidden term in '{line.strip()}'"
+                                    f"{os.path.relpath(filepath, base_dir)}:"
+                                    f"{line_num}: found forbidden term in "
+                                    f"'{line.strip()}'"
                                 )
             except Exception:
                 pass
 
-    assert not offending_lines, f"Forbidden cryptocurrency terms found:\n" + "\n".join(offending_lines)
+    assert not offending_lines, "Forbidden cryptocurrency terms found:\n" + "\n".join(offending_lines)

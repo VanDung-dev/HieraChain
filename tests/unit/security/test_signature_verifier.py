@@ -4,8 +4,8 @@ Tests for storage logging security.
 
 import pytest
 
-from hierachain.security.verify.signature_verifier import SignatureVerifier
 from hierachain.security.security_utils import KeyPair
+from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 
 class TestSignatureVerifier:

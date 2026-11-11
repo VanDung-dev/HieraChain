@@ -38,7 +38,10 @@ def test_is_valid_with_valid_key():
     """Test is_valid method with a valid key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
-    mock_storage.get.return_value = '{"user_id": "test_user", "permissions": ["events"], "created_at": 1000, "expires_at": 9999999999}'
+    mock_storage.get.return_value = (
+        '{"user_id": "test_user", "permissions": ["events"], '
+        '"created_at": 1000, "expires_at": 9999999999}'
+    )
     km = KeyManager(storage_backend=mock_storage)
     valid_key = "valid_key_123456789012345"
 
@@ -69,7 +72,10 @@ def test_is_valid_with_expired_key():
     """Test is_valid method with an expired key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
-    mock_storage.get.return_value = '{"user_id": "test_user", "permissions": ["events"], "created_at": 1000, "expires_at": 1001}'
+    mock_storage.get.return_value = (
+        '{"user_id": "test_user", "permissions": ["events"], '
+        '"created_at": 1000, "expires_at": 1001}'
+    )
     km = KeyManager(storage_backend=mock_storage)
     expired_key = "expired_key_123456789012345"
 
@@ -197,7 +203,11 @@ def test_get_app_details_with_valid_key():
         'name': 'Test Application',
         'version': '1.0'
     }
-    mock_storage.get.return_value = '{"user_id": "test_user", "permissions": ["events"], "app_details": {"name": "Test Application", "version": "1.0"}, "created_at": 1000}'
+    mock_storage.get.return_value = (
+        '{"user_id": "test_user", "permissions": ["events"], '
+        '"app_details": {"name": "Test Application", "version": "1.0"}, '
+        '"created_at": 1000}'
+    )
     km = KeyManager(storage_backend=mock_storage)
     test_key = "app_key_123456789012345"
 
@@ -221,11 +231,6 @@ def test_cache_key():
     """Test cache_key method"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
-    _key_data = {
-        'user_id': 'cached_user',
-        'permissions': ['events'],
-        'created_at': time.time()
-    }
     mock_storage.get.return_value = '{"user_id": "cached_user", "permissions": ["events"], "created_at": 1000}'
     km = KeyManager(storage_backend=mock_storage)
     test_key = "cache_key_123456789012345"
@@ -353,7 +358,11 @@ def test_has_permission_with_special_characters():
     """Test has_permission with special characters in resource names"""
     # Mock storage backend
     mock_storage = Mock()
-    mock_storage.get.return_value = '{"user_id": "test_user", "permissions": ["event.read", "data/write", "sys_admin"], "created_at": 1000}'
+    mock_storage.get.return_value = (
+        '{"user_id": "test_user", '
+        '"permissions": ["event.read", "data/write", "sys_admin"], '
+        '"created_at": 1000}'
+    )
     km = KeyManager(storage_backend=mock_storage)
     test_key = "special_chars_key_123456789012345"
 
@@ -448,7 +457,11 @@ def test_permission_check_performance(benchmark):
     """Test performance of permission checking operations"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
-    mock_storage.get.return_value = '{"user_id": "perf_test_user", "permissions": ["events", "chains", "admin_panel"], "created_at": 1000}'
+    mock_storage.get.return_value = (
+        '{"user_id": "perf_test_user", '
+        '"permissions": ["events", "chains", "admin_panel"], '
+        '"created_at": 1000}'
+    )
     km = KeyManager(storage_backend=mock_storage)
     test_key = "perf_test_key_123456789012345"
     

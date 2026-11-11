@@ -5,12 +5,11 @@ This module contains unit tests for the Block class functionality,
 including block creation, hashing, event operations, and validation.
 """
 
-import time
 import random
 import string
+import time
 
-from hierachain.core import Block
-from hierachain.core import Blockchain
+from hierachain.core import Block, Blockchain
 
 
 def test_block_with_multiple_events():

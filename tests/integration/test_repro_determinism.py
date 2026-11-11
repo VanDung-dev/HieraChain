@@ -9,11 +9,11 @@ If the service is deterministic, it should produce the same blocks.
 If the service is not deterministic, it should produce different blocks.
 """
 
-import time
-import shutil
 import os
+import shutil
+import time
 
-from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
+from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 
 
 def _wait_and_log_blocks(service, phase_label):
@@ -74,10 +74,13 @@ def test_determinism():
     service2.shutdown()
 
     # Assertion
-    assert len(blocks_phase1) == len(blocks_phase2), \
-        f"[FAIL] Determinism check failed! Original: {len(blocks_phase1)} blocks, Recovered: {len(blocks_phase2)} blocks."
+    assert len(blocks_phase1) == len(blocks_phase2), (
+        "[FAIL] Determinism check failed! "
+        f"Original: {len(blocks_phase1)} blocks, "
+        f"Recovered: {len(blocks_phase2)} blocks."
+    )
     
-    print(f"\n[PASS] Block counts match.")
+    print("\n[PASS] Block counts match.")
 
 if __name__ == "__main__":
     test_determinism()

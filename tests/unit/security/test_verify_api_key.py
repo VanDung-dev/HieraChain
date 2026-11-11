@@ -338,7 +338,9 @@ async def test_verify_api_key_performance_many_requests(mock_key_manager, defaul
 
 # Integration test between APIKeyVerifier and ResourcePermissionChecker
 @pytest.mark.asyncio
-async def test_integration_verify_api_key_and_resource_permission_checker(mock_key_manager, default_config, mock_request):
+async def test_integration_verify_api_key_and_resource_permission_checker(
+    mock_key_manager, default_config, mock_request,
+):
     """Test integration between APIKeyVerifier and ResourcePermissionChecker"""
     # Setup APIKeyVerifier
     verify_key = APIKeyVerifier(default_config)

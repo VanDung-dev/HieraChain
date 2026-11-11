@@ -26,7 +26,9 @@ from hierachain.security.key_manager import KeyManager
 
 def _run_server_lifespan() -> None:
     async def run() -> None:
-        async with server.lifespan(server.app):
+        with patch.object(server, "_load_production_key_manager", return_value=KeyManager()):
+            app = create_app()
+        async with server.lifespan(app):
             pass
 
     asyncio.run(run())

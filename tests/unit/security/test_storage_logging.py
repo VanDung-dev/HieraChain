@@ -7,7 +7,7 @@ SQL echo behavior.
 """
 
 import inspect
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from hierachain.adapters.database import SQLiteAdapter, sqlite_adapter
 from hierachain.security import (

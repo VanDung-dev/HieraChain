@@ -5,18 +5,18 @@ Uses Hypothesis to generate random inputs and verify robust handling.
 """
 
 import os
-import shutil
 import time
 import uuid
+
 import pytest
-from hypothesis import given, strategies as st, settings, HealthCheck
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from hierachain.consensus import (
-    OrderingService,
     OrderingNode,
+    OrderingService,
     OrderingStatus,
 )
-
 
 # === Strategy Definitions ===
 

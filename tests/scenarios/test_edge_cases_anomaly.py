@@ -10,10 +10,9 @@ Tests counter-intuitive, weird, and extreme edge-case scenarios:
 
 import time
 
+from hierachain.api.middleware import RateLimiter
 from hierachain.core.block import Block, convert_events_to_arrow
 from hierachain.core.merkle_tree import MerkleTree
-from hierachain.api.middleware import RateLimiter
-
 
 # ============================================================================
 # 1. PyArrow Data Torture & Deeply Nested Types

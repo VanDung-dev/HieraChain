@@ -4,15 +4,16 @@ Unit tests for WebSocket functionality.
 Tests the WebSocket manager and endpoints for real-time communication.
 """
 
-import pytest
 import json
 from unittest.mock import AsyncMock
 
+import pytest
+
 from hierachain.api import (
-    WebSocketManager,
     WebSocketConnection,
+    WebSocketManager,
+    WebSocketMessageType,
     WebSocketSubscription,
-    WebSocketMessageType
 )
 
 
@@ -312,6 +313,7 @@ class TestWebSocketEndpoints:
     def app(self):
         """Create test FastAPI app"""
         from fastapi import FastAPI
+
         from hierachain.api.websocket.endpoints import router
         
         app = FastAPI()
@@ -322,6 +324,7 @@ class TestWebSocketEndpoints:
     async def test_websocket_status_endpoint(self, app):
         """Test /ws/status endpoint"""
         from fastapi.testclient import TestClient
+
         from hierachain.api.websocket.manager import ws_manager
         
         client = TestClient(app)

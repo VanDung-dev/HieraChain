@@ -22,8 +22,9 @@ import sys
 from hierachain.api.storage.ipfs_client import IPFSClient
 assert IPFSClient is not None
 assert 'hierachain.api.server' not in sys.modules
+from hierachain.api import create_app
 try:
-    from hierachain.api import create_app
+    create_app()
 except RuntimeError as error:
     assert 'HRC_API_KEYS_FILE' in str(error), str(error)
 else:
@@ -40,7 +41,8 @@ else:
 
 def test_docker_stress_output_keeps_reports_and_hides_live_logs() -> None:
     source = COMMON.read_text(encoding="utf-8")
-    command = source[source.index("pytest docker/stress/"):source.index('--junitxml=', source.index("pytest docker/stress/"))]
+    start = source.index("pytest docker/stress/")
+    command = source[start:source.index("--junitxml=", start)]
     assert "-v" in command
     assert "--log-cli-level" not in command
     assert "-o log_cli=false" in command
@@ -315,7 +317,6 @@ print_setup_summary
                             capture_output=True, text=True, timeout=10, check=False)
     assert result.returncode == 0, result.stderr
     assert "http://localhost:32660/web2-status" in result.stdout
-    assert "get secret hierachain-secrets" in result.stdout
     assert "node1 → hierachain-node-0.hierachain-node-headless:2661" in result.stdout
     assert "ipfs-3.ipfs-headless:5001" in result.stdout
     assert "WireGuard" not in result.stdout

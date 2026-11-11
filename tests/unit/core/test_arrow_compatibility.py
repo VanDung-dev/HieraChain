@@ -5,9 +5,10 @@ This module contains test cases for the Block class to ensure its compatibility 
 It tests the conversion of events to and from Arrow tables, as well as the addition of events to a block.
 """
 
-import time
-import sys
 import os
+import sys
+import time
+
 import pyarrow as pa
 
 from hierachain.core import Block

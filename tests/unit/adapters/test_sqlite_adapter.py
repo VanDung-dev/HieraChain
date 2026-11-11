@@ -148,7 +148,7 @@ def test_proof_storage(adapter):
         "metadata": {"summary": "test proof"}
     }
     
-    _result = adapter.store_proof(
+    adapter.store_proof(
         main_chain,
         sub_chain,
         proof_data["proof_hash"],

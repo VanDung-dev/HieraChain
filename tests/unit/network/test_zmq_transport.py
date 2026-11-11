@@ -5,11 +5,13 @@ Tests cover validation of message timestamps, nonce uniqueness and automatic
 cleanup of expired entries from the replay buffer.
 """
 
-import pytest
 import time
 import uuid
 
+import pytest
+
 from hierachain.network import ZmqNode
+
 
 @pytest.fixture
 def node():
@@ -22,7 +24,7 @@ def test_valid_fresh_message(node):
         "nonce": str(uuid.uuid4()),
         "content": "hello"
     }
-    assert node._is_valid_replay(msg) == True
+    assert node._is_valid_replay(msg)
     assert len(node.replay_buffer) == 1
 
 def test_missing_timestamp(node):
@@ -30,14 +32,14 @@ def test_missing_timestamp(node):
         "nonce": str(uuid.uuid4()),
         "content": "hello"
     }
-    assert node._is_valid_replay(msg) == False
+    assert not node._is_valid_replay(msg)
 
 def test_missing_nonce(node):
     msg = {
         "timestamp": time.time(),
         "content": "hello"
     }
-    assert node._is_valid_replay(msg) == False
+    assert not node._is_valid_replay(msg)
 
 def test_duplicate_nonce(node):
     nonce = str(uuid.uuid4())
@@ -47,10 +49,10 @@ def test_duplicate_nonce(node):
         "content": "hello"
     }
     # First send is valid
-    assert node._is_valid_replay(msg) == True
+    assert node._is_valid_replay(msg)
 
     # Second send with same nonce is invalid
-    assert node._is_valid_replay(msg) == False
+    assert not node._is_valid_replay(msg)
 
 def test_old_message_rejection(node):
     old_time = time.time() - (node.replay_tolerance + 10)
@@ -59,7 +61,7 @@ def test_old_message_rejection(node):
         "nonce": str(uuid.uuid4()),
         "content": "old"
     }
-    assert node._is_valid_replay(msg) == False
+    assert not node._is_valid_replay(msg)
 
 def test_future_message_rejection(node):
     # Assuming tolerance applies to future too (abs check)
@@ -69,7 +71,7 @@ def test_future_message_rejection(node):
         "nonce": str(uuid.uuid4()),
         "content": "future"
     }
-    assert node._is_valid_replay(msg) == False
+    assert not node._is_valid_replay(msg)
 
 def test_buffer_cleanup(node):
     old_ts = time.time() - (node.replay_tolerance + 10)

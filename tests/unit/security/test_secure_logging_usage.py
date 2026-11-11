@@ -13,7 +13,6 @@ import pytest
 
 from hierachain.security import SecureLogger
 
-
 # ------------------------------------------------------------------ #
 # Source code analysis: verify SecureLogger is instantiated
 # ------------------------------------------------------------------ #
