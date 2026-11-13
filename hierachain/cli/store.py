@@ -158,7 +158,7 @@ def _close_hierarchy_manager(manager: Any) -> None:
     try:
         manager.transaction_manager.journal.close()
     except Exception:
-        logger.exception("Could not close CLI hierarchy transaction journal")
+        logger.exception("Could not close CLI hierarchy event journal")
 
     storage = getattr(manager, "storage", None)
     if storage is not None:

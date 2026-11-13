@@ -1,7 +1,7 @@
 """
-Transaction Journal System for HieraChain.
+Event Journal System for HieraChain.
 
-This module provides a durability layer to ensure that transactions are
+This module provides a durability layer to ensure that events are
 safely persisted to physical storage before being processed.
 This protects against data loss during power failures, system crashes, or
 rapid shutdowns.
@@ -391,7 +391,7 @@ def _iterate_journal_batches(
 
 class TransactionJournal:
     """
-    Append-only journal for durable transaction logging using Apache Arrow.
+    Append-only journal for durable event logging using Apache Arrow.
 
     This class handles writing critical events to disk as serialized Arrow
     RecordBatches with synchronous flushing to guarantee persistence. Using
@@ -417,7 +417,7 @@ class TransactionJournal:
         self, storage_dir: str = "data/journal", active_log_name: str = "current.arrow"
     ) -> None:
         """
-        Initialize the Transaction Journal.
+        Initialize the event journal.
 
         Args:
             storage_dir: Directory to store journal files.
@@ -495,9 +495,9 @@ class TransactionJournal:
                 _repair_truncated_active_file(self.active_log_file)
             self._journal_file = _open_safe_file(self.active_log_file, "ab", buffering=0)
             self._write_poisoned = False
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             self._release_writer_lease()
-            logger.critical("Failed to open transaction journal: %s", e)
+            logger.critical("Failed to open event journal: %s", e)
             raise
 
     def _acquire_writer_lease(self) -> None:
@@ -528,7 +528,7 @@ class TransactionJournal:
         if self._journal_file is not None:
             try:
                 self._journal_file.close()
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.debug("Error closing journal writer: %s", e)
             self._journal_file = None
 
@@ -552,7 +552,7 @@ class TransactionJournal:
             if self._journal_file is None:
                 try:
                     self._open_journal()
-                except Exception as ex:
+                except (OSError, ValueError, RuntimeError) as ex:
                     logger.debug("Error reopening journal after rotation failure: %s", ex)
 
     def _dict_to_arrow_batch(self, event_data: dict[str, Any]) -> pa.RecordBatch:
@@ -587,7 +587,7 @@ class TransactionJournal:
             os.fsync(fd)
             self._synced_file_state = _file_write_state(fd)
             return True
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             self._write_poisoned = True
             logger.critical(
                 "Journal append rollback failed; refusing future writes until reopen: %s",
@@ -635,7 +635,7 @@ class TransactionJournal:
                 self._synced_file_state = _file_write_state(self._journal_file.fileno())
                 return True
             except (OSError, pa.ArrowException) as e:
-                logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
+                logger.critical("CRITICAL: Failed to write to event journal: %s", e)
                 if append_started:
                     self._rollback_failed_append(start_offset)
                 return False
@@ -648,7 +648,7 @@ class TransactionJournal:
                     self._journal_file.flush()
                     os.fsync(self._journal_file.fileno())
                     self._synced_file_state = _file_write_state(self._journal_file.fileno())
-                except Exception as ex:
+                except (OSError, ValueError) as ex:
                     logger.debug("Error flushing journal on flush: %s", ex)
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
@@ -692,7 +692,7 @@ class TransactionJournal:
                 for batch in table.to_batches():
                     for row in batch.to_pylist():
                         yield _unpack_row_data(row)
-            except Exception as exc:
+            except (OSError, ValueError, pa.ArrowException) as exc:
                 raise ValueError(f"Could not replay legacy Parquet journal {path}: {exc}") from exc
             return
 
@@ -727,7 +727,7 @@ class TransactionJournal:
         """
         with self._lock:
             if self._journal_file is None:
-                raise RuntimeError("Cannot read a closed transaction journal")
+                raise RuntimeError("Cannot read a closed event journal")
             self._journal_file.flush()
             file_state = _file_write_state(self._journal_file.fileno())
             if file_state != self._synced_file_state:
@@ -786,6 +786,6 @@ class TransactionJournal:
                     except OSError:
                         pass
                 self._open_journal()
-                logger.info("Transaction journal cleared (Arrow format).")
+                logger.info("Event journal cleared (Arrow format).")
             except OSError as e:
                 logger.error("Failed to clear journal: %s", e)

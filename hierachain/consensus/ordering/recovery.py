@@ -1,5 +1,5 @@
 """
-Ordering state recovery from the transaction journal for the HieraChain
+Ordering state recovery from the event journal for the HieraChain
 ordering service.
 """
 
@@ -39,7 +39,7 @@ def _extract_block_index(event_data: dict) -> int | None:
 
 
 class OrderingRecovery:
-    """Handles state recovery from the transaction journal"""
+    """Handles state recovery from the event journal"""
     def __init__(self, service, processor):
         self.service = service
         self.processor = processor
@@ -47,9 +47,9 @@ class OrderingRecovery:
         self.block_manager = processor.block_manager
 
     async def recover_state_async(self):
-        """Recover state from transaction journal by replaying events"""
+        """Recover state from the event journal by replaying events"""
         logger.info(
-            "Recovering state from Transaction Journal... Skipping blocks < %s",
+            "Recovering state from the event journal... Skipping blocks < %s",
             self.service.blocks_created
         )
         

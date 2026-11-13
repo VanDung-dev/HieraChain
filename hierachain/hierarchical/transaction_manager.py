@@ -116,7 +116,7 @@ class CrossChainTransactionManager:
         try:
             records = self._read_latest_records()
         except Exception as exc:
-            raise RuntimeError("Could not recover the cross-chain transaction journal") from exc
+            raise RuntimeError("Could not recover the cross-chain event journal") from exc
 
         for tx_id, record in records.items():
             source = record.get("source_chain")

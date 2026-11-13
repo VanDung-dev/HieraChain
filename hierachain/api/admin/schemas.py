@@ -107,7 +107,7 @@ class SecureEventRequest(BaseModel):
             "example": {
                 "entity_id": "asset-001",
                 "event_type": "transfer",
-                "details": {"amount": 100, "currency": "HRC"},
+                "details": {"value": 100, "currency": "HRC"},
                 "sender": "0x1234567890abcdef...",
                 "signature": "0xabcdef1234567890..."
             }

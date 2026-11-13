@@ -81,7 +81,7 @@ def write_parquet_log(path: str | Path, record: dict[str, Any]) -> None:
                 os.fsync(file.fileno())
             os.replace(temporary_path, final_path)
             _sync_directory(directory)
-        except Exception:
+        except (OSError, pa.ArrowException, TypeError, ValueError):
             _finish(p)
             raise
         finally:
