@@ -34,4 +34,14 @@ class LedgerStorage(Protocol):
 
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool: ...
 
+    def save_hierarchy_registry(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: str | None = None,
+        channel_ledgers: dict[str, Any] | None = None,
+    ) -> bool: ...
+
+    def load_hierarchy_registry(self) -> dict[str, Any] | None: ...
+
     def close(self) -> None: ...
