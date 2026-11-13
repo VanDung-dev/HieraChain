@@ -58,7 +58,7 @@ class KeyPair:
             private_key_bytes = HexEncoder.decode(private_key_hex.encode('utf-8'))
             signing_key = SigningKey(private_key_bytes)
             return cls(signing_key)
-        except Exception as e:
+        except (binascii.Error, ValueError) as e:
             raise CryptoError(f"Invalid private key format: {e!s}")
 
     def sign(self, message: bytes) -> str:
@@ -74,7 +74,7 @@ class KeyPair:
         try:
             signed = self._signing_key.sign(message)
             return signed.signature.hex()
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             raise CryptoError(f"Signing failed: {e!s}")
 
 

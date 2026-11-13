@@ -343,28 +343,28 @@ def validate_block_index(block_index: int, max_index: int | None = None) -> int:
     return block_index
 
 
-def validate_amount(
-    amount: float,
-    min_amount: float = 0.0,
-    max_amount: float | None = None
+def validate_value(
+    value: float,
+    min_value: float = 0.0,
+    max_value: float | None = None
 ) -> int | float:
     """
-    Validate that an amount (e.g., token amount) is valid.
+    Validate that a numeric value is within bounds.
 
     Args:
-        amount: The amount to validate.
-        min_amount: Minimum allowed amount (default 0, no negative amounts).
-        max_amount: Maximum allowed amount (optional, for overflow prevention).
+        value: The value to validate.
+        min_value: Minimum allowed value (default 0, no negative values).
+        max_value: Maximum allowed value (optional, for overflow prevention).
 
     Returns:
-        The validated amount.
+        The validated value.
 
     Raises:
-        ValidationError: If amount is invalid.
+        ValidationError: If value is invalid.
     """
     return validate_numeric_bounds(
-        amount,
-        min_val=min_amount,
-        max_val=max_amount,
-        field_name="amount"
+        value,
+        min_val=min_value,
+        max_val=max_value,
+        field_name="value"
     )

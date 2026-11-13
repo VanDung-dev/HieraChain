@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from hierachain.config.settings import settings
-from hierachain.security.security_utils import KeyPair
+from hierachain.security.security_utils import CryptoError, KeyPair
 from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def load_node_identity() -> NodeIdentity | None:
         with open(path, "rb") as f:
             data = loads_json(f.read())
         return NodeIdentity(data)
-    except Exception as e:
+    except (AttributeError, CryptoError, KeyError, OSError, TypeError, ValueError) as e:
         logger.error("Failed to load node identity from %s: %s", path, e)
         return None
 
@@ -50,7 +50,7 @@ def load_all_peer_public_keys(peers_file: str) -> dict[str, str]:
         with open(peers_file, "rb") as f:
             data = loads_json(f.read())
         return {node_id: identity["signing_public_key"] for node_id, identity in data.items()}
-    except Exception as e:
+    except (AttributeError, KeyError, OSError, TypeError, ValueError) as e:
         logger.error("Failed to load peer public keys from %s: %s", peers_file, e)
         return {}
 

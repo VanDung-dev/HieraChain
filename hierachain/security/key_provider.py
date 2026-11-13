@@ -11,7 +11,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
@@ -90,7 +90,7 @@ class LocalKeyProvider(KeyProvider):
             return cls(keypair)
         except json.JSONDecodeError:
             raise CryptoError(f"Invalid JSON format in {path}")
-        except Exception as e:
+        except (AttributeError, CryptoError, OSError, ValueError) as e:
             raise CryptoError(f"Failed to load identity from {path}: {e!s}")
 
 
@@ -149,7 +149,7 @@ class FileVaultProvider(KeyProvider):
             decrypted = f.decrypt(encrypted_blob)
             key_data = loads_json(decrypted)
             self._public_key = key_data['public_key']
-        except Exception:
+        except (InvalidToken, KeyError, TypeError, ValueError):
             raise CryptoError("Invalid vault password or corrupted vault")
 
     @property
