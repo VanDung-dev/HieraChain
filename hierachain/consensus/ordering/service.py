@@ -30,7 +30,7 @@ from hierachain.consensus.ordering.types import (
 )
 from hierachain.consensus.ordering.utils import generate_event_id, make_serializable
 from hierachain.core.block import Block
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
@@ -140,7 +140,7 @@ class OrderingService:
         storage_dir = config.get("storage_dir", "journal")
         node_id = nodes[0].node_id if nodes else "unknown"
         active_log_name = f"node_{node_id}_journal.arrow"
-        self.journal = TransactionJournal(
+        self.journal = EventJournal(
             storage_dir=storage_dir, active_log_name=active_log_name
         )
         self._journal_lookup = JournalEventLookup(self.journal, _event_content_fingerprint)

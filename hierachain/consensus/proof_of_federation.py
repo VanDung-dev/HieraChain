@@ -58,7 +58,7 @@ class ProofOfFederation(BaseConsensus):
             try:
                 key_bytes = HexEncoder.decode(signing_key_hex.encode("utf-8"))
                 self._signing_key = SigningKey(key_bytes)
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 logger.error("Invalid signing_key_hex for PoF: %s", e)
     
         # Configuration defaults (can be updated via settings)
