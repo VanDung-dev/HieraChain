@@ -1,6 +1,6 @@
 ---
 title: "Error Mitigation Module"
-description: "Ghi nhật ký giao dịch bền vững cho ledger phân cấp."
+description: "Ghi nhật ký sự kiện bền vững cho ledger phân cấp."
 icon: material/bug
 ---
 
@@ -8,9 +8,9 @@ icon: material/bug
 
 ## 1. Tổng quan
 
-Module `error_mitigation` cung cấp ghi nhật ký giao dịch bền vững. Khôi phục vận hành thuộc về tầng deployment.
+Module `error_mitigation` cung cấp ghi nhật ký sự kiện bền vững. Khôi phục vận hành thuộc về tầng deployment.
 
-## 2. Nhật ký giao dịch (`journal.py`)
+## 2. Nhật ký sự kiện (`journal.py`)
 
 `TransactionJournal` cung cấp khả năng lưu trữ ghi trước:
 

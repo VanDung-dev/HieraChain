@@ -1,6 +1,6 @@
 ---
 title: "Error Mitigation Module"
-description: "Durable transaction journaling for the hierarchical ledger."
+description: "Durable event journaling for the hierarchical ledger."
 icon: material/bug
 ---
 
@@ -8,9 +8,9 @@ icon: material/bug
 
 ## 1. Overview
 
-The `error_mitigation` module provides durable transaction journaling. Operational restoration remains owned by the deployment layer.
+The `error_mitigation` module provides durable event journaling. Operational restoration remains owned by the deployment layer.
 
-## 2. Transaction journaling (`journal.py`)
+## 2. Event journaling (`journal.py`)
 
 `TransactionJournal` provides write-ahead persistence:
 

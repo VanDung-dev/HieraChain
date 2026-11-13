@@ -36,7 +36,7 @@ HieraChain chia storage thành các lớp để cân bằng giữa độ bền v
 
     * **SQLite/Postgres** qua `SQLBase` + `init_database_schema()` (các bảng `chains`, `blocks`, `events`, `proofs`, `chain_state`; index composite).
     * **Redis**: `RedisLedgerAdapter` trong `hierachain/adapters/database/redis_ledger.py` lưu block hierarchy đã ký trong list append-only. `HierarchyManager` và orderer Sub-Chain chọn adapter này với `HRC_STORAGE_BACKEND=redis` sau khi kiểm tra persistence. `RedisStorageAdapter` vẫn phục vụ indexing phụ trợ và các helper registry.
-    * **Memory**: `HRC_STORAGE_BACKEND=memory` cho test. Không có File Adapter tích hợp sẵn. Log Parquet công bố snapshot active bền dữ liệu tối đa 1.024 bản ghi; segment đã đóng giữ bất biến trong `<path>.segments` và đọc bằng `read_parquet_log()` (bao gồm log legacy chỉ có một tệp); transaction journal dùng Arrow IPC append-only (`error_mitigation/journal.py`), không dùng để lưu chain.
+    * **Memory**: `HRC_STORAGE_BACKEND=memory` cho test. Không có File Adapter tích hợp sẵn. Log Parquet công bố snapshot active bền dữ liệu tối đa 1.024 bản ghi; segment đã đóng giữ bất biến trong `<path>.segments` và đọc bằng `read_parquet_log()` (bao gồm log legacy chỉ có một tệp); event journal dùng Arrow IPC append-only (`error_mitigation/journal.py`), không dùng để lưu chain.
 
 *   :material-cloud-sync:{ .lg .middle } __Off-chain Storage (IPFS)__
 

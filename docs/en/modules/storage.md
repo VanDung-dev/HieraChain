@@ -36,7 +36,7 @@ HieraChain splits storage into layers to balance durability and query speed:
 
     * **SQLite/Postgres** via `SQLBase` + `init_database_schema()` (`chains`, `blocks`, `events`, `proofs`, `chain_state` tables; composite indexes).
     * **Redis**: `RedisLedgerAdapter` in `hierachain/adapters/database/redis_ledger.py` stores signed hierarchy blocks in append-only lists. `HierarchyManager` and Sub-Chain orderers select it with `HRC_STORAGE_BACKEND=redis` after checking persistence. `RedisStorageAdapter` remains available for auxiliary indexing and registry helpers.
-    * **Memory**: `HRC_STORAGE_BACKEND=memory` for tests. There is no built-in File Adapter. Parquet logs publish durable active snapshots of up to 1,024 records; sealed segments remain immutable under `<path>.segments` and read with `read_parquet_log()` (including legacy single-file logs); the transaction journal uses append-only Arrow IPC (`error_mitigation/journal.py`), not chain storage.
+    * **Memory**: `HRC_STORAGE_BACKEND=memory` for tests. There is no built-in File Adapter. Parquet logs publish durable active snapshots of up to 1,024 records; sealed segments remain immutable under `<path>.segments` and read with `read_parquet_log()` (including legacy single-file logs); the event journal uses append-only Arrow IPC (`error_mitigation/journal.py`), not chain storage.
 
 *   :material-cloud-sync:{ .lg .middle } __Off-chain Storage (IPFS)__
 
