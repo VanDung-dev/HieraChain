@@ -25,7 +25,7 @@ class ConsensusError(Exception):
     """Exception raised for consensus-related errors"""
 
 
-class TransactionState(str, Enum):
+class CrossChainState(str, Enum):
     """States for a cross-chain transaction."""
 
     PENDING = "pending"
@@ -44,7 +44,11 @@ class CrossChainTransaction:
     source_chain: str
     destination_chain: str
     payload: dict[str, Any]
-    state: TransactionState = TransactionState.PENDING
+    state: CrossChainState = CrossChainState.PENDING
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
     error_message: str | None = None
+
+
+# Backward-compatible alias.
+TransactionState = CrossChainState

@@ -12,12 +12,13 @@ import uuid
 from typing import Any
 
 from hierachain.config.settings import settings
-from hierachain.error_mitigation.journal import TransactionJournal
-from hierachain.hierarchical.types import CrossChainTransaction, TransactionState
+from hierachain.error_mitigation.journal import EventJournal
+from hierachain.hierarchical.types import CrossChainState, CrossChainTransaction
 
 # Backward-compat re-exports
 CrossChainTransaction = CrossChainTransaction
-TransactionState = TransactionState
+TransactionState = CrossChainState
+TransactionJournal = EventJournal
 
 logger = logging.getLogger(__name__)
 _JOURNAL_EVENT = "cross_chain_2pc"
@@ -127,13 +128,13 @@ class CrossChainTransactionManager:
 
             phase = record["phase"]
             if phase == "committed":
-                state = TransactionState.COMMITTED
+                state = CrossChainState.COMMITTED
             elif phase == "rolled_back":
-                state = TransactionState.ROLLED_BACK
+                state = CrossChainState.ROLLED_BACK
             elif phase == "failed":
-                state = TransactionState.FAILED
+                state = CrossChainState.FAILED
             else:
-                state = TransactionState.IN_DOUBT
+                state = CrossChainState.IN_DOUBT
 
             transaction = CrossChainTransaction(
                 transaction_id=tx_id,
@@ -155,7 +156,7 @@ class CrossChainTransactionManager:
             return None
         return source, destination
 
-    def _set_state(self, transaction: CrossChainTransaction, state: TransactionState) -> None:
+    def _set_state(self, transaction: CrossChainTransaction, state: CrossChainState) -> None:
         transaction.state = state
         transaction.updated_at = time.time()
 
@@ -181,11 +182,11 @@ class CrossChainTransactionManager:
     ) -> bool:
         tx_id = transaction.transaction_id
         if self._phases.get(tx_id) in _COMMIT_PHASES:
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             logger.warning("2PC abort refused after a possible COMMIT decision for %s", tx_id)
             return False
 
-        self._set_state(transaction, TransactionState.IN_DOUBT)
+        self._set_state(transaction, CrossChainState.IN_DOUBT)
         # This record is advisory; the durable absence of a COMMIT decision is
         # what makes abort the safe recovery action.
         self._journal_record(transaction, "abort_pending")
@@ -205,13 +206,13 @@ class CrossChainTransactionManager:
             transaction.error_message = "; ".join(
                 part for part in (transaction.error_message, *failures) if part
             )
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             self._journal_record(transaction, "abort_pending")
             return False
 
-        self._set_state(transaction, TransactionState.ROLLED_BACK)
+        self._set_state(transaction, CrossChainState.ROLLED_BACK)
         if not self._journal_record(transaction, "rolled_back"):
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             return False
         return True
 
@@ -233,7 +234,7 @@ class CrossChainTransactionManager:
             self._abort_before_decision(transaction, source_chain, dest_chain)
             return False
 
-        self._set_state(transaction, TransactionState.PREPARED)
+        self._set_state(transaction, CrossChainState.PREPARED)
         if not self._journal_record(transaction, "prepared"):
             transaction.error_message = "Could not persist prepared phase"
             self._abort_before_decision(transaction, source_chain, dest_chain)
@@ -266,7 +267,7 @@ class CrossChainTransactionManager:
                         )
             except Exception as exc:
                 transaction.error_message = f"Forward recovery is waiting for prepared participants: {exc}"
-                self._set_state(transaction, TransactionState.IN_DOUBT)
+                self._set_state(transaction, CrossChainState.IN_DOUBT)
                 logger.warning("2PC forward recovery is waiting for %s: %s", tx_id, exc)
                 return False
 
@@ -283,14 +284,14 @@ class CrossChainTransactionManager:
 
         if failures:
             transaction.error_message = "; ".join(failures)
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             logger.error("2PC commit decision %s remains in doubt: %s", tx_id, transaction.error_message)
             return False
 
-        self._set_state(transaction, TransactionState.COMMITTED)
+        self._set_state(transaction, CrossChainState.COMMITTED)
         if not self._journal_record(transaction, "committed"):
             transaction.error_message = "Both participants committed, but the terminal acknowledgment was not persisted"
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             return False
         return True
 
@@ -308,12 +309,12 @@ class CrossChainTransactionManager:
         dest_chain = self.hierarchy_manager.get_sub_chain(transaction.destination_chain)
         if not _supports_2pc(source_chain) or not _supports_2pc(dest_chain):
             transaction.error_message = "Source or destination is not a registered 2PC participant"
-            self._set_state(transaction, TransactionState.FAILED)
+            self._set_state(transaction, CrossChainState.FAILED)
             return False
 
         if not self._journal_record(transaction, "begin"):
             transaction.error_message = "Could not persist transaction before prepare"
-            self._set_state(transaction, TransactionState.FAILED)
+            self._set_state(transaction, CrossChainState.FAILED)
             return False
 
         if not self._prepare_participants(transaction, source_chain, dest_chain):
@@ -323,10 +324,10 @@ class CrossChainTransactionManager:
         if not self._journal_record(transaction, "commit"):
             transaction.error_message = "Could not confirm durable COMMIT decision"
             self._phases[transaction.transaction_id] = "commit_unknown"
-            self._set_state(transaction, TransactionState.IN_DOUBT)
+            self._set_state(transaction, CrossChainState.IN_DOUBT)
             return False
 
-        self._set_state(transaction, TransactionState.IN_DOUBT)
+        self._set_state(transaction, CrossChainState.IN_DOUBT)
         return self._commit_forward(transaction, source_chain, dest_chain)
 
     def _refresh_unknown_decisions(self) -> None:

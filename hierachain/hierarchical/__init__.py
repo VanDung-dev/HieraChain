@@ -7,6 +7,7 @@ from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.hierarchical.types import (
     ConsensusError,
+    CrossChainState,
     CrossChainTransaction,
     NetworkError,
     OrganizationError,
@@ -15,6 +16,7 @@ from hierachain.hierarchical.types import (
 
 __all__ = [
     'ConsensusError',
+    'CrossChainState',
     'CrossChainTransaction',
     'HierarchyManager',
     'MainChain',
