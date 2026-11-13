@@ -55,7 +55,9 @@ class HashedKeyStorage(MutableMapping[str, Any]):
     def __contains__(self, key: object) -> bool:
         return isinstance(key, str) and _key_digest(key) in self._backend
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: object, default: Any = None) -> Any:
+        if not isinstance(key, str):
+            return default
         return self._backend.get(_key_digest(key), default)
 
 
