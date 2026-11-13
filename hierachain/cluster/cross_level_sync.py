@@ -87,6 +87,61 @@ def _find_anchor_block(
     return None
 
 
+def _iter_proof_events(mainchain: Any) -> Iterator[dict[str, Any]]:
+    """Yield recorded and pending proof events from a MainChain."""
+    pending = getattr(mainchain, "pending_events", None)
+    if isinstance(pending, list):
+        yield from pending
+    chain = getattr(mainchain, "chain", None)
+    if isinstance(chain, list):
+        for block in chain:
+            events = (
+                block.to_event_list()
+                if callable(getattr(block, "to_event_list", None))
+                else getattr(block, "events", [])
+            )
+            if isinstance(events, list):
+                yield from events
+
+
+def _find_proof_at_index(
+    mainchain: Any, subchain_id: str, block_index: int
+) -> dict[str, Any] | None:
+    """Return the first proof anchor for a Sub-chain at a given block index."""
+    for event in _iter_proof_events(mainchain):
+        details = event.get("details")
+        metadata = event.get("metadata")
+        if not isinstance(details, dict) or not isinstance(metadata, dict):
+            continue
+        if (
+            event.get("event") == "proof_submission"
+            and details.get("sub_chain_name") == subchain_id
+            and metadata.get("latest_block_index") == block_index
+        ):
+            return event
+    return None
+
+
+def _derive_sync_cursor(mainchain: Any | None, subchain_id: str) -> int | None:
+    """Return the highest anchored block index recorded for a Sub-chain."""
+    if mainchain is None:
+        return None
+    cursor: int | None = None
+    for event in _iter_proof_events(mainchain):
+        details = event.get("details")
+        metadata = event.get("metadata")
+        if not isinstance(details, dict) or not isinstance(metadata, dict):
+            continue
+        if (
+            event.get("event") == "proof_submission"
+            and details.get("sub_chain_name") == subchain_id
+        ):
+            index = metadata.get("latest_block_index")
+            if isinstance(index, int) and (cursor is None or index > cursor):
+                cursor = index
+    return cursor
+
+
 def _verify_anchor_exists(
     mainchain: Any, subchain_id: str, state_root: str, proof_hash: str | None = None
 ) -> bool:
@@ -173,6 +228,24 @@ def _apply_resolution_strategy(
     return False
 
 
+def _subchain_overrides(
+    strategy: ConflictResolutionStrategy,
+    existing_event: dict[str, Any],
+    new_timestamp: float,
+) -> bool | None:
+    """Return True to replace an existing anchor, False to keep it, None if manual."""
+    if strategy == ConflictResolutionStrategy.MANUAL:
+        return None
+    if strategy == ConflictResolutionStrategy.MAINCHAIN_WINS:
+        return False
+    if strategy == ConflictResolutionStrategy.SUBCHAIN_WINS:
+        return True
+    existing_timestamp = existing_event.get("timestamp", 0.0)
+    if not isinstance(existing_timestamp, (int, float)):
+        return True
+    return new_timestamp >= existing_timestamp
+
+
 def _verify_proof_with(
     verifier: Any, proof: bytes, public_inputs: dict[str, Any]
 ) -> bool:
@@ -240,6 +313,7 @@ class CrossLevelSyncManager:
         self._current_request: CrossLevelSyncRequest | None = None
         self._pending_blocks: list[Any] = []
         self._conflicts: list[SyncConflict] = []
+        self._sync_cursors: dict[str, int] = {}
 
         # Connected chains
         self._mainchain_ref: Any = None
@@ -385,6 +459,12 @@ class CrossLevelSyncManager:
                     "MainChain does not support proof records", start_time
                 )
 
+            prepared = self._prepare_sync(
+                sub_chain_id, latest_block, state_root, start_time
+            )
+            if prepared is not None:
+                return prepared
+
             if not subchain.submit_proof_to_main(
                 self._mainchain_ref, zk_proof=proof
             ):
@@ -408,6 +488,82 @@ class CrossLevelSyncManager:
             logger.error("Sync to MainChain failed: %s", e)
             return self._handle_sync_failure(str(e), start_time)
 
+    def _prepare_sync(
+        self,
+        sub_chain_id: str,
+        latest_block: Any,
+        state_root: str,
+        start_time: float,
+    ) -> SyncResult | None:
+        """Skip already-anchored tips and handle conflicting anchors.
+
+        Returns None when the caller should submit the proof, otherwise the
+        terminal SyncResult for this call.
+        """
+        existing = _find_proof_at_index(
+            self._mainchain_ref, sub_chain_id, latest_block.index
+        )
+        if existing is None:
+            return None
+
+        details = existing.get("details") or {}
+        metadata = existing.get("metadata") or {}
+        existing_root = metadata.get("latest_merkle_root")
+        existing_hash = details.get("proof_hash")
+        if existing_root == state_root and existing_hash == latest_block.hash:
+            if not _verify_anchor_exists(
+                self._mainchain_ref, sub_chain_id, state_root, latest_block.hash
+            ):
+                return None
+            return self._handle_sync_success(
+                sub_chain_id,
+                state_root,
+                start_time,
+                blocks_synced=0,
+                block_index=latest_block.index,
+            )
+
+        conflict = SyncConflict(
+            conflict_id=f"{sub_chain_id}:{latest_block.index}:{existing_hash}",
+            source_chain=sub_chain_id,
+            target_chain=getattr(self._mainchain_ref, "name", "mainchain"),
+            block_index=latest_block.index,
+            source_hash=latest_block.hash,
+            target_hash=existing_hash or "",
+        )
+        with self._state_lock:
+            self._conflicts.append(conflict)
+        self._increment_stat("conflicts_total")
+
+        strategy = self.conflict_strategy
+        if self._on_conflict:
+            strategy = self._on_conflict(conflict)
+        override = _subchain_overrides(
+            strategy,
+            existing,
+            getattr(latest_block, "timestamp", time.time()),
+        )
+        if override is None:
+            return self._handle_sync_failure(
+                f"Unresolved sync conflict at block {latest_block.index}",
+                start_time,
+            )
+
+        conflict.resolution = (
+            "Used SubChain state" if override else "Used MainChain state"
+        )
+        conflict.resolved = True
+        self._increment_stat("conflicts_resolved")
+        if override:
+            return None
+        return self._handle_sync_success(
+            sub_chain_id,
+            state_root,
+            start_time,
+            blocks_synced=0,
+            block_index=latest_block.index,
+        )
+
     def _handle_sync_failure(self, error_message: str, start_time: float) -> SyncResult:
         """Helper to handle sync failure and return result."""
         with self._state_lock:
@@ -424,15 +580,20 @@ class CrossLevelSyncManager:
         sub_chain_id: str,
         state_root: str,
         start_time: float,
+        *,
+        blocks_synced: int = 1,
+        block_index: int | None = None,
     ) -> SyncResult:
         """Helper to handle sync success and return result."""
         with self._state_lock:
-            self._stats["blocks_synced_up"] += 1
+            self._stats["blocks_synced_up"] += blocks_synced
             self._stats["syncs_completed"] += 1
+            if block_index is not None:
+                self._sync_cursors[sub_chain_id] = block_index
 
         result = SyncResult(
             success=True,
-            blocks_synced=1,
+            blocks_synced=blocks_synced,
             duration_seconds=time.time() - start_time,
             state_root_after=state_root,
         )
@@ -526,6 +687,17 @@ class CrossLevelSyncManager:
         """Get list of unresolved conflicts."""
         return [c for c in self._conflicts if not c.resolved]
 
+    def get_sync_cursor(self, sub_chain_id: str) -> int | None:
+        """Return the highest block index already anchored for a Sub-chain."""
+        with self._state_lock:
+            if sub_chain_id in self._sync_cursors:
+                return self._sync_cursors[sub_chain_id]
+        cursor = _derive_sync_cursor(self._mainchain_ref, sub_chain_id)
+        if cursor is not None:
+            with self._state_lock:
+                self._sync_cursors[sub_chain_id] = cursor
+        return cursor
+
     def get_status(self) -> CrossLevelSyncStatus:
         """Get current sync status."""
         with self._state_lock:
@@ -562,6 +734,7 @@ class CrossLevelSyncManager:
             self._current_request = None
             self._pending_blocks.clear()
             self._conflicts.clear()
+            self._sync_cursors.clear()
 
     def _increment_stat(self, name: str) -> None:
         with self._state_lock:
