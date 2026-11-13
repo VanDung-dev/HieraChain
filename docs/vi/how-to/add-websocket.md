@@ -8,7 +8,7 @@ icon: material/connection
 
 ## Mục đích
 
-Kết nối WebSocket tới HieraChain để đăng ký subscription và nhận thông điệp từ các helper broadcast. Luồng commit/sự kiện của ledger không tự gọi các helper này; ứng dụng phải tích hợp chúng. Xem [Workflow WebSocket](../workflows/websocket-streaming.md).
+Kết nối WebSocket tới HieraChain để đăng ký subscription và nhận thông điệp từ các helper broadcast. Luồng gửi event Sub-Chain và channel tự gọi `broadcast_event()`; thông báo commit block yêu cầu ứng dụng tự gọi `broadcast_new_block()`. Xem [Workflow WebSocket](../workflows/websocket-streaming.md).
 
 ## Kết nối WebSocket
 
@@ -222,7 +222,7 @@ Phản hồi mẫu:
 | Lỗi | Nguyên nhân | Cách xử lý |
 |------|-------------|------------|
 | Kết nối bị từ chối | Server chưa chạy | Chạy `python -m hierachain` |
-| Không nhận thông điệp ledger | Thiếu subscription hoặc tích hợp broadcast | Kiểm tra subscription và bảo đảm ứng dụng gọi các helper broadcast |
+| Không nhận thông điệp ledger | Thiếu subscription hoặc chưa nối thông báo block | Kiểm tra subscription cho event; ứng dụng phải gọi `broadcast_new_block()` cho thông báo block |
 | Mất kết nối đột ngột | Server khởi động lại | Cho client tự kết nối lại |
 
 ## Liên quan

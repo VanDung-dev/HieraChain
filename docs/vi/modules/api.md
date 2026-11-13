@@ -16,7 +16,7 @@ Import helper của API client, như `hierachain.api.storage.ipfs_client`, khôn
 
 * FastAPI server (`server.py`) là điểm khởi chạy. Nó thiết lập middleware, xác thực và router.
 * REST API có ba nhóm (ledger, business, admin) cho thao tác lõi, tính năng nghiệp vụ và quản trị hệ thống.
-* Gateway WebSocket quản lý subscription và helper broadcast; ứng dụng phải nối sự kiện ledger vào các helper này.
+* Gateway WebSocket quản lý subscription và helper broadcast; luồng gửi event Sub-Chain và channel tự gọi `broadcast_event()`, còn thông báo commit block yêu cầu ứng dụng gọi `broadcast_new_block()`.
 * Tích hợp IPFS xử lý dữ liệu off-chain với mã hóa AES-256-GCM. Payload lớn nằm ngoài chain, chỉ CID được lưu trên chain.
 
 ## Kiến trúc và bảo mật

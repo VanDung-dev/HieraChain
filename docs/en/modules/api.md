@@ -16,7 +16,7 @@ Importing API client helpers, such as `hierachain.api.storage.ipfs_client`, does
 
 * FastAPI server (`server.py`) is the entry point. It sets up middleware, authentication, and routers.
 * Versioned REST API has three groups (ledger, business, admin) for core operations, business features, and system administration.
-* WebSocket gateway manages subscriptions and broadcast helpers; the application must connect ledger events to those helpers.
+* WebSocket gateway manages subscriptions and broadcast helpers; Sub-Chain and channel event submission calls `broadcast_event()`, while block-commit notifications require an application call to `broadcast_new_block()`.
 * IPFS integration handles off-chain data with AES-256-GCM encryption. Large payloads stay off chain and only the CID is stored on chain.
 
 ## Architecture and security

@@ -8,7 +8,7 @@ icon: material/connection
 
 ## Purpose
 
-Connect to HieraChain over WebSocket to register subscriptions and receive messages sent through its broadcast helpers. The ledger commit/event paths do not invoke those helpers automatically; the application must supply that integration. See [WebSocket workflow](../workflows/websocket-streaming.md).
+Connect to HieraChain over WebSocket to register subscriptions and receive messages sent through its broadcast helpers. Sub-Chain and channel event submission call `broadcast_event()` automatically; block-commit notifications require the application to call `broadcast_new_block()`. See [WebSocket workflow](../workflows/websocket-streaming.md).
 
 ## WebSocket connection
 
@@ -222,7 +222,7 @@ Response:
 | Error | Cause | Solution |
 |------|-------------|------------|
 | Connection refused | Server not running | Run `python -m hierachain` |
-| No ledger messages received | Missing subscription or broadcast integration | Confirm subscription and ensure the application calls the broadcast helpers |
+| No ledger messages received | Missing subscription, or block notifications not wired | Confirm the subscription for event messages; applications must call `broadcast_new_block()` for block notifications |
 | Sudden disconnect | Server restart | Auto-reconnect in client |
 
 ## Related
