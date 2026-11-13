@@ -116,3 +116,12 @@ def test_signed_envelope_does_not_exempt_nested_business_terms() -> None:
     assert not validate_event_structure({**event, "details": {"sender": "person"}})
     assert not validate_event_structure({**event, "details": {"amount": 1}})
     assert not validate_event_structure({**event, "sender": "wallet"})
+
+
+def test_term_validation_uses_word_boundaries_and_envelope_sender_exception() -> None:
+    event = {"entity_id": "e", "event": "created", "timestamp": 1, "sender": "0x" + "ab" * 32}
+    assert validate_event_structure({**event, "details": {"value": 100}})
+    assert validate_event_structure({**event, "details": {"note": "coffee and tokenization"}})
+    assert validate_event_structure({**event, "details": {"ip_address": "10.0.0.1"}})
+    assert not validate_event_structure({**event, "details": {"transaction": "transfer"}})
+    assert not validate_event_structure({**event, "details": {"note": "service fee"}})
