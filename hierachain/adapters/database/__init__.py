@@ -5,10 +5,11 @@ Database adapters for blockchain data persistence.
 from importlib import import_module
 
 __all__ = [
-    "PostgresAdapter", "RedisLedgerAdapter", "RedisStorageAdapter", "SQLBase", "SQLiteAdapter",
+    "LedgerStorage", "PostgresAdapter", "RedisLedgerAdapter", "RedisStorageAdapter", "SQLBase", "SQLiteAdapter",
 ]
 
 _MODULES = {
+    "LedgerStorage": "contract",
     "PostgresAdapter": "postgres_adapter",
     "RedisStorageAdapter": "redis_adapter",
     "RedisLedgerAdapter": "redis_ledger",
