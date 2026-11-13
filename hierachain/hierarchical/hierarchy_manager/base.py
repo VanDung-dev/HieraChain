@@ -1,5 +1,10 @@
 """
 HierarchyManager class — coordinates Main Chain and Sub-Chains.
+
+Behavior is composed from responsibility-specific mixins:
+    - ``OrganizationOperationsMixin`` - organizations, channels, access control
+    - ``SystemOperationsMixin``       - system reports and maintenance
+    - ``TransactionCoordinationMixin`` - cross-chain coordinator plumbing
 """
 
 from __future__ import annotations
@@ -8,55 +13,41 @@ import logging
 import os
 import threading
 import time
-from collections.abc import Callable, Iterator
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import ExitStack, contextmanager
+from collections.abc import Callable
+from contextlib import ExitStack
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
-_SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
-
-
-@contextmanager
-def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]:
-    if max_workers and max_workers != getattr(_SHARED_POOL, "_max_workers", None):
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            yield pool
-    else:
-        yield _SHARED_POOL
-
-from hierachain.hierarchical.channel import Channel
-from hierachain.hierarchical.main_chain import MainChain
-from hierachain.hierarchical.multi_org import MultiOrgNetwork
-from hierachain.hierarchical.private_data import PrivateCollection
-
-if TYPE_CHECKING:
-    from hierachain.domains.chains.domain_chain import DomainChain
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
 from hierachain.cluster.cross_level_sync_types import (
     ConflictResolutionStrategy,
 )
 from hierachain.config.settings import settings
+from hierachain.hierarchical.channel import Channel
 from hierachain.hierarchical.hierarchy_manager import recovery, registry
-from hierachain.hierarchical.hierarchy_manager.organization import (
-    _build_channel_orgs,
-    _build_collection_orgs,
-    _init_organization_msp,
-    _is_organization_admin,
-    _trace_entity_history,
+from hierachain.hierarchical.hierarchy_manager.org_ops import (
+    OrganizationOperationsMixin,
 )
-from hierachain.hierarchical.hierarchy_manager.validation import (
-    _compute_proof_consistency,
-    _compute_system_integrity_report,
-    _validate_cross_chain_consistency,
+from hierachain.hierarchical.hierarchy_manager.system_ops import SystemOperationsMixin
+from hierachain.hierarchical.hierarchy_manager.transaction_ops import (
+    TransactionCoordinationMixin,
 )
+from hierachain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical.multi_org import MultiOrgNetwork
 from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
+
+if TYPE_CHECKING:
+    from hierachain.domains.chains.domain_chain import DomainChain
 
 logger = logging.getLogger(__name__)
 
 
-class HierarchyManager:
+class HierarchyManager(
+    OrganizationOperationsMixin,
+    SystemOperationsMixin,
+    TransactionCoordinationMixin,
+):
     """
     Manages the hierarchy of chains (Main Chain and Sub-Chains).
 
@@ -87,12 +78,12 @@ class HierarchyManager:
         self.chain_access: dict[str, dict[str, list[str]]] = {}
         self.network: MultiOrgNetwork | None = None
         self.channels: dict[str, Channel] = {}
-        self.private_collections: dict[str, PrivateCollection] = {}
+        self.private_collections: dict[str, Any] = {}
         self._registry_lock = threading.RLock()
         self._registry_state: dict[str, Any] | None = None
         self._registry_mutating = False
 
-        self._transaction_manager: CrossChainTransactionManager | None = None
+        self._transaction_manager: Any | None = None
         self._closed = False
 
         # Bootstrap owns these resources until all recovery steps succeed.
@@ -249,361 +240,6 @@ class HierarchyManager:
 
     def get_main_chain(self) -> MainChain:
         return self.main_chain
-
-    def initiate_cross_chain_transaction(
-        self, source_chain_name: str, dest_chain_name: str, payload: dict[str, Any],
-    ) -> str | None:
-        return self.transaction_manager.initiate_transaction(
-            source_chain_name, dest_chain_name, payload
-        )
-
-    def start_operation(
-        self,
-        sub_chain_name: str,
-        entity_id: str,
-        operation_type: str,
-        details: dict[str, Any] | None = None
-    ) -> bool:
-        chain = self.get_sub_chain(sub_chain_name)
-        if not chain:
-            return False
-        return chain.start_domain_operation(entity_id, operation_type, details)
-
-    def complete_operation(
-        self,
-        sub_chain_name: str,
-        entity_id: str,
-        operation_type: str,
-        result: dict[str, Any] | None = None
-    ) -> bool:
-        chain = self.get_sub_chain(sub_chain_name)
-        if not chain:
-            return False
-        return chain.complete_operation(entity_id, operation_type, result)
-
-    def submit_proof_to_main_chain(self, sub_chain_name: str) -> bool:
-        chain = self.get_sub_chain(sub_chain_name)
-        if not chain:
-            return False
-
-        if self.cross_level_sync:
-            sync_result = self.cross_level_sync.sync_to_mainchain(
-                sub_chain_name
-            )
-            if not sync_result.success:
-                logger.warning(
-                    "Cross-level sync to MainChain failed: %s",
-                    sync_result.error_message,
-                )
-                return False
-            return True
-
-        return chain.submit_proof_to_main(self.main_chain) is True
-
-    def get_system_overview(self) -> dict[str, Any]:
-        total_tx = 0
-        total_blocks = len(self.main_chain.chain)
-        domain_distribution: dict[str, int] = {}
-
-        for chain in self.sub_chains.values():
-            stats = chain.get_domain_statistics()
-            total_tx += stats.get("total_operations", 0) + stats.get("total_events", 0)
-            total_blocks += stats.get("total_blocks", 0)
-            d_type = chain.domain_type
-            domain_distribution[d_type] = domain_distribution.get(d_type, 0) + 1
-
-        return {
-            "uptime_seconds": time.time() - self.system_started_at,
-            "total_chains": len(self.sub_chains),
-            "main_chain_blocks": len(self.main_chain.chain),
-            "total_system_blocks": total_blocks,
-            "total_system_transactions": total_tx,
-            "domain_distribution": domain_distribution,
-        }
-
-    def trace_entity_across_chains(
-        self, entity_id: str
-    ) -> dict[str, list[dict[str, Any]]]:
-        return _trace_entity_history(self.sub_chains, entity_id)
-
-    def get_system_integrity_report(self) -> dict[str, Any]:
-        return _compute_system_integrity_report(self)
-
-    def submit_all_proofs(self) -> dict[str, bool]:
-        names = list(self.sub_chains.keys())
-        results: dict[str, bool] = {}
-
-        with _shared_pool(max_workers=min(len(names), 8)) as pool:
-            futures = {
-                pool.submit(self.submit_proof_to_main_chain, name): name
-                for name in names
-            }
-            for future in as_completed(futures):
-                name = futures[future]
-                try:
-                    results[name] = future.result()
-                except Exception as e:
-                    logger.error("Proof submission failed for %s: %s", name, e)
-                    results[name] = False
-
-        return results
-
-    def sync_all_subchains_from_mainchain(self) -> dict[str, dict[str, Any]]:
-        names = list(self.sub_chains.keys())
-        results: dict[str, dict[str, Any]] = {}
-
-        with _shared_pool(max_workers=min(len(names), 8)) as pool:
-            futures = {
-                pool.submit(self.cross_level_sync_subchain, name): name
-                for name in names
-            }
-            for future in as_completed(futures):
-                name = futures[future]
-                try:
-                    results[name] = future.result()
-                except Exception as e:
-                    logger.error("Sync failed for %s: %s", name, e)
-                    results[name] = {"success": False, "error_message": str(e)}
-
-        return results
-
-    def cross_level_sync_subchain(
-        self, sub_chain_name: str, from_block: int = 0, to_block: int = -1
-    ) -> dict[str, Any]:
-        if not self.cross_level_sync:
-            return {"success": False, "error_message": "Cross-level sync not enabled"}
-
-        result = self.cross_level_sync.sync_from_mainchain(
-            sub_chain_name, from_block, to_block
-        )
-        return result.to_dict()
-
-    def finalize_main_chain_block(self) -> Any | None:
-        if hasattr(self.main_chain, "finalize_block"):
-            return self.main_chain.finalize_block()
-        return None
-
-    def get_cross_chain_statistics(self) -> dict[str, Any]:
-        total_entities = 0
-        domain_dist = {}
-        for chain in self.sub_chains.values():
-            if hasattr(chain, "entity_registry"):
-                total_entities += len(chain.entity_registry)
-                domain_dist[chain.domain_type] = len(chain.entity_registry)
-
-        return {
-            "total_unique_entities": total_entities,
-            "cross_chain_operations": 0,
-            "total_proofs_submitted": self.main_chain.proof_count,
-            "domain_distribution": domain_dist,
-        }
-
-    def configure_auto_proof_submission(
-        self, enabled: bool, interval: float = 60.0
-    ) -> None:
-        self.auto_proof_submission = enabled
-        self.proof_submission_interval = int(interval)
-
-        for sub_chain in self.sub_chains.values():
-            sub_chain.auto_proof_submission = enabled
-            sub_chain.proof_submission_interval = interval
-
-    def execute_system_maintenance(self) -> dict[str, Any]:
-        maintenance_results: dict[str, Any] = {
-            "timestamp": time.time(), "operations": []
-        }
-        operations: list[dict[str, Any]] = maintenance_results["operations"]
-
-        proof_results = self.submit_all_proofs()
-        operations.append({"operation": "proof_submission", "results": proof_results})
-
-        main_chain_result = self.finalize_main_chain_block()
-        if main_chain_result:
-            operations.append(
-                {"operation": "main_chain_finalization", "result": main_chain_result}
-            )
-
-        self.system_stats["system_uptime"] = time.time() - self.system_started_at
-
-        return maintenance_results
-
-    def validate_cross_chain_consistency(self) -> dict[str, Any]:
-        return _validate_cross_chain_consistency(self)
-
-    def _check_proof_consistency(self) -> dict[str, Any]:
-        return _compute_proof_consistency(self.main_chain, self.sub_chains)
-
-    def create_organization(
-        self, org_id: str, name: str, admin_users: list[str] | None = None
-    ) -> Any:
-        def change() -> Any:
-            if org_id in self.organizations:
-                raise ValueError(f"Organization {org_id} already exists")
-
-            org = _init_organization_msp(org_id, name, admin_users)
-            self.organizations[org_id] = org
-            if self.network is None:
-                self.network = MultiOrgNetwork()
-            self.network.add_organization(org)
-            return org
-        return self._mutate_registry(change, "Failed to persist organization registry")
-
-    def get_organization(self, org_id: str) -> Any:
-        with self._registry_lock:
-            if not self._registry_mutating:
-                self._restore_hierarchy_registry()
-            return self.organizations.get(org_id)
-
-    def register_organization_member(
-        self, org_id: str, member_id: str, identity: dict[str, Any], role: str,
-        *, actor_user_id: str | None = None,
-    ) -> str:
-        def change() -> str:
-            organization = self.get_organization(org_id)
-            if organization is None:
-                raise ValueError(f"Organization {org_id} not found")
-            if actor_user_id is not None and not _is_organization_admin(organization, actor_user_id):
-                raise PermissionError("Only a registered organization administrator can add members")
-            if member_id in organization.members:
-                raise ValueError(f"Member {member_id} already exists")
-            if (
-                identity.get("user_id") != member_id
-                or identity.get("org_id") != org_id
-                or identity.get("role") != role
-            ):
-                raise ValueError("Member identity does not match registry fields")
-            organization.register_member(member_id, identity, role)
-            return member_id
-        return self._mutate_registry(change, "Failed to persist organization member")
-
-    def create_channel(
-        self,
-        channel_id: str,
-        org_ids: list[str],
-        policy_config: dict[str, Any] | None = None,
-    ) -> Channel:
-        def change() -> Channel:
-            if channel_id in self.channels:
-                raise ValueError(f"Channel {channel_id} already exists")
-
-            organizations = _build_channel_orgs(org_ids, self.organizations)
-            policy = policy_config or {
-                "read": "MEMBER",
-                "write": "ADMIN",
-                "endorsement": "MAJORITY",
-            }
-
-            channel = Channel(
-                channel_id, organizations, policy,
-                node_identity=self.main_chain.node_identity,
-                trusted_public_keys=self.main_chain.trusted_public_keys,
-            )
-            self.channels[channel_id] = channel
-            channel._persist_registry = self._persist_hierarchy_registry
-            channel._registry_lock = self._registry_lock
-            channel._refresh_registry = self._restore_hierarchy_registry
-            channel.ledger._lock = self._registry_lock
-            return channel
-        return self._mutate_registry(change, "Failed to persist channel registry")
-
-    def get_channel(self, channel_id: str) -> Channel | None:
-        with self._registry_lock:
-            if not self._registry_mutating:
-                self._restore_hierarchy_registry()
-            channel = self.channels.get(channel_id)
-            if channel is not None:
-                channel._refresh_ledger()
-            return channel
-
-    def create_private_collection(
-        self,
-        name: str,
-        org_ids: list[str],
-        config: dict[str, Any] | None = None
-    ) -> PrivateCollection:
-        if name in self.private_collections:
-            raise ValueError(f"Private collection {name} already exists")
-
-        organizations = _build_collection_orgs(org_ids, self)
-        col_config = config or {
-            "block_to_purge": 1000,
-            "endorsement_policy": "MAJORITY",
-            "min_endorsements": 2,
-        }
-
-        private_collection = PrivateCollection(name, organizations, col_config)
-        self.private_collections[name] = private_collection
-        return private_collection
-
-    def get_private_collection(self, name: str) -> PrivateCollection | None:
-        return self.private_collections.get(name)
-
-    def create_private_data_collection(
-        self,
-        name: str,
-        org_ids: list[str],
-        config: dict[str, Any] | None = None,
-    ) -> PrivateCollection:
-        return self.create_private_collection(name, org_ids, config)
-
-    def assign_organization_to_chain(
-        self, org_id: str, chain_name: str, *, permissions: list[str] | None = None,
-    ) -> bool:
-        grants = ["read", "write"] if permissions is None else permissions
-        if (
-            not isinstance(grants, list) or not grants
-            or any(not isinstance(item, str) or item not in {"read", "write", "proofs"} for item in grants)
-        ):
-            raise ValueError("Chain permissions must contain read, write, or proofs")
-
-        def change() -> bool:
-            if org_id not in self.organizations or self.get_sub_chain(chain_name) is None:
-                return False
-            self.chain_access.setdefault(chain_name, {})[org_id] = sorted(set(grants))
-            return True
-
-        return self._mutate_registry(change, "Failed to persist chain access")
-
-    def revoke_organization_from_chain(self, org_id: str, chain_name: str) -> bool:
-        def change() -> bool:
-            grants = self.chain_access.get(chain_name)
-            if grants is None or org_id not in grants:
-                return False
-            del grants[org_id]
-            return True
-
-        return self._mutate_registry(change, "Failed to persist chain access revocation")
-
-    def get_chain_access(self, chain_name: str) -> dict[str, list[str]] | None:
-        with self._registry_lock:
-            if not self._registry_mutating:
-                self._restore_hierarchy_registry()
-            grants = self.chain_access.get(chain_name)
-            return deepcopy(grants) if grants is not None else None
-
-    def can_access_chain(self, chain_name: str, user_id: str | None, permission: str) -> bool:
-        with self._registry_lock:
-            if not self._registry_mutating:
-                self._restore_hierarchy_registry()
-            grants = self.chain_access.get(chain_name)
-            if grants is None:
-                return True
-            if not isinstance(user_id, str) or not user_id:
-                return False
-            for org_id, permissions in grants.items():
-                if permission not in permissions:
-                    continue
-                organization = self.organizations.get(org_id)
-                member = organization.members.get(user_id) if organization is not None else None
-                identity = member.get("identity") if isinstance(member, dict) else None
-                if (
-                    isinstance(member, dict) and isinstance(identity, dict) and identity.get("user_id") == user_id
-                    and identity.get("org_id") == org_id
-                    and isinstance(member.get("role"), str) and bool(member["role"])
-                    and identity.get("role") == member["role"]
-                ):
-                    return True
-            return False
 
     @staticmethod
     def _create_storage() -> Any | None:
