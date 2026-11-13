@@ -108,7 +108,7 @@ class ZmqNode:
             
             # Start receiver loop in background
             asyncio.create_task(_receiver_loop(self))
-        except Exception as e:
+        except (OSError, ValueError, zmq.ZMQError) as e:
             await self.stop()
             raise NetworkError(f"Failed to start node {self.node_id}: {e}") from e
 
@@ -171,7 +171,7 @@ class ZmqNode:
             encoded_msg = dumps_json(message).encode("utf-8")
             await socket.send(encoded_msg)
             return True
-        except Exception as e:
+        except (NetworkError, OSError, TypeError, ValueError, zmq.ZMQError) as e:
             logger.error("Failed to send to %s: %s", target_peer_id, e)
             return False
 
@@ -260,7 +260,7 @@ async def _get_or_create_dealer(node: ZmqNode, peer_id: str) -> zmq.asyncio.Sock
             socket.setsockopt(zmq.CURVE_SERVERKEY, peer_public_key)
             socket.setsockopt(zmq.CURVE_PUBLICKEY, node.server_public)
             socket.setsockopt(zmq.CURVE_SECRETKEY, node.server_secret)
-        except Exception as e:
+        except (ValueError, zmq.ZMQError) as e:
             logger.error(
                 "Failed to set CURVE keys for %s: %s (key length: %d)",
                 peer_id, e, key_len

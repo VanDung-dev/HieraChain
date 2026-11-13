@@ -441,7 +441,7 @@ class DomainChain(BaseChain):
 
         try:
             payload_snapshot = copy.deepcopy(payload)
-        except Exception:
+        except (copy.Error, RecursionError, TypeError):
             return False
         if not isinstance(payload_snapshot, dict):
             return False
@@ -484,7 +484,7 @@ class DomainChain(BaseChain):
 
             try:
                 payload_snapshot = copy.deepcopy(payload)
-            except Exception:
+            except (copy.Error, RecursionError, TypeError):
                 return False
             if not isinstance(payload_snapshot, dict):
                 return False
@@ -627,7 +627,7 @@ class DomainChain(BaseChain):
                 step = event.get("transaction_step")
                 if isinstance(tx_id, str) and step in {"start", "complete"}:
                     markers[(tx_id, step)] = event
-        except Exception:
+        except (OSError, RuntimeError, TypeError, ValueError):
             logger.exception("Could not read transaction markers from %s journal", self.name)
             return False
 
