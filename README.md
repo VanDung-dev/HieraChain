@@ -26,7 +26,7 @@ HieraChain is a Python ledger for business events. Domain Sub-Chains record even
 * Built-in SAP/Oracle/Dynamics connectors require `simulation_mode=True` and provide simulation fixtures. Real ERP adapters must be supplied by the application.
 * Redis supports auxiliary adapters, but cannot serve as the durable hierarchical block backend.
 * PoF's ordinary block validation checks the leader signature; automatic multi-party quorum collection and failover are not provided by that path.
-* WebSocket subscriptions receive messages sent through broadcast helpers; applications must connect those helpers to ledger events and block commits.
+* WebSocket subscriptions receive accepted ledger event broadcasts. Block-commit notifications are not wired by default; applications that need them must call `broadcast_new_block`.
 * Event and contract REST routes accept inline data or existing IPFS CID references. Applications must upload off-chain payloads explicitly; these routes do not automatically move large payloads to IPFS.
 
 See [feature support](docs/en/modules/hierarchical.md) and [consensus scope](docs/en/workflows/consensus_mechanisms.md).

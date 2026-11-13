@@ -26,7 +26,7 @@ HieraChain là ledger Python dành cho event nghiệp vụ. Sub-Chain theo domai
 * Connector SAP/Oracle/Dynamics có sẵn yêu cầu `simulation_mode=True` và cung cấp fixture mô phỏng. Ứng dụng phải cung cấp adapter ERP thật.
 * Redis hỗ trợ adapter phụ trợ nhưng chưa làm backend block bền vững cho hierarchy.
 * Xác thực block PoF thông thường kiểm tra chữ ký leader; đường này chưa tự thu thập quorum nhiều bên hoặc cung cấp failover.
-* Subscription WebSocket nhận thông báo qua các hàm broadcast; ứng dụng phải nối các hàm này với event ledger và quá trình commit block.
+* Subscription WebSocket nhận broadcast của event ledger đã được chấp nhận. Thông báo commit block chưa được nối mặc định; ứng dụng cần thông báo này phải tự gọi `broadcast_new_block`.
 * Route REST cho event và contract nhận dữ liệu inline hoặc tham chiếu CID IPFS đã có. Ứng dụng phải chủ động upload payload off-chain; các route này chưa tự chuyển payload lớn lên IPFS.
 
 Xem [phạm vi tính năng](docs/vi/modules/hierarchical.md) và [phạm vi đồng thuận](docs/vi/workflows/consensus_mechanisms.md).
