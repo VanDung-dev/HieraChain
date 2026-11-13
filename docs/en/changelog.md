@@ -140,7 +140,14 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (70)"
+??? note "Improvements (74)"
+
+    * 2026-11-14
+
+        * **Error Mitigation (EventJournal Split & Rename)**: Split `hierachain/error_mitigation/journal.py` into `journal.py`, `journal_codec.py`, `journal_io.py`, and `journal_constants.py`; rename `TransactionJournal` to `EventJournal` with a backward-compatible `TransactionJournal` alias, export `EventJournal` from `hierachain.error_mitigation`, and update ordering/hierarchy consumers to the new name while preserving compatibility aliases.
+        * **Domains (DomainChain Mixin Composition)**: Extract `DomainChain` behavior into `DomainOperationsMixin` (`hierachain/domains/chains/domain_operations.py`) and `TransactionOperationsMixin` (`hierachain/domains/chains/transaction_operations.py`) with shared validation in `operation_validation.py`; `DomainChain` becomes a thin composition root with unchanged public API.
+        * **Hierarchy (HierarchyManager Mixin Composition)**: Extract `HierarchyManager` behavior into `OrganizationOperationsMixin`, `SystemOperationsMixin`, and `TransactionCoordinationMixin` (`hierachain/hierarchical/hierarchy_manager/org_ops.py`, `system_ops.py`, `transaction_ops.py`) with a `HierarchyHost` contract (`contracts.py`); `HierarchyManager` becomes a thin composition root and drops the shared thread pool from `base.py`.
+        * **Hierarchy (CrossChainState Rename)**: Rename `TransactionState` to `CrossChainState` in `hierachain/hierarchical/types.py` with a backward-compatible `TransactionState` alias, export `CrossChainState` from `hierachain.hierarchical`, and update `CrossChainTransactionManager` to use `CrossChainState`/`EventJournal` while retaining compatibility aliases.
 
     * 2026-11-13
 
@@ -281,7 +288,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (48)"
+??? warning "Fix (49)"
+
+    * 2026-11-14
+
+        * **Consensus (Narrow PoF Signing Key Error Handling)**: `ProofOfFederation` (`hierachain/consensus/proof_of_federation.py`) now catches only `(ValueError, TypeError)` when decoding an invalid `signing_key_hex` instead of a broad `Exception`, preventing unrelated failures from being masked during key initialization.
 
     * 2026-11-13
 

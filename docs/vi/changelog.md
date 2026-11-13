@@ -140,7 +140,14 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (70)"
+??? note "Improvements (74)"
+
+    * 2026-11-14
+
+        * **Giảm thiểu Lỗi (Tách & Đổi tên EventJournal)**: Tách `hierachain/error_mitigation/journal.py` thành `journal.py`, `journal_codec.py`, `journal_io.py` và `journal_constants.py`; đổi tên `TransactionJournal` thành `EventJournal` kèm alias tương thích ngược `TransactionJournal`, export `EventJournal` từ `hierachain.error_mitigation`, và cập nhật các consumer ordering/hierarchy sang tên mới trong khi vẫn giữ alias tương thích.
+        * **Domains (Tổ hợp DomainChain bằng Mixin)**: Tách hành vi của `DomainChain` thành `DomainOperationsMixin` (`hierachain/domains/chains/domain_operations.py`) và `TransactionOperationsMixin` (`hierachain/domains/chains/transaction_operations.py`) với validation dùng chung trong `operation_validation.py`; `DomainChain` trở thành composition root mỏng với public API không đổi.
+        * **Hierarchy (Tổ hợp HierarchyManager bằng Mixin)**: Tách hành vi của `HierarchyManager` thành `OrganizationOperationsMixin`, `SystemOperationsMixin` và `TransactionCoordinationMixin` (`hierachain/hierarchical/hierarchy_manager/org_ops.py`, `system_ops.py`, `transaction_ops.py`) kèm hợp đồng `HierarchyHost` (`contracts.py`); `HierarchyManager` trở thành composition root mỏng và bỏ shared thread pool khỏi `base.py`.
+        * **Hierarchy (Đổi tên CrossChainState)**: Đổi tên `TransactionState` thành `CrossChainState` trong `hierachain/hierarchical/types.py` kèm alias tương thích ngược `TransactionState`, export `CrossChainState` từ `hierachain.hierarchical`, và cập nhật `CrossChainTransactionManager` dùng `CrossChainState`/`EventJournal` trong khi vẫn giữ alias tương thích.
 
     * 2026-11-13
 
@@ -281,7 +288,11 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (48)"
+??? warning "Fix (49)"
+
+    * 2026-11-14
+
+        * **Đồng thuận (Thu hẹp xử lý lỗi khóa ký PoF)**: `ProofOfFederation` (`hierachain/consensus/proof_of_federation.py`) nay chỉ bắt `(ValueError, TypeError)` khi giải mã `signing_key_hex` không hợp lệ thay vì bắt `Exception` rộng, tránh che giấu các lỗi không liên quan trong quá trình khởi tạo khóa.
 
     * 2026-11-13
 
