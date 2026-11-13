@@ -60,7 +60,7 @@ To ensure consistency and philosophy of HieraChain, developers must ABSOLUTELY N
 * ❌ Use cryptocurrency terminology: Do not use words like `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `amount`, `fee`. Instead, use `event`, `entity_id`, `details`.
 * ❌ **Use `print()`**: Always use `logging.getLogger(__name__)`.
 * ❌ Direct DB access: Do not directly call `sqlite3` or `redis` outside the `adapters/database/` directory.
-* ❌ Skip Journal: Do not skip the `TransactionJournal` write step when setting up new ordering flows.
+* ❌ Skip Journal: Do not skip the `EventJournal` write step when setting up new ordering flows.
 * ❌ Store secrets in code: Always use environment variables or Secret Manager.
 
 ## Testing

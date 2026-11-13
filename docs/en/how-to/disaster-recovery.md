@@ -12,7 +12,7 @@ deployment responsibilities.
 
 ## 1. Event journaling
 
-`TransactionJournal` records pending events before they enter the ordering
+`EventJournal` records pending events before they enter the ordering
 service. This protects events from application crashes or abrupt shutdowns.
 
 Each event is synchronously appended and fsynced before it is queued. Fsync is
@@ -29,9 +29,9 @@ registered Sub-Chain's Ordering Service is `ACTIVE`, and HTTP 503 while any
 service is recovering or in maintenance.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

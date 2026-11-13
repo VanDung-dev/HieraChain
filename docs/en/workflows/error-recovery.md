@@ -7,7 +7,7 @@ icon: material/alert-decagram
 # Error handling and recovery
 
 HieraChain keeps recovery responsibilities close to the component that owns the
-state: `TransactionJournal` protects pending events and `OrderingRecovery`
+state: `EventJournal` protects pending events and `OrderingRecovery`
 replays them after restart. Snapshot and infrastructure recovery are deployment
 responsibilities, not automatic services in this package.
 
@@ -15,7 +15,7 @@ responsibilities, not automatic services in this package.
 
 ```mermaid
 flowchart TD
-    EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
+    EVENT["Pending journal event"] --> JOURNAL["EventJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
 ```
@@ -24,7 +24,7 @@ These are separate component-owned paths. `OrderingRecovery` replays journal ent
 
 ## Event durability
 
-`TransactionJournal` writes pending events before ordering. After a restart,
+`EventJournal` writes pending events before ordering. After a restart,
 the ordering service can replay journal entries and validate them before they
 re-enter the event pipeline.
 
@@ -35,9 +35,9 @@ journal is closed and reopened as a new instance, which repairs an incomplete
 active tail during startup.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

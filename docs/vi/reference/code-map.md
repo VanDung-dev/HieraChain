@@ -78,6 +78,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật tớ
 
 | Khái niệm | Đường dẫn File | Vai trò |
 |-----------|----------------|---------|
-| Error Mitigation | `hierachain/error_mitigation/` | Ghi nhật ký bền vững (TransactionJournal). |
+| Error Mitigation | `hierachain/error_mitigation/` | Ghi nhật ký bền vững (EventJournal). |
 | Domains | `hierachain/domains/` | Logic nghiệp vụ theo miền (chains, events, utils). |
 | Versioning | `hierachain/config/version.py` | Quản lý phiên bản và semantic versioning. |

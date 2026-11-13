@@ -78,6 +78,6 @@ This document maps concepts in technical documentation to specific source code f
 
 | Concept | File Path | Role |
 |---------|-----------|------|
-| Error Mitigation | `hierachain/error_mitigation/` | Durable journaling (TransactionJournal). |
+| Error Mitigation | `hierachain/error_mitigation/` | Durable journaling (EventJournal). |
 | Domains | `hierachain/domains/` | Domain-specific business logic (chains, events, utils). |
 | Versioning | `hierachain/config/version.py` | Version management and semantic versioning. |

@@ -7,7 +7,7 @@ icon: material/alert-decagram
 # Xử lý lỗi và phục hồi
 
 HieraChain giữ trách nhiệm phục hồi gần với component sở hữu trạng thái:
-`TransactionJournal` bảo vệ các sự kiện đang chờ, còn `OrderingRecovery` phát
+`EventJournal` bảo vệ các sự kiện đang chờ, còn `OrderingRecovery` phát
 lại chúng sau restart. Snapshot và phục hồi hạ tầng thuộc về deployment, không
 phải các service tự động trong package này.
 
@@ -15,7 +15,7 @@ phải các service tự động trong package này.
 
 ```mermaid
 flowchart TD
-    EVENT["Pending journal event"] --> JOURNAL["TransactionJournal\nwrite before ordering"]
+    EVENT["Pending journal event"] --> JOURNAL["EventJournal\nwrite before ordering"]
     JOURNAL --> RECOVERY["OrderingRecovery\nreplay after restart"]
     RECOVERY --> VALIDATE["Validate before ordering"]
 ```
@@ -24,7 +24,7 @@ flowchart TD
 
 ## Độ bền sự kiện
 
-`TransactionJournal` ghi các sự kiện đang chờ trước khi ordering. Sau khi
+`EventJournal` ghi các sự kiện đang chờ trước khi ordering. Sau khi
 restart, ordering service có thể phát lại các entry trong journal và xác thực
 chúng trước khi đưa trở lại pipeline sự kiện.
 
@@ -35,9 +35,9 @@ khi được đóng và mở lại thành instance mới; bước khởi động
 chưa hoàn chỉnh của file đang hoạt động.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

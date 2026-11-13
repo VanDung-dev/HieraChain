@@ -12,7 +12,7 @@ deployment.
 
 ## 1. Ghi nhật ký sự kiện
 
-`TransactionJournal` ghi các sự kiện đang chờ trước khi chúng đi vào ordering
+`EventJournal` ghi các sự kiện đang chờ trước khi chúng đi vào ordering
 service. Cơ chế này bảo vệ sự kiện khi ứng dụng crash hoặc hệ điều hành tắt đột
 ngột.
 
@@ -29,9 +29,9 @@ Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái `ACTIVE
 503 khi còn service đang recovery hoặc ở trạng thái maintenance.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

@@ -12,16 +12,16 @@ Module `error_mitigation` cung cấp ghi nhật ký sự kiện bền vững. Kh
 
 ## 2. Nhật ký sự kiện (`journal.py`)
 
-`TransactionJournal` cung cấp khả năng lưu trữ ghi trước:
+`EventJournal` cung cấp khả năng lưu trữ ghi trước:
 
 1. Ghi bền vững: Ghi tiếp record Arrow có frame và fsync xuống đĩa trước khi block hoàn tất; Parquet cũ vẫn đọc được.
 2. Thực thi schema: Đảm bảo mọi bản ghi nhật ký khớp với schema sự kiện bắt buộc.
 3. Khả năng phát lại: Phát lại các sự kiện đã ghi từ đĩa vào hàng đợi sắp xếp khi nút khởi động lại.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

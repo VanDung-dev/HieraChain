@@ -12,16 +12,16 @@ The `error_mitigation` module provides durable event journaling. Operational res
 
 ## 2. Event journaling (`journal.py`)
 
-`TransactionJournal` provides write-ahead persistence:
+`EventJournal` provides write-ahead persistence:
 
 1. Durable writes: Appends framed Arrow records and fsyncs them on disk before blocks finalize; legacy Parquet remains readable.
 2. Schema enforcement: Guarantees every journal record matches the required event schema.
 3. Replay ability: Replays logged events from disk into the ordering pipeline during node restart.
 
 ```python
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.error_mitigation.journal import EventJournal
 
-journal = TransactionJournal(storage_dir="data/journal")
+journal = EventJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 

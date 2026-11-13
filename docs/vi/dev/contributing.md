@@ -60,7 +60,7 @@ Chúng tôi sử dụng quy trình Fork & Pull tiêu chuẩn:
 * ❌ Sử dụng thuật ngữ tiền điện tử: Không dùng các từ như `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `amount`, `fee`. Thay vào đó, hãy dùng `event`, `entity_id`, `details`.
 * ❌ Sử dụng `print()`: Luôn sử dụng `logging.getLogger(__name__)`.
 * ❌ Truy cập DB trực tiếp: Không gọi trực tiếp `sqlite3` hoặc `redis` bên ngoài thư mục `adapters/database/`.
-* ❌ Bỏ qua Journal: Không bỏ qua bước ghi `TransactionJournal` khi thiết lập luồng ordering mới.
+* ❌ Bỏ qua Journal: Không bỏ qua bước ghi `EventJournal` khi thiết lập luồng ordering mới.
 * ❌ Lưu secret trong code: Luôn sử dụng biến môi trường hoặc Secret Manager.
 
 ## Kiểm thử
