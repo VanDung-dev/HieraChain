@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (63)"
+??? warning "Breaking Changes (64)"
+
+    * 2026-11-13
+
+        * **Security (`validate_amount` → `validate_value` Rename)**: `validate_amount()` in `hierachain/security/sanitization.py` is renamed to `validate_value(value, min_value=0.0, max_value=None)`, with `min_amount`/`max_amount` renamed to `min_value`/`max_value` and the reported `field_name` changed to `value`; callers importing `validate_amount` or using the old parameter names must migrate.
 
     * 2026-11-08
 
@@ -136,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (68)"
+??? note "Improvements (70)"
+
+    * 2026-11-13
+
+        * **Adapters (LedgerStorage Protocol & Hierarchy Registry)**: Add `LedgerStorage` (`hierachain/adapters/database/contract.py`), a `runtime_checkable` `Protocol` describing the canonical storage interface (`store_chain`, `load_chain`, `list_chains`, `store_proof`, `get_proof_history`, `get_entity_events`, `get_events_by_type`, `get_chain_statistics`, `cleanup_old_data`, `close`) plus `save_hierarchy_registry(state, *, expected_revision=None, channel_ledgers=None)`/`load_hierarchy_registry()`, exported from `hierachain/adapters/database/__init__.py`; contract tests assert `SQLiteAdapter`/`RedisStorageAdapter`/`PostgresAdapter`/`RedisLedgerAdapter` all satisfy the protocol.
+        * **Cluster (Idempotent Proof Anchoring & Sync Cursors)**: `CrossLevelSyncManager` (`hierachain/cluster/cross_level_sync.py`) adds `_iter_proof_events`/`_find_proof_at_index`/`_derive_sync_cursor` helpers, `_prepare_sync()` skips already-anchored tips and records conflicts, `_subchain_overrides()` applies `MAINCHAIN_WINS`/`SUBCHAIN_WINS`/`MANUAL` strategies (newer timestamp wins by default), tracks per-sub-chain `_sync_cursors` plus synced block counts on success, adds `get_sync_cursor()` deriving the cursor from anchored proofs when uncached, and clears cursors on state reset — previously re-submitted proofs for already-anchored tips and tracked no sync cursors.
 
     * 2026-11-12
 
@@ -272,7 +281,14 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (44)"
+??? warning "Fix (48)"
+
+    * 2026-11-13
+
+        * **Journal, Ordering & CLI (Event Terminology & Narrow Exceptions)**: Replace "transaction" with "event" in docstrings/log messages/error strings across `hierachain/error_mitigation/journal.py`, `hierachain/error_mitigation/__init__.py`, `hierachain/consensus/ordering/recovery.py`, `hierachain/cli/store.py`, and `hierachain/hierarchical/transaction_manager.py`, change the example schema key from `amount` to `value` in `hierachain/api/admin/schemas.py`, and narrow `except` in `hierachain/core/parquet_log.py`/`hierachain/error_mitigation/journal.py` to specific types (`OSError`, `ValueError`, `RuntimeError`, `pa.ArrowException`) instead of `Exception`.
+        * **Security (Specific Exception Handling)**: `hierachain/security/identity_loader.py`, `hierachain/security/key_provider.py`, and `hierachain/security/security_utils.py` replace `except Exception` with specific types (`CryptoError`, `InvalidToken`, `OSError`, `ValueError`, `binascii.Error`, ...), so unexpected failures are no longer swallowed and are classified correctly.
+        * **Domain & Network (Specific Exception Handling)**: `DomainChain` (`hierachain/domains/chains/domain_chain.py`) catches `(copy.Error, RecursionError, TypeError)` on `deepcopy` and `(OSError, RuntimeError, TypeError, ValueError)` when reading journal markers; `ZmqNode` (`hierachain/network/zmq_transport.py`) catches `(OSError, ValueError, zmq.ZMQError)` on startup, `(NetworkError, OSError, TypeError, ValueError, zmq.ZMQError)` on send, and `(ValueError, zmq.ZMQError)` when setting CURVE keys.
+        * **Security (Non-`str` Keys in `HashedKeyStorage.get`)**: `HashedKeyStorage.get` (`hierachain/security/key_manager.py`) takes `key: object` and returns `default` for non-`str` keys, matching the `MutableMapping` contract instead of hashing the wrong type.
 
     * 2026-11-11
 

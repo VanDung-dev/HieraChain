@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (63)"
+??? warning "Breaking Changes (64)"
+
+    * 2026-11-13
+
+        * **Bảo mật (Đổi tên `validate_amount` → `validate_value`)**: `validate_amount()` trong `hierachain/security/sanitization.py` được đổi tên thành `validate_value(value, min_value=0.0, max_value=None)` cùng đổi tên tham số `min_amount`/`max_amount` thành `min_value`/`max_value` và `field_name` báo lỗi thành `value`; bên gọi import `validate_amount` hoặc dùng tên tham số cũ phải chuyển đổi.
 
     * 2026-11-08
 
@@ -136,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (68)"
+??? note "Improvements (70)"
+
+    * 2026-11-13
+
+        * **Adapter (Giao thức LedgerStorage & Registry Hierarchy)**: Thêm `LedgerStorage` (`hierachain/adapters/database/contract.py`) là `Protocol` `runtime_checkable` mô tả giao diện lưu trữ chuẩn (`store_chain`, `load_chain`, `list_chains`, `store_proof`, `get_proof_history`, `get_entity_events`, `get_events_by_type`, `get_chain_statistics`, `cleanup_old_data`, `close`) cùng `save_hierarchy_registry(state, *, expected_revision=None, channel_ledgers=None)`/`load_hierarchy_registry()`, export qua `hierachain/adapters/database/__init__.py`; test hợp đồng xác nhận `SQLiteAdapter`/`RedisStorageAdapter`/`PostgresAdapter`/`RedisLedgerAdapter` đều thỏa giao thức.
+        * **Cluster (Neo Proof Idempotent & Con trỏ Đồng bộ)**: `CrossLevelSyncManager` (`hierachain/cluster/cross_level_sync.py`) thêm helper `_iter_proof_events`/`_find_proof_at_index`/`_derive_sync_cursor`, `_prepare_sync()` bỏ qua tip đã neo và ghi nhận xung đột, `_subchain_overrides()` áp chiến lược `MAINCHAIN_WINS`/`SUBCHAIN_WINS`/`MANUAL` (mặc định timestamp mới hơn thắng), theo dõi `_sync_cursors` theo sub-chain cùng số block đã đồng bộ khi thành công, `get_sync_cursor()` suy ra con trỏ từ proof đã neo khi chưa có cache, và xóa con trỏ khi reset state — trước đây nộp lại proof cho tip đã neo và không có con trỏ đồng bộ.
 
     * 2026-11-12
 
@@ -272,7 +281,14 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (44)"
+??? warning "Fix (48)"
+
+    * 2026-11-13
+
+        * **Journal, Ordering & CLI (Thuật ngữ Event & Ngoại lệ Hẹp)**: Đổi thuật ngữ "transaction" thành "event" trong docstring/log/thông điệp lỗi của `hierachain/error_mitigation/journal.py`, `hierachain/error_mitigation/__init__.py`, `hierachain/consensus/ordering/recovery.py`, `hierachain/cli/store.py` và `hierachain/hierarchical/transaction_manager.py`, đổi khóa ví dụ `amount` thành `value` trong `hierachain/api/admin/schemas.py`, và thu hẹp `except` trong `hierachain/core/parquet_log.py`/`hierachain/error_mitigation/journal.py` về các kiểu cụ thể (`OSError`, `ValueError`, `RuntimeError`, `pa.ArrowException`) thay vì `Exception`.
+        * **Bảo mật (Bắt Ngoại lệ Cụ thể)**: `hierachain/security/identity_loader.py`, `hierachain/security/key_provider.py` và `hierachain/security/security_utils.py` thay `except Exception` bằng các kiểu cụ thể (`CryptoError`, `InvalidToken`, `OSError`, `ValueError`, `binascii.Error`, ...), nên lỗi ngoài dự kiến không còn bị nuốt và được phân loại đúng.
+        * **Domain & Mạng (Bắt Ngoại lệ Cụ thể)**: `DomainChain` (`hierachain/domains/chains/domain_chain.py`) bắt `(copy.Error, RecursionError, TypeError)` khi `deepcopy` và `(OSError, RuntimeError, TypeError, ValueError)` khi đọc marker journal; `ZmqNode` (`hierachain/network/zmq_transport.py`) bắt `(OSError, ValueError, zmq.ZMQError)` khi khởi động, `(NetworkError, OSError, TypeError, ValueError, zmq.ZMQError)` khi gửi, và `(ValueError, zmq.ZMQError)` khi thiết lập khóa CURVE.
+        * **Bảo mật (Key Không phải `str` trong `HashedKeyStorage.get`)**: `HashedKeyStorage.get` (`hierachain/security/key_manager.py`) nhận `key: object` và trả `default` cho key không phải `str`, khớp hợp đồng `MutableMapping` thay vì băm nhầm kiểu.
 
     * 2026-11-11
 
