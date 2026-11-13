@@ -3,6 +3,7 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -102,3 +103,106 @@ def test_conflict_resolution_keeps_status_active_and_finishes_after_callback_err
     sync.set_callbacks(on_conflict=lambda _c: ConflictResolutionStrategy.MAINCHAIN_WINS)
     assert sync.resolve_sync_conflict(conflict)
     assert sync.get_status() == CrossLevelSyncStatus.COMPLETE
+
+
+def _anchor_event(block_index: int, root: str, proof_hash: str, timestamp: float) -> dict:
+    return {
+        "event": "proof_submission",
+        "timestamp": timestamp,
+        "details": {"sub_chain_name": "child", "proof_hash": proof_hash},
+        "metadata": {"latest_block_index": block_index, "latest_merkle_root": root},
+    }
+
+
+def _sync_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+    existing_root: str,
+    existing_hash: str,
+    strategy: ConflictResolutionStrategy,
+) -> tuple[CrossLevelSyncManager, list[bool], Any]:
+    tip = SimpleNamespace(
+        index=3, merkle_root="new-root", hash="new-hash", timestamp=100.0
+    )
+    event = _anchor_event(3, existing_root, existing_hash, 50.0)
+    mainchain = SimpleNamespace(
+        add_proof=lambda **_kwargs: True,
+        pending_events=[event],
+        name="main",
+    )
+    submitted: list[bool] = []
+
+    def submit(*_args: object, **_kwargs: object) -> bool:
+        submitted.append(True)
+        return True
+
+    child = SimpleNamespace(
+        chain=[tip],
+        get_state_root=lambda: "new-root",
+        get_latest_block=lambda: tip,
+        submit_proof_to_main=submit,
+    )
+    sync = CrossLevelSyncManager(
+        "node", conflict_strategy=strategy, storage=object()
+    )
+    sync.connect_mainchain(mainchain)
+    sync.connect_subchain("child", child)
+    monkeypatch.setattr(sync_module, "_verify_anchor_exists", lambda *_a: True)
+    return sync, submitted, event
+
+
+def test_incremental_sync_skips_already_anchored_tip(monkeypatch: pytest.MonkeyPatch) -> None:
+    sync, submitted, _ = _sync_fixture(
+        monkeypatch, "new-root", "new-hash", ConflictResolutionStrategy.MAINCHAIN_WINS
+    )
+
+    result = sync.sync_to_mainchain("child")
+
+    assert result.success
+    assert result.blocks_synced == 0
+    assert submitted == []
+    assert sync.get_sync_cursor("child") == 3
+    assert sync.get_stats()["blocks_synced_up"] == 0
+
+
+def test_mainchain_wins_keeps_existing_anchor(monkeypatch: pytest.MonkeyPatch) -> None:
+    sync, submitted, _ = _sync_fixture(
+        monkeypatch, "old-root", "old-hash", ConflictResolutionStrategy.MAINCHAIN_WINS
+    )
+
+    result = sync.sync_to_mainchain("child")
+
+    assert result.success
+    assert result.blocks_synced == 0
+    assert submitted == []
+    stats = sync.get_stats()
+    assert stats["conflicts_total"] == 1
+    assert stats["conflicts_resolved"] == 1
+    assert sync.get_pending_conflicts() == []
+    assert sync.get_sync_cursor("child") == 3
+
+
+def test_subchain_wins_replaces_conflicting_anchor(monkeypatch: pytest.MonkeyPatch) -> None:
+    sync, submitted, _ = _sync_fixture(
+        monkeypatch, "old-root", "old-hash", ConflictResolutionStrategy.SUBCHAIN_WINS
+    )
+
+    result = sync.sync_to_mainchain("child")
+
+    assert result.success
+    assert result.blocks_synced == 1
+    assert submitted == [True]
+    assert sync.get_stats()["conflicts_resolved"] == 1
+
+
+def test_manual_conflict_blocks_sync_until_resolved(monkeypatch: pytest.MonkeyPatch) -> None:
+    sync, submitted, _ = _sync_fixture(
+        monkeypatch, "old-root", "old-hash", ConflictResolutionStrategy.MANUAL
+    )
+
+    result = sync.sync_to_mainchain("child")
+
+    assert not result.success
+    assert "Unresolved sync conflict" in result.error_message
+    assert submitted == []
+    assert len(sync.get_pending_conflicts()) == 1
+    assert sync.get_stats()["conflicts_resolved"] == 0
