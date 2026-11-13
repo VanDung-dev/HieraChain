@@ -115,7 +115,7 @@ See [Consensus](en/architecture/consensus.md) · [Đồng thuận](vi/architectu
 
 The hierarchy accepts SQLite, PostgreSQL, a durable primary Redis via `RedisLedgerAdapter`, or process-local memory storage. Redis requires healthy AOF, fsync on every write, no eviction, no fsync bypass during rewrites, and no truncated AOF loading. CLI chain/event commands require SQLite or PostgreSQL. Preserve both the database and the per-chain ordering journals for recovery.
 
-`TransactionJournal` provides durable write-ahead event logging. Recovery depends on `OrderingRecovery` replay and the owning component's actual error-handling path.
+`EventJournal` provides durable write-ahead event logging. Recovery depends on `OrderingRecovery` replay and the owning component's actual error-handling path.
 
 ## API, clients and CLI
 
