@@ -12,6 +12,9 @@ class HierarchyHost(Protocol):
 
     main_chain: Any
     sub_chains: dict[str, Any]
+    storage: Any
+    auto_proof_submission: bool
+    proof_submission_interval: int
     system_started_at: float
     system_stats: dict[str, Any]
     cross_level_sync: Any
