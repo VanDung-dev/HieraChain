@@ -13,7 +13,7 @@ icon: material/check-decagram
 ## Thành phần liên quan
 
 * Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`
-* Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` qua `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
+* Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` qua `hierarchical/hierarchy_manager/bootstrap.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Mẫu hình
 

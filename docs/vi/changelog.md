@@ -140,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (74)"
+??? note "Improvements (76)"
+
+    * 2026-11-17
+
+        * **Hierarchy (Tách HierarchyManager Sâu Hơn)**: Tách chọn storage backend vào `hierachain/hierarchical/hierarchy_manager/storage_factory.py`, tạo/đăng ký Sub-Chain vào `chain_ops.py`, nối bootstrap/recovery vào `bootstrap.py`, delegate registry/recovery vào `state_ops.py`, và vòng đời coordinator liên chuỗi vào `transaction_ops.py`; `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) trở thành composition root 123 dòng và việc tạo `CrossChainTransactionManager` chuyển vào `TransactionCoordinationMixin` — phương thức public, thuộc tính, thứ tự recovery và hook cleanup giữ nguyên.
+        * **Core (Hợp đồng Header Block Có Version)**: thêm `hierachain/core/block_contract.py` (`BLOCK_CONTRACT_VERSION = 1`, `block_header`, `canonical_block_header`, `calculate_block_hash`) tập trung các trường header chuẩn hóa; `Block.calculate_hash()` (`hierachain/core/block.py`) ủy quyền cho module này với hash giống từng byte, nên digest và chữ ký block đã lưu vẫn hợp lệ, đồng thời version hợp đồng khóa layout cho thay đổi sau này.
 
     * 2026-11-14
 

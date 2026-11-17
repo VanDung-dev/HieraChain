@@ -69,7 +69,7 @@ Chủ động kết nối việc xử lý báo cáo với hệ thống giám sá
 
 | Thao tác | Phương thức | Tệp |
 |:----------|:-------|:-----|
-| Phương thức công khai | `HierarchyManager.get_system_integrity_report()` / `validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/base.py` |
+| Phương thức công khai | `HierarchyManager.get_system_integrity_report()` / `validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/system_ops.py` |
 | Triển khai báo cáo | `_compute_system_integrity_report()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Triển khai kiểm tra nhất quán | `_validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Xác minh chữ ký/hash | `BlockVerifier.verify_chain()` | `hierachain/security/verify/block_verifier.py` |

@@ -69,7 +69,7 @@ Connect report handling to the application's monitoring or operational recovery 
 
 | Operation | Method | File |
 |:----------|:-------|:-----|
-| Public methods | `HierarchyManager.get_system_integrity_report()` / `validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/base.py` |
+| Public methods | `HierarchyManager.get_system_integrity_report()` / `validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/system_ops.py` |
 | Report implementation | `_compute_system_integrity_report()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Consistency implementation | `_validate_cross_chain_consistency()` | `hierachain/hierarchical/hierarchy_manager/validation.py` |
 | Signature/hash verification | `BlockVerifier.verify_chain()` | `hierachain/security/verify/block_verifier.py` |

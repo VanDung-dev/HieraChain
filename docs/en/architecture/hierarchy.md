@@ -14,7 +14,7 @@ This page explains how HieraChain organizes its hierarchy. It covers how Sub-Cha
 
 * Main Chain: `hierachain/hierarchical/main_chain/base.py` stores proofs from Sub-Chains and aggregates integrity reports.
 * Sub-Chain (Domain Chain): `hierachain/hierarchical/sub_chain/base.py` processes domain events, orders and closes blocks, and generates proofs.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` coordinates the chain system, manages Sub-Chain lifecycle, cross-chain transactions and system statistics.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` is the composition root that coordinates the chain system, manages Sub-Chain lifecycle, cross-chain transactions and system statistics; responsibility modules such as `chain_ops.py`, `storage_factory.py`, `bootstrap.py`, `state_ops.py` and `transaction_ops.py` sit beside it.
 * Channel: `hierachain/hierarchical/channel/channel.py` provides a private communication space for groups of organizations and holds channel creation policies.
 * Multi-Org: `hierachain/hierarchical/multi_org.py` handles organization initialization, the multi-org network, and the relationship between channels and organizations.
 * Private Data: `hierachain/hierarchical/private_data.py` provides collection objects and access checks with in-memory library storage. The manager does not persist these collections, and the REST private-data write route returns HTTP 501.

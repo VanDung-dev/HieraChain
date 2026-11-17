@@ -34,7 +34,7 @@ graph BT
 
 * `hierachain/hierarchical/main_chain/base.py` is the Main Chain. It stores and verifies proofs from Sub-Chains and aggregates integrity reports.
 * `hierachain/hierarchical/sub_chain/base.py` is the Sub-Chain. It records domain events, orders them into blocks, generates proofs and sends them to the Main Chain.
-* `hierachain/hierarchical/hierarchy_manager/base.py` is the HierarchyManager. It coordinates the multi-chain system, manages the Sub-Chain lifecycle, handles automatic proof submission and cross-chain verification.
+* `hierachain/hierarchical/hierarchy_manager/base.py` is the HierarchyManager composition root. It coordinates the multi-chain system, manages the Sub-Chain lifecycle, handles automatic proof submission and cross-chain verification; storage wiring, chain lifecycle, bootstrap/recovery, registry state and cross-chain coordination live in sibling mixin modules under `hierarchy_manager/`.
 * `hierachain/api/storage/ipfs_client.py` provides off-chain IPFS storage. Large or sensitive business details stay off chain; the ledger event stores `details_cid`, `details_nonce`, optional `details_metadata`, and its normal event fields.
 * `hierachain/consensus/ordering/service.py` is the Ordering Service. It orders events before block creation and is initialized by the Sub-Chain.
 

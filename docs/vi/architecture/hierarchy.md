@@ -14,7 +14,7 @@ Phần này giải thích cách HieraChain tổ chức phân cấp. Nó bao gồ
 
 * Main Chain: `hierachain/hierarchical/main_chain/base.py` lưu proof từ Sub-Chain và tổng hợp báo cáo toàn vẹn.
 * Sub-Chain (Domain Chain): `hierachain/hierarchical/sub_chain/base.py` xử lý event theo domain, sắp xếp và đóng block, tạo proof.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` điều phối hệ thống chuỗi, quản lý vòng đời Sub-Chain, giao dịch liên chuỗi và thống kê hệ thống.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` là composition root điều phối hệ thống chuỗi, quản lý vòng đời Sub-Chain, giao dịch liên chuỗi và thống kê hệ thống; các module trách nhiệm như `chain_ops.py`, `storage_factory.py`, `bootstrap.py`, `state_ops.py` và `transaction_ops.py` nằm cạnh đó.
 * Channel: `hierachain/hierarchical/channel/channel.py` cung cấp không gian giao tiếp riêng cho nhóm organization và giữ policy tạo channel.
 * Multi-Org: `hierachain/hierarchical/multi_org.py` xử lý khởi tạo organization, mạng multi-org và quan hệ giữa channel với organization.
 * Dữ liệu riêng tư: `hierachain/hierarchical/private_data.py` cung cấp đối tượng collection và kiểm tra truy cập, với kho dữ liệu trong bộ nhớ ở cấp thư viện. Manager không lưu bền các collection này; API REST ghi dữ liệu riêng tư trả HTTP 501.

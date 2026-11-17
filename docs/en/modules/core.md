@@ -52,7 +52,7 @@ TTL expiration is lazy: reads reject expired entries; writes at capacity, statis
 
 The Arrow table has metadata columns for filtering and a binary `data` column for canonical JSON event bytes. `to_event_list()` decodes those bytes to preserve JSON types and nested details. See [Data models](../reference/data-models.md) for the seven-column schema.
 
-`calculate_hash()` hashes `index`, `timestamp`, `previous_hash`, `nonce`, `merkle_root` and `creator_id`. The signature and event table are not direct header fields in that hash; the Merkle root binds the event bytes to the header.
+`calculate_hash()` hashes `index`, `timestamp`, `previous_hash`, `nonce`, `merkle_root` and `creator_id`. The header field list, canonical JSON encoding and SHA-256 digest are centralized in `hierachain/core/block_contract.py` (`BLOCK_CONTRACT_VERSION = 1`); `Block.calculate_hash()` delegates there and produces byte-identical hashes. The signature and event table are not direct header fields in that hash; the Merkle root binds the event bytes to the header.
 
 ```python
 # Query events by entity on a Block instance

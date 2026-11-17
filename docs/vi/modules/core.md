@@ -52,7 +52,7 @@ TTL được xử lý khi dùng cache: đọc từ chối entry hết hạn; ghi
 
 Bảng Arrow có các cột metadata để lọc và cột nhị phân `data` chứa byte JSON chuẩn hóa của sự kiện. `to_event_list()` giải mã các byte đó để giữ kiểu JSON và details lồng nhau. Xem [Mô hình dữ liệu](../reference/data-models.md) để biết lược đồ bảy cột.
 
-`calculate_hash()` băm `index`, `timestamp`, `previous_hash`, `nonce`, `merkle_root` và `creator_id`. Chữ ký và bảng sự kiện không phải các trường header được băm trực tiếp; Merkle root gắn byte sự kiện với header.
+`calculate_hash()` băm `index`, `timestamp`, `previous_hash`, `nonce`, `merkle_root` và `creator_id`. Danh sách trường header, encoding JSON chuẩn hóa và digest SHA-256 được tập trung trong `hierachain/core/block_contract.py` (`BLOCK_CONTRACT_VERSION = 1`); `Block.calculate_hash()` ủy quyền cho module này và cho hash giống từng byte. Chữ ký và bảng sự kiện không phải các trường header được băm trực tiếp; Merkle root gắn byte sự kiện với header.
 
 ```python
 # Query events by entity on a Block instance

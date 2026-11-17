@@ -30,7 +30,7 @@ This table lists all workflows for quick lookup:
 |:---------|:------|:--------|:-------|:-----------|
 | [Event Submission](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API returns `event_id`; block is created and finalized asynchronously | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Proof Anchoring](./proof-anchoring.md) | A | Block finalized on Sub-Chain | Proof hash on Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
-| [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK`, or recoverable `IN_DOUBT` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
+| [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED`, `ROLLED_BACK`, or recoverable `IN_DOUBT` | `hierarchical/hierarchy_manager/transaction_ops.py` + `hierarchical/transaction_manager.py` |
 | [Error Mitigation](./error-recovery.md) | C | Validation error / interrupted event | Journal replay | `error_mitigation/journal.py` |
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |

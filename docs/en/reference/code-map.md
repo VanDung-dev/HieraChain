@@ -14,9 +14,10 @@ This document maps concepts in technical documentation to specific source code f
 |---------|-----------|------|
 | Blockchain (Base) | `hierachain/core/blockchain.py` | Base class managing chain, adding blocks, integrity checks. |
 | Block Structure | `hierachain/core/block.py` | Defines Block structure (Index, Hash, Data, Proof). |
+| Block Hash Contract | `hierachain/core/block_contract.py` | Canonical block header and SHA-256 hash (contract v1). |
 | Main Chain | `hierachain/hierarchical/main_chain/base.py` | Main chain (Layer 1), stores Proof only and manages Sub-chains. |
 | Sub Chain | `hierachain/hierarchical/sub_chain/base.py` | Sub chain (Layer 2), processes Domain data and creates Proof. |
-| Hierarchy Manager | `hierachain/hierarchical/hierarchy_manager/base.py` | Coordinator managing Main/Sub-chain lifecycle. |
+| Hierarchy Manager | `hierachain/hierarchical/hierarchy_manager/base.py` | Coordinator composition root delegating to `hierarchy_manager/` modules. |
 
 ## Consensus & Ordering
 

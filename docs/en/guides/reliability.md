@@ -13,7 +13,7 @@ Provides practices to ensure stable system operation and easy recovery from fail
 ## Related Components
 
 * Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`
-* Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` via `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
+* Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` via `hierarchical/hierarchy_manager/bootstrap.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Patterns
 

@@ -14,9 +14,10 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật tớ
 |-----------|----------------|---------|
 | Blockchain (Base) | `hierachain/core/blockchain.py` | Lớp cơ sở quản lý chuỗi, thêm khối, kiểm tra tính toàn vẹn. |
 | Block Structure | `hierachain/core/block.py` | Định nghĩa cấu trúc Block (Index, Hash, Data, Proof). |
+| Block Hash Contract | `hierachain/core/block_contract.py` | Header block chuẩn hóa và hash SHA-256 (hợp đồng v1). |
 | Main Chain | `hierachain/hierarchical/main_chain/base.py` | Chuỗi chính (Layer 1), chỉ lưu Proof và quản lý Sub-chain. |
 | Sub Chain | `hierachain/hierarchical/sub_chain/base.py` | Chuỗi con (Layer 2), xử lý dữ liệu Domain và tạo Proof. |
-| Hierarchy Manager | `hierachain/hierarchical/hierarchy_manager/base.py` | Bộ điều phối quản lý vòng đời Main/Sub-chain. |
+| Hierarchy Manager | `hierachain/hierarchical/hierarchy_manager/base.py` | Composition root của coordinator, ủy quyền cho các module trong `hierarchy_manager/`. |
 
 ## Consensus & Ordering
 

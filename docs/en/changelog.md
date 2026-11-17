@@ -140,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (74)"
+??? note "Improvements (76)"
+
+    * 2026-11-17
+
+        * **Hierarchy (Further HierarchyManager Decomposition)**: Extract storage backend selection into `hierachain/hierarchical/hierarchy_manager/storage_factory.py`, Sub-Chain creation/registration into `chain_ops.py`, bootstrap/recovery wiring into `bootstrap.py`, registry/recovery delegates into `state_ops.py`, and cross-chain coordinator lifecycle into `transaction_ops.py`; `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) becomes a 123-line composition root and `CrossChainTransactionManager` construction moves behind `TransactionCoordinationMixin` — public methods, attributes, recovery order and cleanup hooks are unchanged.
+        * **Core (Versioned Block Header Contract)**: new `hierachain/core/block_contract.py` (`BLOCK_CONTRACT_VERSION = 1`, `block_header`, `canonical_block_header`, `calculate_block_hash`) centralizes the canonical header fields; `Block.calculate_hash()` (`hierachain/core/block.py`) delegates to it with byte-identical hashes, so stored block digests and signatures remain valid while the contract version pins future layout changes.
 
     * 2026-11-14
 

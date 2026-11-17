@@ -68,11 +68,12 @@ print(manager.get_system_overview())
 manager.close()
 ```
 
-Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager/base.py`:
+Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager/`:
 
-* `create_sub_chain(name, domain_type, metadata=None)`
-* `start_operation(...)`, `complete_operation(...)`
-* `submit_proof_to_main_chain(sub_chain_name)`
+* `create_sub_chain(name, domain_type, metadata=None)` — `chain_ops.py`
+* `start_operation(...)`, `complete_operation(...)` — `transaction_ops.py`
+* `submit_proof_to_main_chain(sub_chain_name)` — `transaction_ops.py`
+* `close()` — `base.py`
 
 ## Method 2: Using REST API Ledger
 
