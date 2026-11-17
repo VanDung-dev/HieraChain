@@ -15,8 +15,8 @@ from typing import Any
 import pyarrow as pa
 import pyarrow.compute as pc
 
+from hierachain.core.block_contract import calculate_block_hash
 from hierachain.core.merkle_tree import MerkleTree, serialize_event_payload
-from hierachain.core.utils import generate_hash
 from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
@@ -88,16 +88,14 @@ class Block:
 
     def calculate_hash(self) -> str:
         """Calculate the hash of the block."""
-        block_header = {
-            "index": self.index,
-            "timestamp": self.timestamp,
-            "previous_hash": self.previous_hash,
-            "nonce": self.nonce,
-            "merkle_root": self.merkle_root,
-            "creator_id": self.creator_id
-        }
-        
-        return generate_hash(block_header)
+        return calculate_block_hash(
+            index=self.index,
+            timestamp=self.timestamp,
+            previous_hash=self.previous_hash,
+            nonce=self.nonce,
+            merkle_root=self.merkle_root,
+            creator_id=self.creator_id,
+        )
 
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """Get all events for a specific entity using Arrow filtering."""
