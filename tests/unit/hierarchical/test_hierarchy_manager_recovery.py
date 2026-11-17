@@ -109,7 +109,7 @@ def test_failed_bootstrap_closes_storage_journal_and_started_chains(
     chain = Mock()
     monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
     monkeypatch.setattr(
-        "hierachain.hierarchical.hierarchy_manager.base.CrossChainTransactionManager",
+        "hierachain.hierarchical.hierarchy_manager.transaction_ops.CrossChainTransactionManager",
         lambda _manager: coordinator,
     )
     monkeypatch.setattr(HierarchyManager, "_restore_main_chain", lambda _self: None)

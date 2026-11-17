@@ -840,8 +840,7 @@ def test_domain_chain_can_replace_generic_restored_placeholder(
 
     monkeypatch.setattr(hierarchy_module, "MainChain", _MainChain)
     monkeypatch.setattr(
-        hierarchy_module,
-        "CrossChainTransactionManager",
+        "hierachain.hierarchical.hierarchy_manager.transaction_ops.CrossChainTransactionManager",
         lambda manager: _TransactionManager(manager),
     )
     monkeypatch.setattr(hierarchy_module.HierarchyManager, "_create_storage", staticmethod(lambda: _Storage()))
@@ -932,8 +931,7 @@ def test_restore_uses_domain_chains_only_for_unresolved_participants(monkeypatch
 
     monkeypatch.setattr(hierarchy_module, "MainChain", _MainChain)
     monkeypatch.setattr(
-        hierarchy_module,
-        "CrossChainTransactionManager",
+        "hierachain.hierarchical.hierarchy_manager.transaction_ops.CrossChainTransactionManager",
         lambda manager: _TransactionManager(manager),
     )
     monkeypatch.setattr(

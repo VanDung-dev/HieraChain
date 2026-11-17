@@ -27,6 +27,7 @@ class HierarchyHost(Protocol):
     _registry_state: dict[str, Any] | None
     _registry_mutating: bool
     _transaction_manager: Any
+    _closed: bool
 
     @property
     def transaction_manager(self) -> Any: ...

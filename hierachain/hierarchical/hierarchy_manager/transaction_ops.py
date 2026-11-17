@@ -4,12 +4,34 @@ import logging
 from typing import Any
 
 from hierachain.hierarchical.hierarchy_manager.contracts import HierarchyHost
+from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
 
 logger = logging.getLogger(__name__)
 
 
 class TransactionCoordinationMixin(HierarchyHost):
     """Lifecycle plumbing for the single cross-chain coordinator writer."""
+
+    @property
+    def transaction_manager(self) -> CrossChainTransactionManager:
+        if getattr(self, "_closed", False):
+            raise RuntimeError("Hierarchy manager is closed")
+        if self._transaction_manager is not None:
+            return self._transaction_manager
+        with self._registry_lock:
+            if self._closed:
+                raise RuntimeError("Hierarchy manager is closed")
+            if self._transaction_manager is None:
+                self._transaction_manager = CrossChainTransactionManager(self)
+            return self._transaction_manager
+
+    @transaction_manager.setter
+    def transaction_manager(self, manager: CrossChainTransactionManager) -> None:
+        self._transaction_manager = manager
+
+    def _close_transaction_manager(self) -> None:
+        if self._transaction_manager is not None:
+            self._transaction_manager.journal.close()
 
     def initiate_cross_chain_transaction(
         self, source_chain_name: str, dest_chain_name: str, payload: dict[str, Any],

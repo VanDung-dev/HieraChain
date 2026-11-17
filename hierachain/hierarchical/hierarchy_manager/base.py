@@ -28,7 +28,6 @@ from hierachain.hierarchical.hierarchy_manager.transaction_ops import (
 )
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import MultiOrgNetwork
-from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
 
 if TYPE_CHECKING:
     from hierachain.domains.chains.domain_chain import DomainChain
@@ -81,28 +80,6 @@ class HierarchyManager(
         self._closed = False
 
         bootstrap.initialize(self, node_identity)
-
-    @property
-    def transaction_manager(self) -> CrossChainTransactionManager:
-        """Acquire the single coordinator writer only when needed."""
-        if getattr(self, "_closed", False):
-            raise RuntimeError("Hierarchy manager is closed")
-        if self._transaction_manager is not None:
-            return self._transaction_manager
-        with self._registry_lock:
-            if self._closed:
-                raise RuntimeError("Hierarchy manager is closed")
-            if self._transaction_manager is None:
-                self._transaction_manager = CrossChainTransactionManager(self)
-            return self._transaction_manager
-
-    @transaction_manager.setter
-    def transaction_manager(self, manager: CrossChainTransactionManager) -> None:
-        self._transaction_manager = manager
-
-    def _close_transaction_manager(self) -> None:
-        if self._transaction_manager is not None:
-            self._transaction_manager.journal.close()
 
     def close(self) -> None:
         """Release owned orderers, coordinator and storage without opening new resources."""
