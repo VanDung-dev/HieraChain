@@ -24,6 +24,7 @@ class HierarchyHost(Protocol):
     private_collections: dict[str, Any]
     network: Any
     _registry_lock: threading.RLock
+    _registry_state: dict[str, Any] | None
     _registry_mutating: bool
     _transaction_manager: Any
 

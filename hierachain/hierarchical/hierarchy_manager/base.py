@@ -4,30 +4,24 @@ HierarchyManager class — coordinates Main Chain and Sub-Chains.
 Behavior is composed from responsibility-specific mixins:
     - ``ChainOperationsMixin``        - sub-chain creation and registration
     - ``OrganizationOperationsMixin`` - organizations, channels, access control
+    - ``StateOperationsMixin``        - durable registry and recovery state
     - ``SystemOperationsMixin``       - system reports and maintenance
     - ``TransactionCoordinationMixin`` - cross-chain coordinator plumbing
 """
 
 from __future__ import annotations
 
-import os
 import threading
 import time
-from collections.abc import Callable
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
 
-from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
-from hierachain.cluster.cross_level_sync_types import (
-    ConflictResolutionStrategy,
-)
-from hierachain.config.settings import settings
-from hierachain.hierarchical.channel import Channel
-from hierachain.hierarchical.hierarchy_manager import recovery, registry, storage_factory
+from hierachain.hierarchical.hierarchy_manager import bootstrap, storage_factory
 from hierachain.hierarchical.hierarchy_manager.chain_ops import ChainOperationsMixin
 from hierachain.hierarchical.hierarchy_manager.org_ops import (
     OrganizationOperationsMixin,
 )
+from hierachain.hierarchical.hierarchy_manager.state_ops import StateOperationsMixin
 from hierachain.hierarchical.hierarchy_manager.system_ops import SystemOperationsMixin
 from hierachain.hierarchical.hierarchy_manager.transaction_ops import (
     TransactionCoordinationMixin,
@@ -38,11 +32,13 @@ from hierachain.hierarchical.transaction_manager import CrossChainTransactionMan
 
 if TYPE_CHECKING:
     from hierachain.domains.chains.domain_chain import DomainChain
+    from hierachain.hierarchical.channel import Channel
 
 
 class HierarchyManager(
     ChainOperationsMixin,
     OrganizationOperationsMixin,
+    StateOperationsMixin,
     SystemOperationsMixin,
     TransactionCoordinationMixin,
 ):
@@ -84,41 +80,7 @@ class HierarchyManager(
         self._transaction_manager: Any | None = None
         self._closed = False
 
-        # Bootstrap owns these resources until all recovery steps succeed.
-        with ExitStack() as cleanup:
-            cleanup.callback(self._close_transaction_manager)
-            # Registry/channel workers need no 2PC writer. Existing decisions
-            # must still be recovered, with the journal's exclusive lease.
-            if os.path.lexists(os.path.join("data", "transactions")):
-                _ = self.transaction_manager
-            self.cross_level_sync: CrossLevelSyncManager | None = None
-            if settings.CROSS_LEVEL_SYNC_ENABLED:
-                sync = CrossLevelSyncManager(
-                    node_id=getattr(node_identity, "node_id", "main-node"),
-                    hierarchy_level="mainchain",
-                    batch_size=settings.CROSS_LEVEL_SYNC_BATCH_SIZE,
-                    sync_timeout=settings.CROSS_LEVEL_SYNC_TIMEOUT,
-                    conflict_strategy=ConflictResolutionStrategy.MAINCHAIN_WINS,
-                    block_verifier=None,
-                    proof_verifier=None,
-                )
-                sync.connect_mainchain(self.main_chain)
-                self.cross_level_sync = sync
-
-            self.storage = self._create_storage()
-            if self.storage is not None:
-                cleanup.callback(self.storage.close)
-                if not self.storage.store_chain(self.main_chain):
-                    raise RuntimeError("Failed to persist main chain metadata")
-                self.main_chain.proof_storage = self.storage
-                self._restore_main_chain()
-                if self.cross_level_sync is not None:
-                    self.cross_level_sync.storage = self.storage
-                self._restore_sub_chains()
-                for chain in self.sub_chains.values():
-                    cleanup.callback(chain.shutdown)
-                self._restore_hierarchy_registry()
-            cleanup.pop_all()
+        bootstrap.initialize(self, node_identity)
 
     @property
     def transaction_manager(self) -> CrossChainTransactionManager:
@@ -154,38 +116,6 @@ class HierarchyManager(
                 cleanup.callback(self._close_transaction_manager)
                 for chain in self.sub_chains.values():
                     cleanup.callback(chain.shutdown)
-
-    def _restore_main_chain(self) -> None:
-        """Restore and verify the signed MainChain history before accepting proofs."""
-        return recovery._restore_main_chain(self)
-
-    def _hierarchy_registry_snapshot(self) -> dict[str, Any]:
-        return registry._hierarchy_registry_snapshot(self)
-
-    def _persist_hierarchy_registry(self) -> bool:
-        return registry._persist_hierarchy_registry(self)
-
-    def _restore_hierarchy_registry(self) -> None:
-        return registry._restore_hierarchy_registry(self)
-
-    def _channel_registry_revision(self) -> str | None:
-        return (self._registry_state or {}).get("_revision")
-
-    def _bind_channel_ledger(self, channel: Channel) -> None:
-        channel.ledger._lock = self._registry_lock
-        if self.storage is not None:
-            channel.ledger.bind_storage(self.storage, self._channel_registry_revision)
-
-    def _apply_hierarchy_registry(self, state: dict[str, Any]) -> None:
-        """Refresh access metadata; existing ledgers consume their own durable suffix."""
-        return registry._apply_hierarchy_registry(self, state)
-
-    def _mutate_registry(self, change: Callable[[], Any], failure_message: str) -> Any:
-        return registry._mutate_registry(self, change, failure_message)
-
-    def _restore_sub_chains(self) -> None:
-        """Recreate every persisted sub-chain before serving API requests."""
-        return recovery._restore_sub_chains(self)
 
     def get_sub_chain(self, name: str) -> DomainChain | None:
         return self.sub_chains.get(name)
