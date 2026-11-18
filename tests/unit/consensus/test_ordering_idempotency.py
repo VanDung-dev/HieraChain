@@ -10,6 +10,7 @@ import pytest
 
 from hierachain.consensus.ordering import admission, idempotency
 from hierachain.consensus.ordering.types import (
+    EventStatus,
     OrderingBackpressureError,
     OrderingStatus,
     PendingEvent,
@@ -30,6 +31,7 @@ def _event(event_id: str = "event-1", channel_id: str = "orders") -> PendingEven
         channel_id=channel_id,
         submitter_org="org-a",
         received_at=1.0,
+        status=EventStatus.PENDING,
     )
 
 

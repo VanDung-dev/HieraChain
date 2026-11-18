@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+import hierachain.consensus.ordering.lifecycle as lifecycle_module
 import hierachain.consensus.ordering.service as service_module
 import hierachain.error_mitigation.journal as journal_module
 from hierachain.consensus.ordering.processor import OrderingProcessor
@@ -35,7 +36,7 @@ def test_wait_for_active_allows_long_replay_without_resetting_it(
         if now[0] >= 11:
             service.status = OrderingStatus.ACTIVE
 
-    monkeypatch.setattr(service_module, "time", SimpleNamespace(monotonic=lambda: now[0], sleep=advance))
+    monkeypatch.setattr(lifecycle_module, "time", SimpleNamespace(monotonic=lambda: now[0], sleep=advance))
     assert service.wait_for_active(timeout=timeout) is active
     assert (now[0] >= 11) is active
 
