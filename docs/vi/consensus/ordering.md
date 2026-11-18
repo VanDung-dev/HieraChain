@@ -23,8 +23,11 @@ Ordering Service được thiết kế theo mô hình Facade, điều phối nhi
 | Storage | Lưu khối có chữ ký và đọc lịch sử đã hoàn tất. | `storage.py` |
 | Recovery | Khôi phục trạng thái từ Event Journal sau sự cố. | `recovery.py` |
 | Journal lookup | Lập index commitment ID/kênh/nội dung bền vững để nhận stable ID. | `journal_lookup.py` |
+| Lifecycle | Chuyển trạng thái, chính sách restart của watchdog và thứ tự shutdown. | `lifecycle.py` |
+| Admission | Giữ chỗ hàng đợi, ghi journal bền vững trước khi công bố event. | `admission.py` |
+| Idempotency | Commitment stable ID xuyên suốt pending, batch, processed, storage và journal. | `idempotency.py` |
 
-`OrderingService` sở hữu hàng đợi sự kiện, pending events, certifier, block builder, storage và metrics. `OrderingProcessor` truy cập các dependency này qua service và trực tiếp xử lý cả batch mới lẫn sự kiện replay. Việc tạo và commit block vẫn nằm trong `OrderingBlockManager`; replay journal vẫn nằm trong `OrderingRecovery`.
+`OrderingService` sở hữu hàng đợi sự kiện, pending events, certifier, block builder, storage và metrics. `OrderingProcessor` truy cập các dependency này qua service và trực tiếp xử lý cả batch mới lẫn sự kiện replay. Việc tạo và commit block vẫn nằm trong `OrderingBlockManager`; replay journal vẫn nằm trong `OrderingRecovery`. Chuyển trạng thái và shutdown nằm trong `lifecycle.py`, còn admission và kiểm tra stable ID nằm trong `admission.py` và `idempotency.py`. Các bước tách này giữ nguyên quy tắc ghi bền vững trước khi ACK và fail-closed khi ID xung đột.
 
 ## Luồng xử lý Sự kiện (Ordering Pipeline)
 

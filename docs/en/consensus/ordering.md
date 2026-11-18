@@ -23,8 +23,11 @@ Ordering Service is designed using the Facade pattern, coordinating multiple spe
 | Storage | Persists signed blocks and reads finalized history. | `storage.py` |
 | Recovery | Restores state from Event Journal after failures. | `recovery.py` |
 | Journal lookup | Indexes durable ID/channel/content commitments for stable-ID admission. | `journal_lookup.py` |
+| Lifecycle | Status transitions, watchdog restart policy and shutdown ordering. | `lifecycle.py` |
+| Admission | Reserves queue capacity, then journals durably before publishing. | `admission.py` |
+| Idempotency | Stable-ID commitment across pending, batch, processed, storage and journal tiers. | `idempotency.py` |
 
-`OrderingService` owns the event queue, pending events, certifier, block builder, storage and metrics. `OrderingProcessor` accesses these dependencies through the service and processes both live batches and replayed events directly. Block creation and commit remain in `OrderingBlockManager`; journal replay remains in `OrderingRecovery`.
+`OrderingService` owns the event queue, pending events, certifier, block builder, storage and metrics. `OrderingProcessor` accesses these dependencies through the service and processes both live batches and replayed events directly. Block creation and commit remain in `OrderingBlockManager`; journal replay remains in `OrderingRecovery`. Status transitions and shutdown live in `lifecycle.py`, while admission and stable-ID checks live in `admission.py` and `idempotency.py`. These moves keep the durable-before-ack and fail-closed conflict rules unchanged.
 
 ## Event Processing Flow (Ordering Pipeline)
 
