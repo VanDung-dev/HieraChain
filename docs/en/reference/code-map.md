@@ -13,7 +13,7 @@ This document maps concepts in technical documentation to specific source code f
 | Concept | File Path | Role |
 |---------|-----------|------|
 | Blockchain (Base) | `hierachain/core/blockchain.py` | Base class managing chain, adding blocks, integrity checks. |
-| Block Structure | `hierachain/core/block.py` | Defines Block structure (Index, Hash, Data, Proof). |
+| Block Structure | `hierachain/core/block.py` | Block events (Arrow), Merkle root, canonical header hash and signature. |
 | Block Hash Contract | `hierachain/core/block_contract.py` | Canonical block header and SHA-256 hash (contract v1). |
 | Main Chain | `hierachain/hierarchical/main_chain/base.py` | Main chain (Layer 1), stores Proof only and manages Sub-chains. |
 | Sub Chain | `hierachain/hierarchical/sub_chain/base.py` | Sub chain (Layer 2), processes Domain data and creates Proof. |
@@ -47,7 +47,7 @@ This document maps concepts in technical documentation to specific source code f
 | Concept | File Path | Role |
 |---------|-----------|------|
 | ZK Prover | `hierachain/security/zk_prover.py` | Development mock; production backend unimplemented. |
-| Key Manager | `hierachain/security/key_manager.py` | Manages Cryptographic keys. |
+| Key Manager | `hierachain/security/key_manager.py` | Manages API keys, permissions and revocation. |
 | Key Provider | `hierachain/security/key_provider.py` | Provides keys to Node. |
 | Block Verifier | `hierachain/security/verify/block_verifier.py` | Validates Block integrity. |
 | Signature Verifier | `hierachain/security/verify/signature_verifier.py` | Validates digital signatures. |

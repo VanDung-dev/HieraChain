@@ -143,9 +143,9 @@ Mock is for development only. When `HRC_ENV=production`, constructing `ZKProver`
 
 These attributes do not start ERP sync in the API. Built-in vendor connectors are `simulation_mode=True` fixtures; applications must provide real adapters.
 
-### Declared settings without runtime consumers
+### Settings without runtime support
 
-`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` and `HRC_SQL_RETENTION_DAYS` are read into settings but have no runtime consumers under `hierachain/`. Setting them does not change batching, rotate Parquet, start a SQL batch worker or purge old events automatically. Configure batching on the ordering service/Sub-Chain itself.
+`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` and `HRC_SQL_RETENTION_DAYS` are not read by `hierachain/config/settings.py`; setting them has no effect. HieraChain does not change batching, rotate Parquet, start a SQL batch worker or purge old events from these names. Configure batching on the ordering service/Sub-Chain itself.
 
 ### Logging
 

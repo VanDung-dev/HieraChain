@@ -140,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (76)"
+??? note "Improvements (78)"
+
+    * 2026-11-18
+
+        * **Consensus (Tách Ordering Service)**: Tách vòng đời ordering (`start`, `shutdown`, `wait_for_active`, chuyển trạng thái và watchdog restart) vào `hierachain/consensus/ordering/lifecycle.py`, giữ chỗ hàng đợi cùng ghi journal bền vững vào `admission.py`, và kiểm tra commitment stable ID vào `idempotency.py`; `OrderingService` (`hierachain/consensus/ordering/service.py`) giữ nguyên các phương thức public dưới dạng delegator, nên việc nhận event bền vững trước khi ACK, báo `journaled` khi backpressure, từ chối ID xung đột và hành vi replay journal không đổi.
+        * **Bảo mật (Tách Storage, Cache & Revocation của KeyManager)**: Chuyển view lưu trữ đã hash và tra cứu backend vào `hierachain/security/key_store.py`, cache khóa/quyền vào `key_cache.py`, kiểm tra thu hồi vào `key_revocation.py`, và helper kiểm tra/hết hạn/tạo key record vào `key_records.py`; `KeyManager` (`hierachain/security/key_manager.py`) giữ nguyên constructor, phương thức public, các thuộc tính `storage`/`revoked_keys`/`revocation_store` và re-export `HashedKeyStorage`/`KeyStorage`/`KeyCacheManager`, nên hành vi xác thực API, lưu thu hồi và fallback cache không đổi.
 
     * 2026-11-17
 

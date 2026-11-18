@@ -31,7 +31,7 @@ The defense is organized into six coordinated areas:
 
 * Encryption and keys:
 
-    * `hierachain/security/{key_manager.py, key_provider.py}` and `hierachain/security/identity_loader.py` provide Ed25519 support, node identity loading and `FileVaultProvider` (Fernet/PBKDF2, dev only). There is no `key_backup_manager.py` or `certificate.py` and no mTLS.
+    * `hierachain/security/{key_provider.py, identity_loader.py}` provide Ed25519 key provisioning and node identity loading, `key_manager.py` manages API-key lifecycle and revocation, and `FileVaultProvider` (Fernet/PBKDF2, dev only) lives in `key_provider.py`. There is no `key_backup_manager.py` or `certificate.py` and no mTLS.
 
 * Decentralized zero-knowledge proofs:
 

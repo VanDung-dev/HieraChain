@@ -31,7 +31,7 @@ Phòng thủ được chia thành sáu nhóm phối hợp với nhau:
 
 * Encryption và khóa:
 
-    * `hierachain/security/{key_manager.py, key_provider.py}` và `hierachain/security/identity_loader.py` cung cấp hỗ trợ Ed25519, nạp node identity và `FileVaultProvider` (Fernet/PBKDF2, chỉ dùng cho dev). Không có `key_backup_manager.py` hay `certificate.py` và không có mTLS.
+    * `hierachain/security/{key_provider.py, identity_loader.py}` cung cấp provision khóa Ed25519 và nạp node identity, `key_manager.py` quản lý vòng đời API key và thu hồi, còn `FileVaultProvider` (Fernet/PBKDF2, chỉ dùng cho dev) nằm trong `key_provider.py`. Không có `key_backup_manager.py` hay `certificate.py` và không có mTLS.
 
 * Zero-knowledge proof phi tập trung:
 

@@ -123,7 +123,7 @@ Adapters log queries and connection events through `SecureLogger`, redacting dat
 
 ## 6. Maintenance and retention
 
-* `HRC_SQL_RETENTION_DAYS` is declared in settings but is not consumed by a runtime retention worker. No automatic event-history purge is wired to this setting.
+* `HRC_SQL_RETENTION_DAYS` is not read by `hierachain/config/settings.py` and no runtime retention worker consumes it. No automatic event-history purge is wired to this name.
 * Logging and journals: Persistent binary journals and forensic error records use `hierachain/core/parquet_log.py` and `hierachain/error_mitigation/journal.py`, keeping chain persistence decoupled from diagnostic logging.
 
 ## Related

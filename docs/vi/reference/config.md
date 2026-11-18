@@ -143,9 +143,9 @@ Mock chỉ phục vụ phát triển. Khi `HRC_ENV=production`, khởi tạo `ZK
 
 Các thuộc tính này không khởi động ERP sync ở API. Connector vendor có sẵn là fixture `simulation_mode=True`; ứng dụng phải cấp adapter thật.
 
-### Thuộc tính khai báo chưa điều khiển runtime
+### Thuộc tính không có hỗ trợ runtime
 
-`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` và `HRC_SQL_RETENTION_DAYS` được đọc vào settings nhưng chưa có consumer runtime trong `hierachain/`. Đặt các biến này không tự đổi batching, xoay Parquet, bật batch worker SQL hoặc xóa event cũ. Cấu hình batching trực tiếp trên ordering service/Sub-Chain.
+`HRC_BLOCK_CREATION_MODE`, `HRC_BLOCK_MAX_WAIT_SEC`, `HRC_PARQUET_ROLL_INTERVAL`, `HRC_POSTGRES_SYNC_MODE` và `HRC_SQL_RETENTION_DAYS` không được `hierachain/config/settings.py` đọc; đặt chúng không có tác dụng. HieraChain không đổi batching, xoay Parquet, bật batch worker SQL hoặc xóa event cũ từ các tên này. Cấu hình batching trực tiếp trên ordering service/Sub-Chain.
 
 ### Logging
 

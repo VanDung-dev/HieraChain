@@ -123,7 +123,7 @@ Adapter ghi nhận truy vấn và sự kiện kết nối qua `SecureLogger`, t�
 
 ## 6. Bảo trì và lưu giữ dữ liệu
 
-* `HRC_SQL_RETENTION_DAYS` được khai báo trong settings nhưng không có worker retention runtime sử dụng. Cấu hình này không tự xóa lịch sử event.
+* `HRC_SQL_RETENTION_DAYS` không được `hierachain/config/settings.py` đọc và không có worker retention runtime sử dụng. Không có cơ chế tự xóa lịch sử event nào gắn với tên này.
 * Nhật ký và journal: Nhật ký nhị phân và dữ liệu kiểm toán lỗi sử dụng `hierachain/core/parquet_log.py` và `hierachain/error_mitigation/journal.py`, tách rời việc lưu trữ chuỗi khỏi hệ thống log chẩn đoán.
 
 ## Liên quan

@@ -140,7 +140,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (76)"
+??? note "Improvements (78)"
+
+    * 2026-11-18
+
+        * **Consensus (Ordering Service Decomposition)**: Extract ordering lifecycle (`start`, `shutdown`, `wait_for_active`, status transitions and watchdog restart) into `hierachain/consensus/ordering/lifecycle.py`, queue-capacity reservation plus the durable journal write into `admission.py`, and stable-ID commitment checks into `idempotency.py`; `OrderingService` (`hierachain/consensus/ordering/service.py`) keeps its public methods as delegators, so durable-before-ack admission, `journaled` backpressure reporting, conflicting-ID rejection and journal replay behavior are unchanged.
+        * **Security (KeyManager Storage, Cache and Revocation Seams)**: Move the hashed storage view and backend lookup into `hierachain/security/key_store.py`, key/permission caching into `key_cache.py`, revocation checks into `key_revocation.py`, and key record validation/expiry/creation helpers into `key_records.py`; `KeyManager` (`hierachain/security/key_manager.py`) keeps the same constructor, public methods, `storage`/`revoked_keys`/`revocation_store` attributes and re-exports `HashedKeyStorage`/`KeyStorage`/`KeyCacheManager`, so API authentication, revocation persistence and cache fallback behavior are unchanged.
 
     * 2026-11-17
 
