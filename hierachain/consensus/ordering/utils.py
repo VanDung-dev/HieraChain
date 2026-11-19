@@ -4,7 +4,6 @@ Ordering storage handler for the HieraChain ordering service.
 
 import hashlib
 import logging
-import struct
 import time
 from queue import Queue
 from typing import Any
@@ -37,12 +36,11 @@ def _json_default(obj: Any) -> Any:
 
 
 def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
-    """Generate unique event ID"""
+    """Derive a stable event ID from the routed payload for retry-safe deduplication."""
     json_bytes = dumps_json(event_data, default=_json_default).encode("utf-8")
     h = hashlib.sha256()
     h.update(channel_id.encode('utf-8'))
     h.update(json_bytes)
-    h.update(struct.pack("<d", time.time()))
     return h.hexdigest()[:16]
 
 

@@ -296,17 +296,14 @@ class OrderingProcessor:
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
         """
         Process each event in the batch after verification is complete.
-        Uses asyncio.gather for parallel processing of independent events.
+        Certification and block creation stay in event order so a batch that
+        spans multiple blocks cannot commit those blocks out of sequence.
         """
-        tasks = []
         for event in batch:
             if event.status == EventStatus.REJECTED:
                 _remove_pending(self.service.pending_events, event.event_id)
                 continue
-            tasks.append(self.process_single_event(event))
-        
-        if tasks:
-            await asyncio.gather(*tasks)
+            await self.process_single_event(event)
 
     async def process_single_event(
         self,

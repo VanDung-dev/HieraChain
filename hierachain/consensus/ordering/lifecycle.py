@@ -61,7 +61,7 @@ class OrderingLifecycleMixin(OrderingLifecycleHost):
             except Exception as exc:
                 if self.should_stop.is_set():
                     return
-                failures = 1 if was_active else failures + 1
+                failures += 1
                 logger.error(
                     "Ordering processor stopped unexpectedly; restart %d/%d: %s",
                     failures, max_restarts, exc,
@@ -75,7 +75,7 @@ class OrderingLifecycleMixin(OrderingLifecycleHost):
                     )
                     return
                 self.processor = OrderingProcessor(self)
-                delay = min(2 ** (failures - 1), 30)
+                delay = 0.1 if was_active else min(2 ** (failures - 1), 30)
                 if self.should_stop.wait(delay):
                     return
             finally:

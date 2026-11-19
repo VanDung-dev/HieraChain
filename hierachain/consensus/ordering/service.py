@@ -271,12 +271,14 @@ class OrderingService(OrderingLifecycleMixin):
     def get_next_block(self, timeout: float | None = None) -> Block | None:
         """Get next committed block from queue"""
         try:
-            return (
+            block = (
                 self.commit_queue.get(timeout=timeout)
                 if timeout else self.commit_queue.get_nowait()
             )
         except Empty:
             return None
+        self.commit_queue.task_done()
+        return block
 
     @property
     def block_history(self):

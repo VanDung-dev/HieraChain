@@ -18,6 +18,15 @@ from hierachain.security.verify.block_verifier import sign_block
 logger = logging.getLogger(__name__)
 
 
+def _configured_block_spacing(config: Any) -> float:
+    try:
+        value = config.get("block_spacing") or 0.0
+        spacing = float(value)
+    except (AttributeError, TypeError, ValueError):
+        return 0.0
+    return spacing if spacing > 0 else 0.0
+
+
 class OrderingBlockManager:
     """Manages block creation, hashing, and committing to storage"""
     def __init__(self, service):
@@ -31,6 +40,8 @@ class OrderingBlockManager:
         
         # Serialize persistence with lockdown and status transitions.
         self._block_index_lock = service._commit_lock
+        self.block_spacing = _configured_block_spacing(self.config)
+        self._spacing_lock = asyncio.Lock()
 
     async def create_block_async(self, events: list[dict[str, Any]]) -> None:
         """Create a block asynchronously by offloading Merkle tree calculation."""
@@ -48,15 +59,28 @@ class OrderingBlockManager:
             previous_hash="",
             merkle_root=merkle_tree.root
         )
-        while not self.service.should_stop.is_set():
-            try:
-                await asyncio.to_thread(self.commit_block, block)
-            except OrderingPausedError:
-                # Keep the cut batch intact while maintenance freezes commits.
-                await asyncio.sleep(0.05)
-            else:
-                return
+        # Spacing belongs to block creation, so wait before taking the commit lock.
+        async with self._spacing_lock:
+            await self._wait_for_block_spacing()
+            while not self.service.should_stop.is_set():
+                try:
+                    await asyncio.to_thread(self.commit_block, block)
+                except OrderingPausedError:
+                    # Keep the cut batch intact while maintenance freezes commits.
+                    await asyncio.sleep(0.05)
+                else:
+                    return
         raise RuntimeError("Ordering service is stopping")
+
+    async def _wait_for_block_spacing(self) -> None:
+        if self.block_spacing <= 0:
+            return
+        previous_block = self.storage_handler.last_block
+        if previous_block is None:
+            return
+        delay = previous_block.timestamp + self.block_spacing - time.time()
+        if delay > 0:
+            await asyncio.sleep(delay)
 
     def _require_commit_allowed(self) -> None:
         if self.service.status == OrderingStatus.LOCKDOWN:
