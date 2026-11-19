@@ -140,7 +140,11 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (78)"
+??? note "Improvements (79)"
+
+    * 2026-11-20
+
+        * **API (Idempotent Event Retry Inputs)**: `EventRequest` (`hierachain/api/ledger/schemas.py`) adds optional `event_id` and `timestamp` fields for client-controlled idempotent retries, and `_build_event_data()` (`hierachain/api/ledger/events.py`) honors a supplied `timestamp` (falling back to `time.time()`) and attaches a supplied `event_id` so clients can resend byte-stable retry payloads — previously retries could not preserve a caller-chosen event identity or event time.
 
     * 2026-11-18
 
@@ -298,7 +302,14 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (49)"
+??? warning "Fix (53)"
+
+    * 2026-11-20
+
+        * **Adapters (Chain Type Detection by `chain_kind`)**: `SQLBase._determine_chain_type()` (`hierachain/adapters/database/base/sql_adapter.py`) and `RedisChainManager.store_chain()` (`hierachain/adapters/database/redis_adapter.py`) resolve chain type from the `chain_kind` attribute (`main`/`sub`/`domain`, defaulting to `sub`) instead of class-name matching or `resolve_sub_proof` heuristics — previously non-standard chain classes could be classified incorrectly.
+        * **Consensus (Ordering Sequencing, Spacing & Stable Event IDs)**: `OrderingProcessor._handle_processed_batch()` (`hierachain/consensus/ordering/processor.py`) applies certified events sequentially so batches spanning multiple blocks commit in order, `OrderingBlockManager` (`hierachain/consensus/ordering/block_manager.py`) waits for configured `block_spacing` before taking the commit lock with defensive config parsing, `OrderingService.get_next_block()` (`hierachain/consensus/ordering/service.py`) calls `task_done()` on dequeue, watchdog restart counting in `OrderingLifecycleMixin` (`hierachain/consensus/ordering/lifecycle.py`) increments on every processor failure (including post-`ACTIVE` flaps) with a shorter post-active restart delay, and `generate_event_id()` (`hierachain/consensus/ordering/utils.py`) derives a stable ID from channel plus routed payload without a clock seed — previously parallel batch handling, missing spacing/task accounting, and time-seeded IDs could misorder commits or break retry-safe deduplication.
+        * **Hierarchical (Registration, Ordering & Proof Hardening)**: `MainChain` (`hierachain/hierarchical/main_chain/base.py`) declares `chain_kind = "main"` and makes `register_sub_chain()` thread-safe with rollback of membership, metadata, authority, and the appended registration event when `add_event()` fails; `SubChain` (`hierachain/hierarchical/sub_chain/base.py`, `hierachain/hierarchical/sub_chain/block.py`, `hierachain/hierarchical/sub_chain/ordering.py`, `hierachain/hierarchical/sub_chain/proof.py`) includes `_block_spacing_seconds()` in ordering config, publishes `receive_event()` and `pending_events` registration under the same lock, sleeps briefly while draining the event pool to avoid busy-waiting, compares the local block at the DB tip index during divergence checks, and records `proof_submitted` with a deterministic `event_id` and the block timestamp — previously registration could leave partial state, premature commits/rechecks could race or spin, and retries could record divergent proof events.
+        * **Core (Event Type Index Guard)**: `get_events_by_type()` (`hierachain/core/blockchain.py`) snapshots `blocks_by_index` under the chain lock and skips missing block indexes when resolving `event_type_index` entries — previously stale index references could raise `IndexError`.
 
     * 2026-11-14
 

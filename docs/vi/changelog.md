@@ -140,7 +140,11 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (78)"
+??? note "Improvements (79)"
+
+    * 2026-11-20
+
+        * **API (Đầu vào Retry Event Idempotent)**: `EventRequest` (`hierachain/api/ledger/schemas.py`) thêm các trường tùy chọn `event_id` và `timestamp` để client kiểm soát retry idempotent, và `_build_event_data()` (`hierachain/api/ledger/events.py`) ưu tiên `timestamp` được cung cấp (fallback về `time.time()`) đồng thời gắn `event_id` được cung cấp để client có thể gửi lại payload retry byte-stable — trước đây retry không thể giữ nguyên danh tính event hoặc thời gian event do caller chọn.
 
     * 2026-11-18
 
@@ -298,7 +302,14 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (49)"
+??? warning "Fix (53)"
+
+    * 2026-11-20
+
+        * **Adapter (Nhận diện Loại Chain theo `chain_kind`)**: `SQLBase._determine_chain_type()` (`hierachain/adapters/database/base/sql_adapter.py`) và `RedisChainManager.store_chain()` (`hierachain/adapters/database/redis_adapter.py`) xác định loại chain từ thuộc tính `chain_kind` (`main`/`sub`/`domain`, mặc định `sub`) thay vì so khớp tên lớp hoặc heuristic `resolve_sub_proof` — trước đây các lớp chain không chuẩn có thể bị phân loại sai.
+        * **Đồng thuận (Tuần tự Batch, Spacing & Event ID Ổn định)**: `OrderingProcessor._handle_processed_batch()` (`hierachain/consensus/ordering/processor.py`) áp dụng event đã certify tuần tự để batch trải nhiều block commit đúng thứ tự, `OrderingBlockManager` (`hierachain/consensus/ordering/block_manager.py`) chờ `block_spacing` cấu hình trước khi lấy commit lock kèm parse cấu hình phòng thủ, `OrderingService.get_next_block()` (`hierachain/consensus/ordering/service.py`) gọi `task_done()` khi dequeue, bộ đếm restart watchdog trong `OrderingLifecycleMixin` (`hierachain/consensus/ordering/lifecycle.py`) tăng ở mọi lần processor lỗi (kể cả flap sau `ACTIVE`) với delay khởi động lại ngắn hơn sau ACTIVE, và `generate_event_id()` (`hierachain/consensus/ordering/utils.py`) sinh ID ổn định từ channel cộng payload đã định tuyến, không dùng seed đồng hồ — trước đây xử lý batch song song, thiếu spacing/task accounting và ID gắn seed thời gian có thể làm lệch thứ tự commit hoặc phá dedup retry an toàn.
+        * **Hierarchical (Củng cố Đăng ký, Ordering & Proof)**: `MainChain` (`hierachain/hierarchical/main_chain/base.py`) khai báo `chain_kind = "main"` và biến `register_sub_chain()` thành an toàn luồng với rollback membership, metadata, authority và event đăng ký đã append khi `add_event()` lỗi; `SubChain` (`hierachain/hierarchical/sub_chain/base.py`, `hierachain/hierarchical/sub_chain/block.py`, `hierachain/hierarchical/sub_chain/ordering.py`, `hierachain/hierarchical/sub_chain/proof.py`) đưa `_block_spacing_seconds()` vào cấu hình ordering, publish `receive_event()` và ghi nhận `pending_events` dưới cùng một lock, sleep ngắn khi drain event pool để tránh busy-wait, so sánh block local tại chỉ số tip DB khi kiểm tra phân kỳ, và ghi `proof_submitted` với `event_id` xác định cùng timestamp của block — trước đây đăng ký có thể để lại trạng thái dở dang, commit/kiểm tra sớm có thể race hoặc quay vòng, và retry có thể ghi proof event khác nhau.
+        * **Core (Chặn Lỗi Tra cứu Event Type Index)**: `get_events_by_type()` (`hierachain/core/blockchain.py`) chụp snapshot `blocks_by_index` dưới chain lock và bỏ qua chỉ số block bị thiếu khi resolve mục trong `event_type_index` — trước đây tham chiếu index cũ có thể gây `IndexError`.
 
     * 2026-11-14
 
