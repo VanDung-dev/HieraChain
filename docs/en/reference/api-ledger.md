@@ -92,6 +92,8 @@ Unknown channels return `404`; an absent authenticated user or a user outside th
 
     * `entity_id: str`
     * `event_type: str`
+    * `event_id: str | None` (Client idempotency key; resend unchanged content to reuse it)
+    * `timestamp: float | None` (Client event time; resend the original value with a retried `event_id`)
     * `details: dict[str, Any] | None` (On-chain data)
     * `details_cid: str | None` (Off-chain CID reference)
     * `details_nonce: str | None` (Encryption nonce)
@@ -253,7 +255,7 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 ## Implementation Notes (abbreviated from `hierachain/api/ledger/events.py`)
 
 * Lazy DI: uses lightweight singletons `get_hierarchy_manager()` and `get_entity_tracer()` for request lifecycle.
-* `POST /api/ledger/chains/{chain_name}/events`: server sets `timestamp = time.time()`; missing `details` defaults to `{}`.
+* `POST /api/ledger/chains/{chain_name}/events`: uses the supplied `timestamp` and otherwise sets `time.time()`; passes a supplied `event_id` through as the ordering idempotency key; missing `details` defaults to `{}`.
 * `POST /api/ledger/chains/{chain_name}/submit-proof`: delegates to `HierarchyManager.submit_proof_to_main_chain()`; success means the signed MainChain proof block was finalized and verified after durable SQL readback. Missing or unsupported storage returns an error.
 * `GET /api/ledger/chains/{chain_name}/blocks`: when `Block` has no `to_event_list`, there is a fallback conversion from Arrow Table (`to_pylist`) for safety.
 

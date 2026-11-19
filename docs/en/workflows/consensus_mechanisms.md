@@ -23,7 +23,7 @@ MainChain selects `HRC_MAINCHAIN_CONSENSUS`, falling back to `HRC_CONSENSUS_TYPE
 
 ## Ordering and durability
 
-`SubChain.add_event()` journals and queues the event. Ordering batches events, finalizes consensus, signs the block header and saves the block before publishing it to the commit queue. The Sub-Chain consumer validates and applies the committed block without rewriting it. A submission acknowledgement is earlier than finality. Default Sub-Chain ordering uses 50 events and a 1-second batch timeout; this wait is independent of PoA block spacing.
+`SubChain.add_event()` journals and queues the event. Ordering batches events, finalizes consensus, signs the block header and saves the block before publishing it to the commit queue. The Sub-Chain consumer validates and applies the committed block without rewriting it. A submission acknowledgement is earlier than finality. Default Sub-Chain ordering uses 50 events and a 1-second batch timeout; this wait is independent of PoA block spacing. A positive PoA `block_interval` adds a separate wait before block creation takes the commit lock, so produced blocks satisfy the validator's half-interval threshold.
 
 ## PoF boundary
 

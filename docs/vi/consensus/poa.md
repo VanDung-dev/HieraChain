@@ -54,7 +54,7 @@ Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của c
 
 MainChain và SubChain dùng PoA đọc giá trị này từ `HRC_BLOCK_INTERVAL`, mặc định là `0.0`. Khởi tạo trực tiếp `ProofOfAuthority()` cũng mặc định là `0.0`. Giá trị âm hoặc không hữu hạn bị từ chối khi khởi tạo PoA.
 
-Orderer của SubChain vẫn gom event theo `block_size` và `batch_timeout` (mặc định: 50 event và 1.0 giây). Bỏ thời gian chờ PoA không loại bỏ thời gian gom batch, xác thực chữ ký, đồng bộ journal hay công việc lưu trữ. PoF giữ cấu hình thời gian riêng.
+Orderer của SubChain vẫn gom event theo `block_size` và `batch_timeout` (mặc định: 50 event và 1.0 giây). Khi `block_interval` dương, bước tạo block chờ đến timestamp block trước cộng nửa khoảng interval rồi mới lấy commit lock, nên orderer không tạo ra block mà validator của nó sẽ từ chối; bước finalizer giữ cùng rào chắn. Bỏ thời gian chờ PoA không loại bỏ thời gian gom batch, xác thực chữ ký, đồng bộ journal hay công việc lưu trữ. PoF giữ cấu hình thời gian riêng.
 
 Với triển khai hiện có, cấu hình tường minh `HRC_BLOCK_INTERVAL=10` giữ khoảng cách tối thiểu 5 giây như trước. Dùng `HRC_BLOCK_INTERVAL=0` để bỏ khoảng cách này và cấu hình nhất quán giữa bên tạo block và validator: validator giữ khoảng cách cũ sẽ từ chối các block nhanh hơn. Các block đã đáp ứng khoảng cách cũ vẫn hợp lệ với mặc định mới.
 

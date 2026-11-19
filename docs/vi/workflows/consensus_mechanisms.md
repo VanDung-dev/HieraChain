@@ -23,7 +23,7 @@ MainChain chọn `HRC_MAINCHAIN_CONSENSUS`, fallback về `HRC_CONSENSUS_TYPE`; 
 
 ## Ordering và độ bền dữ liệu
 
-`SubChain.add_event()` ghi journal và đưa event vào hàng đợi. Ordering gom event, finalize đồng thuận, ký header và lưu block trước khi đưa vào commit queue. Consumer Sub-Chain xác minh và áp dụng block đã commit mà không ghi lại. Xác nhận gửi event xảy ra trước finality. Ordering Sub-Chain mặc định dùng 50 event và batch timeout 1 giây; thời gian chờ này độc lập với giãn cách block PoA.
+`SubChain.add_event()` ghi journal và đưa event vào hàng đợi. Ordering gom event, finalize đồng thuận, ký header và lưu block trước khi đưa vào commit queue. Consumer Sub-Chain xác minh và áp dụng block đã commit mà không ghi lại. Xác nhận gửi event xảy ra trước finality. Ordering Sub-Chain mặc định dùng 50 event và batch timeout 1 giây; thời gian chờ này độc lập với giãn cách block PoA. Khi `block_interval` PoA dương, bước tạo block chờ thêm một khoảng riêng trước khi lấy commit lock, để block tạo ra đáp ứng ngưỡng nửa interval của validator.
 
 ## Giới hạn PoF
 

@@ -30,7 +30,7 @@ Cột `data` chứa byte JSON chuẩn hóa của sự kiện do bước chuyển
 
 ## Input REST và SDK
 
-`EventRequest` trong `hierachain/api/ledger/schemas.py` dùng `event_type`; server tạo event nội bộ với `event` và timestamp server. `entity_id` và `event_type` bắt buộc. Field tùy chọn gồm `details`, `details_cid`, `details_nonce`, `details_metadata`, `sender` và `signature`.
+`EventRequest` trong `hierachain/api/ledger/schemas.py` dùng `event_type`; server tạo event nội bộ với `event` và `timestamp` do client cung cấp hoặc thời gian server. `entity_id` và `event_type` bắt buộc. Field tùy chọn gồm `event_id`, `timestamp`, `details`, `details_cid`, `details_nonce`, `details_metadata`, `sender` và `signature`. Truyền `event_id` biến request thành khóa idempotency; gửi lại đúng payload cùng `timestamp` gốc để khớp kiểm tra nội dung stable-ID.
 
 ```python
 from hierachain.api.ledger.schemas import EventRequest

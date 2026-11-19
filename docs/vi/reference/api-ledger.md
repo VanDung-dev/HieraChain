@@ -92,6 +92,8 @@ Channel không tồn tại trả về `404`; thiếu user đã xác thực hoặ
 
     * `entity_id: str`
     * `event_type: str`
+    * `event_id: str | None` (Khóa idempotency do client cung cấp; gửi lại nội dung không đổi để tái sử dụng)
+    * `timestamp: float | None` (Thời gian event do client cung cấp; gửi lại giá trị gốc khi retry kèm `event_id`)
     * `details: dict[str, Any] | None` (On-chain data)
     * `details_cid: str | None` (Off-chain CID reference)
     * `details_nonce: str | None` (Encryption nonce)
@@ -253,7 +255,7 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 ## Ghi chú triển khai (rút gọn từ `hierachain/api/ledger/events.py`)
 
 * DI lười (lazy DI): dùng các singleton nhẹ `get_hierarchy_manager()` và `get_entity_tracer()` cho request lifecycle.
-* `POST /api/ledger/chains/{chain_name}/events`: server sẽ đặt `timestamp = time.time()`; `details` vắng mặt sẽ thành `{}`.
+* `POST /api/ledger/chains/{chain_name}/events`: dùng `timestamp` do client cung cấp, nếu không có thì đặt `time.time()`; chuyển `event_id` do client cung cấp thành khóa idempotency của ordering; `details` vắng mặt sẽ thành `{}`.
 * `POST /api/ledger/chains/{chain_name}/submit-proof`: gọi `HierarchyManager.submit_proof_to_main_chain()`; thành công nghĩa là block proof MainChain đã ký được hoàn tất và kiểm tra lại sau khi đọc từ SQL bền vững. Thiếu storage hoặc backend chưa hỗ trợ sẽ trả lỗi.
 * `GET /api/ledger/chains/{chain_name}/blocks`: khi `Block` không có `to_event_list`, có fallback chuyển đổi từ Arrow Table (`to_pylist`) để an toàn.
 

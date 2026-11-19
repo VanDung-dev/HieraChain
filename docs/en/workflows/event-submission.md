@@ -93,7 +93,7 @@ event = {
 }
 ```
 
-> The Ledger API requires `entity_id` and `event_type`, and maps `event_type` to the internal `event` field. Defaults in `SubChain.add_event()` apply to internal calls and do not make those API fields optional. `SubChain.add_event()` rejects malformed events and forbidden terminology before enqueueing. The returned `event_id` acknowledges acceptance for ordering, not block finalization.
+> The Ledger API requires `entity_id` and `event_type`, and maps `event_type` to the internal `event` field. A client retry may also send optional `event_id` and `timestamp`; resend the same pair with unchanged content so the deterministic ordering ID is reused instead of appended as a duplicate. Defaults in `SubChain.add_event()` apply to internal calls and do not make those API fields optional. `SubChain.add_event()` rejects malformed events and forbidden terminology before enqueueing. The returned `event_id` acknowledges acceptance for ordering, not block finalization.
 
 ## Error handling
 

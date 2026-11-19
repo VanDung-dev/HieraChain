@@ -26,7 +26,7 @@ sequenceDiagram
     else Bootstrap available
         OS-->>SC: Bootstrap blocks
     end
-    SC->>SC: Compare local tip index/hash with supplied tip
+    SC->>SC: Compare local state at the supplied tip index with supplied hash
     opt Rebuild required
         SC->>SC: Lock, clear chain and WorldState
         SC->>SC: Append all supplied blocks and apply WorldState
@@ -44,8 +44,8 @@ sequenceDiagram
 | Local tip behind supplied tip | Rebuild from the complete supplied block list |
 | Same index and same hash | Keep the local chain |
 | Same index with different hash | Rebuild from supplied blocks |
-| Local index ahead, different tip hash | Log divergence and rebuild |
-| Local index ahead, same tip hash | Keep the local chain |
+| Local index ahead, local block at the supplied tip index matches the supplied hash | Keep the local chain and its extra blocks |
+| Local index ahead, block missing or hash different at the supplied tip index | Log divergence and rebuild from supplied blocks |
 
 `_apply_rehydrated_blocks()` holds the chain lock while clearing and rebuilding the chain, WorldState and event indexes. It then calls `is_chain_valid()` and raises `ValueError` if validation fails. It does not reset an active orderer's block counters.
 

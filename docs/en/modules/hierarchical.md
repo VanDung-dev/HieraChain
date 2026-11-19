@@ -18,6 +18,7 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 
 * Stores cryptographic block proofs rather than raw business event records.
 * Recursively sanitizes Sub-Chain registration metadata before storing it in the registry, consensus authority, or registration event; summaries expose only the sanitized copy.
+* Serializes `register_sub_chain()`: if appending the registration event fails, it removes the membership, metadata and authority entry, returns `False`, and leaves no partial registration.
 * Exposes a ZK verification hook; production proving and verification are not implemented.
 * Validates cross-chain anchors under consortium or authority consensus.
 

@@ -93,7 +93,7 @@ event = {
 }
 ```
 
-> Ledger API yêu cầu `entity_id` và `event_type`, đồng thời ánh xạ `event_type` sang trường nội bộ `event`. Giá trị mặc định trong `SubChain.add_event()` áp dụng cho lời gọi nội bộ, không khiến các trường API này trở thành tùy chọn. `SubChain.add_event()` từ chối sự kiện sai định dạng và thuật ngữ bị cấm trước khi xếp hàng. `event_id` trả về xác nhận đã tiếp nhận để sắp thứ tự, không xác nhận khối đã hoàn tất.
+> Ledger API yêu cầu `entity_id` và `event_type`, đồng thời ánh xạ `event_type` sang trường nội bộ `event`. Client retry có thể gửi thêm `event_id` và `timestamp` tùy chọn; gửi lại đúng cặp này với nội dung không đổi để ID ordering tất định được tái sử dụng thay vì thêm bản ghi trùng. Giá trị mặc định trong `SubChain.add_event()` áp dụng cho lời gọi nội bộ, không khiến các trường API này trở thành tùy chọn. `SubChain.add_event()` từ chối sự kiện sai định dạng và thuật ngữ bị cấm trước khi xếp hàng. `event_id` trả về xác nhận đã tiếp nhận để sắp thứ tự, không xác nhận khối đã hoàn tất.
 
 ## Xử lý lỗi
 

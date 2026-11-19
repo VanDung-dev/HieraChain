@@ -26,7 +26,7 @@ sequenceDiagram
     else Bootstrap available
         OS-->>SC: Bootstrap blocks
     end
-    SC->>SC: Compare local tip index/hash with supplied tip
+    SC->>SC: Compare local state at the supplied tip index with supplied hash
     opt Rebuild required
         SC->>SC: Lock, clear chain and WorldState
         SC->>SC: Append all supplied blocks and apply WorldState
@@ -44,8 +44,8 @@ sequenceDiagram
 | Khối cuối cục bộ đứng sau khối cuối được cung cấp | Dựng lại từ toàn bộ danh sách khối được cung cấp |
 | Cùng chỉ số và cùng hash | Giữ chuỗi cục bộ |
 | Cùng chỉ số nhưng khác hash | Dựng lại từ các khối được cung cấp |
-| Chỉ số cục bộ cao hơn, hash khối cuối khác | Ghi log phân kỳ và dựng lại |
-| Chỉ số cục bộ cao hơn, hash khối cuối giống nhau | Giữ chuỗi cục bộ |
+| Chỉ số cục bộ cao hơn, khối cục bộ tại chỉ số tip được cung cấp khớp hash được cung cấp | Giữ chuỗi cục bộ cùng các khối dư |
+| Chỉ số cục bộ cao hơn, thiếu khối hoặc hash khác tại chỉ số tip được cung cấp | Ghi log phân kỳ và dựng lại từ các khối được cung cấp |
 
 `_apply_rehydrated_blocks()` giữ khóa chuỗi trong khi xóa và dựng lại chuỗi, WorldState và chỉ mục sự kiện. Sau đó, nó gọi `is_chain_valid()` và phát sinh `ValueError` nếu xác thực thất bại. Nó không đặt lại bộ đếm khối của orderer đang hoạt động.
 

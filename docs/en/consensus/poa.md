@@ -54,7 +54,7 @@ The protocol operates based on trust in the identity of participating nodes:
 
 MainChain and SubChain instances using PoA read this value from `HRC_BLOCK_INTERVAL`, which defaults to `0.0`. Direct `ProofOfAuthority()` construction also defaults to `0.0`. Negative or nonfinite values are rejected when constructing PoA.
 
-The SubChain orderer still batches events according to `block_size` and `batch_timeout` (defaults: 50 events and 1.0 second). Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.
+The SubChain orderer still batches events according to `block_size` and `batch_timeout` (defaults: 50 events and 1.0 second). When `block_interval` is positive, block creation waits until the previous block timestamp plus half the interval before taking the commit lock, so the orderer does not produce blocks its validators reject; the finalizer keeps the same guard. Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.
 
 For an existing deployment, an explicit `HRC_BLOCK_INTERVAL=10` retains the previous 5-second minimum spacing. Use `HRC_BLOCK_INTERVAL=0` to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.
 

@@ -18,6 +18,7 @@ Các thành phần được tổ chức trong các gói chuyên biệt dưới `
 
 * Lưu trữ các bằng chứng khối mật mã thay vì dữ liệu sự kiện thô.
 * Lọc đệ quy metadata đăng ký Sub-Chain trước khi lưu vào registry, authority đồng thuận hoặc event đăng ký; bản tóm tắt chỉ trả bản đã lọc.
+* Tuần tự hóa `register_sub_chain()`: nếu append event đăng ký thất bại, hàm gỡ membership, metadata và authority entry, trả `False`, không để lại đăng ký dở dang.
 * Cung cấp hook xác thực ZK; tạo và xác minh proof production chưa được triển khai.
 * Kiểm tra tính hợp lệ của các điểm neo liên chuỗi theo cơ chế đồng thuận thẩm quyền hoặc liên minh.
 
