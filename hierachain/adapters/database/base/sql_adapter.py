@@ -62,9 +62,8 @@ class SQLBase(ChannelLedgerSQLStorage, ABC):
     @staticmethod
     def _determine_chain_type(chain: Blockchain) -> str:
         """Determine if chain is main, domain or plain sub chain."""
-        if "MainChain" in str(type(chain)):
-            return "main"
-        return "domain" if getattr(chain, "chain_kind", "sub") == "domain" else "sub"
+        chain_kind = getattr(chain, "chain_kind", None)
+        return chain_kind if chain_kind in {"main", "sub", "domain"} else "sub"
 
     @staticmethod
     def _create_block_data(block_row: Any, events: list[dict[str, Any]]) -> dict[str, Any]:

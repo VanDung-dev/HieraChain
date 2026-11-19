@@ -48,10 +48,8 @@ class RedisChainManager:
 
     def store_chain(self, chain: Blockchain) -> bool:
         try:
-            if hasattr(chain, "resolve_sub_proof") or "MainChain" in chain.__class__.__name__:
-                chain_type = "main"
-            else:
-                chain_type = "domain" if getattr(chain, "chain_kind", "sub") == "domain" else "sub"
+            chain_kind = getattr(chain, "chain_kind", None)
+            chain_type = chain_kind if chain_kind in {"main", "sub", "domain"} else "sub"
             domain_type = getattr(chain, "domain_type", None)
             data = {
                 "name": chain.name,
