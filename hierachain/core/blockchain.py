@@ -489,11 +489,14 @@ class BlockchainQueryEngine:
         with self.blockchain.lock:
             idx = self.blockchain.event_type_index
             if event_type in idx:
+                blocks_by_index = {
+                    block.index: block for block in self.blockchain.chain
+                }
                 events = []
                 for bi in idx[event_type]:
-                    events.extend(
-                        self.blockchain.chain[bi].get_events_by_type(event_type)
-                    )
+                    block = blocks_by_index.get(bi)
+                    if block is not None:
+                        events.extend(block.get_events_by_type(event_type))
                 return events
             return []
 
