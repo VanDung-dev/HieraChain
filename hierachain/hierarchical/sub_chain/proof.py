@@ -256,12 +256,13 @@ def _update_local_state_after_proof(
     proof_event = {
         "entity_id": sub_chain.name,
         "event": "proof_submitted",
-        "timestamp": time.time(),
+        "event_id": f"proof-submitted:{sub_chain.name}:{latest_block.index}:{latest_block.hash}",
+        "timestamp": latest_block.timestamp,
         "details": {
             "main_chain_name": getattr(main_chain, "name", str(main_chain)),
             "proof_hash": latest_block.hash,
             "block_index": latest_block.index,
-            "submitted_at": time.time(),
+            "submitted_at": latest_block.timestamp,
             "zk_proof_included": zk_proof is not None,
         },
     }

@@ -16,12 +16,17 @@ def _check_divergence_and_rehydrate(
 ) -> bool:
     """Check for state divergence between local and database. Returns True if rehydrate is needed."""
     if latest_local.index > latest_db.index:
-        local_hash = latest_local.hash
-        db_hash = latest_db.hash
-        if local_hash != db_hash:
+        local_at_db_tip = next(
+            (block for block in getattr(sub_chain, "chain", []) if block.index == latest_db.index),
+            None,
+        )
+        if local_at_db_tip is None or local_at_db_tip.hash != latest_db.hash:
             logger.warning(
-                "Chain %s has divergent state! Local hash: %s, DB hash: %s. Will rehydrate.",
-                sub_chain.name, local_hash[:16] if local_hash else "None", db_hash[:16] if db_hash else "None"
+                "Chain %s has divergent state! DB index: %d, DB hash: %s, local hash: %s. Will rehydrate.",
+                sub_chain.name,
+                latest_db.index,
+                latest_db.hash[:16] if latest_db.hash else "None",
+                local_at_db_tip.hash[:16] if local_at_db_tip and local_at_db_tip.hash else "None",
             )
             return True
         logger.info(

@@ -43,6 +43,8 @@ class MainChain(Blockchain):
     - Provides proof verification and chain coordination
     - Uses Proof of Authority consensus suitable for business applications
     """
+    chain_kind = "main"
+
     __slots__ = (
         'consensus',
         'latest_proofs',
@@ -151,35 +153,51 @@ class MainChain(Blockchain):
         Returns:
             True if Sub-Chain was registered successfully, False otherwise
         """
-        if sub_chain_name in self.registered_sub_chains:
-            return False
+        with self.lock:
+            if sub_chain_name in self.registered_sub_chains:
+                return False
 
-        safe_metadata = sanitize_metadata_for_main_chain(metadata or {})
-        self.registered_sub_chains.add(sub_chain_name)
-        self.sub_chain_metadata[sub_chain_name] = safe_metadata
+            safe_metadata = sanitize_metadata_for_main_chain(metadata or {})
+            self.registered_sub_chains.add(sub_chain_name)
+            self.sub_chain_metadata[sub_chain_name] = safe_metadata
 
-        # Add Sub-Chain as an authority for proof submission
-        self.consensus.add_authority(sub_chain_name, {
-            "role": "sub_chain",
-            "permissions": ["proof_submission"],
-            "registered_at": time.time(),
-            "metadata": safe_metadata
-        })
-
-        # Create registration event
-        registration_event = {
-            "entity_id": sub_chain_name,
-            "event": "sub_chain_registration",
-            "timestamp": time.time(),
-            "details": {
-                "sub_chain_name": sub_chain_name,
-                "registered_by": "main_chain",
+            # Add Sub-Chain as an authority for proof submission
+            authority_added = self.consensus.add_authority(sub_chain_name, {
+                "role": "sub_chain",
+                "permissions": ["proof_submission"],
+                "registered_at": time.time(),
                 "metadata": safe_metadata
-            }
-        }
+            })
 
-        self.add_event(registration_event)
-        return True
+            # Create registration event
+            registration_event = {
+                "entity_id": sub_chain_name,
+                "event": "sub_chain_registration",
+                "timestamp": time.time(),
+                "details": {
+                    "sub_chain_name": sub_chain_name,
+                    "registered_by": "main_chain",
+                    "metadata": safe_metadata
+                }
+            }
+
+            try:
+                self.add_event(registration_event)
+            except Exception:
+                self.registered_sub_chains.discard(sub_chain_name)
+                self.sub_chain_metadata.pop(sub_chain_name, None)
+                if authority_added:
+                    remover = getattr(self.consensus, "remove_authority", None)
+                    if remover is None:
+                        remover = getattr(self.consensus, "remove_validator", None)
+                    if callable(remover):
+                        remover(sub_chain_name)
+                logger.exception(
+                    "Rolled back Sub-Chain registration for %s after event append failed",
+                    sub_chain_name,
+                )
+                return False
+            return True
 
     def add_proof(
         self,

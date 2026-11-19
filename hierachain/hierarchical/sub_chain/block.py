@@ -73,6 +73,7 @@ def _flush_pending_and_finalize_for_sub_chain(
     while not sub_chain.ordering_service.event_pool.empty():
         if time.time() - start_time > timeout:
             break
+        time.sleep(0.01)
 
     initial_len = len(sub_chain.chain)
 

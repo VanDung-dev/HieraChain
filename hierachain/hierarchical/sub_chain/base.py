@@ -162,12 +162,16 @@ class SubChain(Blockchain):
             return False
         return True
 
+    def _block_spacing_seconds(self) -> float:
+        timing_factor = 0.5 if isinstance(self.consensus, ProofOfAuthority) else 0.8
+        interval = self.consensus.config.get("block_interval", 0.0)
+        return max(0.0, float(interval) * timing_factor)
+
     def _finalize_ordered_block(self, block: Block, previous_block: Block | None) -> Block:
         """Complete consensus before the orderer signs and persists the block."""
         if previous_block is None:
             raise ValueError("Sub-chain ordering requires a persisted genesis block")
-        timing_factor = 0.5 if isinstance(self.consensus, ProofOfAuthority) else 0.8
-        interval = self.consensus.config["block_interval"] * timing_factor
+        interval = self._block_spacing_seconds()
         delay = previous_block.timestamp + interval - time.time()
         if delay > 0 and self._shutdown_event.wait(delay):
             raise RuntimeError("Sub-chain stopped during consensus finalization")
@@ -245,6 +249,7 @@ class SubChain(Blockchain):
             "storage_backend": settings.STORAGE_BACKEND,
             "chain_name": self.name,
             "trusted_public_keys": self.trusted_public_keys,
+            "block_spacing": self._block_spacing_seconds(),
         }
 
         config = default_config.copy()
@@ -283,12 +288,14 @@ class SubChain(Blockchain):
             "SubChain %s adding event: %s", self.name, event_snapshot.get("event")
         )
 
-        event_id = self.ordering_service.receive_event(
-            event_data=event_snapshot, channel_id=self.name, submitter_org=self.name
-        )
-        event_snapshot["event_id"] = event_id
-
+        # Publish and record under the same lock so the commit consumer cannot
+        # finalize an event before it is visible in pending_events.
         with self.lock:
+            event_id = self.ordering_service.receive_event(
+                event_data=event_snapshot, channel_id=self.name, submitter_org=self.name
+            )
+            event_snapshot["event_id"] = event_id
+
             if not any(
                 pending.get("event_id") == event_id
                 for pending in self.pending_events
