@@ -58,6 +58,14 @@ class EventRequest(BaseModel):
     event_type: str = Field(
         ..., description="Type of event (e.g., 'operation_start', 'status_change')"
     )
+    event_id: str | None = Field(
+        None,
+        description="Client-supplied idempotency key; resend it with the original timestamp on retry",
+    )
+    timestamp: float | None = Field(
+        None,
+        description="Client-supplied event time; required for a byte-stable retry of an event_id",
+    )
 
     # On-chain data (traditional)
     details: dict[str, Any] | None = Field(

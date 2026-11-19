@@ -71,11 +71,16 @@ def _build_event_data(
         "entity_id": safe_entity_id,
         "event": safe_event_type,
         "event_type": safe_event_type,
-        "timestamp": time.time(),
+        "timestamp": (
+            event_request.timestamp
+            if event_request.timestamp is not None else time.time()
+        ),
         "submitted_by": submitted_by or event_request.sender,
         "sender": event_request.sender,
         "signature": event_request.signature,
     }
+    if event_request.event_id is not None:
+        event["event_id"] = event_request.event_id
 
     if event_request.signature:
         event["signature_content"] = event_request.model_dump(
