@@ -302,7 +302,11 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (53)"
+??? warning "Fix (54)"
+
+    * 2026-11-25
+
+        * **API (Thao tác Ledger Khi Tắt Xác thực)**: `require_chain_management()` (`hierachain/api/ledger/chain_access.py`) cho phép quản lý gán chain khi xác thực bị tắt và không có người dùng đã xác thực, đồng thời vẫn yêu cầu `chains:manage` với ngữ cảnh đã xác thực; `_resolve_submitter()` và gửi event kênh (`hierachain/api/ledger/events.py`) fallback về sender của event hoặc `anonymous` khi xác thực bị tắt và không có người dùng đã đăng ký — trước đây các thao tác ledger này từ chối request không có người dùng xác thực ngay cả khi auth bị tắt.
 
     * 2026-11-20
 

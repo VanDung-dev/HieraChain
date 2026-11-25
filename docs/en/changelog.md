@@ -302,7 +302,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (53)"
+??? warning "Fix (54)"
+
+    * 2026-11-25
+
+        * **API (Ledger Operations When Authentication Disabled)**: `require_chain_management()` (`hierachain/api/ledger/chain_access.py`) allows chain-assignment management when authentication is disabled and no authenticated user is present, while still requiring `chains:manage` for authenticated contexts; `_resolve_submitter()` and channel event submission (`hierachain/api/ledger/events.py`) fall back to the event sender or `anonymous` when authentication is disabled and no authenticated user is registered — previously these ledger operations rejected requests without an authenticated user even when auth was disabled.
 
     * 2026-11-20
 
