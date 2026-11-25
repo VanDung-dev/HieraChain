@@ -10,18 +10,110 @@ import os
 from collections.abc import Iterator
 
 os.environ.setdefault("HRC_ENV", "test")
-# prevent product .env from enabling auth/strict CORS in tests when .env is product
 if os.getenv("HRC_ENV", "").lower() in ("test", "testing"):
     os.environ.setdefault("HRC_AUTH_ENABLED", "false")
+import atexit
 import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import pytest
 
 from hierachain.config.settings import settings
 from hierachain.security.security_utils import KeyPair
+
+_TESTS_DIR = os.path.dirname(__file__)
+if _TESTS_DIR not in sys.path:
+    sys.path.insert(0, _TESTS_DIR)
+
+from test_infra import (  # noqa: E402
+    cleanup_container,
+    create_temp_postgres_db,
+    drop_postgres_db,
+    ensure_durable_redis,
+    resolve_postgres_base_url,
+)
+
+_infra_state: dict[str, object] = {}
+
+
+def _provision_test_infrastructure() -> None:
+    if _infra_state.get("done"):
+        return
+    _infra_state["done"] = True
+
+    pg_base = resolve_postgres_base_url()
+    if pg_base:
+        _infra_state["pg_base"] = pg_base
+        os.environ.setdefault("HRC_P2_TEST_POSTGRES_URL", pg_base)
+
+    if not os.getenv("HRC_P2_TEST_REDIS_URL") or not os.getenv("HRC_TEST_REDIS_PORT"):
+        result = ensure_durable_redis("hrc-test-redis-shared")
+        if result:
+            url, port, name = result
+            _infra_state["shared_redis"] = name
+            os.environ.setdefault("HRC_P2_TEST_REDIS_URL", url)
+            os.environ.setdefault("HRC_TEST_REDIS_PORT", str(port))
+
+    if not os.getenv("HRC_REDIS_LEDGER_TEST_URL") or not os.getenv(
+        "HRC_REDIS_LEDGER_TEST_CONTAINER"
+    ):
+        result = ensure_durable_redis(f"hrc-ledger-test-{uuid.uuid4().hex[:8]}")
+        if result:
+            url, port, name = result
+            _infra_state["ledger_redis"] = name
+            os.environ.setdefault("HRC_REDIS_LEDGER_TEST_URL", url)
+            os.environ.setdefault("HRC_REDIS_LEDGER_TEST_CONTAINER", name)
+
+
+def _cleanup_test_infrastructure() -> None:
+    for key in ("shared_redis", "ledger_redis"):
+        name = _infra_state.get(key)
+        if isinstance(name, str):
+            cleanup_container(name)
+            _infra_state.pop(key, None)
+
+
+_provision_test_infrastructure()
+atexit.register(_cleanup_test_infrastructure)
+
+
+def _needs_isolated_postgres_db(node: pytest.Item) -> bool:
+    callspec = getattr(node, "callspec", None)
+    if callspec and "postgres" in str(callspec.params):
+        return True
+    path = str(getattr(node, "fspath", ""))
+    if "test_live_backends" in path:
+        return False
+    for marker in (
+        "test_bulk_storage",
+        "test_cli_postgres",
+        "test_block_event_ownership",
+        "test_registry_multiworker",
+    ):
+        if marker in path:
+            return True
+    return False
+
+
+@pytest.fixture(autouse=True)
+def _isolated_postgres_test_db(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch):
+    pg_base = _infra_state.get("pg_base")
+    if not isinstance(pg_base, str) or not _needs_isolated_postgres_db(request.node):
+        yield
+        return
+    try:
+        db_url, db_name = create_temp_postgres_db(pg_base)
+    except Exception:
+        yield
+        return
+    monkeypatch.setenv("HRC_TEST_POSTGRES_URL", db_url)
+    try:
+        yield
+    finally:
+        drop_postgres_db(pg_base, db_name)
 
 # Compute project root (parent of this tests directory)
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
