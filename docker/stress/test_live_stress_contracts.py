@@ -247,14 +247,24 @@ def test_auth_preflight_aborts_on_first_rejection(
 
 
 def test_auth_preflight_checks_all_nodes_and_handles_connection_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("HRC_STRESS_ENV", raising=False)
+    monkeypatch.setenv("HRC_ENV", "product")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "true")
     monkeypatch.setenv("HRC_API_KEY", "test-credential")
     client = real_client.RealStressClient(nodes=["gateway:80", "node1:2661", "node2:2661"])
     assert client.session.headers["X-API-Key"] == "test-credential"
     client.session.get = Mock(return_value=Mock(status_code=200))
+    client.session.post = Mock(return_value=Mock(status_code=409))
     client.preflight_auth()
     assert [call.args[0] for call in client.session.get.call_args_list] == [
         "http://node1:2661/api/ledger/chains", "http://node2:2661/api/ledger/chains",
     ]
+    client.session.post.assert_called_once_with(
+        "http://node1:2661/api/ledger/chains/__hrc_stress_preflight__/create",
+        json={"chain_type": "generic", "participants": ["node1", "node2", "node3", "node4"]},
+        timeout=client.timeout,
+        headers={"Connection": "close"},
+    )
     client.session.get = Mock(side_effect=real_client.requests.ConnectionError())
     with pytest.raises(RuntimeError, match="could not reach"):
         client.preflight_auth()

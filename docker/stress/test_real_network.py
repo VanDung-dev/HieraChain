@@ -33,7 +33,7 @@ class TestRealNetworkStress:
         """Test that all nodes are healthy."""
         client = RealStressClient()
 
-        # Try to connect to nodes
+        assert client.wait_for_nodes(timeout=60), "Configured Docker nodes did not become healthy"
         health = client.check_all_nodes()
 
         assert health and all(health.values()), f"Not all configured nodes are healthy: {health}"

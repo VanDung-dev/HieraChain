@@ -21,7 +21,7 @@ from typing import Any
 import pytest
 from urllib3.util import Retry
 
-from docker.stress.real_stress_client import DEFAULT_NODES
+from docker.stress.real_stress_client import DEFAULT_NODES, generate_event, sign_event
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +39,15 @@ DEFAULT_CONFIG = {
 def generate_random_event(size_bytes: int = 1024) -> dict[str, Any]:
     """Generate a random event with specified payload size."""
     payload = ''.join(random.choices(string.ascii_letters + string.digits, k=size_bytes))
-    return {
-        "entity_id": f"evt-{random.randint(100000, 999999)}",
-        "event_type": "stress_test",
-        "details": {
-            "payload": payload,
-            "timestamp": time.time(),
-            "test_name": "tsunami_flood",
-        }
+    event = generate_event()
+    event["entity_id"] = f"evt-{random.randint(100000, 999999)}"
+    event["details"] = {
+        "payload": payload,
+        "timestamp": time.time(),
+        "test_name": "tsunami_flood",
+        "data": f"tsunami_{random.randint(1, 100000)}",
     }
+    return sign_event(event)
 
 
 class TsunamiFloodTest:
@@ -116,18 +116,33 @@ class TsunamiFloodTest:
             "errors": errors[:5],
         }
 
+    def _errors(self) -> dict[str, str]:
+        if not self.client:
+            return {}
+        return {
+            node_id: status.last_error
+            for node_id, status in self.client.node_status.items()
+            if status.last_error
+        }
+
     def _ensure_nodes_ready(self) -> None:
         from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
             raise RuntimeError("Tsunami flood requires REAL_REQUESTS=true and a live client")
         # Increased node waiting timeout to 120s for Docker cold start
         if not self.client.wait_for_nodes(timeout=120):
-            raise RuntimeError("No healthy Docker nodes; refusing to simulate flood results")
+            raise RuntimeError(
+                f"No healthy Docker nodes; refusing to simulate flood results: {self._errors()}"
+            )
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
-            raise RuntimeError("No healthy Docker nodes; refusing to simulate flood results")
+            raise RuntimeError(
+                f"No healthy Docker nodes; refusing to simulate flood results: {self._errors()}"
+            )
         if not self.client.create_chains_on_nodes():
-            raise RuntimeError("Could not create the stress chain on live Docker nodes")
+            raise RuntimeError(
+                f"Could not create the stress chain on live Docker nodes: {self._errors()}"
+            )
 
     def _execute_batches(self, batches: list, concurrent: int, nodes: list) -> None:
         timeout = float(self.config["timeout_seconds"])
@@ -237,7 +252,7 @@ class TestTsunamiFlood:
         
         assert result["status"] == "completed", result
         assert result["sent_success"] + result["sent_failed"] == result["total_events"]
-        assert result["success_rate"] >= 0.8  # Upgraded for optimized performance
+        assert result["success_rate"] >= 0.8, f"Flood failed on live nodes: {test._errors()}"
 
     def test_flood_throughput(self, small_config):
         """Test throughput threshold."""
@@ -252,7 +267,9 @@ class TestTsunamiFlood:
         # ponytail: k8s out-of-cluster compose has higher latency (host.docker.internal + 30s node wait)
         threshold = 3.0 if os.getenv("K8S_NAMESPACE") else 10.0
         assert result["sent_success"] + result["sent_failed"] == result["total_events"]
-        assert result["events_per_second"] >= threshold, f"Expected {threshold} eps, got {result['events_per_second']}"
+        assert result["events_per_second"] >= threshold, (
+            f"Expected {threshold} eps, got {result['events_per_second']}: {test._errors()}"
+        )
 
     @pytest.mark.stress
     def test_full_flood(self):
@@ -262,7 +279,7 @@ class TestTsunamiFlood:
 
         assert result["status"] == "completed", result
         assert result["sent_success"] + result["sent_failed"] == result["total_events"]
-        assert result["success_rate"] >= 0.8  # Upgraded success rate threshold
+        assert result["success_rate"] >= 0.8, f"Full flood failed on live nodes: {test._errors()}"
 
 
 if __name__ == "__main__":

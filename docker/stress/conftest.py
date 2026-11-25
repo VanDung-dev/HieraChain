@@ -10,6 +10,13 @@ import sys
 import pytest
 
 _STRESS_DIR = os.path.dirname(os.path.abspath(__file__))
+_LOCAL_ONLY_MODULES = {
+    "test_crypto_scale.py",
+    "test_duration_config.py",
+    "test_live_stress_contracts.py",
+    "test_memory_leak_soak.py",
+    "test_memory_pressure_sync.py",
+}
 _DOCKER_DIR = os.path.dirname(_STRESS_DIR)
 _PROJECT_ROOT = os.path.dirname(_DOCKER_DIR)
 
@@ -42,3 +49,22 @@ def pytest_sessionstart(session: pytest.Session) -> None:
                     raise RuntimeError("K8s stress requires a reachable IPFS API") from None
         except RuntimeError as exc:
             raise pytest.UsageError(str(exc)) from None
+
+
+@pytest.fixture(autouse=True)
+def restore_live_cluster_between_tests(request: pytest.FixtureRequest):
+    if os.path.basename(str(getattr(request.node, "path", ""))) in _LOCAL_ONLY_MODULES:
+        yield
+        return
+
+    from docker.stress.cluster_guard import live_docker_enabled, restore_cluster
+
+    if not live_docker_enabled():
+        yield
+        return
+
+    restore_cluster()
+    try:
+        yield
+    finally:
+        restore_cluster()

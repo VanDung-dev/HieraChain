@@ -13,19 +13,19 @@ Environment:
   - K8s: kubectl delete pod, kubectl exec tc
 """
 
-import time
+import http.client
 import json
 import logging
 import os
 import socket
-import http.client
 import subprocess
+import time
+
 import pytest
 
 from docker.stress.real_stress_client import (
-    RealStressClient,
     REAL_REQUESTS,
-    DEFAULT_CHAIN_NAME,
+    RealStressClient,
     generate_event,
 )
 
@@ -201,15 +201,15 @@ class TestSingleNodeFailure:
         logger.info("Killing node: %s, survivors: %s", target, survivors)
         _kill_node(target)
 
-        time.sleep(5)
+        try:
+            time.sleep(5)
+            for nid in survivors:
+                ok = _is_api_responding(self.client, nid)
+                logger.info("  %s: %s", nid, "alive" if ok else "dead")
+                assert ok, f"Survivor {nid} should still respond"
+        finally:
+            _restart_node(target)
 
-        # Survivors still healthy
-        for nid in survivors:
-            ok = _is_api_responding(self.client, nid)
-            logger.info("  %s: %s", nid, "alive" if ok else "dead")
-            assert ok, f"Survivor {nid} should still respond"
-
-        _restart_node(target)
         assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after node deletion"
 
 
@@ -248,13 +248,14 @@ class TestQuorumLoss:
             _kill_node(t)
             time.sleep(2)
 
-        time.sleep(5)
+        try:
+            time.sleep(5)
+            lockdown_detected = any(self._check_lockdown(nid) for nid in survivors)
+            logger.info("Lockdown detected: %s", lockdown_detected)
+        finally:
+            for t in targets:
+                _restart_node(t)
 
-        lockdown_detected = any(self._check_lockdown(nid) for nid in survivors)
-        logger.info("Lockdown detected: %s", lockdown_detected)
-
-        for t in targets:
-            _restart_node(t)
         assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after node deletion"
 
 
@@ -285,24 +286,24 @@ class TestNetworkPartition:
         baseline_avg = sum(baseline_latencies) / len(baseline_latencies)
 
         # Inject latency
-        _inject_network_delay(target, delay_ms=500)
-        time.sleep(3)
+        try:
+            _inject_network_delay(target, delay_ms=500)
+            time.sleep(3)
 
-        # Under latency
-        latency_latencies = []
-        for _ in range(20):
-            start = time.time()
-            self.client.submit_event(target, generate_event(), chain_name=LOCKDOWN_CHAIN)
-            latency_latencies.append((time.time() - start) * 1000)
+            # Under latency
+            latency_latencies = []
+            for _ in range(20):
+                start = time.time()
+                self.client.submit_event(target, generate_event(), chain_name=LOCKDOWN_CHAIN)
+                latency_latencies.append((time.time() - start) * 1000)
+        finally:
+            _reset_network(target)
 
         latency_avg = sum(latency_latencies) / len(latency_latencies)
 
         logger.info("Baseline avg latency: %.2fms", baseline_avg)
         logger.info("Under 500ms delay avg: %.2fms", latency_avg)
         logger.info("Impact ratio: %.2fx", latency_avg / baseline_avg if baseline_avg else 0)
-
-        # Cleanup
-        _reset_network(target)
 
         # Latency under 500ms netem should remain functional; allow jitter/warmup
         # ponytail: relax strict increase — tc may be shadowed by wg0/WAN sim, baseline already ~1-2ms

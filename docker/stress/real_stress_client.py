@@ -15,10 +15,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any
 
+import nacl.encoding
+import nacl.signing
 import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util import Timeout
+
+from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +38,11 @@ REAL_REQUESTS = os.getenv("REAL_REQUESTS", "true").lower() == "true"
 
 # Default chain name for stress testing
 DEFAULT_CHAIN_NAME = os.getenv("STRESS_CHAIN_NAME", "stress_test")
+
+# Shared signing key for stress-generated events (normal ledger endpoints verify sig, not trusted-sender list).
+_STRESS_SIGNING_KEY = nacl.signing.SigningKey.generate()
+_STRESS_VERIFY_KEY = _STRESS_SIGNING_KEY.verify_key
+STRESS_SENDER_HEX = "0x" + _STRESS_VERIFY_KEY.encode(encoder=nacl.encoding.HexEncoder).decode()
 
 
 def get_auth_headers() -> dict[str, str]:
@@ -66,14 +75,24 @@ class StressTestResult:
     nodes: dict[str, NodeStatus] = field(default_factory=dict)
 
 
+def _canonicalize_for_signing(data: dict) -> bytes:
+    return SignatureVerifier.get_canonical_bytes(data)
+
+
+def sign_event(event: dict[str, Any]) -> dict[str, Any]:
+    event.pop("signature", None)
+    signature = _STRESS_SIGNING_KEY.sign(_canonicalize_for_signing(event))
+    event["signature"] = "0x" + signature.signature.hex()
+    return event
+
+
 def generate_event() -> dict[str, Any]:
     """Generate a valid event for submission matching EventRequest schema."""
     event_id = hashlib.sha256(
         f"{time.time()}-{random.random()}".encode()
     ).hexdigest()[:16]
 
-    # Match EventRequest schema from hierachain.api.ledger.schemas
-    return {
+    event = {
         "entity_id": f"stress_entity_{event_id}",
         "event_type": "stress_test",
         "details": {
@@ -81,9 +100,9 @@ def generate_event() -> dict[str, Any]:
             "size": random.randint(100, 1000),
             "timestamp": time.time(),
         },
-        "sender": "0x" + "a" * 64,  # Simulated Ed25519 public key
-        "signature": "0x" + "b" * 128,  # Simulated signature
+        "sender": STRESS_SENDER_HEX,
     }
+    return sign_event(event)
 
 
 def _collect_worker_results(futures: list) -> None:
@@ -154,10 +173,38 @@ class RealStressClient:
                         f"Authentication preflight failed on {node_id}: HTTP {response.status_code}; "
                         "check key permissions and active lockout before retrying"
                     )
+            if not unauthenticated_k8s_test:
+                self._preflight_chain_management()
         except requests.RequestException as exc:
             raise RuntimeError("Authentication preflight could not reach all configured nodes") from exc
         finally:
             self.session.close()
+
+    def _preflight_chain_management(self) -> None:
+        """Fail fast if the configured key cannot create chains required by stress tests."""
+        probe_chain = "__hrc_stress_preflight__"
+        payload = {
+            "chain_type": "generic",
+            "participants": ["node1", "node2", "node3", "node4"],
+        }
+        for node_id, status in self.node_status.items():
+            response = self.session.post(
+                f"{status.url}/api/ledger/chains/{probe_chain}/create",
+                json=payload,
+                timeout=self.timeout,
+                headers={"Connection": "close"},
+            )
+            if response.status_code in (200, 201, 409):
+                return
+            if response.status_code == 403:
+                raise RuntimeError(
+                    f"Chain-management preflight failed on {node_id}: HTTP 403; "
+                    "the configured key needs chains, chains:manage, events, and proofs permissions"
+                )
+            raise RuntimeError(
+                f"Chain-management preflight failed on {node_id}: HTTP {response.status_code}; "
+                "check key permissions before running stress tests"
+            )
 
     def check_health(self, node_id: str, timeout: float | None = None) -> bool:
         """Require recovered hierarchy and active orderers before sending load."""
@@ -212,8 +259,9 @@ class RealStressClient:
                 self.results.events_submitted += 1
                 return True
             status.error_count += 1
-            status.last_error = f"HTTP {response.status_code}: {response.text[:100]}"
+            status.last_error = f"HTTP {response.status_code}: {response.text[:200]}"
             self.results.failed_requests += 1
+            logger.error("Event submit failed on %s: HTTP %s %s", status.node_id, response.status_code, response.text[:200])
             return False
 
     def wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
@@ -273,8 +321,9 @@ class RealStressClient:
                     pass
             with self.lock:
                 status.error_count += 1
-                status.last_error = str(e)
+                status.last_error = str(e)[:200]
                 self.results.failed_requests += 1
+            logger.error("Event submit exception on %s: %s", node_id, str(e)[:200])
             return False
 
     def submit_secure_event(
@@ -410,6 +459,21 @@ class RealStressClient:
         except (requests.RequestException, ValueError, TypeError) as e:
             logger.debug("Chain verification request failed on %s: %s", node_id, e)
             return False
+
+    def wait_for_chain(
+        self,
+        node_id: str,
+        chain_name: str = DEFAULT_CHAIN_NAME,
+        timeout: float = 60.0,
+    ) -> bool:
+        deadline = time.monotonic() + timeout
+        while True:
+            if self.verify_chain_exists(node_id, chain_name):
+                return True
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(1.0, remaining))
 
     def run_flood_test(
         self,

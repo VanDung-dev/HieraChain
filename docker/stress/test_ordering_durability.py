@@ -338,6 +338,9 @@ class TestJournalDurability:
         node_id = healthy[0]
         chain_name = f"recovery_crash_{uuid.uuid4().hex[:12]}"
         assert self.client.create_chain(node_id, chain_name), f"Could not create {chain_name}"
+        assert self.client.wait_for_chain(node_id, chain_name, timeout=30), (
+            f"Chain {chain_name} was not visible after creation"
+        )
 
         status = self.client.node_status[node_id]
         import psycopg
@@ -368,8 +371,10 @@ class TestJournalDurability:
             )
             assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after SIGKILL"
             self._log_chains_after_recovery(node_id)
-            assert self.client.verify_chain_exists(node_id, chain_name), (
-                f"Recovered node did not expose chain {chain_name}"
+            status = self.client.node_status.get(node_id)
+            assert self.client.wait_for_chain(node_id, chain_name, timeout=60), (
+                f"Recovered node did not expose chain {chain_name}: "
+                f"{status.last_error if status else 'unknown node'}"
             )
 
             deadline = time.time() + 60

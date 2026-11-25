@@ -128,18 +128,24 @@ class TestZKProofScale:
     """Measure ZK proof generation and verification throughput."""
 
     @pytest.fixture
-    def zk_modules(self) -> dict[str, Any]:
+    def zk_modules(self, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         try:
             from hierachain.security.verify.zk_verifier import ZKVerifier
-            from hierachain.security.zk_prover import ZKProver
-            return {"prover": ZKProver, "verifier": ZKVerifier}
+            from hierachain.security.zk_prover import ZKProver, ZKProvingError
         except ImportError as e:
             pytest.skip(f"ZK modules not available: {e}")
 
+        monkeypatch.setenv("HRC_ENV", "test")
+        try:
+            prover = ZKProver(mode="mock")
+        except ZKProvingError as e:
+            pytest.fail(f"ZK mock prover unavailable: {e}")
+        verifier = ZKVerifier(mode="mock")
+        return {"prover": prover, "verifier": verifier}
+
     def test_mock_proof_generation_throughput(self, zk_modules: dict[str, Any]) -> None:
         """Measure ZK proof generation throughput (mock mode)."""
-        ZKProver = zk_modules["prover"]
-        prover = ZKProver()
+        prover = zk_modules["prover"]
 
         num_proofs = BENCHMARK_SMALL
         start = time.time()
@@ -163,10 +169,8 @@ class TestZKProofScale:
 
     def test_mock_proof_verify_throughput(self, zk_modules: dict[str, Any]) -> None:
         """Measure ZK proof verification throughput (mock mode)."""
-        ZKProver = zk_modules["prover"]
-        ZKVerifier = zk_modules["verifier"]
-        prover = ZKProver()
-        verifier = ZKVerifier()
+        prover = zk_modules["prover"]
+        verifier = zk_modules["verifier"]
 
         num_proofs = BENCHMARK_SMALL
         proofs = []

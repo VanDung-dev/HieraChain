@@ -12,15 +12,16 @@ Environment:
   - K8s: can kubectl exec tc
 """
 
-import time
 import logging
 import os
 import subprocess
+import time
+
 import pytest
 
 from docker.stress.real_stress_client import (
-    RealStressClient,
     REAL_REQUESTS,
+    RealStressClient,
     generate_event,
 )
 
@@ -34,28 +35,41 @@ pytestmark = pytest.mark.skipif(
 P2P_CHAIN = os.getenv("P2P_CHAIN_NAME", "p2p_stress_test")
 
 
-def _exec_tc(node_id: str, cmd: list[str]) -> None:
+def _exec_tc(node_id: str, cmd: list[str]) -> str:
     """Execute tc command in container."""
     container = f"hierachain-{node_id}"
     try:
         if os.environ.get("K8S_NAMESPACE"):
             ns = os.environ["K8S_NAMESPACE"]
             pod = f"hierachain-node-{int(node_id.removeprefix('node')) - 1}"
-            subprocess.run(
+            result = subprocess.run(
                 ["kubectl", "exec", "-n", ns, pod, "--"] + cmd,
                 capture_output=True, timeout=15,
             )
-        else:
-            from docker.stress.docker_helper import run_docker_exec
-            run_docker_exec(container, cmd)
+            if result.returncode != 0:
+                return result.stderr.decode() or f"kubectl exec exited {result.returncode}"
+            return ""
+        from docker.stress.docker_helper import run_docker_exec
+        _, error = run_docker_exec(container, cmd)
+        return error
     except Exception as e:
         logger.debug("tc exec failed on %s: %s", node_id, e)
+        return str(e)
+
+
+def _apply_tc(node_id: str, cmd: list[str]) -> None:
+    error = _exec_tc(node_id, cmd)
+    if not error:
+        return
+    if "Operation not permitted" in error:
+        pytest.skip(f"tc requires NET_ADMIN on {node_id}: {error}")
+    raise RuntimeError(f"tc command failed on {node_id}: {error}")
 
 
 def _inject_delay(node_id: str, ms: int = 200, jitter: int = 20) -> None:
     """Inject network delay."""
     _exec_tc(node_id, ["tc", "qdisc", "del", "dev", "eth0", "root"])
-    _exec_tc(node_id, [
+    _apply_tc(node_id, [
         "tc", "qdisc", "add", "dev", "eth0", "root", "netem",
         "delay", f"{ms}ms", f"{jitter}ms", "distribution", "normal",
     ])
@@ -65,7 +79,7 @@ def _inject_delay(node_id: str, ms: int = 200, jitter: int = 20) -> None:
 def _inject_loss(node_id: str, loss_pct: int = 5) -> None:
     """Inject packet loss."""
     _exec_tc(node_id, ["tc", "qdisc", "del", "dev", "eth0", "root"])
-    _exec_tc(node_id, [
+    _apply_tc(node_id, [
         "tc", "qdisc", "add", "dev", "eth0", "root", "netem",
         "loss", f"{loss_pct}%",
     ])
@@ -74,8 +88,21 @@ def _inject_loss(node_id: str, loss_pct: int = 5) -> None:
 
 def _reset_network(node_id: str) -> None:
     """Reset network to default."""
-    _exec_tc(node_id, ["tc", "qdisc", "del", "dev", "eth0", "root"])
+    error = _exec_tc(node_id, ["tc", "qdisc", "del", "dev", "eth0", "root"])
+    if error and "Cannot delete qdisc with handle of zero" not in error:
+        logger.debug("Network reset on %s reported: %s", node_id, error)
     logger.info("Reset network on %s", node_id)
+
+
+def _wait_healthy(client: RealStressClient, node_id: str, timeout: float = 60.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while True:
+        if client.check_health(node_id, timeout=min(5.0, max(0.1, deadline - time.monotonic()))):
+            return True
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        time.sleep(min(2.0, remaining))
 
 
 class TestP2PPing:
@@ -175,16 +202,14 @@ class TestNetworkDegradation:
         baseline = self._run_throughput_brief(duration=10)
         logger.info("Baseline throughput: %s", baseline)
 
-        # Inject 300ms latency
-        _inject_delay(target, ms=300, jitter=30)
-        time.sleep(3)
+        try:
+            _inject_delay(target, ms=300, jitter=30)
+            time.sleep(3)
+            degraded = self._run_throughput_brief(duration=10)
+        finally:
+            _reset_network(target)
 
-        # Under latency
-        degraded = self._run_throughput_brief(duration=10)
         logger.info("Under 300ms latency: %s", degraded)
-
-        # Reset
-        _reset_network(target)
 
         if baseline["eps"] > 0 and degraded["eps"] > 0:
             impact = (baseline["eps"] - degraded["eps"]) / baseline["eps"] * 100
@@ -201,15 +226,12 @@ class TestNetworkDegradation:
         # Baseline
         baseline = self._run_throughput_brief(duration=10)
 
-        # Inject 5% packet loss
-        _inject_loss(target, loss_pct=5)
-        time.sleep(3)
-
-        # Under loss
-        degraded = self._run_throughput_brief(duration=10)
-
-        # Reset
-        _reset_network(target)
+        try:
+            _inject_loss(target, loss_pct=5)
+            time.sleep(3)
+            degraded = self._run_throughput_brief(duration=10)
+        finally:
+            _reset_network(target)
 
         logger.info("Baseline: %s", baseline)
         logger.info("Under 5%% loss: %s", degraded)
@@ -225,21 +247,19 @@ class TestNetworkDegradation:
         # Baseline
         self.client.submit_event(target, generate_event(), chain_name=P2P_CHAIN)
 
-        # Cut network (100% loss)
-        _inject_loss(target, loss_pct=100)
-        time.sleep(5)
-
-        # Try sending — may fail
         try:
-            self.client.submit_event(target, generate_event(), chain_name=P2P_CHAIN)
-        except Exception:
-            pass
+            _inject_loss(target, loss_pct=100)
+            time.sleep(5)
+            try:
+                self.client.submit_event(target, generate_event(), chain_name=P2P_CHAIN)
+            except Exception:
+                pass
+        finally:
+            _reset_network(target)
 
-        # Restore
-        _reset_network(target)
-        time.sleep(5)
-
-        # Verify system recovery
-        ok = self.client.check_health(target)
-        logger.info("Node %s after recovery: %s", target, "healthy" if ok else "unhealthy")
-        assert ok, "Node should be healthy after network recovery"
+        ok = _wait_healthy(self.client, target)
+        status = self.client.node_status.get(target)
+        assert ok, (
+            f"Node {target} should be healthy after network recovery: "
+            f"{status.last_error if status else 'unknown node'}"
+        )

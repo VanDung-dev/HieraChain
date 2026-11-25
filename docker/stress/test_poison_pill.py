@@ -8,21 +8,26 @@ This test sends events designed to stress:
 - Resource exhaustion prevention
 """
 
-import time
-import random
-import threading
+import json
 import logging
-import nacl.signing
-import nacl.encoding
+import os
+import random
+import subprocess
+import threading
+import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Any
 
+import nacl.encoding
+import nacl.signing
 import pytest
+
+from docker.stress.real_stress_client import DEFAULT_NODES
 from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = logging.getLogger(__name__)
-
-from docker.stress.real_stress_client import DEFAULT_NODES
 
 # Test configuration
 DEFAULT_CONFIG = {
@@ -64,10 +69,53 @@ def _build_recursive_dict(depth: int) -> dict:
     return result
 
 
-# Global test key for signing valid events
-TEST_SIGNING_KEY = nacl.signing.SigningKey.generate()
-TEST_VERIFY_KEY = TEST_SIGNING_KEY.verify_key
-TEST_SENDER_HEX = "0x" + TEST_VERIFY_KEY.encode(encoder=nacl.encoding.HexEncoder).decode()
+_SIGNING_KEY: nacl.signing.SigningKey | None = None
+_SENDER_HEX: str | None = None
+
+
+def _load_trusted_identity() -> dict[str, Any]:
+    override = os.getenv("HRC_STRESS_SIGNING_IDENTITY")
+    if override:
+        with open(override, encoding="utf-8") as handle:
+            return json.load(handle)
+
+    if os.getenv("K8S_NAMESPACE"):
+        result = subprocess.run(
+            [
+                "kubectl", "exec", "-n", os.environ["K8S_NAMESPACE"],
+                "hierachain-node-0", "--",
+                "cat", "/app/config/identity/identity.json",
+            ],
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout)
+    else:
+        try:
+            from docker.stress.docker_helper import run_docker_exec
+            output, error = run_docker_exec(
+                "hierachain-node1", ["cat", "/app/config/identity/identity.json"]
+            )
+        except Exception as exc:
+            output, error = "", str(exc)
+        if not error and output.strip():
+            return json.loads(output)
+
+    local_path = Path(__file__).resolve().parents[2] / "docker" / "nodes" / "node1" / "identity.json"
+    if local_path.is_file():
+        with local_path.open(encoding="utf-8") as handle:
+            return json.load(handle)
+
+    raise RuntimeError("No trusted node identity available for poison pill event signing")
+
+
+def _trusted_signer() -> tuple[nacl.signing.SigningKey, str]:
+    global _SIGNING_KEY, _SENDER_HEX
+    if _SIGNING_KEY is None:
+        identity = _load_trusted_identity()
+        _SIGNING_KEY = nacl.signing.SigningKey(bytes.fromhex(identity["signing_key"]))
+        _SENDER_HEX = "0x" + _SIGNING_KEY.verify_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+    return _SIGNING_KEY, _SENDER_HEX
 
 
 def _canonicalize(data: dict) -> bytes:
@@ -77,6 +125,7 @@ def _canonicalize(data: dict) -> bytes:
 
 def generate_valid_event(entity_id: str) -> dict:
     """Generate a valid business event for testing with real signature."""
+    signing_key, sender_hex = _trusted_signer()
     event = {
         "entity_id": entity_id,
         "event_type": "business_operation",
@@ -85,13 +134,14 @@ def generate_valid_event(entity_id: str) -> dict:
             "status": "completed",
             "timestamp": int(time.time()),
         },
-        "sender": TEST_SENDER_HEX,
+        "sender": sender_hex,
+        "nonce": uuid.uuid4().hex,
+        "timestamp": time.time(),
     }
-    
-    # Sign the event
-    signature = TEST_SIGNING_KEY.sign(_canonicalize(event))
+
+    signature = signing_key.sign(_canonicalize(event))
     event["signature"] = "0x" + signature.signature.hex()
-    
+
     return event
 
 
@@ -112,6 +162,8 @@ def generate_poison_event(event_id: str, poison_type: str = "invalid_sig") -> di
             "poison_type": poison_type,
             "timestamp": int(time.time()),
         },
+        "nonce": uuid.uuid4().hex,
+        "timestamp": time.time(),
         "_is_poison": True,
         "_poison_type": poison_type,
     }

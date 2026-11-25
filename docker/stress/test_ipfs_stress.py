@@ -84,16 +84,25 @@ def _preload_ipfs_data(count: int) -> list[dict[str, Any]]:
     return results
 
 
-def _generate_ipfs_event(ipfs_ref: dict[str, Any]) -> dict[str, Any]:
+def _generate_ipfs_event(ipfs_ref: dict[str, Any], entity_id: str) -> dict[str, Any]:
     """Generate an event referencing IPFS data."""
-    event_id = f"ipfs_stress_{int(time.time() * 1_000_000)}_{random.randint(0, 99999)}"
-    return {
-        "entity_id": f"ipfs_stress_entity_{event_id}",
+    from docker.stress.real_stress_client import (
+        STRESS_SENDER_HEX,
+        _canonicalize_for_signing,
+        _STRESS_SIGNING_KEY,
+    )
+
+    event = {
+        "entity_id": entity_id,
         "event_type": "ipfs_stress_test",
         "details_cid": ipfs_ref["cid"],
         "details_nonce": ipfs_ref["nonce"],
         "details_metadata": ipfs_ref["metadata"],
+        "sender": STRESS_SENDER_HEX,
     }
+    signature = _STRESS_SIGNING_KEY.sign(_canonicalize_for_signing(event))
+    event["signature"] = "0x" + signature.signature.hex()
+    return event
 
 
 class TestIPFSStress:
@@ -106,8 +115,7 @@ class TestIPFSStress:
     def _submit_ipfs_event(
         self, node_url: str, entity_id: str, ipfs_ref: dict[str, Any], client: RealStressClient
     ) -> dict[str, Any]:
-        event = _generate_ipfs_event(ipfs_ref)
-        event["entity_id"] = entity_id
+        event = _generate_ipfs_event(ipfs_ref, entity_id)
         resp = client.session.post(
             f"{node_url}/api/ledger/chains/{CHAIN_NAME}/events",
             json=event,
