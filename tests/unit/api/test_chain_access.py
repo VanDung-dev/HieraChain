@@ -91,9 +91,12 @@ def test_rest_reads_writes_and_scope_intersection(setup: tuple) -> None:
     assert manager.sub_chains["private"].add_event.call_count == 1
 
 
-def test_disabled_authentication_cannot_bypass_managed_chain(setup: tuple) -> None:
+def test_disabled_authentication_cannot_bypass_managed_chain(
+    setup: tuple, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     app, _manager, _headers = setup
     app.state.auth_verifier = None
+    monkeypatch.setattr("hierachain.api.ledger.chain_access._auth_disabled", lambda: False)
     with TestClient(app) as client:
         assert client.get("/api/ledger/chains/public/blocks").status_code == 200
         assert client.get("/api/ledger/chains/private/blocks").status_code == 403

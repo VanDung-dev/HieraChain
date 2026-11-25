@@ -120,8 +120,8 @@ run_tests
     assert "delete pod stress-tester" in calls
     if not wait_exit:
         assert "env TEST_DURATION=15 /stress-scripts/run-stress.sh" in calls
-        assert "k8s_stress_report.html log/report/k8s_stress_report.html" in calls
-        assert "k8s_stress_report.xml log/report/k8s_stress_report.xml" in calls
+        assert "k8s_stress_report.html logs/report/k8s_stress_report.html" in calls
+        assert "k8s_stress_report.xml logs/report/k8s_stress_report.xml" in calls
     else:
         assert "exec" not in calls
 

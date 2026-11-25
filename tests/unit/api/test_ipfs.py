@@ -8,6 +8,7 @@ Usage:
     python -m hierachain.api.storage.test_ipfs
 """
 
+import hashlib
 import json
 import os
 
@@ -104,111 +105,148 @@ def test_encryption():
     print("=" * 60)
 
 
+def _fake_kubo(store: dict[str, bytes], pins: set[str], counter: list[int]):
+    class Response:
+        def __init__(self, content: bytes = b"", ok: bool = True):
+            self.content = content
+            self.is_success = ok
+
+        def raise_for_status(self) -> None:
+            if not self.is_success:
+                raise RuntimeError("request failed")
+
+    class FakeClient:
+        def _arg(self, path: str, params: dict | None) -> str | None:
+            params = params or {}
+            if "arg" in params:
+                return params["arg"]
+            if "arg=" in path:
+                return path.split("arg=", 1)[-1].split("&", 1)[0]
+            return None
+
+        def _route(self, path: str) -> str:
+            return path.split("?", 1)[0]
+
+        def post(self, path: str, params=None, files=None, **kwargs):
+            params = params or {}
+            route = self._route(path)
+            if route == "/api/v0/version":
+                return Response(json.dumps({"Version": "fake-0.0.0"}).encode())
+            if route == "/api/v0/add":
+                data = files["file"][1] if files and "file" in files else b""
+                cid = hashlib.sha256(data + str(counter[0]).encode()).hexdigest()[:46]
+                counter[0] += 1
+                store[cid] = bytes(data)
+                if str(params.get("pin", "false")).lower() == "true":
+                    pins.add(cid)
+                return Response(json.dumps({"Hash": cid}).encode())
+            if route == "/api/v0/cat":
+                cid = self._arg(path, params)
+                if cid not in store:
+                    return Response(b"", ok=False)
+                return Response(store[cid])
+            if route == "/api/v0/pin/add":
+                cid = self._arg(path, params)
+                if cid:
+                    pins.add(cid)
+                return Response(json.dumps({"Pins": [cid]}).encode())
+            if route == "/api/v0/pin/rm":
+                cid = self._arg(path, params)
+                if cid:
+                    pins.discard(cid)
+                return Response(json.dumps({"Pins": [cid]}).encode())
+            if route == "/api/v0/pin/ls":
+                return Response(
+                    json.dumps({"Keys": {cid: {"Type": "recursive"} for cid in pins}}).encode()
+                )
+            if route == "/api/v0/files/stat":
+                arg = self._arg(path, params) or ""
+                cid = arg.replace("/ipfs/", "")
+                return Response(json.dumps({"Hash": cid}).encode(), ok=cid in store)
+            return Response(b"{}", ok=False)
+
+        def close(self) -> None:
+            return None
+
+    return FakeClient()
+
+
 def test_ipfs_client():
-    """Test IPFS client (requires running IPFS daemon)."""
+    """Test IPFS client with an in-memory Kubo API stub."""
     print("\n" + "=" * 60)
     print("Testing IPFS Client")
     print("=" * 60)
 
     with IPFSClient(auto_pin=True) as client:
-        # Create client
         print("\n[Test 1] Creating IPFS client")
         print("  ✅ Client created")
 
-        # Check daemon version
+        store: dict[str, bytes] = {}
+        pins: set[str] = set()
+        counter = [0]
+        client._client = _fake_kubo(store, pins, counter)
+
         print("\n[Test 2] Checking IPFS daemon version")
         try:
             version = client.get_daemon_version()
         except IPFSError as exc:
             pytest.skip(f"IPFS daemon is unavailable: {exc}")
-        print(f"  IPFS Version: {version.get('Version', 'unknown')}")
+        print(f"  IPFS Version: {version.get('version', version.get('Version', 'unknown'))}")
         print("  ✅ Connected to IPFS daemon")
 
-        # Test upload/download bytes
         print("\n[Test 3] Upload/download encrypted bytes")
         test_data = b"This is test data for IPFS storage"
-
         result = client.upload_bytes(test_data, encrypt=True)
         print(f"  Uploaded CID: {result['cid']}")
         print(f"  Size: {result['size']} bytes")
         print(f"  Nonce: {result['nonce']}")
         print(f"  Encrypted: {result['encrypted']}")
-
         downloaded = client.download_bytes(
-            cid=result['cid'],
-            encrypted=True,
-            nonce=result['nonce']
+            cid=result["cid"], encrypted=True, nonce=result["nonce"]
         )
         assert test_data == downloaded
         print("  ✅ Upload/download successful")
 
-        # Test upload/download JSON
         print("\n[Test 4] Upload/download encrypted JSON")
         json_data = {
             "event_type": "test_event",
             "data": {
                 "key1": "value1",
                 "key2": 12345,
-                "nested": {
-                    "array": [1, 2, 3]
-                }
-            }
+                "nested": {"array": [1, 2, 3]},
+            },
         }
-
         result = client.upload_json(json_data, encrypt=True)
         print(f"  Uploaded CID: {result['cid']}")
-
         downloaded_json = client.download_json(
-            cid=result['cid'],
-            encrypted=True,
-            nonce=result['nonce']
+            cid=result["cid"], encrypted=True, nonce=result["nonce"]
         )
         assert json_data == downloaded_json
         print("  ✅ JSON upload/download successful")
 
-        # Test with metadata (AAD)
         print("\n[Test 5] Upload/download with metadata (AAD)")
-        metadata = {
-            "channel": "test-channel",
-            "org": "test-org"
-        }
-
-        result = client.upload_json(
-            data=json_data,
-            encrypt=True,
-            metadata=metadata
-        )
-
+        metadata = {"channel": "test-channel", "org": "test-org"}
+        result = client.upload_json(data=json_data, encrypt=True, metadata=metadata)
         downloaded_with_metadata = client.download_json(
-            cid=result['cid'],
-            encrypted=True,
-            nonce=result['nonce'],
-            metadata=metadata
+            cid=result["cid"], encrypted=True, nonce=result["nonce"], metadata=metadata
         )
         assert json_data == downloaded_with_metadata
         print("  ✅ Upload/download with metadata successful")
 
-        # Test pinning
         print("\n[Test 6] Pin management")
-        cid = result['cid']
-
-        # List pins
-        pins = client.list_pins()
-        print(f"  Total pinned items: {len(pins)}")
-        assert cid in pins, f"Auto-pinned CID missing from pin list: {cid}"
-
-        # Check if available
-        is_avail = client.is_available(cid)
-        print(f"  CID {cid[:12]}... is available: {is_avail}")
-        assert is_avail
+        cid = result["cid"]
+        pins_list = client.list_pins()
+        print(f"  Total pinned items: {len(pins_list)}")
+        assert cid in pins_list, f"Auto-pinned CID missing from pin list: {cid}"
+        assert client.is_available(cid)
 
         with IPFSClient(auto_pin=False) as no_pin_client:
+            no_pin_client._client = _fake_kubo(store, pins, counter)
             unpinned = no_pin_client.upload_bytes(os.urandom(32), encrypt=False)
             assert unpinned["cid"] not in no_pin_client.list_pins()
 
         print("  ✅ Pin management working")
 
-        # Cleanup
         print("\n[Test 7] Cleanup - unpinning test data")
         client.unpin(cid)
         print("  ✅ Cleanup successful")
