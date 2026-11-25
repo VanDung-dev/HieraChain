@@ -42,13 +42,19 @@ metadata:
 data:
   run-stress.sh: |
     #!/bin/sh
-    set -e
     cd /app
-    mkdir -p log/report
-    exec /app/.venv/bin/python -m pytest docker/stress/ -v --log-level=INFO --durations=10 \
+    report_name="k8s_stress_report"
+    tmp_dir=/tmp/hrc-stress-report
+    out_dir=/app/logs/report
+    mkdir -p "$tmp_dir" "$out_dir" 2>/dev/null || true
+    /app/.venv/bin/python -m pytest docker/stress/ -v --log-level=INFO --durations=10 \
       -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
-      --html=/app/log/report/k8s_stress_report.html --self-contained-html \
-      --junitxml=/app/log/report/k8s_stress_report.xml
+      --html="$tmp_dir/${report_name}.html" --self-contained-html \
+      --junitxml="$tmp_dir/${report_name}.xml"
+    status=$?
+    cp "$tmp_dir/${report_name}.html" "$out_dir/" 2>/dev/null || echo "  WARN: could not copy HTML report to $out_dir"
+    cp "$tmp_dir/${report_name}.xml" "$out_dir/" 2>/dev/null || echo "  WARN: could not copy XML report to $out_dir"
+    exit $status
 ---
 apiVersion: v1
 kind: Pod

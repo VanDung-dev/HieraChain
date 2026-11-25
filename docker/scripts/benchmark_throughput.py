@@ -14,7 +14,7 @@ def main() -> None:
     if not database_url.startswith(("postgresql://", "postgres://")):
         raise RuntimeError("Docker benchmark requires HRC_BENCHMARK_DB_URL to point to PostgreSQL")
     os.environ.setdefault("HRC_BENCHMARK_JOURNAL_DIR", "/app/data/journal")
-    os.environ.setdefault("HRC_BENCHMARK_LOG_FILE", "/app/log/benchmark_debug.log")
+    os.environ.setdefault("HRC_BENCHMARK_LOG_FILE", "/app/logs/benchmark_debug.log")
     benchmark_main()
 
 

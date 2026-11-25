@@ -25,7 +25,7 @@ services:
     volumes:
       - ../docker/stress:/app/docker/stress
       - ../docker/scripts:/app/docker/scripts
-      - ../log:/app/log
+      - ../logs:/app/logs
       # Uncomment and adjust path to enable Real K8s Namespace Isolation
       - ~/.kube/config:/root/.kube/config:ro
     # Use host network to access K8s NodePort directly
@@ -41,6 +41,10 @@ services:
           memory: 512M
     entrypoint: ["sh", "/app/docker/scripts/docker-stress-entrypoint.sh"]
     command: >
+      sh -c "mkdir -p /tmp/hrc-stress-report /app/logs/report 2>/dev/null || true;
       python -m pytest docker/stress/ -v
-      --html=/app/log/report/k8s_stress_test_report.html
-      --self-contained-html
+      --html=/tmp/hrc-stress-report/k8s_stress_test_report.html
+      --self-contained-html;
+      status=$$?;
+      cp /tmp/hrc-stress-report/k8s_stress_test_report.html /app/logs/report/ 2>/dev/null || echo '  WARN: could not copy HTML report to /app/logs/report';
+      exit $$status"

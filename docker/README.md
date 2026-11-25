@@ -121,8 +121,8 @@ the image, removes containers and volumes, and starts a new cluster first.
 Reports from the wrapper's Compose runner are written to:
 
 ```text
-log/report/docker_stress_report.html
-log/report/docker_stress_report.xml
+logs/report/docker_stress_report.html
+logs/report/docker_stress_report.xml
 ```
 
 ### Direct Compose commands and cleanup
@@ -152,7 +152,7 @@ bash docker/hierachain.sh down docker
 
 This calls Compose `down --remove-orphans -v`, deleting node data, PostgreSQL
 data, and IPFS data volumes. Host files under `docker/nodes/`, `docker/ipfs/`,
-and `log/` remain. The parsed `--force` flag does not control this behavior;
+and `logs/` remain. The parsed `--force` flag does not control this behavior;
 volume removal happens without it.
 
 ## Isolated container tests
@@ -223,7 +223,7 @@ not measure four-node network consensus throughput.
 
 The application limit defaults to 1 CPU and 1 GiB; override `BENCHMARK_CPUS` and
 `BENCHMARK_MEMORY` to change it. The JSON result is printed to the container log
-and written to `/app/log/benchmark_debug.log`. `/app/data` and `/app/log` use
+and written to `/app/logs/benchmark_debug.log`. `/app/data` and `/app/log` use
 anonymous volumes, so retain any results you need before removing them:
 
 ```bash
@@ -257,7 +257,7 @@ chaos tests. The runner's service account can only get/delete the four node
 pods and execute commands in them; the test node pods have `NET_ADMIN` for
 network fault injection.
 
-The wrapper copies HTML and JUnit reports into `log/report/`, removes the
+The wrapper copies HTML and JUnit reports into `logs/report/`, removes the
 runner pod and returns failure if pytest or report retrieval fails. It never
 falls back to Docker Compose after a K8s failure. `TEST_DURATION` controls load
 test duration, not a timeout for the entire suite. Docker-only recovery and

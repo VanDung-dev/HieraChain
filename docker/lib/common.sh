@@ -159,7 +159,7 @@ import json
 config = json.load(sys.stdin)
 key = config["services"]["stress-tester"].get("environment", {}).get("HRC_API_KEY")
 if not isinstance(key, str) or not key.strip():
-    raise SystemExit("ERROR: set HRC_API_KEY in .env or the environment to a provisioned chains/events/proofs key before stress")
+    raise SystemExit("ERROR: set HRC_API_KEY in .env or the environment to a provisioned key with chains, chains:manage, events, and proofs permissions before stress")
 '
 }
 
@@ -387,15 +387,17 @@ run_tests() {
 
   if $K8S; then
     local result=0
-    mkdir -p log/report
+    mkdir -p logs/report
     kubectl delete job stress-tester -n "$NAMESPACE" --ignore-not-found --wait=true || return 1
     kubectl delete pod stress-tester -n "$NAMESPACE" --ignore-not-found --wait=true || return 1
     kubectl apply -f docker/k8s/stress-tester.yaml || return 1
     if kubectl wait pod/stress-tester -n "$NAMESPACE" --for=condition=Ready --timeout=300s; then
       kubectl exec -n "$NAMESPACE" stress-tester -- \
         env TEST_DURATION="${DURATION:-60}" /stress-scripts/run-stress.sh || result=$?
-      kubectl cp "$NAMESPACE/stress-tester:/app/log/report/${report}.html" "log/report/${report}.html" || result=1
-      kubectl cp "$NAMESPACE/stress-tester:/app/log/report/${report}.xml" "log/report/${report}.xml" || result=1
+      kubectl cp "$NAMESPACE/stress-tester:/app/logs/report/${report}.html" "logs/report/${report}.html" \
+        || echo "  WARN: could not copy ${report}.html from pod"
+      kubectl cp "$NAMESPACE/stress-tester:/app/logs/report/${report}.xml" "logs/report/${report}.xml" \
+        || echo "  WARN: could not copy ${report}.xml from pod"
     else
       result=1
       kubectl describe pod stress-tester -n "$NAMESPACE"
@@ -414,12 +416,22 @@ run_tests() {
     -e HRC_IPFS_ENCRYPTION_KEY stress-tester \
     bash -c "
       set -e
-      mkdir -p /app/log/report
+      report_name='${report}'
+      tmp_dir=/tmp/hrc-stress-report
+      out_dir=/app/logs/report
+      mkdir -p \"\$tmp_dir\"
+      mkdir -p \"\$out_dir\" 2>/dev/null || true
+      set +e
       pytest docker/stress/ -v --log-level=INFO --durations=10 \
         -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
-        --html=/app/log/report/${report}.html \
+        --html=\"\$tmp_dir/\${report_name}.html\" \
         --self-contained-html \
-        --junitxml=/app/log/report/${report}.xml
+        --junitxml=\"\$tmp_dir/\${report_name}.xml\"
+      status=\$?
+      set -e
+      cp \"\$tmp_dir/\${report_name}.html\" \"\$out_dir/\" 2>/dev/null || echo \"  WARN: could not copy HTML report to \$out_dir\"
+      cp \"\$tmp_dir/\${report_name}.xml\" \"\$out_dir/\" 2>/dev/null || echo \"  WARN: could not copy XML report to \$out_dir\"
+      exit \$status
     "
 }
 
@@ -443,8 +455,9 @@ print_setup_summary() {
   echo "  (Accessible from LAN 0.0.0.0)"
   echo ""
   if $K8S; then
-    echo "Kubernetes namespace: $NAMESPACE"
     echo "  Gateway status: http://localhost:${port}/web2-status"
+    echo ""
+    echo "Kubernetes namespace: $NAMESPACE"
     for i in $(seq 0 3); do
       echo "  node$((i+1)) → hierachain-node-$i.hierachain-node-headless:2661"
       echo "  IPFS → ipfs-$i.ipfs-headless:5001"

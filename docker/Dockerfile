@@ -20,7 +20,7 @@ COPY scripts/benchmark_throughput.py ./scripts/benchmark_throughput.py
 RUN uv sync --frozen --no-dev && \
     uv export --frozen --extra dev --no-dev --no-emit-project --no-hashes \
       --output-file /app/runtime-constraints.txt && \
-    mkdir -p /app/data /app/log
+    mkdir -p /app/data /app/log /app/logs
 
 FROM source AS test
 
@@ -70,7 +70,7 @@ COPY docker/stress/ /app/docker/stress/
 COPY pytest.ini /app/pytest.ini
 COPY --from=kubectl /bin/kubectl /usr/local/bin/kubectl
 
-RUN mkdir -p /app/data /app/log && \
+RUN mkdir -p /app/data /app/log /app/logs && \
     chmod +x /app/docker/entrypoint.sh /app/docker/scripts/wg-tc.sh
 
 EXPOSE 2661 5555 26657 51820/udp

@@ -79,7 +79,7 @@ services:
     volumes:
       - node1-data:/app/data
       - ./nodes/node1:/app/config/identity:ro
-      - ../log/node1:/app/log
+      - ../logs/node1:/app/log
     secrets:
       - hrc_api_keys
     deploy:
@@ -145,7 +145,7 @@ services:
     volumes:
       - node2-data:/app/data
       - ./nodes/node2:/app/config/identity:ro
-      - ../log/node2:/app/log
+      - ../logs/node2:/app/log
     secrets:
       - hrc_api_keys
     deploy:
@@ -211,7 +211,7 @@ services:
     volumes:
       - node3-data:/app/data
       - ./nodes/node3:/app/config/identity:ro
-      - ../log/node3:/app/log
+      - ../logs/node3:/app/log
     secrets:
       - hrc_api_keys
     deploy:
@@ -277,7 +277,7 @@ services:
     volumes:
       - node4-data:/app/data
       - ./nodes/node4:/app/config/identity:ro
-      - ../log/node4:/app/log
+      - ../logs/node4:/app/log
     secrets:
       - hrc_api_keys
     deploy:
@@ -582,6 +582,7 @@ services:
       - HRC_API_KEY_NAME=${HRC_API_KEY_NAME:-X-API-Key}
       - HRC_STRESS_ENV=docker
       - STRESS_TIMEOUT=${STRESS_TIMEOUT:-120}
+      - HRC_STRESS_SIGNING_IDENTITY=/app/config/stress-identity.json
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
@@ -593,8 +594,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts:/app/docker/scripts
       - ./stress:/app/docker/stress
+      - ./nodes/node1/identity.json:/app/config/stress-identity.json:ro
       - ../tests:/app/tests
-      - ../log:/app/log
+      - ../logs:/app/logs
     depends_on:
       node1:
         condition: service_healthy
