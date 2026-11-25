@@ -50,11 +50,22 @@ def _verify_request_signature(event_request: EventRequest) -> None:
         )
 
 
-def _resolve_submitter(auth_context: dict[str, Any]) -> str:
+def _auth_disabled() -> bool:
+    try:
+        return not get_settings().AUTH_ENABLED
+    except Exception:
+        return False
+
+
+def _resolve_submitter(auth_context: dict[str, Any], fallback: str | None = None) -> str:
     user_id = auth_context.get("user_id")
-    if not isinstance(user_id, str) or not user_id.strip():
-        raise HTTPException(status_code=403, detail="Authenticated user is not registered")
-    return user_id
+    if isinstance(user_id, str) and user_id.strip():
+        return user_id
+    if _auth_disabled():
+        if isinstance(fallback, str) and fallback.strip():
+            return fallback
+        return "anonymous"
+    raise HTTPException(status_code=403, detail="Authenticated user is not registered")
 
 
 def _build_event_data(
@@ -146,7 +157,7 @@ async def add_event(
         )
 
     _verify_request_signature(event_request)
-    submitted_by = _resolve_submitter(auth_context)
+    submitted_by = _resolve_submitter(auth_context, event_request.sender)
 
     inline_details, cid_info = process_event_details(
         event_request,
@@ -193,8 +204,12 @@ async def add_channel_event(
         raise HTTPException(status_code=404, detail=f"Channel '{channel_id}' not found")
 
     user_id = auth_context.get("user_id")
-    if not isinstance(user_id, str) or not user_id.strip():
-        raise HTTPException(status_code=403, detail="Authenticated user is not registered")
+    if not (isinstance(user_id, str) and user_id.strip()):
+        if _auth_disabled():
+            fallback = event_request.sender
+            user_id = fallback if isinstance(fallback, str) and fallback.strip() else "anonymous"
+        else:
+            raise HTTPException(status_code=403, detail="Authenticated user is not registered")
 
     _verify_request_signature(event_request)
 

@@ -19,11 +19,26 @@ class ChainAccessRequest(BaseModel):
     permissions: list[Literal["read", "write", "proofs"]] = Field(min_length=1)
 
 
+def _auth_disabled() -> bool:
+    try:
+        from hierachain.config.settings import get_settings
+
+        return not get_settings().AUTH_ENABLED
+    except Exception:
+        return False
+
+
 def require_chain_management(
     context: dict[str, Any] = Depends(require_chain_access),
 ) -> dict[str, Any]:
-    if authenticated_user_id(context) is None or not ResourcePermissionChecker.has_permission(context, "chains:manage"):
-        raise HTTPException(status_code=403, detail="Chain assignments require chains:manage permission")
+    if _auth_disabled() and authenticated_user_id(context) is None:
+        return context
+    if authenticated_user_id(context) is None or not ResourcePermissionChecker.has_permission(
+        context, "chains:manage"
+    ):
+        raise HTTPException(
+            status_code=403, detail="Chain assignments require chains:manage permission"
+        )
     return context
 
 
