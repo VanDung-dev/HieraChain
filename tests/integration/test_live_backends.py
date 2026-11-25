@@ -222,6 +222,7 @@ def test_authenticated_http_event_and_cross_worker_revocation(
     monkeypatch.setattr(settings, "RATE_LIMIT_ENABLED", False)
     monkeypatch.setattr(settings, "get_auth_config", lambda: {"enabled": True})
     monkeypatch.setattr(settings, "get_p2p_config", lambda: {"enabled": False})
+    monkeypatch.setenv("HRC_STORAGE_BACKEND", "postgres")
     monkeypatch.setattr(server, "get_settings", lambda: settings)
     key = secrets.token_urlsafe(32)
     records = {key: {"user_id": "p2-tester", "permissions": ["all"],
@@ -234,44 +235,50 @@ def test_authenticated_http_event_and_cross_worker_revocation(
     chain_name = f"p2_{secrets.token_hex(4)}"
     headers = {"x-api-key": key}
 
-    from hierachain.api.ledger.depds import get_hierarchy_manager
+    from hierachain.api.ledger.depds import close_hierarchy_manager, get_hierarchy_manager
+
+    chain = None
+    close_hierarchy_manager()
     try:
-        get_hierarchy_manager()
-    except Exception as exc:
-        raise exc.__cause__ or exc
+        try:
+            get_hierarchy_manager()
+        except Exception as exc:
+            raise exc.__cause__ or exc
 
-    with TestClient(apps[0]) as first, TestClient(apps[1]) as second:
-        assert first.get("/api/ledger/chains").status_code == 401
-        created = first.post(f"/api/ledger/chains/{chain_name}/create", headers=headers)
-        assert created.status_code == 201, created.text
+        with TestClient(apps[0]) as first, TestClient(apps[1]) as second:
+            assert first.get("/api/ledger/chains").status_code == 401
+            created = first.post(f"/api/ledger/chains/{chain_name}/create", headers=headers)
+            assert created.status_code == 201, created.text
 
-        chain = get_hierarchy_manager().get_sub_chain(chain_name)
-        assert chain is not None
-        pending_before = len(chain.pending_events)
-        invalid = first.post(f"/api/ledger/chains/{chain_name}/events", headers=headers,
-                             json={"entity_id": "item-1", "event_type": "transaction"})
-        assert invalid.status_code == 422, invalid.text
-        assert len(chain.pending_events) == pending_before
+            chain = get_hierarchy_manager().get_sub_chain(chain_name)
+            assert chain is not None
+            pending_before = len(chain.pending_events)
+            invalid = first.post(f"/api/ledger/chains/{chain_name}/events", headers=headers,
+                                 json={"entity_id": "item-1", "event_type": "transaction"})
+            assert invalid.status_code == 422, invalid.text
+            assert len(chain.pending_events) == pending_before
 
-        valid = first.post(f"/api/ledger/chains/{chain_name}/events", headers=headers,
-                           json={"entity_id": "item-1", "event_type": "created",
-                                 "details": {"batch": "A"}})
-        assert valid.status_code == 200, valid.text
-        assert valid.json()["event_id"]
-        chain.flush_pending_and_finalize(timeout=5.0)
-        with psycopg.connect(postgres_url) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "SELECT event_type FROM events WHERE chain_name = %s AND entity_id = %s",
-                    (chain_name, "item-1"),
-                )
-                event_types = [row[0] for row in cursor.fetchall()]
-        assert event_types == ["created"]
-        assert second.get("/api/ledger/chains", headers=headers).status_code == 200
+            valid = first.post(f"/api/ledger/chains/{chain_name}/events", headers=headers,
+                               json={"entity_id": "item-1", "event_type": "created",
+                                     "details": {"batch": "A"}})
+            assert valid.status_code == 200, valid.text
+            assert valid.json()["event_id"]
+            chain.flush_pending_and_finalize(timeout=5.0)
+            with psycopg.connect(postgres_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT event_type FROM events WHERE chain_name = %s AND entity_id = %s",
+                        (chain_name, "item-1"),
+                    )
+                    event_types = [row[0] for row in cursor.fetchall()]
+            assert event_types == ["created"]
+            assert second.get("/api/ledger/chains", headers=headers).status_code == 200
 
-        apps[0].state.auth_verifier.key_manager.revoke_key(key)
-        assert second.get("/api/ledger/chains", headers=headers).status_code == 401
-        restarted = KeyManager(storage_backend=records, revocation_store=RedisRevocationStore(redis_url))
-        assert restarted.is_revoked(key)
-
-    chain.stop()
+            apps[0].state.auth_verifier.key_manager.revoke_key(key)
+            assert second.get("/api/ledger/chains", headers=headers).status_code == 401
+            restarted = KeyManager(storage_backend=records, revocation_store=RedisRevocationStore(redis_url))
+            assert restarted.is_revoked(key)
+    finally:
+        if chain is not None:
+            chain.stop()
+        close_hierarchy_manager()

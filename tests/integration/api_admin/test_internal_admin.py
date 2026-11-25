@@ -47,7 +47,9 @@ def test_verify_identity():
             mock_settings = MagicMock()
             mock_settings.VALIDATOR_IDENTITY_PATH = temp_identity_path
             mock_settings.NODE_ID = identity_data["node_id"]
-            
+            mock_settings.AUTH_STATE_REDIS_URL = None
+            mock_settings.API_STATE_DB = None
+
             with patch.object(admin_endpoints, 'get_settings', return_value=mock_settings):
                 challenge = "abcd1234"
                 payload = {"challenge": challenge}

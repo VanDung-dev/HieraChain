@@ -169,58 +169,87 @@ def test_full_lifecycle_success(zk_context):
     Verify the complete lifecycle of a block with ZK proof:
     Create Previous Block -> Generate Proof -> Create Consensus Event -> Validate.
     """
+    from hierachain.core.block import calculate_merkle_from_list
+    from hierachain.core.utils import generate_hash
+    from hierachain.security.security_utils import KeyPair
+    from hierachain.security.verify.block_verifier import BlockVerifier
+
     # 1. State A (Previous Block)
     prev_block = Block(
-        index=100, 
-        events=[], 
-        previous_hash="root_hash_99", 
-        timestamp=time.time() - 10
+        index=100,
+        events=[],
+        previous_hash="root_hash_99",
+        timestamp=time.time() - 10,
     )
     prev_block.merkle_root = "a" * 64
-    
+
     # 2. State B (New Block Target)
     new_index = 101
     new_root = "b" * 64
-    
+
     # 3. Prover generates proof for transition A -> B
     stats_before = zk_context.prover.get_stats()
     proof_bytes = zk_context.prover.generate_proof_bytes(
-        prev_block.merkle_root, 
-        new_root, 
-        new_index
+        prev_block.merkle_root,
+        new_root,
+        new_index,
     )
-    
+
     # Assert generation stats
     stats = zk_context.prover.get_stats()
     assert stats["total_proofs_generated"] == stats_before["total_proofs_generated"] + 1
-    
-    # 4. Authority creates a block including this proof
+
+    # 4. Authority creates a properly signed block including this proof
+    timestamp = time.time()
+    block_timestamp = prev_block.timestamp + 10
+    authority_id = zk_context.authority_id
+    private_key = zk_context.poa._authority_private_keys[authority_id]
+    key_pair = KeyPair.from_private_key(private_key)
+
+    unfinalized_hash = generate_hash({
+        "index": new_index,
+        "timestamp": block_timestamp,
+        "previous_hash": prev_block.hash,
+        "nonce": 0,
+        "merkle_root": calculate_merkle_from_list([]),
+        "creator_id": None,
+    })
+    authority_signature = key_pair.sign(
+        f"{unfinalized_hash}{authority_id}{timestamp}".encode()
+    )
+
     consensus_event = {
-        "entity_id": zk_context.authority_id,
+        "entity_id": authority_id,
         "event": "consensus_finalization",
-        "timestamp": time.time(),
+        "timestamp": timestamp,
         "details": {
-            "authority_id": zk_context.authority_id,
-            "authority_signature": "valid_rsa_sig_base64",
+            "authority_id": authority_id,
+            "authority_signature": authority_signature,
+            "timestamp": timestamp,
             "zk_proof": proof_bytes.hex(),
             "previous_state": prev_block.merkle_root,
-            "current_state": new_root
-        }
+            "current_state": new_root,
+        },
     }
-    
+
     block = Block(
         index=new_index,
         events=[consensus_event],
         previous_hash=prev_block.hash,
-        timestamp=prev_block.timestamp + 10,
-        signature="authority_block_sig"
+        timestamp=block_timestamp,
     )
-    
+    block_header_signature = key_pair.sign(BlockVerifier._get_signable_content(block))
+    block.signature = (
+        block_header_signature.hex()
+        if isinstance(block_header_signature, bytes)
+        else block_header_signature
+    )
+
     # 5. Validators (PoA) verify the block
     is_valid = zk_context.poa.validate_block(block, prev_block)
-    
+
     assert is_valid is True
-    
+
     # Assert verification stats (at least one successful)
     v_stats = zk_context.verifier.get_stats()
     assert v_stats["successful_verifications"] >= 1
