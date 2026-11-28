@@ -504,9 +504,10 @@ class BlockchainQueryEngine:
         self, filter_func: Callable[[dict[str, Any]], bool]
     ) -> list[dict[str, Any]]:
         """Get all events that match a custom filter function."""
-        events = []
-        for block in self.blockchain.chain:
-            for event in block.to_event_list():
-                if filter_func(event):
-                    events.append(event)
-        return events
+        with self.blockchain.lock:
+            events = []
+            for block in self.blockchain.chain:
+                for event in block.to_event_list():
+                    if filter_func(event):
+                        events.append(event)
+            return events
