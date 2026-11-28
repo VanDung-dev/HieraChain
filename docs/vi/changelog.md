@@ -302,7 +302,13 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (54)"
+??? warning "Fix (57)"
+
+    * 2026-11-28
+
+        * **Hierarchy & Domains (Truyền Identity Chain & Trạng thái Proof)**: `HierarchyManager.create_sub_chain()` (`hierachain/hierarchical/hierarchy_manager/chain_ops.py`) và khôi phục sub-chain/domain-chain (`hierachain/hierarchical/hierarchy_manager/recovery.py`) truyền `config["trusted_public_keys"]` từ `main_chain.trusted_public_keys` cùng `node_identity` từ `main_chain.node_identity`; `BaseChain`/`DomainChain` (`hierachain/domains/chains/base_chain.py`, `hierachain/domains/chains/domain_chain.py`) nhận thêm `config` và `node_identity` để chuyển tiếp xuống `SubChain`. `_update_local_state_after_proof()` (`hierachain/hierarchical/sub_chain/proof.py`) chỉ cập nhật `last_proof_submission`/`last_proof_block_index` sau khi `add_event(proof_submitted)` thành công — trước đây chain tạo/khôi phục có thể thiếu trusted key hoặc node identity, và trạng thái proof local có thể tiến lên dù append event audit thất bại.
+        * **Core (Khóa Đọc Event Lọc)**: `get_events_by_filter()` (`hierachain/core/blockchain.py`) đọc chain dưới `self.blockchain.lock` khi duyệt block và decode event; `table_to_list_of_dicts()` (`hierachain/core/block.py`) bỏ nhánh kiểm tra `has_data_col` lặp khi bảng không có cột `data` — trước đây lọc event tùy chỉnh có thể chạy ngoài lock và đụng trạng thái chain đang thay đổi.
+        * **Consensus (Mở rộng ID Event Ordering)**: `generate_event_id()` (`hierachain/consensus/ordering/utils.py`) trả về 32 ký tự hex thay vì 16 ký tự từ digest SHA-256 của `channel_id` và payload đã định tuyến — trước đây ID 16 ký tự có không gian va chạm nhỏ hơn.
 
     * 2026-11-25
 

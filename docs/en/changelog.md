@@ -302,7 +302,13 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (54)"
+??? warning "Fix (57)"
+
+    * 2026-11-28
+
+        * **Hierarchy & Domains (Chain Identity Propagation & Proof State)**: `HierarchyManager.create_sub_chain()` (`hierachain/hierarchical/hierarchy_manager/chain_ops.py`) and sub-chain/domain-chain recovery (`hierachain/hierarchical/hierarchy_manager/recovery.py`) pass `config["trusted_public_keys"]` from `main_chain.trusted_public_keys` and `node_identity` from `main_chain.node_identity`; `BaseChain`/`DomainChain` (`hierachain/domains/chains/base_chain.py`, `hierachain/domains/chains/domain_chain.py`) accept `config` and `node_identity` and forward them to `SubChain`. `_update_local_state_after_proof()` (`hierachain/hierarchical/sub_chain/proof.py`) updates `last_proof_submission`/`last_proof_block_index` only after `add_event(proof_submitted)` succeeds — previously created/restored chains could miss trusted keys or node identity, and local proof state could advance even when the audit event append failed.
+        * **Core (Locked Filtered Event Reads)**: `get_events_by_filter()` (`hierachain/core/blockchain.py`) reads the chain under `self.blockchain.lock` while scanning blocks and decoding events; `table_to_list_of_dicts()` (`hierachain/core/block.py`) drops the repeated `has_data_col` branch when the table has no `data` column — previously custom event filtering could run outside the lock and observe mutating chain state.
+        * **Consensus (Extend Ordering Event IDs to 32 Characters)**: `generate_event_id()` (`hierachain/consensus/ordering/utils.py`) returns 32 hex characters instead of 16 from the SHA-256 digest of `channel_id` and the routed payload — previously 16-character IDs had a smaller collision space.
 
     * 2026-11-25
 
