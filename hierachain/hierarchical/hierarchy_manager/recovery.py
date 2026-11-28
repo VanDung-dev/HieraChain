@@ -152,14 +152,25 @@ def _restore_sub_chains(self: HierarchyManager) -> None:
             is_domain = chain_type == "domain" or (
                 self.transaction_manager.requires_2pc_participant(name)
             )
+            config = {
+                "trusted_public_keys": getattr(
+                    self.main_chain, "trusted_public_keys", None
+                )
+            }
             if is_domain:
                 from hierachain.domains.chains.domain_chain import DomainChain
 
-                chain = DomainChain(name, domain_type)
+                chain = DomainChain(
+                    name,
+                    domain_type,
+                    config=config,
+                    node_identity=self.node_identity,
+                )
             else:
                 chain = SubChain(
                     name=name,
                     domain_type=domain_type,
+                    config=config,
                     node_identity=self.node_identity,
                 )
             cleanup.callback(chain.shutdown)

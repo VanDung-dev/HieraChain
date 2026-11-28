@@ -25,7 +25,17 @@ class ChainOperationsMixin(HierarchyHost):
 
         from hierachain.domains.chains.domain_chain import DomainChain
 
-        sub_chain = DomainChain(name, domain_type, metadata=metadata)
+        sub_chain = DomainChain(
+            name,
+            domain_type,
+            metadata=metadata,
+            config={
+                "trusted_public_keys": getattr(
+                    self.main_chain, "trusted_public_keys", None
+                )
+            },
+            node_identity=getattr(self.main_chain, "node_identity", None),
+        )
 
         try:
             if existing is None:

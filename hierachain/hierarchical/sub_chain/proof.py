@@ -250,9 +250,6 @@ def _update_local_state_after_proof(
     zk_proof: bytes | None
 ) -> None:
     """Update local state after successful proof submission."""
-    sub_chain.last_proof_submission = time.time()
-    sub_chain.last_proof_block_index = latest_block.index
-
     proof_event = {
         "entity_id": sub_chain.name,
         "event": "proof_submitted",
@@ -268,6 +265,8 @@ def _update_local_state_after_proof(
     }
 
     sub_chain.add_event(proof_event)
+    sub_chain.last_proof_submission = time.time()
+    sub_chain.last_proof_block_index = latest_block.index
 
 
 def _connect_sub_chain_to_main(sub_chain: Any, main_chain: Any) -> bool:
