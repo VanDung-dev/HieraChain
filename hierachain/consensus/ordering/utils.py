@@ -41,7 +41,7 @@ def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     h = hashlib.sha256()
     h.update(channel_id.encode('utf-8'))
     h.update(json_bytes)
-    return h.hexdigest()[:16]
+    return h.hexdigest()[:32]
 
 
 def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -> None:
