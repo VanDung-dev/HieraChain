@@ -36,7 +36,13 @@ class BaseChain(SubChain, ABC):
 
     chain_kind = "domain"
 
-    def __init__(self, name: str, domain_type: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        domain_type: str,
+        config: dict[str, Any] | None = None,
+        node_identity: Any | None = None,
+    ) -> None:
         """
         Initialize a base domain chain.
         
@@ -44,7 +50,12 @@ class BaseChain(SubChain, ABC):
             name: Name identifier for the chain
             domain_type: Type of domain this chain handles
         """
-        super().__init__(name, domain_type)
+        super().__init__(
+            name,
+            domain_type,
+            config=config,
+            node_identity=node_identity,
+        )
         self.entity_registry: dict[str, dict[str, Any]] = {}
         self.domain_rules: dict[str, Callable] = {}
         self.event_handlers: dict[str, Callable] = {}

@@ -35,7 +35,12 @@ class DomainChain(DomainOperationsMixin, TransactionOperationsMixin, BaseChain):
     """
 
     def __init__(
-        self, name: str, domain_type: str = "generic", metadata: dict[str, Any] | None = None
+        self,
+        name: str,
+        domain_type: str = "generic",
+        metadata: dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
+        node_identity: Any | None = None,
     ) -> None:
         """
         Initialize a domain chain.
@@ -45,7 +50,12 @@ class DomainChain(DomainOperationsMixin, TransactionOperationsMixin, BaseChain):
             domain_type: Type of domain this chain handles
             metadata: Additional metadata for the chain
         """
-        super().__init__(name, domain_type)
+        super().__init__(
+            name,
+            domain_type,
+            config=config,
+            node_identity=node_identity,
+        )
 
         # Store metadata if provided
         self.metadata = metadata or {}
