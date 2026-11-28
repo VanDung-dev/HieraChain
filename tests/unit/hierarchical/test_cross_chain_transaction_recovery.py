@@ -807,7 +807,7 @@ def test_domain_chain_can_replace_generic_restored_placeholder(
             self.pending_events = []
 
     class _Placeholder:
-        def __init__(self, name: str, domain_type: str, node_identity=None) -> None:
+        def __init__(self, name: str, domain_type: str, **_kwargs) -> None:
             self.name = name
             self.domain_type = domain_type
 
@@ -819,7 +819,7 @@ def test_domain_chain_can_replace_generic_restored_placeholder(
             calls.append("placeholder-shutdown")
 
     class _DomainParticipant(_Placeholder):
-        def __init__(self, name: str, domain_type: str, metadata=None) -> None:
+        def __init__(self, name: str, domain_type: str, **_kwargs) -> None:
             super().__init__(name, domain_type)
 
         def prepare_transaction(self, *_args, **_kwargs) -> bool:

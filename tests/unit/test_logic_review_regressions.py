@@ -95,6 +95,27 @@ def test_proof_submitted_event_id_is_stable_across_retries() -> None:
     assert captured[0]["details"]["submitted_at"] == block.timestamp
 
 
+def test_proof_state_is_not_advanced_when_audit_event_append_fails() -> None:
+    def fail_add_event(_event: dict) -> None:
+        raise RuntimeError("append failed")
+
+    sub_chain = SimpleNamespace(
+        name="orders",
+        last_proof_submission=0.0,
+        last_proof_block_index=-1,
+        add_event=fail_add_event,
+    )
+    block = SimpleNamespace(index=3, hash="a" * 64, timestamp=123.0)
+
+    with pytest.raises(RuntimeError, match="append failed"):
+        _update_local_state_after_proof(
+            sub_chain, SimpleNamespace(name="MainChain"), block, None
+        )
+
+    assert sub_chain.last_proof_block_index == -1
+    assert sub_chain.last_proof_submission == 0.0
+
+
 def test_watchdog_still_counts_failures_that_return_to_active(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

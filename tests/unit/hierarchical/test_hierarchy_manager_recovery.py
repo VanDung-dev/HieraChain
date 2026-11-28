@@ -152,7 +152,10 @@ def test_manager_restores_persisted_subchains(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
 
     class RestoredSubChain:
-        def __init__(self, name: str, domain_type: str, node_identity: object) -> None:
+        def __init__(
+            self, name: str, domain_type: str, **kwargs: object
+        ) -> None:
+            node_identity = kwargs.get("node_identity")
             self.name = name
             self.domain_type = domain_type
             self.node_identity = node_identity
@@ -409,14 +412,24 @@ def test_create_subchain_connects_before_persisting_metadata(
         return True
 
     monkeypatch.setattr(storage, "store_chain", store_chain)
+    created: dict[str, Any] = {}
+
+    def build_domain_chain(_name, _domain_type, metadata=None, **kwargs):
+        created.update(kwargs)
+        return sub_chain
+
     monkeypatch.setattr(
-        "hierachain.domains.chains.domain_chain.DomainChain",
-        lambda _name, _domain_type, metadata=None: sub_chain,
+        "hierachain.domains.chains.domain_chain.DomainChain", build_domain_chain
     )
 
     assert manager.create_sub_chain("payments", "finance")
 
     assert calls == ["connect", "persist"]
+    assert created["node_identity"] is manager.node_identity
+    assert (
+        created["config"]["trusted_public_keys"]
+        is manager.main_chain.trusted_public_keys
+    )
     assert manager.get_sub_chain("payments") is sub_chain
 
 
@@ -449,7 +462,7 @@ def test_create_subchain_stops_when_persistence_fails(
     monkeypatch.setattr(storage, "store_chain", store_chain)
     monkeypatch.setattr(
         "hierachain.domains.chains.domain_chain.DomainChain",
-        lambda _name, _domain_type, metadata=None: sub_chain,
+        lambda _name, _domain_type, metadata=None, **_kwargs: sub_chain,
     )
 
     with pytest.raises(RuntimeError, match="Failed to persist sub-chain metadata: payments"):
@@ -566,9 +579,13 @@ def test_manager_restores_persisted_domain_chains_without_downgrade(
     monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
 
     class RestoredDomainChain:
-        def __init__(self, name: str, domain_type: str) -> None:
+        def __init__(
+            self, name: str, domain_type: str, **kwargs: object
+        ) -> None:
             self.name = name
             self.domain_type = domain_type
+            self.node_identity = kwargs.get("node_identity")
+            self.config = kwargs.get("config")
 
         def connect_to_main_chain(self, _main_chain: object) -> bool:
             return True
@@ -580,11 +597,17 @@ def test_manager_restores_persisted_domain_chains_without_downgrade(
         "hierachain.domains.chains.domain_chain.DomainChain", RestoredDomainChain
     )
 
-    manager = HierarchyManager(node_identity=load_node_identity())
+    identity = load_node_identity()
+    manager = HierarchyManager(node_identity=identity)
 
     restored = manager.get_sub_chain("payments")
     assert isinstance(restored, RestoredDomainChain)
     assert restored.domain_type == "finance"
+    assert restored.node_identity is identity
+    assert (
+        restored.config["trusted_public_keys"]
+        is manager.main_chain.trusted_public_keys
+    )
 
 
 def test_configured_postgres_failure_does_not_fall_back_to_sqlite(
